@@ -1,8 +1,8 @@
 ---
 applications:
-- name: metis-framework-rest-test
+- name: metis-core-rest-test
   memory: 2048M
   instances: 1
-  host: metis-framework-rest-test
-  path: target/metis-framework-rest-1.0-SNAPSHOT.war
+  host: metis-core-rest-test
+  path: target/metis-core-rest-1.0-SNAPSHOT.war
   buildpack: https://github.com/europeana/java-buildpack.git#feat/java8
