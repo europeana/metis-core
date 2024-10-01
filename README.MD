@@ -8,3 +8,4 @@
 
 # metis-core
 Metis Core project.
+Please refer to [metis-framework](https://github.com/europeana/metis-framework/blob/e7291f358d4905b44bb7d42cc14cf430f3b60617/README.MD) for more configuration information.
