@@ -4,7 +4,7 @@
   <parent>
     <artifactId>metis-core</artifactId>
     <groupId>eu.europeana.metis</groupId>
-    <version>12.2</version>
+    <version>13</version>
   </parent>
   <artifactId>metis-core-service</artifactId>
 
@@ -17,17 +17,17 @@
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-authentication-common</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-core-common</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <artifactId>metis-transformation-service</artifactId>
       <groupId>eu.europeana.metis</groupId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>eu.europeana.cloud</groupId>

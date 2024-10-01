@@ -5,7 +5,7 @@
   <parent>
     <artifactId>metis-core</artifactId>
     <groupId>eu.europeana.metis</groupId>
-    <version>12.2</version>
+    <version>13</version>
   </parent>
   <artifactId>metis-core-common</artifactId>
   <dependencies>
@@ -26,12 +26,12 @@
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-common-utils</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-common-mongo</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
       <exclusions>
         <exclusion>
           <groupId>eu.europeana.corelib</groupId>

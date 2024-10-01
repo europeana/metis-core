@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 
+import eu.europeana.metis.utils.DepublicationReason;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -17,6 +18,7 @@ public class DepublishPluginMetadata extends AbstractExecutablePluginMetadata {
   private static final ExecutablePluginType pluginType = ExecutablePluginType.DEPUBLISH;
   private boolean datasetDepublish;
   private Set<String> recordIdsToDepublish;
+  private DepublicationReason depublicationReason;
 
   public DepublishPluginMetadata() {
     //Required for json serialization
@@ -42,5 +44,13 @@ public class DepublishPluginMetadata extends AbstractExecutablePluginMetadata {
 
   public void setRecordIdsToDepublish(Set<String> recordIdsToDepublish) {
     this.recordIdsToDepublish = new HashSet<>(recordIdsToDepublish);
+  }
+
+  public void setDepublicationReason(DepublicationReason depublicationReason) {
+    this.depublicationReason = depublicationReason;
+  }
+
+  public DepublicationReason getDepublicationReason() {
+    return depublicationReason;
   }
 }
