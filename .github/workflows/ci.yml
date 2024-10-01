@@ -1,0 +1,31 @@
+name: CI
+
+on: push
+
+jobs:
+
+  ci:
+    uses: europeana/metis-actions/.github/workflows/ci.yml@main
+    with:
+      sonar_organization: europeana
+      sonar_project_key: europeana_metis-core
+    secrets:
+      SONAR_TOKEN: ${{ secrets.METIS_SONAR_TOKEN }}
+
+  deploy-artifacts:
+    needs: ci
+    uses: europeana/metis-actions/.github/workflows/deploy-artifacts.yml@main
+    secrets:
+      ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+      ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+  docker-build:
+    needs: ci
+    uses: europeana/metis-actions/.github/workflows/docker-build-push.yml@main
+    with:
+      docker-organization: europeana
+      docker-image-name: metis-core
+      project-path: metis-core-rest/
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
