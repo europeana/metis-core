@@ -82,12 +82,12 @@
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-common-spring-properties</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-core-service</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
 
 
@@ -132,7 +132,7 @@
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-authentication-rest-client</artifactId>
-      <version>${project.version}</version>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
