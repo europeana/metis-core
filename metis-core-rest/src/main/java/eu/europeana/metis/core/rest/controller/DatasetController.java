@@ -218,8 +218,9 @@ public class DatasetController {
     MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
 
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(metisUserView, datasetId);
-    LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", sanitizeCRLF(datasetId),
-        datasetXslt.getId());
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", sanitizeCRLF(datasetId), datasetXslt.getId());
+    }
     return datasetXslt;
   }
 

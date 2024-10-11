@@ -1,11 +1,8 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import static java.lang.String.format;
-
 import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.metis.core.common.RecordIdUtils;
-import eu.europeana.metis.utils.DepublicationReason;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.util.CollectionUtils;
