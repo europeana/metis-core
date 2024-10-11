@@ -1,8 +1,11 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import static java.lang.String.format;
+
 import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.metis.core.common.RecordIdUtils;
+import eu.europeana.metis.utils.DepublicationReason;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.util.CollectionUtils;
@@ -47,8 +50,7 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
   }
 
   @Override
-  public DpsTask prepareDpsTask(String datasetId,
-      DpsTaskSettings dpsTaskSettings) {
+  public DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
 
     Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
@@ -63,8 +65,8 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
         extraParameters.put(PluginParameterKeys.RECORD_IDS_TO_DEPUBLISH, recordIdList);
       }
     }
-    //TODO: 2024-09-24 - Update below key with the PluginParameterKeys equivalent when it's available
-    extraParameters.put("DEPUBLICATION_REASON", getPluginMetadata().getDepublicationReason().name());
+
+    extraParameters.put(PluginParameterKeys.DEPUBLICATION_REASON, getPluginMetadata().getDepublicationReason().name());
     DpsTask dpsTask = new DpsTask();
     dpsTask.setParameters(extraParameters);
     return dpsTask;

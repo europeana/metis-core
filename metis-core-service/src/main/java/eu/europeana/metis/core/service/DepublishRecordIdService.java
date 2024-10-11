@@ -1,10 +1,13 @@
 package eu.europeana.metis.core.service;
 
+import static java.lang.String.format;
+
 import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation.PublicationStatus;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
+import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.rest.DepublishRecordIdView;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
@@ -185,6 +188,11 @@ public class DepublishRecordIdService {
       throws GenericMetisException {
     // Authorize.
     authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId);
+
+    if (depublicationReason == DepublicationReason.UNKNOWN) {
+      throw new PluginExecutionNotAllowed(
+          format("Depublication reason %s, is not allowed", depublicationReason));
+    }
 
     //Prepare depublish workflow, do not save in the database. Only create workflow execution
     final Workflow workflow = new Workflow();
