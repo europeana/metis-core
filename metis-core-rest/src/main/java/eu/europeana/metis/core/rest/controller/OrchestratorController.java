@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
+
 import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
 import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.DaoFieldNames;
@@ -149,8 +151,11 @@ public class OrchestratorController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteWorkflow(
-      @RequestHeader("Authorization") String authorization,
-      @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+      @RequestHeader("Authorization") String authorization, @PathVariable("datasetId") String datasetId)
+      throws GenericMetisException {
+    authorization = sanitizeCRLF(authorization);
+    datasetId = sanitizeCRLF(datasetId);
+
     MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
     orchestratorService.deleteWorkflow(metisUserView, datasetId);
     if (LOGGER.isInfoEnabled()) {

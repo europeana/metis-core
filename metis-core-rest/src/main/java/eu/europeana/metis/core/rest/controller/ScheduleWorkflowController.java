@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
+import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
 import eu.europeana.metis.authentication.user.MetisUserView;
@@ -149,6 +150,9 @@ public class ScheduleWorkflowController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteScheduledWorkflowExecution(@RequestHeader("Authorization") String authorization,
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    authorization = sanitizeCRLF(authorization);
+    datasetId = sanitizeCRLF(datasetId);
+
     MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
     scheduleWorkflowService.deleteScheduledWorkflow(metisUserView, datasetId);
     if (LOGGER.isInfoEnabled()) {
