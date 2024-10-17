@@ -29,7 +29,7 @@ public class DepublishRecordIdView {
     this.depublicationStatus = DepublicationStatus
         .convertFromModelToView(depublishRecordId.getDepublicationStatus());
     this.depublicationReason =
-        depublishRecordId.getDepublicationReason() == null ? DepublicationReason.UNKNOWN.toString()
+        depublishRecordId.getDepublicationReason() == null ? DepublicationReason.LEGACY.toString()
             : depublishRecordId.getDepublicationReason().toString();
   }
 
@@ -50,7 +50,7 @@ public class DepublishRecordIdView {
   }
 
   /**
-   * The status of this record with regards to (de)publication.
+   * The status of this record regarding (de)publication.
    */
   public enum DepublicationStatus {
     DEPUBLISHED, PENDING;
