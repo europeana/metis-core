@@ -242,6 +242,9 @@ public class DepublishRecordIdController {
                  .map(DepublicationReasonView::new).toList();
   }
 
+  /**
+   * The view class for a depublication reason
+   */
   public static class DepublicationReasonView {
 
     @JsonProperty("name")
