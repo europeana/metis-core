@@ -189,7 +189,7 @@ public class DepublishRecordIdService {
     // Authorize.
     authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId);
 
-    if (depublicationReason == DepublicationReason.UNKNOWN) {
+    if (depublicationReason == DepublicationReason.LEGACY) {
       throw new PluginExecutionNotAllowed(
           format("Depublication reason %s, is not allowed", depublicationReason));
     }
