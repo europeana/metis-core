@@ -4,13 +4,13 @@
   <groupId>eu.europeana.metis</groupId>
   <artifactId>metis-core</artifactId>
   <packaging>pom</packaging>
-  <version>14-SNAPSHOT</version>
+  <version>15-SNAPSHOT</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!--Internal versions-->
-    <version.ecloud>13-SNAPSHOT</version.ecloud>
-    <version.metis-framework>14-SNAPSHOT</version.metis-framework>
+    <version.ecloud>13</version.ecloud>
+    <version.metis-framework>14</version.metis-framework>
     <version.metis-schema>10</version.metis-schema>
     <version.corelib>2.16.10-SNAPSHOT</version.corelib>
 
