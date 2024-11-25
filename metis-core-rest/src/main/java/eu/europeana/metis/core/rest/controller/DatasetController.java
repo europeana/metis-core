@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
+import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
@@ -149,8 +150,9 @@ public class DatasetController {
   @DeleteMapping(value = RestEndpoints.DATASETS_DATASETID)
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteDataset(@RequestHeader("Authorization") String authorization,
-      @PathVariable("datasetId") String datasetId)
-      throws GenericMetisException {
+      @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    authorization = sanitizeCRLF(authorization);
+    datasetId = sanitizeCRLF(datasetId);
 
     MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
 
@@ -210,12 +212,15 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public DatasetXslt getDatasetXsltByDatasetId(@RequestHeader("Authorization") String authorization,
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    authorization = sanitizeCRLF(authorization);
+    datasetId = sanitizeCRLF(datasetId);
 
     MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
 
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(metisUserView, datasetId);
-    LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", datasetId,
-        datasetXslt.getId());
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", sanitizeCRLF(datasetId), datasetXslt.getId());
+    }
     return datasetXslt;
   }
 

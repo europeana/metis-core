@@ -4,24 +4,22 @@
   <parent>
     <artifactId>metis-core</artifactId>
     <groupId>eu.europeana.metis</groupId>
-    <version>13</version>
+    <version>14</version>
   </parent>
   <artifactId>metis-core-service</artifactId>
 
   <dependencies>
-    <dependency>
-      <groupId>jakarta.xml.bind</groupId>
-      <artifactId>jakarta.xml.bind-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-authentication-common</artifactId>
-      <version>${version.metis-framework}</version>
-    </dependency>
+    <!-- Submodules -->
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-core-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- Owned -->
+    <dependency>
+      <groupId>eu.europeana.metis</groupId>
+      <artifactId>metis-authentication-common</artifactId>
       <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
@@ -51,6 +49,8 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <!-- Compile -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
@@ -74,12 +74,6 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>de.flapdoodle.embed</groupId>
-      <artifactId>de.flapdoodle.embed.mongo</artifactId>
-      <version>${version.embedded.mongo}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.wiremock</groupId>
@@ -124,20 +118,38 @@
       <version>${version.redisson}</version>
     </dependency>
     <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <version>${version.awaitability}</version>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+    </dependency>
+
+    <!-- Runtime -->
+    <!-- Test -->
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.jetbrains</groupId>
-      <artifactId>annotations</artifactId>
+      <groupId>de.flapdoodle.embed</groupId>
+      <artifactId>de.flapdoodle.embed.mongo</artifactId>
+      <version>${version.embedded.mongo}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${version.awaitability}</version>
+      <scope>test</scope>
+    </dependency>
+
+
+    <!-- Runtime -->
+
   </dependencies>
 
   <dependencyManagement>

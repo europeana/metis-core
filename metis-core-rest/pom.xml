@@ -4,38 +4,27 @@
   <parent>
     <artifactId>metis-core</artifactId>
     <groupId>eu.europeana.metis</groupId>
-    <version>13</version>
+    <version>14</version>
   </parent>
   <artifactId>metis-core-rest</artifactId>
   <dependencies>
+    <!-- Submodules -->
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-logging</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>eu.europeana.metis</groupId>
+      <artifactId>metis-core-service</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- Owned -->
+    <dependency>
+      <groupId>eu.europeana.metis</groupId>
+      <artifactId>metis-authentication-rest-client</artifactId>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-log4j2</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>co.elastic.apm</groupId>
-      <artifactId>apm-agent-attach</artifactId>
-      <version>${version.elastic.apm}</version>
-      <scope>runtime</scope>
+      <groupId>eu.europeana.metis</groupId>
+      <artifactId>metis-common-spring-properties</artifactId>
+      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>eu.europeana.cloud</groupId>
@@ -61,6 +50,18 @@
       <artifactId>ecloud-service-dps-rest-client-java</artifactId>
       <version>${version.ecloud}</version>
     </dependency>
+
+    <!-- Compile -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
@@ -80,18 +81,6 @@
       <artifactId>spring-web</artifactId>
     </dependency>
     <dependency>
-      <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-common-spring-properties</artifactId>
-      <version>${version.metis-framework}</version>
-    </dependency>
-    <dependency>
-      <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-core-service</artifactId>
-      <version>${version.metis-framework}</version>
-    </dependency>
-
-
-    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${version.jackson}</version>
@@ -107,16 +96,39 @@
       <version>${version.jackson}</version>
     </dependency>
 
+    <!-- Runtime -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-log4j2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.elastic.apm</groupId>
+      <artifactId>apm-agent-attach</artifactId>
+      <version>${version.elastic.apm}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Test -->
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -130,11 +142,6 @@
       <artifactId>spring-test</artifactId>
     </dependency>
     <dependency>
-      <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-authentication-rest-client</artifactId>
-      <version>${version.metis-framework}</version>
-    </dependency>
-    <dependency>
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path</artifactId>
       <scope>test</scope>
@@ -145,6 +152,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>

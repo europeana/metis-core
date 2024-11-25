@@ -238,11 +238,14 @@ public class DepublishRecordIdController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<DepublicationReasonView> getAllDepublicationReasons(){
-    return Arrays.stream(DepublicationReason.values()).filter(value -> value != DepublicationReason.UNKNOWN)
+    return Arrays.stream(DepublicationReason.values()).filter(value -> value != DepublicationReason.LEGACY)
                  .map(DepublicationReasonView::new).toList();
   }
 
-  private static class DepublicationReasonView {
+  /**
+   * The view class for a depublication reason
+   */
+  public static class DepublicationReasonView {
 
     @JsonProperty("name")
     private final String name;
