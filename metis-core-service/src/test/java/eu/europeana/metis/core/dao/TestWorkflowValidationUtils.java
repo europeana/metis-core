@@ -39,12 +39,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class TestWorkflowValidationUtils {
+class TestWorkflowValidationUtils {
 
   private static final String DATASET_ID = Integer.toString(TestObjectFactory.DATASETID);
   private static WorkflowValidationUtils validationUtils;
   private static DepublishRecordIdDao depublishRecordIdDao;
   private static DataEvolutionUtils dataEvolutionUtils;
+  private static final ExecutablePluginType predecessorType = ExecutablePluginType.OAIPMH_HARVEST;
 
   @BeforeAll
   static void prepare() {
@@ -59,44 +60,43 @@ public class TestWorkflowValidationUtils {
   }
 
   @Test
-  void testValidateWorkflowPlugins_testWorkflowComposition() throws GenericMetisException {
-
-    // Create successful predecessor
-    final ExecutablePluginType predecessorType = ExecutablePluginType.OAIPMH_HARVEST;
+  void testValidateWorkflowPlugins_SuccessfulPredecessor() throws GenericMetisException {
     final AbstractExecutablePlugin predecessor =
-            ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
+        ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
     predecessor.getExecutionProgress().setErrors(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
-            .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
+                                                          .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 
-    // Test allowed workflow
     assertSame(predecessor, validationUtils.validateWorkflowPlugins(createWorkflow(
-            ExecutablePluginType.OAIPMH_HARVEST), predecessorType).getPlugin());
-    assertSame(predecessor, validationUtils.validateWorkflowPlugins(createWorkflow(
-            ExecutablePluginType.NORMALIZATION, ExecutablePluginType.ENRICHMENT,
-            ExecutablePluginType.LINK_CHECKING), predecessorType).getPlugin());
-    assertSame(predecessor, validationUtils.validateWorkflowPlugins(createWorkflow(
-            ExecutablePluginType.ENRICHMENT, ExecutablePluginType.OAIPMH_HARVEST), predecessorType)
-            .getPlugin());
+        ExecutablePluginType.OAIPMH_HARVEST), predecessorType).getPlugin());
+  }
 
-    // Test workflow with empty list
+  @Test
+  void testValidateWorkflowPlugins_EmptyWorkflow() {
     assertThrows(BadContentException.class, () -> validationUtils
-            .validateWorkflowPlugins(createWorkflow(), predecessorType));
+        .validateWorkflowPlugins(createWorkflow(), predecessorType));
+  }
 
-    // Test workflow with null list
+  @Test
+  void testValidateWorkflowPlugins_NullWorkflowList() {
     final Workflow workflowWithNullList = new Workflow();
     workflowWithNullList.setMetisPluginsMetadata(null);
+
     assertThrows(BadContentException.class, () -> validationUtils
-            .validateWorkflowPlugins(workflowWithNullList, predecessorType));
+        .validateWorkflowPlugins(workflowWithNullList, predecessorType));
+  }
 
-    // Test workflow with plugin with invalid type
+  @Test
+  void testValidateWorkflowPlugins_InvalidPluginType() {
     assertThrows(BadContentException.class, () -> validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.NORMALIZATION, null,
-                    ExecutablePluginType.LINK_CHECKING), predecessorType));
+        createWorkflow(ExecutablePluginType.NORMALIZATION, null,
+            ExecutablePluginType.LINK_CHECKING), predecessorType));
+  }
 
-    // Test workflow with two plugins, one of which is depublish
+  @Test
+  void testValidateWorkflowPlugins_DepublishAndOaiPlugins() {
     Workflow workflowDepublishAndOai = new Workflow();
     workflowDepublishAndOai.setDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
@@ -108,60 +108,92 @@ public class TestWorkflowValidationUtils {
     abstractMetisPluginMetadata.add(oaipmhHarvestPluginMetadata);
     abstractMetisPluginMetadata.add(depublishPluginMetadata);
     workflowDepublishAndOai.setMetisPluginsMetadata(abstractMetisPluginMetadata);
-    assertThrows(BadContentException.class,
-            () -> validationUtils.validateWorkflowPlugins(workflowDepublishAndOai, null));
 
-    // Test if workflow contains record depublish that record ids exist
+    assertThrows(BadContentException.class,
+        () -> validationUtils.validateWorkflowPlugins(workflowDepublishAndOai, null));
+  }
+
+  @Test
+  void testValidateWorkflowPlugins_RecordDepublishWithoutIds() throws BadContentException {
     Workflow workflowDepublish = new Workflow();
     workflowDepublish.setDatasetId(Integer.toString(TestObjectFactory.DATASETID));
+    DepublishPluginMetadata depublishPluginMetadata = new DepublishPluginMetadata();
     depublishPluginMetadata.setDatasetDepublish(false);
-    abstractMetisPluginMetadata.clear();
+    List<AbstractExecutablePluginMetadata> abstractMetisPluginMetadata = new ArrayList<>(1);
     abstractMetisPluginMetadata.add(depublishPluginMetadata);
     workflowDepublish.setMetisPluginsMetadata(abstractMetisPluginMetadata);
     when(depublishRecordIdDao
-            .getAllDepublishRecordIdsWithStatus(workflowDepublish.getDatasetId(),
-                    DepublishRecordIdSortField.DEPUBLICATION_STATE, SortDirection.ASCENDING,
-                    DepublicationStatus.PENDING_DEPUBLICATION)).thenReturn(Collections.emptySet());
+        .getAllDepublishRecordIdsWithStatus(workflowDepublish.getDatasetId(),
+            DepublishRecordIdSortField.DEPUBLICATION_STATE, SortDirection.ASCENDING,
+            DepublicationStatus.PENDING_DEPUBLICATION)).thenReturn(Collections.emptySet());
+
     assertThrows(BadContentException.class, () -> validationUtils
-            .validateWorkflowPlugins(workflowDepublish, null));
+        .validateWorkflowPlugins(workflowDepublish, null));
+  }
 
-    // Test workflow starting with link checking.
+  @Test
+  void testValidateWorkflowPlugins_LinkCheckingAndOthers() throws GenericMetisException {
+    final AbstractExecutablePlugin predecessor =
+        ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
+    predecessor.setExecutionProgress(new ExecutionProgress());
+    predecessor.getExecutionProgress().setProcessedRecords(1);
+    predecessor.getExecutionProgress().setErrors(0);
+    doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
+                                                          .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
+
     assertSame(predecessor, validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.LINK_CHECKING), predecessorType).getPlugin());
+        createWorkflow(ExecutablePluginType.LINK_CHECKING), predecessorType).getPlugin());
     assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.LINK_CHECKING, ExecutablePluginType.TRANSFORMATION),
-            predecessorType));
+        createWorkflow(ExecutablePluginType.LINK_CHECKING, ExecutablePluginType.TRANSFORMATION),
+        predecessorType));
+  }
 
-    // Test workflow with gaps
+  @Test
+  void testValidateWorkflowPlugins_GapsInWorkflow() {
     assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.ENRICHMENT),
-            predecessorType));
+        createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.ENRICHMENT),
+        predecessorType));
+  }
 
-    // Test workflow with duplicate types
+  @Test
+  void testValidateWorkflowPlugins_DuplicatePluginTypes() {
     assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.ENRICHMENT,
-                    ExecutablePluginType.ENRICHMENT), predecessorType));
+        createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.ENRICHMENT,
+            ExecutablePluginType.ENRICHMENT), predecessorType));
     assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.LINK_CHECKING,
-                    ExecutablePluginType.LINK_CHECKING), predecessorType));
+        createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.LINK_CHECKING,
+            ExecutablePluginType.LINK_CHECKING), predecessorType));
+  }
 
-    // Test workflow with disabled plugins: valid before disabling, but invalid after.
+  @Test
+  void testValidateWorkflowPlugins_DisabledPlugins() throws GenericMetisException {
     final Workflow workflowWithDisabledPlugins = createWorkflow(
-            ExecutablePluginType.NORMALIZATION,
-            ExecutablePluginType.ENRICHMENT, ExecutablePluginType.MEDIA_PROCESS);
-    assertSame(predecessor, validationUtils.validateWorkflowPlugins(workflowWithDisabledPlugins,
-            predecessorType).getPlugin());
-    when(workflowWithDisabledPlugins.getMetisPluginsMetadata().get(1).isEnabled())
-            .thenReturn(false);
-    assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
-            workflowWithDisabledPlugins, predecessorType));
+        ExecutablePluginType.NORMALIZATION,
+        ExecutablePluginType.ENRICHMENT, ExecutablePluginType.MEDIA_PROCESS);
+    final AbstractExecutablePlugin predecessor =
+        ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
+    predecessor.setExecutionProgress(new ExecutionProgress());
+    predecessor.getExecutionProgress().setProcessedRecords(1);
+    predecessor.getExecutionProgress().setErrors(0);
+    doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
+                                                          .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 
-    // Test workflow with bad predecessor
-    doThrow(PluginExecutionNotAllowed.class).when(dataEvolutionUtils)
-            .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
+    assertSame(predecessor, validationUtils.validateWorkflowPlugins(workflowWithDisabledPlugins,
+        predecessorType).getPlugin());
+    when(workflowWithDisabledPlugins.getMetisPluginsMetadata().get(1).isEnabled())
+        .thenReturn(false);
     assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
-            createWorkflow(ExecutablePluginType.ENRICHMENT, ExecutablePluginType.OAIPMH_HARVEST),
-            predecessorType));
+        workflowWithDisabledPlugins, predecessorType));
+  }
+
+  @Test
+  void testValidateWorkflowPlugins_BadPredecessor() throws PluginExecutionNotAllowed {
+    doThrow(PluginExecutionNotAllowed.class).when(dataEvolutionUtils)
+                                            .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
+
+    assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
+        createWorkflow(ExecutablePluginType.ENRICHMENT, ExecutablePluginType.OAIPMH_HARVEST),
+        predecessorType));
   }
 
   private Workflow createWorkflow(ExecutablePluginType... pluginTypes) {
@@ -169,7 +201,7 @@ public class TestWorkflowValidationUtils {
     workflow.setDatasetId(DATASET_ID);
     workflow.setMetisPluginsMetadata(Arrays.stream(pluginTypes).map(type -> {
       final AbstractExecutablePluginMetadata plugin = mock(
-              AbstractExecutablePluginMetadata.class);
+          AbstractExecutablePluginMetadata.class);
       when(plugin.isEnabled()).thenReturn(true);
       doReturn(type).when(plugin).getExecutablePluginType();
       return plugin;
@@ -228,13 +260,13 @@ public class TestWorkflowValidationUtils {
     oai.setUrl("invalid URL");
     workflow.setMetisPluginsMetadata(Collections.singletonList(oai));
     assertThrows(BadContentException.class,
-            () -> validationUtils.validateWorkflowPlugins(workflow, null));
+        () -> validationUtils.validateWorkflowPlugins(workflow, null));
 
     // Test HTTP with missing URL
     http.setUrl(null);
     workflow.setMetisPluginsMetadata(Collections.singletonList(http));
     assertThrows(BadContentException.class,
-            () -> validationUtils.validateWorkflowPlugins(workflow, null));
+        () -> validationUtils.validateWorkflowPlugins(workflow, null));
 
     // Test incremental OAI
     oai.setUrl(urlWithFragmentAndQuery);
@@ -244,7 +276,7 @@ public class TestWorkflowValidationUtils {
     validationUtils.validateWorkflowPlugins(workflow, null);
     doReturn(false).when(validationUtils).isIncrementalHarvestingAllowed(DATASET_ID);
     assertThrows(BadContentException.class,
-            () -> validationUtils.validateWorkflowPlugins(workflow, null));
+        () -> validationUtils.validateWorkflowPlugins(workflow, null));
 
     // Test incremental HTTP
     http.setUrl(urlWithFragmentAndQuery);
@@ -260,10 +292,10 @@ public class TestWorkflowValidationUtils {
   @Test
   void testIsIncrementalHarvestingAllowed() {
     doReturn(List.of(new PluginWithExecutionId<>((String) null, null)))
-            .when(dataEvolutionUtils).getPublishedHarvestIncrements(DATASET_ID);
+        .when(dataEvolutionUtils).getPublishedHarvestIncrements(DATASET_ID);
     assertTrue(validationUtils.isIncrementalHarvestingAllowed(DATASET_ID));
     doReturn(Collections.emptyList()).when(dataEvolutionUtils)
-            .getPublishedHarvestIncrements(DATASET_ID);
+                                     .getPublishedHarvestIncrements(DATASET_ID);
     assertFalse(validationUtils.isIncrementalHarvestingAllowed(DATASET_ID));
     doReturn(null).when(dataEvolutionUtils).getPublishedHarvestIncrements(DATASET_ID);
     assertFalse(validationUtils.isIncrementalHarvestingAllowed(DATASET_ID));

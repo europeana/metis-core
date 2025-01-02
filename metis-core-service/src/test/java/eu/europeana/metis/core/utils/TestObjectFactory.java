@@ -359,13 +359,14 @@ public class TestObjectFactory {
    */
   public static DatasetXslt createXslt(Dataset dataset) {
     DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(),
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<xsl:stylesheet version=\"2.0\"\n"
-            + "xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n"
-            + "<xsl:template match=\"/\">\n"
-            + "<xsl:copy-of select=\"node()\"/>\n"
-            + "</xsl:template>\n"
-            + "</xsl:stylesheet>");
+        """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <xsl:stylesheet version="2.0"
+            xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            <xsl:template match="/">
+            <xsl:copy-of select="node()"/>
+            </xsl:template>
+            </xsl:stylesheet>""");
     datasetXslt.setId(new ObjectId());
     return datasetXslt;
   }

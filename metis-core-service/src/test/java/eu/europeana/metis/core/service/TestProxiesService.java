@@ -79,10 +79,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-02-26
- */
 class TestProxiesService {
 
   private static final long EXTERNAL_TASK_ID = 2070373127078497810L;
@@ -375,9 +371,10 @@ class TestProxiesService {
 
     // If the actual record could not be gotten, we need to see an exception.
     doReturn(null).when(proxiesService).getRecord(plugin, ecloudId);
+    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
     assertThrows(IllegalStateException.class, () -> proxiesService
-        .getListOfFileContentsFromPluginExecution(metisUserView, TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), null, 5));
+        .getListOfFileContentsFromPluginExecution(metisUserView, TestObjectFactory.EXECUTIONID, executablePluginType
+            , null, 5));
   }
 
   @Test

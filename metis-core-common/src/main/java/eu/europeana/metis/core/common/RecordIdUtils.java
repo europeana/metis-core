@@ -116,7 +116,6 @@ public final class RecordIdUtils {
     // Split in segments based on the slash - don't discard empty segments at the end.
     final String[] segments = recordIdTrimmed.split("/", -1);
     final String lastSegment = segments[segments.length - 1];
-    final String penultimateSegment = segments.length > 1 ? segments[segments.length - 2] : "";
 
     // Check last segment: cannot be empty.
     if (lastSegment.isEmpty()) {
@@ -129,6 +128,7 @@ public final class RecordIdUtils {
               "Invalid record ID (contains invalid characters): " + lastSegment);
     }
 
+    final String penultimateSegment = segments.length > 1 ? segments[segments.length - 2] : "";
     // Check penultimate segment: if it is empty, it must be because it is the start of the ID.
     if (penultimateSegment.isEmpty() && segments.length > 2) {
       throw new BadContentException(
