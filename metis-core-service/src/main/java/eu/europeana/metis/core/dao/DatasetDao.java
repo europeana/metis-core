@@ -345,10 +345,10 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     if (StringUtils.isEmpty(dataset.getEcloudDatasetId()) || dataset.getEcloudDatasetId()
                                                                     .startsWith("NOT_CREATED_YET")) {
       final String uuid = UUID.randomUUID().toString();
-      dataset.setEcloudDatasetId(uuid);
       try {
         ecloudDataSetServiceClient
             .createDataSet(getEcloudProvider(), uuid, "Metis generated dataset");
+        dataset.setEcloudDatasetId(uuid);
         update(dataset);
       } catch (DataSetAlreadyExistsException e) {
         throw new ExternalTaskException("Dataset already exist, not recreating", e);

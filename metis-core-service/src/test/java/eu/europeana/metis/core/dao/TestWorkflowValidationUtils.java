@@ -61,7 +61,7 @@ class TestWorkflowValidationUtils {
 
   @Test
   void testValidateWorkflowPlugins_SuccessfulPredecessor() throws GenericMetisException {
-    final AbstractExecutablePlugin predecessor =
+    final AbstractExecutablePlugin<?> predecessor =
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
@@ -133,7 +133,7 @@ class TestWorkflowValidationUtils {
 
   @Test
   void testValidateWorkflowPlugins_LinkCheckingAndOthers() throws GenericMetisException {
-    final AbstractExecutablePlugin predecessor =
+    final AbstractExecutablePlugin<?> predecessor =
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
@@ -170,7 +170,7 @@ class TestWorkflowValidationUtils {
     final Workflow workflowWithDisabledPlugins = createWorkflow(
         ExecutablePluginType.NORMALIZATION,
         ExecutablePluginType.ENRICHMENT, ExecutablePluginType.MEDIA_PROCESS);
-    final AbstractExecutablePlugin predecessor =
+    final AbstractExecutablePlugin<?> predecessor =
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);

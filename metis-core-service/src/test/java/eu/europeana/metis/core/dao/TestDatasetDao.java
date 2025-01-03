@@ -54,7 +54,7 @@ class TestDatasetDao {
     datasetDao.setDatasetsPerRequest(1);
     datasetDao.setEcloudProvider("ecloudProvider");
 
-    dataset = TestObjectFactory.createDataset("testName");
+    dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
   }
 
   @AfterAll
@@ -358,7 +358,6 @@ class TestDatasetDao {
     int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
     assertEquals(1, nextInSequenceDatasetId);
 
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     dataset.setDatasetId("2");
     datasetDao.create(dataset);
 
@@ -368,7 +367,6 @@ class TestDatasetDao {
 
   @Test
   void testCheckAndCreateDatasetInEcloud() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
     datasetDao.create(dataset);
     when(ecloudDataSetServiceClient.createDataSet(any(), any(), any())).thenReturn(null);
 
@@ -377,7 +375,6 @@ class TestDatasetDao {
 
   @Test
   void testCheckAndCreateDatasetInEcloud_FieldWithEcloudIdIsAlreadyPresent() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
     dataset.setEcloudDatasetId("f525f64c-fea0-44bf-8c56-88f30962734c");
     datasetDao.create(dataset);
     when(ecloudDataSetServiceClient.createDataSet(any(), any(), any())).thenReturn(null);
@@ -387,7 +384,6 @@ class TestDatasetDao {
 
   @Test
   void testCheckAndCreateDatasetInEcloud_DataSetAlreadyExistsException() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
     datasetDao.create(dataset);
     when(ecloudDataSetServiceClient.createDataSet(any(), any(), any()))
         .thenThrow(new DataSetAlreadyExistsException("Dataset already exist, not recreating"));
@@ -398,7 +394,6 @@ class TestDatasetDao {
 
   @Test
   void testCheckAndCreateDatasetInEcloud_MCSException() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
     datasetDao.create(dataset);
     when(ecloudDataSetServiceClient.createDataSet(any(), any(), any()))
         .thenThrow(new MCSException("An error has occurred during ecloud dataset creation."));
