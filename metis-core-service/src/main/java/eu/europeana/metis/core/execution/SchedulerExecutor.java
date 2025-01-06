@@ -26,11 +26,11 @@ import org.slf4j.LoggerFactory;
 public class SchedulerExecutor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerExecutor.class);
+  private static final String SCHEDULER_LOCK = "schedulerLock";
 
   private final OrchestratorService orchestratorService;
   private final ScheduleWorkflowService scheduleWorkflowService;
   private final RedissonClient redissonClient;
-  private static final String SCHEDULER_LOCK = "schedulerLock";
   private LocalDateTime lastExecutionTime = LocalDateTime.now();
 
   /**

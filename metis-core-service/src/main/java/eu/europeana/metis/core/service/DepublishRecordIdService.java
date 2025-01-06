@@ -164,6 +164,7 @@ public class DepublishRecordIdService {
    * @param recordIdsInSeparateLines the specific pending record ids to depublish. Only record ids
    * that are marked as {@link eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus#PENDING_DEPUBLICATION}
    * in the database will be attempted for depublication.
+   * @param depublicationReason the reason of depublication.
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -182,9 +183,8 @@ public class DepublishRecordIdService {
    * </ul>
    */
   public WorkflowExecution createAndAddInQueueDepublishWorkflowExecution(
-      MetisUserView metisUserView,
-      String datasetId, boolean datasetDepublish, int priority, String recordIdsInSeparateLines,
-      DepublicationReason depublicationReason)
+      MetisUserView metisUserView, String datasetId, boolean datasetDepublish, int priority,
+      String recordIdsInSeparateLines, DepublicationReason depublicationReason)
       throws GenericMetisException {
     // Authorize.
     authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId);

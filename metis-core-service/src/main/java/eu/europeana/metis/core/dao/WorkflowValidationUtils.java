@@ -159,11 +159,10 @@ public class WorkflowValidationUtils {
       if (pluginMetadata instanceof HTTPHarvestPluginMetadata httpHarvestPluginMetadata) {
         httpHarvestPluginMetadata.setUrl(validateUrl(httpHarvestPluginMetadata.getUrl()).toString());
       }
-      if (pluginMetadata instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata) {
-        if (abstractHarvestPluginMetadata.isIncrementalHarvest() && !isIncrementalHarvestingAllowed(datasetId)) {
+      if (pluginMetadata instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata &&
+              abstractHarvestPluginMetadata.isIncrementalHarvest() && !isIncrementalHarvestingAllowed(datasetId)) {
           throw new BadContentException("Can't perform incremental harvesting for this dataset.");
         }
-      }
     }
   }
 

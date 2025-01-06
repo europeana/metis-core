@@ -6,6 +6,7 @@ import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
 import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
+import eu.europeana.metis.core.exceptions.NoScheduledWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.ScheduledWorkflowAlreadyExistsException;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
@@ -46,6 +47,12 @@ public class ScheduleWorkflowController {
   private final ScheduleWorkflowService scheduleWorkflowService;
   private final AuthenticationClient authenticationClient;
 
+  /**
+   * Constructor.
+   *
+   * @param scheduleWorkflowService the scheduled workflow service
+   * @param authenticationClient the authentication client
+   */
   public ScheduleWorkflowController(ScheduleWorkflowService scheduleWorkflowService,
       AuthenticationClient authenticationClient) {
     this.scheduleWorkflowService = scheduleWorkflowService;
@@ -111,6 +118,18 @@ public class ScheduleWorkflowController {
     return scheduledWorkflow;
   }
 
+  /**
+   * Get all scheduled workflows.
+   *
+   * @param authorization the authorization token
+   * @param nextPage the next page to retrieve
+   * @return the list of scheduled workflows
+   * @throws GenericMetisException which can be one of:
+   * <ul>
+   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
+   * workflow</li>
+   * </ul>
+   */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
@@ -132,6 +151,20 @@ public class ScheduleWorkflowController {
     return responseListWrapper;
   }
 
+  /**
+   * Update a scheduled workflow
+   * @param authorization the authorization token
+   * @param scheduledWorkflow the scheduled workflow
+   * @throws GenericMetisException which can be one of:
+   * <ul>
+   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
+   * workflow</li>
+   * <li>{@link NoDatasetFoundException} if dataset identifier does not exist</li>
+   * <li>{@link NoScheduledWorkflowFoundException} if the workflow for a dataset was not found</li>
+   * <li>{@link BadContentException} if some content send was not acceptable</li>
+   * <li>{@link NoScheduledWorkflowFoundException} if scheduled workflow does not exist</li>
+   * </ul>
+   */
   @PutMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -145,6 +178,18 @@ public class ScheduleWorkflowController {
     }
   }
 
+  /**
+   * Delete a scheduled workflow.
+   *
+   * @param authorization the authorization token
+   * @param datasetId the dataset identifier of which a scheduled workflow is to be deleted
+   * @throws GenericMetisException which can be one of:
+   * <ul>
+   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
+   * workflow</li>
+   * <li>{@link NoDatasetFoundException} if dataset identifier does not exist</li>
+   * </ul>
+   */
   @DeleteMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
