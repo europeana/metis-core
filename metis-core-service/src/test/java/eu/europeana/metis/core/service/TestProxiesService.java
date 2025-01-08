@@ -249,7 +249,7 @@ class TestProxiesService {
             Objects::nonNull).findAny().orElseThrow(IllegalStateException::new);
     return new ImmutablePair<>(
         (AbstractExecutablePlugin<?>) execution.getMetisPluginWithType(usedPluginType)
-                                               .filter(plugin -> plugin instanceof AbstractExecutablePlugin)
+                                               .filter(AbstractExecutablePlugin.class::isInstance)
                                                .orElseThrow(IllegalStateException::new), unusedPluginType);
   }
 
