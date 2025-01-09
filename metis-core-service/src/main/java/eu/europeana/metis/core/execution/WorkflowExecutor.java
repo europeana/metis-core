@@ -168,7 +168,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     // One by one start the plugins of the workflow
     for (int i = firstPluginPositionToStart;
         i < metisPlugins.size() && continueNextPlugin; i++) {
-      final AbstractMetisPlugin plugin = metisPlugins.get(i);
+      final AbstractMetisPlugin<?> plugin = metisPlugins.get(i);
 
       //Run plugin if available space
       didPluginRun = runMetisPluginWithSemaphoreAllocation(i, plugin);
@@ -179,7 +179,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     }
 
     // Compute the finished date
-    final AbstractMetisPlugin lastPlugin = metisPlugins.get(metisPlugins.size() - 1);
+    final AbstractMetisPlugin<?> lastPlugin = metisPlugins.get(metisPlugins.size() - 1);
     final Date finishDate;
     if (lastPlugin.getPluginStatus() == PluginStatus.FINISHED) {
       finishDate = lastPlugin.getFinishedDate();
@@ -193,7 +193,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     int firstPluginPositionToStart = 0;
     List<AbstractMetisPlugin> metisPlugins = workflowExecution.getMetisPlugins();
     for (int i = 0; i < metisPlugins.size(); i++) {
-      AbstractMetisPlugin metisPlugin = metisPlugins.get(i);
+      AbstractMetisPlugin<?> metisPlugin = metisPlugins.get(i);
       if (metisPlugin.getPluginStatus() == PluginStatus.INQUEUE
           || metisPlugin.getPluginStatus() == PluginStatus.RUNNING
           || metisPlugin.getPluginStatus() == PluginStatus.CLEANING
@@ -219,13 +219,13 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
    * @param plugin the provided plugin to be ran
    * @return true if plugin ran, false if plugin did not run
    */
-  private boolean runMetisPluginWithSemaphoreAllocation(int i, AbstractMetisPlugin plugin) {
+  private boolean runMetisPluginWithSemaphoreAllocation(int i, AbstractMetisPlugin<?> plugin) {
     // Sanity check
     if (plugin == null) {
       throw new IllegalStateException("Plugin cannot be null.");
     }
     // Check the plugin: it has to be executable
-    AbstractExecutablePlugin executablePlugin = expectExecutablePlugin(plugin);
+    AbstractExecutablePlugin<?> executablePlugin = expectExecutablePlugin(plugin);
 
     final ExecutablePluginType executablePluginType = ExecutablePluginType
         .getExecutablePluginFromPluginType(executablePlugin.getPluginType());
@@ -361,12 +361,12 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         .orElse(null);
   }
 
-  private AbstractExecutablePlugin expectExecutablePlugin(AbstractMetisPlugin plugin) {
+  private AbstractExecutablePlugin<?> expectExecutablePlugin(AbstractMetisPlugin<?> plugin) {
     if (plugin == null) {
       return null;
     }
 
-    if (plugin instanceof AbstractExecutablePlugin abstractExecutablePlugin) {
+    if (plugin instanceof AbstractExecutablePlugin<?> abstractExecutablePlugin) {
       return abstractExecutablePlugin;
     }
     throw new IllegalStateException(String.format(
@@ -374,7 +374,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         workflowExecution.getId(), plugin.getId()));
   }
 
-  private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin plugin,
+  private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin,
       String datasetId) {
     MonitorResult monitorResult = null;
     int consecutiveCancelOrMonitorFailures = 0;
@@ -450,20 +450,20 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   }
 
   private boolean isIndexingInPostProcessing(MonitorResult monitor,
-      AbstractExecutablePlugin plugin) {
+      AbstractExecutablePlugin<?> plugin) {
     return monitor.getTaskState() == TaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.REINDEX_TO_PREVIEW ||
             plugin.getPluginType() == PluginType.REINDEX_TO_PUBLISH);
   }
 
-  private boolean isHarvestingInPostProcessing(MonitorResult monitor, AbstractExecutablePlugin plugin) {
+  private boolean isHarvestingInPostProcessing(MonitorResult monitor, AbstractExecutablePlugin<?> plugin) {
     return monitor.getTaskState() == TaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.HTTP_HARVEST ||
             plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
-      AbstractExecutablePlugin plugin, AtomicInteger previousProcessedRecords,
+      AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
       AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, previousProcessedRecords,
         checkPointDateOfProcessedRecordsPeriodInMillis)) {
@@ -474,7 +474,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     }
   }
 
-  private boolean applyPostProcessing(MonitorResult monitorResult, AbstractExecutablePlugin plugin,
+  private boolean applyPostProcessing(MonitorResult monitorResult, AbstractExecutablePlugin<?> plugin,
       String datasetId) {
     boolean processingAppliedOrNotRequired = true;
     if (monitorResult.getTaskState() == TaskState.PROCESSED) {
@@ -497,7 +497,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         && monitorResult.getTaskState() != TaskState.PROCESSED);
   }
 
-  private boolean shouldPluginBeCancelled(AbstractExecutablePlugin plugin,
+  private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
       AtomicInteger previousProcessedRecords,
       AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) {
     // A plugin with CLEANING state is NOT cancellable, it will be when the state is updated

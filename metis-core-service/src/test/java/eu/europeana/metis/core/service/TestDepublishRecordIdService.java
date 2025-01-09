@@ -93,9 +93,9 @@ class TestDepublishRecordIdService {
   void getDepublishRecordIdsTest() throws GenericMetisException {
 
     // Mock the DAO
-    final DepublishRecordId record = new DepublishRecordId();
-    record.setRecordId("RECORD_ID");
-    doReturn(List.of(new DepublishRecordIdView(record))).when(depublishRecordIdDao)
+    final DepublishRecordId depublishRecordId = new DepublishRecordId();
+    depublishRecordId.setRecordId("RECORD_ID");
+    doReturn(List.of(new DepublishRecordIdView(depublishRecordId))).when(depublishRecordIdDao)
         .getDepublishRecordIds(eq(datasetId), anyInt(), any(), any(), anyString());
 
     // Make the actual call
@@ -113,7 +113,7 @@ class TestDepublishRecordIdService {
     // verify the result
     assertEquals(1, result.getListSize());
     assertEquals(1, result.getResults().size());
-    assertEquals(record.getRecordId(), result.getResults().getFirst().getRecordId());
+    assertEquals(depublishRecordId.getRecordId(), result.getResults().getFirst().getRecordId());
   }
 
   @Test

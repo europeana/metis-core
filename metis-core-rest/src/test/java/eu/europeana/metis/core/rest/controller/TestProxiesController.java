@@ -164,13 +164,13 @@ class TestProxiesController {
     final NodePathStatistics nodePath = new NodePathStatistics();
     nodePath.setxPath("node path");
     nodePath.setNodeValueStatistics(Collections.singletonList(nodeValue));
-    final RecordStatistics record = new RecordStatistics();
-    record.setTaskId(TestObjectFactory.EXTERNAL_TASK_ID);
-    record.setNodePathStatistics(Collections.singletonList(nodePath));
+    final RecordStatistics recordStatistics = new RecordStatistics();
+    recordStatistics.setTaskId(TestObjectFactory.EXTERNAL_TASK_ID);
+    recordStatistics.setNodePathStatistics(Collections.singletonList(nodePath));
     
     // Make the call and verify the result.
     when(proxiesService.getExternalTaskStatistics(metisUserView, TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(record);
+        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
     proxiesControllerMock.perform(
         get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
             TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
@@ -178,7 +178,7 @@ class TestProxiesController {
             .contentType(MediaType.APPLICATION_JSON).content(""))
         .andExpect(status().is(200))
         .andExpect(jsonPath("$.taskId", is(TestObjectFactory.EXTERNAL_TASK_ID)))
-        .andExpect(jsonPath("$.nodePathStatistics", hasSize(record.getNodePathStatistics().size())))
+        .andExpect(jsonPath("$.nodePathStatistics", hasSize(recordStatistics.getNodePathStatistics().size())))
         .andExpect(jsonPath("$.nodePathStatistics[0].xPath", is(nodePath.getxPath())))
         .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics", hasSize(nodePath.getNodeValueStatistics().size())))
         .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].value", is(nodeValue.getValue())))

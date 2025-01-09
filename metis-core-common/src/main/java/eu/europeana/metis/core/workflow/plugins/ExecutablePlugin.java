@@ -59,6 +59,7 @@ public interface ExecutablePlugin extends MetisPlugin {
    * @return {@link AbstractExecutablePlugin.MonitorResult} object containing the current state of
    * the task.
    * @throws ExternalTaskException exceptions that encapsulates the external occurred exception
+   * @throws UnrecoverableExternalTaskException which indicated an unrecoverable error
    */
   MonitorResult monitor(DpsClient dpsClient) throws ExternalTaskException, UnrecoverableExternalTaskException;
 

@@ -26,6 +26,7 @@ public class DpsTaskSettings {
    * used to calculate faster the total records for the current execution on the ecloud side. Can be
    * null if there is no previous task, like for example a harvesting plugin.
    * @param metisCoreBaseUrl the base url of metis core application
+   * @param throttlingValues the throttling values for the process
    */
   public DpsTaskSettings(String ecloudBaseUrl, String ecloudProvider,
                          String ecloudDatasetId, String previousExternalTaskId, String metisCoreBaseUrl, ThrottlingValues throttlingValues) {

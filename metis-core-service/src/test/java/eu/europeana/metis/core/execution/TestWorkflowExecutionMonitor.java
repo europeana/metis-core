@@ -42,10 +42,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisConnectionException;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-16
- */
 class TestWorkflowExecutionMonitor {
 
   private static final String FAILSAFE_LOCK = "failsafeLock";
@@ -115,23 +111,19 @@ class TestWorkflowExecutionMonitor {
     // Mock the retrieval of executions: 1, 2 and 3 are running, 4 is in queue.
     doReturn(Arrays.asList(workflowExecution1, workflowExecution2, workflowExecution3))
         .when(monitor).updateCurrentRunningExecutions();
-    when(workflowExecutionDao
-        .getAllWorkflowExecutions(isNull(), eq(EnumSet.of(WorkflowStatus.INQUEUE)), any(),
+    when(workflowExecutionDao.getAllWorkflowExecutions(isNull(), eq(EnumSet.of(WorkflowStatus.INQUEUE)), any(),
             anyBoolean(), eq(0), eq(1), eq(true)))
         .thenReturn(new ResultList<>(Collections.singletonList(workflowExecution4), false));
     when(workflowExecutionDao.getWorkflowExecutionsPerRequest()).thenReturn(4);
 
     // Perform method and verify the requeued executions
     monitor.performFailsafe();
-    verify(workflowExecutorManager, times(1))
-        .addWorkflowExecutionToQueue(eq(workflowExecution2.getId().toString()),
-            eq(workflowExecution2.getWorkflowPriority()));
-    verify(workflowExecutorManager, times(1))
-        .addWorkflowExecutionToQueue(eq(workflowExecution3.getId().toString()),
-            eq(workflowExecution3.getWorkflowPriority()));
-    verify(workflowExecutorManager, times(1))
-        .addWorkflowExecutionToQueue(eq(workflowExecution4.getId().toString()),
-            eq(workflowExecution4.getWorkflowPriority()));
+    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution2.getId().toString(),
+        workflowExecution2.getWorkflowPriority());
+    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution3.getId().toString(),
+        workflowExecution3.getWorkflowPriority());
+    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution4.getId().toString(),
+        workflowExecution4.getWorkflowPriority());
     verifyNoMoreInteractions(workflowExecutorManager);
 
     // Verify calls that need to be locked.
@@ -140,8 +132,8 @@ class TestWorkflowExecutionMonitor {
     inOrder.verify(lock).lock();
     inOrder.verify(monitor, times(1)).updateCurrentRunningExecutions();
     inOrder.verify(workflowExecutionDao, times(1))
-        .getAllWorkflowExecutions(isNull(), eq(EnumSet.of(WorkflowStatus.INQUEUE)), any(),
-            anyBoolean(), eq(0), eq(1), eq(true));
+           .getAllWorkflowExecutions(isNull(), eq(EnumSet.of(WorkflowStatus.INQUEUE)), any(),
+               anyBoolean(), eq(0), eq(1), eq(true));
     inOrder.verify(lock).unlock();
     inOrder.verifyNoMoreInteractions();
   }
