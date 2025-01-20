@@ -13,6 +13,12 @@ spring.autoconfigure.exclude=\
 truststore.path=
 truststore.password=
 
+#keycloak
+spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:7080/realms/europeana/protocol/openid-connect/certs
+spring.security.oauth2.client.provider.external.issuer-uri=http://localhost:7080/realms/europeana
+#Custom property for resource names
+spring.security.oauth2.resourceserver.jwt.resourceNames=metis-core-local
+
 #Orchestration
 metis-core.maxConcurrentThreads=1
 metis-core.dpsMonitorCheckIntervalInSeconds=5
