@@ -51,6 +51,7 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
+import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -190,6 +191,36 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
       cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
     } else {
       cancelledBy = metisUserView.getUserId();
+    }
+    final UpdateOperator setCancellingOperator = UpdateOperators.set("cancelling", Boolean.TRUE);
+    final UpdateOperator setCancelledByOperator = UpdateOperators.set("cancelledBy", cancelledBy);
+
+    UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
+        () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));
+    LOGGER.debug(
+        "WorkflowExecution cancelling for datasetId '{}' set to true in Mongo. (UpdateResults: {})",
+        workflowExecution.getDatasetId(),
+        updateResult == null ? 0 : updateResult.getModifiedCount());
+  }
+
+  /**
+   * Set the cancelling field in the database.
+   * <p>Also adds information of the user identifier that cancelled the execution or if it was by a
+   * system operation, using {@link SystemId} values as identifiers. For historical executions the value of the
+   * <code>cancelledBy</code> field will remain <code>null</code></p>
+   *
+   * @param workflowExecution the workflowExecution to be cancelled
+   * @param email the user email that triggered the cancellation or null if it was the system
+   */
+  public void setCancellingState(WorkflowExecution workflowExecution, String email) {
+    Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
+                                                             .find(WorkflowExecution.class)
+                                                             .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()));
+    String cancelledBy;
+    if (StringUtils.isBlank(email)) {
+      cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
+    } else {
+      cancelledBy = email;
     }
     final UpdateOperator setCancellingOperator = UpdateOperators.set("cancelling", Boolean.TRUE);
     final UpdateOperator setCancelledByOperator = UpdateOperators.set("cancelledBy", cancelledBy);

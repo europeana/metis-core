@@ -637,7 +637,7 @@ class TestOrchestratorService {
     final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(workflowExecution);
-    doNothing().when(workflowExecutionDao).setCancellingState(workflowExecution, null);
+    doNothing().when(workflowExecutionDao).setCancellingState(workflowExecution, "");
     orchestratorService.cancelWorkflowExecution(metisUserView, TestObjectFactory.EXECUTIONID);
     verify(authorizer, times(1))
         .authorizeWriteExistingDatasetById(metisUserView, workflowExecution.getDatasetId());

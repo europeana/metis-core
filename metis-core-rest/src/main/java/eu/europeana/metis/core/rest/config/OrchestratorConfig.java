@@ -27,6 +27,9 @@ import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.ScheduleWorkflowService;
+import eu.europeana.metis.core.service.SecuredOrchestratorService;
+import eu.europeana.metis.core.service.SecuredProxiesService;
+import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
@@ -137,6 +140,21 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return orchestratorService;
   }
 
+  @Bean
+  public SecuredOrchestratorService getSecuredOrchestratorService(WorkflowDao workflowDao,
+      WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
+      DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
+      WorkflowExecutionFactory workflowExecutionFactory,
+      WorkflowExecutorManager workflowExecutorManager,
+      DepublishRecordIdDao depublishRecordIdDao,
+      MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    SecuredOrchestratorService orchestratorService = new SecuredOrchestratorService(workflowExecutionFactory,
+        workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
+        workflowExecutorManager, redissonClient, depublishRecordIdDao);
+    orchestratorService.setSolrCommitPeriodInMins(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());
+    return orchestratorService;
+  }
+
   @Bean(name = "validationExternalProperties")
   public ValidationProperties getValidationExternalProperties(
       ValidationConfigurationProperties validationConfigurationProperties) {
@@ -187,6 +205,12 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   }
 
   @Bean
+  public SecuredScheduleWorkflowService getSecuredScheduleWorkflowService(ScheduledWorkflowDao scheduledWorkflowDao,
+      WorkflowDao workflowDao, DatasetDao datasetDao) {
+    return new SecuredScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao);
+  }
+
+  @Bean
   public ProxiesService getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
@@ -194,6 +218,16 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       EcloudConfigurationProperties ecloudConfigurationProperties) {
     return new ProxiesService(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient,
         fileServiceClient, dpsClient, uisClient, ecloudConfigurationProperties.getProvider(), authorizer);
+  }
+
+  @Bean
+  public SecuredProxiesService getSecuredProxiesService(
+      WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
+      RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
+      DpsClient dpsClient, UISClient uisClient, DatasetDao datasetDao,
+      EcloudConfigurationProperties ecloudConfigurationProperties) {
+    return new SecuredProxiesService(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient,
+        fileServiceClient, dpsClient, uisClient, ecloudConfigurationProperties.getProvider(), datasetDao);
   }
 
   /**

@@ -168,7 +168,7 @@ class TestWorkflowExecutionDao {
     WorkflowExecution workflowExecution = TestObjectFactory
         .createWorkflowExecutionObject();
     String objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
-    workflowExecutionDao.setCancellingState(workflowExecution, null);
+    workflowExecutionDao.setCancellingState(workflowExecution, "");
     WorkflowExecution cancellingWorkflowExecution = workflowExecutionDao
         .getById(objectId);
     assertTrue(cancellingWorkflowExecution.isCancelling());

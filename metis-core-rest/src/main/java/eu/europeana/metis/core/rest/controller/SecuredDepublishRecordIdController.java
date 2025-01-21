@@ -1,12 +1,9 @@
 package eu.europeana.metis.core.rest.controller;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.europeana.metis.authentication.user.AccountRole;
-import eu.europeana.metis.authentication.user.MetisUser;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.rest.DepublicationInfoView;
-import eu.europeana.metis.core.service.DepublishRecordIdService;
+import eu.europeana.metis.core.service.SecuredDepublishRecordIdService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -26,12 +23,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -50,33 +48,22 @@ public class SecuredDepublishRecordIdController {
   private static final Pattern CRLF_PATTERN = Pattern
       .compile(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX);
 
-  private final DepublishRecordIdService depublishRecordIdService;
-  //TODO: 2025-01-17 - Remove when in-code authorization complete.
-  //Temp static user so that the service methods will still work.
-  private final MetisUserView metisUserView;
+  private final SecuredDepublishRecordIdService securedDepublishRecordIdService;
 
   /**
    * Autowired constructor with all required parameters.
    *
-   * @param depublishRecordIdService the service for depublished records.
+   * @param securedDepublishRecordIdService the service for depublished records.
    */
   @Autowired
-  public SecuredDepublishRecordIdController(DepublishRecordIdService depublishRecordIdService) {
-    this.depublishRecordIdService = depublishRecordIdService;
-
-    MetisUser metisUser = new MetisUser();
-    metisUser.setAccountRole(AccountRole.EUROPEANA_DATA_OFFICER);
-    metisUser.setOrganizationId("1482250000001617026");
-    metisUser.setOrganizationName("Europeana Foundation");
-    metisUserView = new MetisUserView(metisUser);
+  public SecuredDepublishRecordIdController(SecuredDepublishRecordIdService securedDepublishRecordIdService) {
+    this.securedDepublishRecordIdService = securedDepublishRecordIdService;
   }
 
   /**
    * Adds a list of record ids to be depublished for the dataset - the version for a simple text body.
    *
-   * @param authorization the HTTP Authorization header, in the form of a Bearer Access Token.
    * @param datasetId The dataset ID to which the depublish record ids belong.
-   * @param depublicationReason the reason of depublication
    * @param recordIdsInSeparateLines The string containing the record IDs in separate lines.
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -88,12 +75,11 @@ public class SecuredDepublishRecordIdController {
   @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
       MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public void createRecordIdsToBeDepublished(@RequestHeader("Authorization") String authorization,
-      @PathVariable("datasetId") String datasetId,
+  public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    final int added = depublishRecordIdService
-        .addRecordIdsToBeDepublished(metisUserView, datasetId, recordIdsInSeparateLines);
+    final int added = securedDepublishRecordIdService
+        .addRecordIdsToBeDepublished(datasetId, recordIdsInSeparateLines);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("{} Depublish record ids added to dataset with datasetId: {}", added,
           CRLF_PATTERN.matcher(datasetId).replaceAll(""));
@@ -103,9 +89,7 @@ public class SecuredDepublishRecordIdController {
   /**
    * Adds a list of record ids to be depublished for the dataset - the version for a multipart file.
    *
-   * @param authorization the HTTP Authorization header, in the form of a Bearer Access Token.
    * @param datasetId The dataset ID to which the depublish record ids belong.
-   * @param depublicationReason the reason of depublication
    * @param recordIdsFile The file containing the record IDs in separate lines.
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -118,11 +102,10 @@ public class SecuredDepublishRecordIdController {
   @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
       MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public void createRecordIdsToBeDepublished(@RequestHeader("Authorization") String authorization,
-      @PathVariable("datasetId") String datasetId,
+  public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestPart("depublicationFile") MultipartFile recordIdsFile
   ) throws GenericMetisException, IOException {
-    createRecordIdsToBeDepublished(authorization, datasetId,
+    createRecordIdsToBeDepublished(datasetId,
         new String(recordIdsFile.getBytes(), StandardCharsets.UTF_8));
   }
 
@@ -130,7 +113,6 @@ public class SecuredDepublishRecordIdController {
    * Deletes a list of record ids from the database. Only record ids that are in a
    * {@link eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus#PENDING_DEPUBLICATION} state will be removed.
    *
-   * @param authorization the HTTP Authorization header, in the form of a Bearer Access Token.
    * @param datasetId The dataset ID to which the depublish record ids belong.
    * @param recordIdsInSeparateLines The string containing the record IDs in separate lines.
    * @throws GenericMetisException which can be one of:
@@ -143,11 +125,9 @@ public class SecuredDepublishRecordIdController {
   @DeleteMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
       MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void deletePendingRecordIds(@RequestHeader("Authorization") String authorization,
-      @PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
+  public void deletePendingRecordIds(@PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    final Long removedRecordIds = depublishRecordIdService
-        .deletePendingRecordIds(metisUserView, datasetId, recordIdsInSeparateLines);
+    final Long removedRecordIds = securedDepublishRecordIdService.deletePendingRecordIds(datasetId, recordIdsInSeparateLines);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("{} Depublish record ids removed from database with datasetId: {}",
           removedRecordIds, CRLF_PATTERN.matcher(datasetId).replaceAll(""));
@@ -157,7 +137,6 @@ public class SecuredDepublishRecordIdController {
   /**
    * Retrieve the list of depublish record ids for a specific dataset.
    *
-   * @param authorization the HTTP Authorization header, in the form of a Bearer Access Token.
    * @param datasetId The ID of the dataset for which to retrieve the records.
    * @param page The page to retrieve.
    * @param sortField The field on which to sort.
@@ -174,17 +153,16 @@ public class SecuredDepublishRecordIdController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DepublicationInfoView getDepublishRecordIds(
-      @RequestHeader("Authorization") String authorization,
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "sortField", required = false) DepublishRecordIdSortField sortField,
       @RequestParam(value = "sortAscending", defaultValue = "" + true) boolean sortAscending,
       @RequestParam(value = "searchQuery", required = false) String searchQuery
   ) throws GenericMetisException {
-    final var recordIds = depublishRecordIdService.getDepublishRecordIds(metisUserView, datasetId, page,
+    final var recordIds = securedDepublishRecordIdService.getDepublishRecordIds(datasetId, page,
         sortField == null ? DepublishRecordIdSortField.RECORD_ID : sortField,
         sortAscending ? SortDirection.ASCENDING : SortDirection.DESCENDING, searchQuery);
-    final var canDepublish = depublishRecordIdService.canTriggerDepublication(metisUserView, datasetId);
+    final var canDepublish = securedDepublishRecordIdService.canTriggerDepublication(datasetId);
     return new DepublicationInfoView(recordIds, canDepublish);
   }
 
@@ -193,7 +171,6 @@ public class SecuredDepublishRecordIdController {
    * status of the WorkflowExecution to {@link eu.europeana.metis.core.workflow.WorkflowStatus#INQUEUE}, adds it to the database
    * and also it's identifier goes into the distributed queue of WorkflowExecutions.
    *
-   * @param authorization the authorization header with the access token
    * @param datasetId the dataset identifier for which the execution will take place
    * @param datasetDepublish true for dataset depublication, false for record depublication
    * @param depublicationReason the reason of depublication
@@ -222,26 +199,28 @@ public class SecuredDepublishRecordIdController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public WorkflowExecution addDepublishWorkflowInQueueOfWorkflowExecutions(
-      @RequestHeader("Authorization") String authorization,
+      Authentication authentication,
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "datasetDepublish", defaultValue = "" + true) boolean datasetDepublish,
       @RequestParam(value = "depublicationReason") DepublicationReason depublicationReason,
       @RequestParam(value = "priority", defaultValue = "0") int priority,
       @RequestBody(required = false) String recordIdsInSeparateLines)
       throws GenericMetisException {
-    return depublishRecordIdService
-        .createAndAddInQueueDepublishWorkflowExecution(metisUserView, datasetId,
-            datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason);
+    final String email = getUserEmail(authentication);
+    return securedDepublishRecordIdService
+        .createAndAddInQueueDepublishWorkflowExecution(datasetId,
+            datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason, email);
   }
 
   /**
    * API to return all possible values of depublication reasons
+   *
    * @return All possible values of depublication reasons
    */
   @GetMapping(value = RestEndpoints.DEPUBLISH_REASONS, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public List<DepublicationReasonView> getAllDepublicationReasons(){
+  public List<DepublicationReasonView> getAllDepublicationReasons() {
     return Arrays.stream(DepublicationReason.values()).filter(value -> value != DepublicationReason.LEGACY)
                  .map(DepublicationReasonView::new).toList();
   }
@@ -265,5 +244,15 @@ public class SecuredDepublishRecordIdController {
       this.name = depublicationReason.name();
       this.valueAsString = depublicationReason.toString();
     }
+  }
+
+  private static String getUserEmail(Authentication authentication) throws BadContentException {
+    final String email;
+    if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+      email = jwt.getClaimAsString("email");
+    } else {
+      throw new BadContentException("Jwt does not contain email address of user");
+    }
+    return email;
   }
 }

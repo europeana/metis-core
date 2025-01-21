@@ -31,9 +31,10 @@ public class SecurityConfig {
     httpSecurity
         .authorizeHttpRequests(registry -> registry
             .requestMatchers(HttpMethod.GET, "/secured/datasets/xslt/default").permitAll()
-            .requestMatchers(HttpMethod.POST, "/secured/datasets/xslt/default").hasRole("METIS_ADMIN")
+            .requestMatchers(HttpMethod.POST, "/secured/datasets/xslt/default").hasRole("ADMIN")
             .requestMatchers(HttpMethod.GET, "/secured/datasets/xslt/{xsltId}").permitAll()
-            .requestMatchers("/secured/**").hasAnyRole("METIS_ADMIN", "EUROPEANA_DATA_OFFICER")
+            .requestMatchers(HttpMethod.GET, "/secured/depublish/reasons").permitAll()
+            .requestMatchers("/secured/**").hasAnyRole("ADMIN", "DATA_OFFICER")
             .anyRequest().authenticated()
         )
         .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
