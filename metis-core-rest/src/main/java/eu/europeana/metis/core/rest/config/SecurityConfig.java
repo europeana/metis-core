@@ -1,5 +1,11 @@
 package eu.europeana.metis.core.rest.config;
 
+import static eu.europeana.metis.core.common.AccountRole.ADMIN;
+import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
+import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +29,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+  public static final String SECURED = "/secured";
   @Value("${spring.security.oauth2.resourceserver.jwt.resourceNames}")
   private String[] resourceNames;
 
@@ -30,17 +37,17 @@ public class SecurityConfig {
   public SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
     httpSecurity
         .authorizeHttpRequests(registry -> registry
-            .requestMatchers(HttpMethod.GET, "/secured/datasets/xslt/default").permitAll()
-            .requestMatchers(HttpMethod.POST, "/secured/datasets/xslt/default").hasRole("ADMIN")
-            .requestMatchers(HttpMethod.GET, "/secured/datasets/xslt/{xsltId}").permitAll()
-            .requestMatchers(HttpMethod.GET, "/secured/depublish/reasons").permitAll()
-            .requestMatchers("/secured/**").hasAnyRole("ADMIN", "DATA_OFFICER")
+            .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_DEFAULT).permitAll()
+            .requestMatchers(HttpMethod.POST, SECURED + DATASETS_XSLT_DEFAULT).hasRole(ADMIN.name())
+            .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_XSLTID).permitAll()
+            .requestMatchers(HttpMethod.GET, SECURED + DEPUBLISH_REASONS).permitAll()
+            .requestMatchers(SECURED + "/**").hasAnyRole(ADMIN.name(), DATA_OFFICER.name())
             .anyRequest().authenticated()
         )
         .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
             .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
             )
-        ).securityMatcher("/secured/**");
+        ).securityMatcher(SECURED + "/**");
 
     return httpSecurity.build();
   }
