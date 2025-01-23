@@ -35,15 +35,13 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
-    httpSecurity
-        .authorizeHttpRequests(registry -> registry
+    httpSecurity.authorizeHttpRequests(registry -> registry
             .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_DEFAULT).permitAll()
             .requestMatchers(HttpMethod.POST, SECURED + DATASETS_XSLT_DEFAULT).hasRole(ADMIN.name())
             .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_XSLTID).permitAll()
             .requestMatchers(HttpMethod.GET, SECURED + DEPUBLISH_REASONS).permitAll()
             .requestMatchers(SECURED + "/**").hasAnyRole(ADMIN.name(), DATA_OFFICER.name())
-            .anyRequest().authenticated()
-        )
+            .anyRequest().denyAll())
         .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
             .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
             )
