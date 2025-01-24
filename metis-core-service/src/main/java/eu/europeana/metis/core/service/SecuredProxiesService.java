@@ -21,8 +21,6 @@ import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.dataset.Dataset;
-import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
@@ -51,7 +49,6 @@ import java.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
@@ -127,7 +124,7 @@ public class SecuredProxiesService {
    */
   public List<SubTaskInfo> getExternalTaskLogs(String topologyName, long externalTaskId, int from, int to)
       throws GenericMetisException {
-    getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     List<SubTaskInfo> detailedTaskReportBetweenChunks;
     try {
       detailedTaskReportBetweenChunks =
@@ -160,7 +157,7 @@ public class SecuredProxiesService {
    * </ul>
    */
   public boolean existsExternalTaskReport(String topologyName, long externalTaskId) throws GenericMetisException {
-    getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     try {
       return dpsClient.checkIfErrorReportExists(topologyName, externalTaskId);
     } catch (DpsException e) {
@@ -190,7 +187,7 @@ public class SecuredProxiesService {
    */
   public TaskErrorsInfo getExternalTaskReport(String topologyName, long externalTaskId, int idsPerError)
       throws GenericMetisException {
-    getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     TaskErrorsInfo taskErrorsInfo;
     try {
       taskErrorsInfo =
@@ -220,7 +217,7 @@ public class SecuredProxiesService {
    * </ul>
    */
   public RecordStatistics getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
-    getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
 
     // Obtain the report from eCloud.
     final StatisticsReport report;
@@ -256,7 +253,7 @@ public class SecuredProxiesService {
    */
   public NodePathStatistics getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
       throws GenericMetisException {
-    getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
 
     // Obtain the reports from eCloud.
     final List<NodeReport> nodeReports;
@@ -331,11 +328,11 @@ public class SecuredProxiesService {
     // Get the records themselves.
     final List<Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
     for (CloudTagsResponse cloudTagsResponse : revisionsWithDeletedFlagSetToFalse) {
-      final Record record = getRecord(executionAndPlugin.getRight(), cloudTagsResponse.getCloudId());
-      if (record == null) {
+      final Record eloudXmlRecord = getRecord(executionAndPlugin.getRight(), cloudTagsResponse.getCloudId());
+      if (eloudXmlRecord == null) {
         throw new IllegalStateException("This can't happen: eCloud just told us the record exists");
       }
-      records.add(record);
+      records.add(eloudXmlRecord);
     }
 
     // Compile the result.
@@ -486,7 +483,7 @@ public class SecuredProxiesService {
     return ecloudId == null ? null : getRecord(executionAndPlugin.getRight(), ecloudId);
   }
 
-  private String verifyExistenceOfEcloudId(String potentialEcloudId) throws ExternalTaskException {
+  private String verifyExistenceOfEcloudId(String potentialEcloudId) {
     try {
       return uisClient.getRecordId(potentialEcloudId).getResults().isEmpty() ? null
           : potentialEcloudId;
@@ -508,7 +505,7 @@ public class SecuredProxiesService {
           String.format("No workflow execution found for workflowExecutionId: %s, in METIS",
               workflowExecutionId));
     }
-    getDatasetOrThrow(workflowExecution.getDatasetId());
+    datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());
 
     // Get the plugin for which to get the records and return.
     final MetisPlugin plugin = workflowExecution
@@ -561,14 +558,5 @@ public class SecuredProxiesService {
 
   String getEcloudProvider() {
     return ecloudProvider;
-  }
-
-  private @NotNull Dataset getDatasetOrThrow(String datasetId) throws NoDatasetFoundException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: '%s' in METIS", datasetId));
-    }
-    return dataset;
   }
 }

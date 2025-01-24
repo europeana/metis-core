@@ -151,7 +151,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     SecuredOrchestratorService orchestratorService = new SecuredOrchestratorService(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
         workflowExecutorManager, redissonClient, depublishRecordIdDao);
-    orchestratorService.setSolrCommitPeriodInMins(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());
+    orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());
     return orchestratorService;
   }
 

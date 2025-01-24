@@ -5,7 +5,6 @@ import static java.lang.String.format;
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
-import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation.PublicationStatus;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -25,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -69,10 +67,9 @@ public class SecuredDepublishRecordIdService {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  public int addRecordIdsToBeDepublished(String datasetId,
-      String recordIdsInSeparateLines) throws GenericMetisException {
+  public int addRecordIdsToBeDepublished(String datasetId, String recordIdsInSeparateLines) throws GenericMetisException {
 
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Check and normalize the record IDs.
     final Set<String> normalizedRecordIds = checkAndNormalizeRecordIds(datasetId,
@@ -99,7 +96,7 @@ public class SecuredDepublishRecordIdService {
   public Long deletePendingRecordIds(String datasetId,
       String recordIdsInSeparateLines) throws GenericMetisException {
 
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Check and normalize the record IDs (Just in case).
     final Set<String> normalizedRecordIds = checkAndNormalizeRecordIds(datasetId,
@@ -129,7 +126,7 @@ public class SecuredDepublishRecordIdService {
       String datasetId, int page, DepublishRecordIdSortField sortField,
       SortDirection sortDirection, String searchQuery) throws GenericMetisException {
 
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Get the page of records
     final List<DepublishRecordIdView> records = depublishRecordIdDao
@@ -176,7 +173,7 @@ public class SecuredDepublishRecordIdService {
   public WorkflowExecution createAndAddInQueueDepublishWorkflowExecution(String datasetId, boolean datasetDepublish, int priority,
       String recordIdsInSeparateLines, DepublicationReason depublicationReason, String email)
       throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     if (depublicationReason == DepublicationReason.LEGACY) {
       throw new PluginExecutionNotAllowed(
@@ -228,7 +225,7 @@ public class SecuredDepublishRecordIdService {
    */
   public boolean canTriggerDepublication(String datasetId)
       throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Compute the result.
     final boolean result;
@@ -251,14 +248,4 @@ public class SecuredDepublishRecordIdService {
       String recordIdsInSeparateLines) throws BadContentException {
     return RecordIdUtils.checkAndNormalizeRecordIds(datasetId, recordIdsInSeparateLines);
   }
-
-  private @NotNull Dataset getDatasetOrThrow(String datasetId) throws NoDatasetFoundException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: '%s' in METIS", datasetId));
-    }
-    return dataset;
-  }
-
 }

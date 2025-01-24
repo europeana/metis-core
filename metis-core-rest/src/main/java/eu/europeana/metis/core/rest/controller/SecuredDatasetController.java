@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserEmail;
 import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
 import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
@@ -33,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -89,16 +89,6 @@ public class SecuredDatasetController {
         createdDataset.getDatasetId(), createdDataset.getDatasetName(),
         createdDataset.getOrganizationId());
     return createdDataset;
-  }
-
-  private static String getUserEmail(Authentication authentication) throws BadContentException {
-    final String email;
-    if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
-      email = jwt.getClaimAsString("email");
-    } else {
-      throw new BadContentException("Jwt does not contain email address of user");
-    }
-    return email;
   }
 
   /**

@@ -18,15 +18,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
  * Service class that controls the communication between the different DAOs of the system for controlling scheduled workflows.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-05
  */
 @Service
 public class SecuredScheduleWorkflowService {
@@ -62,7 +58,7 @@ public class SecuredScheduleWorkflowService {
    * @throws NoDatasetFoundException if dataset identifier does not exist
    */
   public ScheduledWorkflow getScheduledWorkflowByDatasetId(String datasetId) throws NoDatasetFoundException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     return scheduledWorkflowDao.getScheduledWorkflowByDatasetId(datasetId);
   }
 
@@ -80,7 +76,7 @@ public class SecuredScheduleWorkflowService {
    * </ul>
    */
   public void scheduleWorkflow(ScheduledWorkflow scheduledWorkflow) throws GenericMetisException {
-    getDatasetOrThrow(scheduledWorkflow.getDatasetId());
+    datasetDao.getDatasetOrThrow(scheduledWorkflow.getDatasetId());
     checkRestrictionsOnScheduleWorkflow(scheduledWorkflow);
     scheduledWorkflowDao.create(scheduledWorkflow);
   }
@@ -114,7 +110,7 @@ public class SecuredScheduleWorkflowService {
 
   public void updateScheduledWorkflow(ScheduledWorkflow scheduledWorkflow)
       throws GenericMetisException {
-    getDatasetOrThrow(scheduledWorkflow.getDatasetId());
+    datasetDao.getDatasetOrThrow(scheduledWorkflow.getDatasetId());
     String storedId = checkRestrictionsOnScheduledWorkflowUpdate(scheduledWorkflow);
     scheduledWorkflow.setId(new ObjectId(storedId));
     scheduledWorkflowDao.update(scheduledWorkflow);
@@ -152,9 +148,8 @@ public class SecuredScheduleWorkflowService {
     return storedId;
   }
 
-  public void deleteScheduledWorkflow(String datasetId)
-      throws UserUnauthorizedException, NoDatasetFoundException {
-    getDatasetOrThrow(datasetId);
+  public void deleteScheduledWorkflow(String datasetId) throws NoDatasetFoundException {
+    datasetDao.getDatasetOrThrow(datasetId);
     scheduledWorkflowDao.deleteScheduledWorkflow(datasetId);
   }
 
@@ -174,14 +169,5 @@ public class SecuredScheduleWorkflowService {
           String.format("No workflow found with datasetId: %s, in METIS", datasetId));
     }
     return workflow;
-  }
-
-  private @NotNull Dataset getDatasetOrThrow(String datasetId) throws NoDatasetFoundException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: '%s' in METIS", datasetId));
-    }
-    return dataset;
   }
 }

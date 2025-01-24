@@ -64,7 +64,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -75,9 +74,6 @@ import org.springframework.stereotype.Service;
 
 /**
  * Service class that controls the communication between the different DAOs of the system.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-24
  */
 @Service
 public class SecuredOrchestratorService {
@@ -166,7 +162,7 @@ public class SecuredOrchestratorService {
       ExecutablePluginType enforcedPredecessorType) throws GenericMetisException {
 
     // Authorize (check dataset existence) and set dataset ID to avoid discrepancy.
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     workflow.setDatasetId(datasetId);
 
     // Check that the workflow does not yet exist.
@@ -203,7 +199,7 @@ public class SecuredOrchestratorService {
       ExecutablePluginType enforcedPredecessorType) throws GenericMetisException {
 
     // Authorize (check dataset existence) and set dataset ID to avoid discrepancy.
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     workflow.setDatasetId(datasetId);
 
     // Get the current workflow in the database. If it doesn't exist, throw exception.
@@ -232,7 +228,7 @@ public class SecuredOrchestratorService {
    * </ul>
    */
   public void deleteWorkflow(String datasetId) throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     workflowDao.deleteWorkflow(datasetId);
   }
 
@@ -248,7 +244,7 @@ public class SecuredOrchestratorService {
    * </ul>
    */
   public Workflow getWorkflow(String datasetId) throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     return workflowDao.getWorkflow(datasetId);
   }
 
@@ -266,7 +262,7 @@ public class SecuredOrchestratorService {
   public WorkflowExecution getWorkflowExecutionByExecutionId(String executionId) throws GenericMetisException {
     final WorkflowExecution result = workflowExecutionDao.getById(executionId);
     if (result != null) {
-      getDatasetOrThrow(result.getDatasetId());
+      datasetDao.getDatasetOrThrow(result.getDatasetId());
     }
     return result;
   }
@@ -341,7 +337,7 @@ public class SecuredOrchestratorService {
   public WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
       @Nullable ExecutablePluginType enforcedPredecessorType, int priority, String email)
       throws GenericMetisException {
-    final Dataset dataset = getDatasetOrThrow(datasetId);
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, priority, email);
   }
 
@@ -424,7 +420,7 @@ public class SecuredOrchestratorService {
   public void cancelWorkflowExecution(String executionId, String email) throws GenericMetisException {
     WorkflowExecution workflowExecution = workflowExecutionDao.getById(executionId);
     if (workflowExecution != null) {
-      getDatasetOrThrow(workflowExecution.getDatasetId());
+      datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());
     }
     if (workflowExecution != null && (
         workflowExecution.getWorkflowStatus() == WorkflowStatus.RUNNING
@@ -468,7 +464,7 @@ public class SecuredOrchestratorService {
   public ExecutablePlugin getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(String datasetId,
       ExecutablePluginType pluginType,
       ExecutablePluginType enforcedPredecessorType) throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     return Optional.ofNullable(
                        dataEvolutionUtils.computePredecessorPlugin(pluginType, enforcedPredecessorType, datasetId))
                    .map(PluginWithExecutionId::getPlugin).orElse(null);
@@ -496,7 +492,7 @@ public class SecuredOrchestratorService {
 
     // Authorize
     if (datasetId != null) {
-      getDatasetOrThrow(datasetId);
+      datasetDao.getDatasetOrThrow(datasetId);
     }
 
     // Determine the dataset IDs to filter on.
@@ -629,7 +625,7 @@ public class SecuredOrchestratorService {
    * </ul>
    */
   public DatasetExecutionInformation getDatasetExecutionInformation(String datasetId) throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
     // Obtain the relevant parts of the execution history
     final ExecutablePlugin lastHarvestPlugin = Optional.ofNullable(
                                                            workflowExecutionDao.getLatestSuccessfulExecutablePlugin(datasetId, HARVEST_TYPES, false))
@@ -805,7 +801,7 @@ public class SecuredOrchestratorService {
   private boolean isPreviewOrPublishReadyForViewing(MetisPlugin plugin, Date now) {
     final boolean dataIsValid = !(plugin instanceof ExecutablePlugin executablePlugin)
         || MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID;
-    final boolean enoughTimeHasPassed = getSolrCommitPeriodInMins() < DateUtils
+    final boolean enoughTimeHasPassed = getSolrCommitPeriodInMinutes() < DateUtils
         .calculateDateDifference(plugin.getFinishedDate(), now, TimeUnit.MINUTES);
     return dataIsValid && enoughTimeHasPassed;
   }
@@ -835,7 +831,7 @@ public class SecuredOrchestratorService {
       throws GenericMetisException {
 
     // Check that the user is authorized
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Get the executions from the database
     final ResultList<WorkflowExecution> allExecutions = workflowExecutionDao
@@ -977,28 +973,19 @@ public class SecuredOrchestratorService {
    */
   public boolean isIncrementalHarvestingAllowed(String datasetId)
       throws GenericMetisException {
-    getDatasetOrThrow(datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Do the check.
     return workflowValidationUtils.isIncrementalHarvestingAllowed(datasetId);
   }
 
-  private @NotNull Dataset getDatasetOrThrow(String datasetId) throws NoDatasetFoundException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: '%s' in METIS", datasetId));
-    }
-    return dataset;
-  }
-
-  public int getSolrCommitPeriodInMins() {
+  public int getSolrCommitPeriodInMinutes() {
     synchronized (this) {
       return solrCommitPeriodInMins;
     }
   }
 
-  public void setSolrCommitPeriodInMins(int solrCommitPeriodInMins) {
+  public void setSolrCommitPeriodInMinutes(int solrCommitPeriodInMins) {
     synchronized (this) {
       this.solrCommitPeriodInMins = solrCommitPeriodInMins;
     }

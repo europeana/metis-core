@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
-import org.jetbrains.annotations.NotNull;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -165,7 +164,7 @@ public class SecuredDatasetService {
       throws GenericMetisException {
 
     // Find existing dataset and check authentication.
-    final Dataset storedDataset = getDatasetOrThrow(dataset.getDatasetId());
+    final Dataset storedDataset = datasetDao.getDatasetOrThrow(dataset.getDatasetId());
 
     // Check that the new dataset name does not already exist.
     final String newDatasetName = dataset.getDatasetName();
@@ -207,15 +206,6 @@ public class SecuredDatasetService {
     // Update the dataset
     dataset.setUpdatedDate(new Date());
     datasetDao.update(dataset);
-  }
-
-  private @NotNull Dataset getDatasetOrThrow(String datasetId) throws NoDatasetFoundException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: '%s' in METIS", datasetId));
-    }
-    return dataset;
   }
 
   private void verifyReferencesToOldDatasetIds(Dataset dataset) throws BadContentException {
@@ -320,7 +310,7 @@ public class SecuredDatasetService {
    */
   public Dataset getDatasetByDatasetId(String datasetId)
       throws GenericMetisException {
-    return getDatasetOrThrow(datasetId);
+    return datasetDao.getDatasetOrThrow(datasetId);
   }
 
   /**
@@ -336,7 +326,7 @@ public class SecuredDatasetService {
    * </ul>
    */
   public DatasetXslt getDatasetXsltByDatasetId(String datasetId) throws GenericMetisException {
-    final Dataset dataset = getDatasetOrThrow(datasetId);
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     DatasetXslt datasetXslt = datasetXsltDao.getById(dataset.getXsltId() == null ? null : dataset.getXsltId().toString());
     if (datasetXslt == null) {
       throw new NoXsltFoundException(String.format(
@@ -434,7 +424,7 @@ public class SecuredDatasetService {
   public List<Record> transformRecordsUsingLatestDefaultXslt(String datasetId,
       List<Record> records) throws GenericMetisException {
     //Used for authentication and dataset existence
-    final Dataset dataset = getDatasetOrThrow(datasetId);
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     //Using default dataset identifier
     DatasetXslt datasetXslt = datasetXsltDao.getLatestDefaultXslt();
     if (datasetXslt == null) {
@@ -471,7 +461,7 @@ public class SecuredDatasetService {
   public List<Record> transformRecordsUsingLatestDatasetXslt(String datasetId,
       List<Record> records) throws GenericMetisException {
     //Used for authentication and dataset existence
-    final Dataset dataset = getDatasetOrThrow(datasetId);
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     if (dataset.getXsltId() == null) {
       throw new NoXsltFoundException(
           String.format("Could not find xslt for datasetId %s", datasetId));
@@ -498,18 +488,18 @@ public class SecuredDatasetService {
       europeanIdCreator = new EuropeanaIdCreator();
 
       // Transform the records.
-      return records.stream().map(record -> {
+      return records.stream().map(ecloudXmlRecord -> {
         try {
           EuropeanaGeneratedIdsMap europeanaGeneratedIdsMap = europeanIdCreator
-              .constructEuropeanaId(record.getXmlRecord(), dataset.getDatasetId());
-          return new Record(record.getEcloudId(),
-              transformer.transform(record.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap).toString());
+              .constructEuropeanaId(ecloudXmlRecord.getXmlRecord(), dataset.getDatasetId());
+          return new Record(ecloudXmlRecord.getEcloudId(),
+              transformer.transform(ecloudXmlRecord.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap).toString());
         } catch (TransformationException e) {
           LOGGER.info("Record from list failed transformation", e);
-          return new Record(record.getEcloudId(), e.getMessage());
+          return new Record(ecloudXmlRecord.getEcloudId(), e.getMessage());
         } catch (EuropeanaIdException e) {
           LOGGER.info(CommonStringValues.EUROPEANA_ID_CREATOR_INITIALIZATION_FAILED, e);
-          return new Record(record.getEcloudId(), e.getMessage());
+          return new Record(ecloudXmlRecord.getEcloudId(), e.getMessage());
         }
       }).toList();
     } catch (TransformationException e) {
