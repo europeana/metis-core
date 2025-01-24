@@ -1,7 +1,11 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_DATA_OFFICER;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_INVALID_ROLE;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_VALID_TOKEN;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,17 +44,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 import org.hamcrest.core.IsNull;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
@@ -80,21 +82,7 @@ class TestSecuredProxiesController {
                              .build();
   }
 
-  private static final String BEARER = "Bearer ";
-  private static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
-  private static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.name()));
-  private static final String MOCK_INVALID_TOKEN = "invalidToken";
-  private static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
-
-  private static @NotNull Jwt getJwt(String token, List<String> resourceAccessRoles) {
-    return Jwt.withTokenValue(token)
-              .header("alg", "none")
-              .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
-              .claim("email", "user@example.com")
-              .build();
-  }
-
-  @AfterEach
+  @BeforeEach
   void cleanUp() {
     reset(securedProxiesService);
     reset(jwtDecoder);

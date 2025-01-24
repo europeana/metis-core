@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.rest.utils;
 
+import static eu.europeana.metis.core.common.AccountRole.ADMIN;
+import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
@@ -36,8 +38,11 @@ import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.bson.types.ObjectId;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
@@ -54,9 +59,23 @@ public class TestObjectFactory {
   public static final String TOPOLOGY_NAME = "topology_name";
   public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
   private static final int OCCURRENCES = 2;
+  public static final String BEARER = "Bearer ";
+  public static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
+  public static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.name()));
+  public static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.name()));
+  public static final String MOCK_INVALID_TOKEN = "invalidToken";
+  public static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
 
 
   private TestObjectFactory() {
+  }
+
+  private static @NotNull Jwt getJwt(String token, List<String> resourceAccessRoles) {
+    return Jwt.withTokenValue(token)
+              .header("alg", "none")
+              .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
+              .claim("email", "user@example.com")
+              .build();
   }
 
   /**
@@ -304,5 +323,4 @@ public class TestObjectFactory {
     }
     return records;
   }
-
 }

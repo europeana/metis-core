@@ -1,7 +1,11 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_ADMIN;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_DATA_OFFICER;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_INVALID_ROLE;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_VALID_TOKEN;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,15 +51,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.bson.types.ObjectId;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
@@ -78,21 +80,6 @@ class TestSecuredDatasetController {
 
   private static MockMvc mockMvc;
 
-  private static final String BEARER = "Bearer ";
-  private static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
-  private static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.name()));
-  private static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.name()));
-  private static final String MOCK_INVALID_TOKEN = "invalidToken";
-  private static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
-
-  private static @NotNull Jwt getJwt(String token, List<String> resourceAccessRoles) {
-    return Jwt.withTokenValue(token)
-              .header("alg", "none")
-              .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
-              .claim("email", "user@example.com")
-              .build();
-  }
-
   @BeforeAll
   static void setup(WebApplicationContext context) {
     mockMvc = MockMvcBuilders.webAppContextSetup(context)
@@ -101,7 +88,7 @@ class TestSecuredDatasetController {
                              .build();
   }
 
-  @AfterEach
+  @BeforeEach
   void cleanUp() {
     reset(securedDatasetService);
     reset(jwtDecoder);
@@ -609,10 +596,10 @@ class TestSecuredDatasetController {
   void transformRecordsUsingLatestDefaultXslt_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
     mockMvc.perform(post("/secured/datasets/{datasetId}/xslt/transform/default", Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
-            .contentType(MediaType.APPLICATION_JSON_VALUE)
-            .content(TestUtils.convertObjectToJsonBytes(TestObjectFactory.createListOfRecords(5))))
-        .andExpect(status().isForbidden());
+               .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON_VALUE)
+               .content(TestUtils.convertObjectToJsonBytes(TestObjectFactory.createListOfRecords(5))))
+           .andExpect(status().isForbidden());
   }
 
   @Test
