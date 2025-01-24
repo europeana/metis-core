@@ -1,6 +1,5 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
 import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
 import static eu.europeana.metis.utils.RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID;
 import static org.hamcrest.Matchers.hasSize;
@@ -66,17 +65,20 @@ import java.util.Map;
 import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(SecuredOrchestratorController.class)
 @ContextConfiguration(classes = {SecuredOrchestratorController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
@@ -89,8 +91,7 @@ class TestSecuredOrchestratorController {
   @MockBean
   private JwtDecoder jwtDecoder;
 
-  @Autowired
-  private MockMvc mockMvc;
+  private static MockMvc mockMvc;
 
   private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
@@ -102,7 +103,6 @@ class TestSecuredOrchestratorController {
   private static final String BEARER = "Bearer ";
   private static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
   private static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.name()));
-  private static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.name()));
   private static final String MOCK_INVALID_TOKEN = "invalidToken";
   private static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
 
@@ -112,6 +112,14 @@ class TestSecuredOrchestratorController {
               .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
               .claim("email", "user@example.com")
               .build();
+  }
+
+  @BeforeAll
+  static void setup(WebApplicationContext context) {
+    mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                             .apply(SecurityMockMvcConfigurers.springSecurity())
+                             .defaultRequest(get("/").with(csrf().asHeader()))
+                             .build();
   }
 
   @AfterEach
@@ -139,7 +147,6 @@ class TestSecuredOrchestratorController {
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     mockMvc.perform(post("/secured" + ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(workflow)))
            .andExpect(status().isUnauthorized());
 
@@ -195,7 +202,6 @@ class TestSecuredOrchestratorController {
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(workflow)))
            .andExpect(status().isUnauthorized());
   }
@@ -246,7 +252,6 @@ class TestSecuredOrchestratorController {
   void deleteWorkflow_Unauthenticated() throws Exception {
     mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                    .contentType(MediaType.APPLICATION_JSON)
-                   .with(csrf())
                    .content(""))
            .andExpect(status().isUnauthorized());
   }
@@ -299,7 +304,6 @@ class TestSecuredOrchestratorController {
   void addWorkflowInQueueOfWorkflowExecutions_Unauthenticated() throws Exception {
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE, Integer.toString(TestObjectFactory.DATASETID))
                    .contentType(MediaType.APPLICATION_JSON)
-                   .with(csrf())
                    .content(""))
            .andExpect(status().isUnauthorized());
   }
@@ -383,7 +387,6 @@ class TestSecuredOrchestratorController {
   void cancelWorkflowExecution_Unauthenticated() throws Exception {
     mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, TestObjectFactory.EXECUTIONID)
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(""))
            .andExpect(status().isUnauthorized());
   }

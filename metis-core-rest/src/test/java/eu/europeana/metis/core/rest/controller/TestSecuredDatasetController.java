@@ -49,18 +49,21 @@ import java.util.Map;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(SecuredDatasetController.class)
 @ContextConfiguration(classes = {SecuredDatasetController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
@@ -73,8 +76,7 @@ class TestSecuredDatasetController {
   @MockBean
   private JwtDecoder jwtDecoder;
 
-  @Autowired
-  private MockMvc mockMvc;
+  private static MockMvc mockMvc;
 
   private static final String BEARER = "Bearer ";
   private static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
@@ -89,6 +91,14 @@ class TestSecuredDatasetController {
               .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
               .claim("email", "user@example.com")
               .build();
+  }
+
+  @BeforeAll
+  static void setup(WebApplicationContext context) {
+    mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                             .apply(SecurityMockMvcConfigurers.springSecurity())
+                             .defaultRequest(get("/").with(csrf().asHeader()))
+                             .build();
   }
 
   @AfterEach
@@ -121,7 +131,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(post("/secured/datasets")
                .contentType(MediaType.APPLICATION_JSON)
                .accept(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(dataset)))
            .andExpect(status().isUnauthorized());
     verify(securedDatasetService, times(0)).createDataset(any(String.class), any(Dataset.class));
@@ -181,7 +190,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(put("/secured/datasets")
                .accept(MediaType.APPLICATION_JSON)
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(dataset)))
            .andExpect(status().isUnauthorized());
     verify(securedDatasetService, times(0)).updateDataset(any(Dataset.class), anyString());
@@ -260,7 +268,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(delete(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
                .accept(MediaType.APPLICATION_JSON)
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
     verify(securedDatasetService, times(0)).deleteDatasetByDatasetId(anyString());
@@ -317,7 +324,6 @@ class TestSecuredDatasetController {
   void getByDatasetIdUnauthenticated() throws Exception {
     mockMvc.perform(get(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
     verify(securedDatasetService, times(0)).getDatasetByDatasetId(anyString());
@@ -410,7 +416,6 @@ class TestSecuredDatasetController {
         .thenReturn(xsltObject);
     mockMvc.perform(get(String.format("/secured/datasets/%s/xslt", TestObjectFactory.DATASETID))
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
     verify(securedDatasetService, times(0)).getDatasetXsltByDatasetId(anyString());
@@ -497,7 +502,6 @@ class TestSecuredDatasetController {
 
     mockMvc.perform(post("/secured/datasets/xslt/default", TestObjectFactory.XSLTID)
                .contentType(MediaType.TEXT_PLAIN)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(xsltObject.getXslt())))
            .andExpect(status().isUnauthorized());
   }
@@ -565,7 +569,6 @@ class TestSecuredDatasetController {
   void transformRecordsUsingLatestDatasetXslt_Unauthenticated() throws Exception {
     mockMvc.perform(post("/secured/datasets/{datasetId}/xslt/transform", Integer.toString(TestObjectFactory.DATASETID))
                .contentType(MediaType.APPLICATION_JSON_VALUE)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(TestObjectFactory.createListOfRecords(5))))
            .andExpect(status().isUnauthorized());
   }
@@ -598,7 +601,6 @@ class TestSecuredDatasetController {
   void transformRecordsUsingLatestDefaultXslt_Unauthenticated() throws Exception {
     mockMvc.perform(post("/secured/datasets/{datasetId}/xslt/transform/default", Integer.toString(TestObjectFactory.DATASETID))
                .contentType(MediaType.APPLICATION_JSON_VALUE)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(TestObjectFactory.createListOfRecords(5))))
            .andExpect(status().isUnauthorized());
   }
@@ -637,7 +639,6 @@ class TestSecuredDatasetController {
   void getByDatasetNameUnauthenticated() throws Exception {
     mockMvc.perform(get(String.format("/secured/datasets/dataset_name/%s", TestObjectFactory.DATASETNAME))
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
 
@@ -714,7 +715,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(get("/secured/datasets/provider/myProvider")
                .param("nextPage", "3")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
 
@@ -778,7 +778,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(get("/secured/datasets/intermediate_provider/myIntermediateProvider")
                .param("nextPage", "3")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
 
@@ -844,7 +843,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(get("/secured/datasets/data_provider/myDataProvider")
                .param("nextPage", "3")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
     verify(securedDatasetService, times(0)).getAllDatasetsByDataProvider(anyString(), anyInt());
@@ -907,7 +905,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(get("/secured/datasets/organization_id/myOrganizationId")
                .param("nextPage", "3")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
 
@@ -975,7 +972,6 @@ class TestSecuredDatasetController {
     mockMvc.perform(get("/secured/datasets/organization_name/myOrganizationName")
                .param("nextPage", "3")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
 
@@ -1020,7 +1016,6 @@ class TestSecuredDatasetController {
   void getDatasetsCountriesUnauthenticated() throws Exception {
     mockMvc.perform(get("/secured/datasets/countries")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(""))
            .andExpect(status().isUnauthorized());
   }
@@ -1059,7 +1054,6 @@ class TestSecuredDatasetController {
   void getDatasetsLanguagesUnauthenticated() throws Exception {
     mockMvc.perform(get("/secured/datasets/languages")
                .contentType(MediaType.APPLICATION_JSON)
-               .with(csrf())
                .content(""))
            .andExpect(status().isUnauthorized());
   }
