@@ -8,7 +8,6 @@ import eu.europeana.metis.core.exceptions.NoScheduledWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.ScheduledWorkflowAlreadyExistsException;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
@@ -34,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Contains all the calls that are related to scheduling workflows.
- * <p>The {@link ScheduleWorkflowService} has control on how to schedule workflows</p>
+ * <p>The {@link SecuredScheduleWorkflowService} has control on how to schedule workflows</p>
  *
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2018-04-05

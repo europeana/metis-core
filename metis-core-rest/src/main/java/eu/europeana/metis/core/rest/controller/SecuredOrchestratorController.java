@@ -12,7 +12,6 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
-import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.SecuredOrchestratorService;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -48,7 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Contains all the calls that are related to Orchestration.
- * <p>The {@link OrchestratorService} has control on how to orchestrate different components of the
+ * <p>The {@link SecuredOrchestratorService} has control on how to orchestrate different components of the
  * system</p>
  */
 @RestController
@@ -186,6 +185,7 @@ public class SecuredOrchestratorController {
    * {@code enforcedPredecessorType}, which means that the last valid plugin that is provided with that parameter, will be used as
    * the source data.
    *
+   * @param authentication the authentication request object
    * @param datasetId the dataset identifier for which the execution will take place
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
    * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
@@ -232,6 +232,7 @@ public class SecuredOrchestratorController {
    * Request to cancel a workflow execution. The execution will go into a cancelling state until it's properly
    * {@link WorkflowStatus#CANCELLED} from the system
    *
+   * @param authentication the authentication request object
    * @param executionId the execution identifier of the execution to cancel
    * @throws GenericMetisException which can be one of:
    * <ul>

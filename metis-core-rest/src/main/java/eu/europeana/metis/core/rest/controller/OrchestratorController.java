@@ -49,7 +49,10 @@ import org.springframework.web.bind.annotation.RestController;
  * Contains all the calls that are related to Orchestration.
  * <p>The {@link OrchestratorService} has control on how to orchestrate different components of the
  * system</p>
+ *
+ * @deprecated replaced by {@link SecuredOrchestratorController}
  */
+@Deprecated(forRemoval = true)
 @RestController
 public class OrchestratorController {
 

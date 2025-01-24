@@ -125,6 +125,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return redissonClient;
   }
 
+  @Deprecated(forRemoval = true)
   @Bean
   public OrchestratorService getOrchestratorService(WorkflowDao workflowDao,
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
@@ -140,6 +141,24 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return orchestratorService;
   }
 
+  /**
+   * Creates and configures a {@link SecuredOrchestratorService} bean.
+   * <p>
+   * This service orchestrates secured workflows and handles the execution, validation, and evolution of workflows across
+   * datasets. The method initializes the {@link SecuredOrchestratorService} with various dependencies required for its operation,
+   * including DAOs, utility classes, and configuration properties.
+   *
+   * @param workflowDao the DAO for managing workflows
+   * @param workflowExecutionDao the DAO for tracking workflow executions
+   * @param workflowValidationUtils utility class for workflow validation
+   * @param dataEvolutionUtils utility class for handling data evolution
+   * @param datasetDao the DAO for accessing dataset information
+   * @param workflowExecutionFactory factory for creating workflow execution instances
+   * @param workflowExecutorManager manager for handling workflow execution processes
+   * @param depublishRecordIdDao the DAO for managing depublished record IDs
+   * @param metisCoreConfigurationProperties the core configuration properties for the system
+   * @return a configured instance of {@link SecuredOrchestratorService}
+   */
   @Bean
   public SecuredOrchestratorService getSecuredOrchestratorService(WorkflowDao workflowDao,
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
@@ -197,6 +216,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new RedirectionInferrer(workflowExecutionDao, dataEvolutionUtils);
   }
 
+  @Deprecated(forRemoval = true)
   @Bean
   public ScheduleWorkflowService getScheduleWorkflowService(
       ScheduledWorkflowDao scheduledWorkflowDao, WorkflowDao workflowDao, DatasetDao datasetDao,
@@ -210,6 +230,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new SecuredScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao);
   }
 
+  @Deprecated(forRemoval = true)
   @Bean
   public ProxiesService getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,

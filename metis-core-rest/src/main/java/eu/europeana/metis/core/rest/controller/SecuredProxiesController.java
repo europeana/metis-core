@@ -283,6 +283,7 @@ public class SecuredProxiesController {
    * Get an eCloudId from the external resource for a specific searchId.
    *
    * @param workflowExecutionId the execution identifier of the workflow
+   * @param pluginType the plugin from the execution
    * @param idToSearch the ID we are searching for and for which we want to find a record
    * @return the CloudId from the external resource matching the input ID. If no record with the matching ID was found, it will
    * return an empty string.

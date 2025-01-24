@@ -30,7 +30,10 @@ import org.springframework.stereotype.Service;
 /**
  * Service object for all operations concerning depublished records. The functionality in this class
  * is checked for user authentication.
+ *
+ * @deprecated replaced by {@link SecuredDepublishRecordIdService}
  */
+@Deprecated(forRemoval = true)
 @Service
 public class DepublishRecordIdService {
 

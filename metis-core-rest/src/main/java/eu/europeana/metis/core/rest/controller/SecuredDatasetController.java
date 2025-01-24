@@ -17,7 +17,6 @@ import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.exceptions.XsltSetupException;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.service.SecuredDatasetService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
@@ -47,7 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Contains all the calls that are related to Datasets.
- * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
+ * <p>The {@link SecuredDatasetService} has control on how to manipulate a dataset</p>
  */
 @RestController
 @RequestMapping("/secured")
@@ -73,6 +72,7 @@ public class SecuredDatasetController {
    * <p> The expected input should follow the rule Bearer
    * accessTokenHere </p>
    *
+   * @param authentication the authentication request object
    * @param dataset the provided dataset to be created
    * @return the dataset created including all other fields that are auto generated
    * @throws GenericMetisException which can be one of:

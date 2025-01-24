@@ -77,6 +77,7 @@ public class SecuredProxiesService {
    * @param recordServiceClient {@link RecordServiceClient}
    * @param fileServiceClient {@link FileServiceClient}
    * @param dpsClient {@link DpsClient}
+   * @param uisClient {@link UISClient}
    * @param ecloudProvider the ecloud provider string
    * @param datasetDao the Dao instance to access the Dataset database
    */
@@ -361,11 +362,7 @@ public class SecuredProxiesService {
 
     // Get the right workflow execution and plugin type.
     final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
-    if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No executable plugin of type %s found for workflowExecution with id: %s",
-              pluginType.name(), workflowExecutionId));
-    }
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
     // Get the records.
     final List<Record> records = new ArrayList<>(ecloudIds.getIds().size());
@@ -375,6 +372,15 @@ public class SecuredProxiesService {
 
     // Done.
     return new RecordsResponse(records);
+  }
+
+  private static void existsOrThrowNoWorkflowExecutionFoundException(String workflowExecutionId, ExecutablePluginType pluginType,
+      Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin) throws NoWorkflowExecutionFoundException {
+    if (executionAndPlugin == null) {
+      throw new NoWorkflowExecutionFoundException(String
+          .format("No executable plugin of type %s found for workflowExecution with id: %s",
+              pluginType.name(), workflowExecutionId));
+    }
   }
 
   /**
@@ -400,11 +406,7 @@ public class SecuredProxiesService {
 
     // Get the right workflow execution and plugin type.
     final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
-    if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No executable plugin of type %s found for workflowExecution with id: %s",
-              pluginType.name(), workflowExecutionId));
-    }
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
     Pair<MetisPlugin, WorkflowExecution> predecessorPlugin =
         dataEvolutionUtils.getPreviousExecutionAndPlugin(executionAndPlugin.getRight(),
@@ -449,11 +451,7 @@ public class SecuredProxiesService {
 
     // Get the right workflow execution and plugin type.
     final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
-    if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No executable plugin of type %s found for workflowExecution with id: %s",
-              pluginType.name(), workflowExecutionId));
-    }
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();

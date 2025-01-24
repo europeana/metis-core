@@ -53,7 +53,10 @@ import org.springframework.stereotype.Service;
 /**
  * Contains business logic of how to manipulate datasets in the system using several components. The functionality in this class
  * is checked for user authentication.
+ *
+ * @deprecated replaced by {@link SecuredDatasetService}
  */
+@Deprecated(forRemoval = true)
 @Service
 public class DatasetService {
 

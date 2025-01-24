@@ -318,6 +318,7 @@ public class SecuredOrchestratorService {
    * @param workflowProvided optional, the workflow to use instead of retrieving the saved one from the db
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
    * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
+   * @param email the email of the user
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -410,6 +411,7 @@ public class SecuredOrchestratorService {
    * {@link WorkflowStatus#CANCELLED} from the system
    *
    * @param executionId the execution identifier of the execution to cancel
+   * @param email the email of the user
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoWorkflowExecutionFoundException} if no worklfowExecution could be found</li>

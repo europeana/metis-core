@@ -39,7 +39,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Controller for calls related to depublish record ids.
+ *
+ * @deprecated replaced by {@link SecuredDepublishRecordIdController}
  */
+@Deprecated(forRemoval = true)
 @RestController
 public class DepublishRecordIdController {
 
@@ -232,12 +235,13 @@ public class DepublishRecordIdController {
 
   /**
    * API to return all possible values of depublication reasons
+   *
    * @return All possible values of depublication reasons
    */
   @GetMapping(value = RestEndpoints.DEPUBLISH_REASONS, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public List<DepublicationReasonView> getAllDepublicationReasons(){
+  public List<DepublicationReasonView> getAllDepublicationReasons() {
     return Arrays.stream(DepublicationReason.values()).filter(value -> value != DepublicationReason.LEGACY)
                  .map(DepublicationReasonView::new).toList();
   }

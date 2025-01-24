@@ -153,6 +153,7 @@ public class SecuredDepublishRecordIdService {
    * {@link eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus#PENDING_DEPUBLICATION} in the database will be
    * attempted for depublication.
    * @param depublicationReason the reason of depublication.
+   * @param email the email of the user
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
    * <ul>

@@ -190,6 +190,7 @@ public class ApplicationConfiguration {
    * @param authorizer the authorizer for this service
    * @return the dataset service instance instantiated
    */
+  @Deprecated(forRemoval = true)
   @Bean
   public DatasetService getDatasetService(
       DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
@@ -212,6 +213,7 @@ public class ApplicationConfiguration {
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
    * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient {@link RedissonClient}
+   * @param metisCoreConfigurationProperties the metis configuration properties
    * @return the dataset service instance instantiated
    */
   @Bean
@@ -226,6 +228,7 @@ public class ApplicationConfiguration {
     return datasetService;
   }
 
+  @Deprecated(forRemoval = true)
   @Bean
   public DepublishRecordIdService getDepublishedRecordService(
       DepublishRecordIdDao depublishRecordIdDao, OrchestratorService orchestratorService,
@@ -233,6 +236,14 @@ public class ApplicationConfiguration {
     return new DepublishRecordIdService(authorizer, orchestratorService, depublishRecordIdDao);
   }
 
+  /**
+   * Creates and configures a {@link SecuredDepublishRecordIdService} bean.
+   *
+   * @param depublishRecordIdDao the DAO used for managing depublished record IDs
+   * @param securedOrchestratorService the secured orchestrator service for handling secured operations
+   * @param datasetDao the DAO for accessing dataset information
+   * @return a configured instance of {@link SecuredDepublishRecordIdService}
+   */
   @Bean
   public SecuredDepublishRecordIdService getSecuredDepublishedRecordService(
       DepublishRecordIdDao depublishRecordIdDao, SecuredOrchestratorService securedOrchestratorService,

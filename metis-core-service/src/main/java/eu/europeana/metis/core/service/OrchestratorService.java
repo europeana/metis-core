@@ -75,9 +75,9 @@ import org.springframework.stereotype.Service;
 /**
  * Service class that controls the communication between the different DAOs of the system.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-24
+ * @deprecated replaced by {@link SecuredOrchestratorService}
  */
+@Deprecated(forRemoval = true)
 @Service
 public class OrchestratorService {
 

@@ -35,7 +35,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Proxies Controller which encapsulates functionality that has to be proxied to an external resource.
+ *
+ * @deprecated replaced by {@link SecuredProxiesController}
  */
+@Deprecated(forRemoval = true)
 @RestController
 public class ProxiesController {
 

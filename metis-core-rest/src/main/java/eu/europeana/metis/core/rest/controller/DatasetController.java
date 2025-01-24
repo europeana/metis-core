@@ -47,7 +47,10 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Contains all the calls that are related to Datasets.
  * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
+ *
+ * @deprecated replaced by {@link SecuredDatasetController}
  */
+@Deprecated(forRemoval = true)
 @RestController
 public class DatasetController {
 

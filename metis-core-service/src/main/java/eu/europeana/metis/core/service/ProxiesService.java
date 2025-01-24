@@ -52,7 +52,10 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
+ *
+ * @deprecated replaced by {@link SecuredProxiesService}
  */
+@Deprecated(forRemoval = true)
 public class ProxiesService {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat(

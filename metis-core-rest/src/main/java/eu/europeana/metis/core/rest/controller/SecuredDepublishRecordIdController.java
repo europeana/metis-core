@@ -172,6 +172,7 @@ public class SecuredDepublishRecordIdController {
    * status of the WorkflowExecution to {@link eu.europeana.metis.core.workflow.WorkflowStatus#INQUEUE}, adds it to the database
    * and also it's identifier goes into the distributed queue of WorkflowExecutions.
    *
+   * @param authentication the authentication request object
    * @param datasetId the dataset identifier for which the execution will take place
    * @param datasetDepublish true for dataset depublication, false for record depublication
    * @param depublicationReason the reason of depublication

@@ -37,9 +37,9 @@ import org.springframework.web.bind.annotation.RestController;
  * Contains all the calls that are related to scheduling workflows.
  * <p>The {@link ScheduleWorkflowService} has control on how to schedule workflows</p>
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-05
+ * @deprecated replaced by {@link SecuredScheduleWorkflowController}
  */
+@Deprecated(forRemoval = true)
 @RestController
 public class ScheduleWorkflowController {
 
@@ -153,6 +153,7 @@ public class ScheduleWorkflowController {
 
   /**
    * Update a scheduled workflow
+   *
    * @param authorization the authorization token
    * @param scheduledWorkflow the scheduled workflow
    * @throws GenericMetisException which can be one of:

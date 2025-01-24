@@ -14,7 +14,6 @@ import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.exception.UserUnauthorizedException;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
@@ -81,21 +80,8 @@ public class SecuredScheduleWorkflowService {
     scheduledWorkflowDao.create(scheduledWorkflow);
   }
 
-  // This method does not require authorization. It is called from a scheduled task.
-  public List<ScheduledWorkflow> getAllScheduledWorkflowsWithoutAuthorization(
-      ScheduleFrequence scheduleFrequence, int nextPage) {
-    return scheduledWorkflowDao.getAllScheduledWorkflows(scheduleFrequence, nextPage);
-  }
-
   public List<ScheduledWorkflow> getAllScheduledWorkflows(ScheduleFrequence scheduleFrequence, int nextPage) {
-    return getAllScheduledWorkflowsWithoutAuthorization(scheduleFrequence, nextPage);
-  }
-
-  // This method does not require authorization. It is called from a scheduled task.
-  public List<ScheduledWorkflow> getAllScheduledWorkflowsByDateRangeONCE(
-      LocalDateTime lowerBound, LocalDateTime upperBound, int nextPage) {
-    return scheduledWorkflowDao
-        .getAllScheduledWorkflowsByDateRangeONCE(lowerBound, upperBound, nextPage);
+    return scheduledWorkflowDao.getAllScheduledWorkflows(scheduleFrequence, nextPage);
   }
 
   private void checkScheduledWorkflowExistenceForDatasetId(String datasetId)

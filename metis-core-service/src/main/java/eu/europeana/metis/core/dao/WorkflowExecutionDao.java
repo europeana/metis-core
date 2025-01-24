@@ -82,6 +82,8 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   private static final int INQUEUE_POSITION_IN_OVERVIEW = 1;
   private static final int RUNNING_POSITION_IN_OVERVIEW = 2;
   private static final int DEFAULT_POSITION_IN_OVERVIEW = 3;
+  private static final String CANCELLING = "cancelling";
+  private static final String CANCELLED_BY = "cancelledBy";
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
   private int workflowExecutionsPerRequest =
@@ -181,7 +183,10 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    *
    * @param workflowExecution the workflowExecution to be cancelled
    * @param metisUserView the user that triggered the cancellation or null if it was the system
+   *
+   * @deprecated replaced by {@link #setCancellingState(WorkflowExecution, String)}
    */
+  @Deprecated(forRemoval = true)
   public void setCancellingState(WorkflowExecution workflowExecution, MetisUserView metisUserView) {
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)
@@ -192,8 +197,8 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     } else {
       cancelledBy = metisUserView.getUserId();
     }
-    final UpdateOperator setCancellingOperator = UpdateOperators.set("cancelling", Boolean.TRUE);
-    final UpdateOperator setCancelledByOperator = UpdateOperators.set("cancelledBy", cancelledBy);
+    final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
+    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, cancelledBy);
 
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));
@@ -222,8 +227,8 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     } else {
       cancelledBy = email;
     }
-    final UpdateOperator setCancellingOperator = UpdateOperators.set("cancelling", Boolean.TRUE);
-    final UpdateOperator setCancelledByOperator = UpdateOperators.set("cancelledBy", cancelledBy);
+    final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
+    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, cancelledBy);
 
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));
@@ -743,7 +748,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     WorkflowExecution workflowExecution = retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class)
                                       .filter(Filters.eq(ID.getFieldName(), id))
-                                      .first(new FindOptions().projection().include("cancelling")));
+                                      .first(new FindOptions().projection().include(CANCELLING)));
     return workflowExecution != null && workflowExecution.isCancelling();
   }
 

@@ -60,6 +60,10 @@ public class SecuredDatasetService {
   private static final Logger LOGGER = LoggerFactory.getLogger(SecuredDatasetService.class);
   private static final String DATASET_CREATION_LOCK = "datasetCreationLock";
   private static final int MINIMUM_WORD_LENGTH = 3;
+  //TODO: 2025-01-17 - Remove when in-code authorization complete.
+  //Temp static organization so that the service methods will still work.
+  private static final String ORGANIZATION_ID = "1482250000001617026";
+  private static final String ORGANIZATION_NAME = "Europeana Foundation";
 
   private final DatasetDao datasetDao;
   private final DatasetXsltDao datasetXsltDao;
@@ -69,10 +73,6 @@ public class SecuredDatasetService {
   private final RedissonClient redissonClient;
   private String metisCoreUrl; //Initialize with setter
 
-  //TODO: 2025-01-17 - Remove when in-code authorization complete.
-  //Temp static organization so that the service methods will still work.
-  private static final String ORGANIZATION_ID = "1482250000001617026";
-  private static final String ORGANIZATION_NAME = "Europeana Foundation";
 
   /**
    * Constructs the service.
@@ -99,6 +99,7 @@ public class SecuredDatasetService {
   /**
    * Creates a dataset.
    *
+   * @param email the email of the user
    * @param dataset the dataset to be created
    * @return the created {@link Dataset} including the extra fields generated from the system
    * @throws GenericMetisException which can be one of:
@@ -493,7 +494,8 @@ public class SecuredDatasetService {
           EuropeanaGeneratedIdsMap europeanaGeneratedIdsMap = europeanIdCreator
               .constructEuropeanaId(ecloudXmlRecord.getXmlRecord(), dataset.getDatasetId());
           return new Record(ecloudXmlRecord.getEcloudId(),
-              transformer.transform(ecloudXmlRecord.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap).toString());
+              transformer.transform(ecloudXmlRecord.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap)
+                         .toString());
         } catch (TransformationException e) {
           LOGGER.info("Record from list failed transformation", e);
           return new Record(ecloudXmlRecord.getEcloudId(), e.getMessage());

@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Spring security configuration class.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -33,19 +37,26 @@ public class SecurityConfig {
   @Value("${spring.security.oauth2.resourceserver.jwt.resourceNames}")
   private String[] resourceNames;
 
+  /**
+   * Spring security configuration.
+   *
+   * @param httpSecurity the http security
+   * @return the security filter chain
+   * @throws Exception if something went wrong
+   */
   @Bean
   public SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
     httpSecurity.authorizeHttpRequests(registry -> registry
-            .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_DEFAULT).permitAll()
-            .requestMatchers(HttpMethod.POST, SECURED + DATASETS_XSLT_DEFAULT).hasRole(ADMIN.name())
-            .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_XSLTID).permitAll()
-            .requestMatchers(HttpMethod.GET, SECURED + DEPUBLISH_REASONS).permitAll()
-            .requestMatchers(SECURED + "/**").hasAnyRole(ADMIN.name(), DATA_OFFICER.name())
-            .anyRequest().denyAll())
-        .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
-            .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
-            )
-        ).securityMatcher(SECURED + "/**");
+                    .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_DEFAULT).permitAll()
+                    .requestMatchers(HttpMethod.POST, SECURED + DATASETS_XSLT_DEFAULT).hasRole(ADMIN.name())
+                    .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_XSLTID).permitAll()
+                    .requestMatchers(HttpMethod.GET, SECURED + DEPUBLISH_REASONS).permitAll()
+                    .requestMatchers(SECURED + "/**").hasAnyRole(ADMIN.name(), DATA_OFFICER.name())
+                    .anyRequest().denyAll())
+                .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
+                    .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
+                    )
+                ).securityMatcher(SECURED + "/**");
 
     return httpSecurity.build();
   }
@@ -58,8 +69,9 @@ public class SecurityConfig {
     private final JwtGrantedAuthoritiesConverter defaultGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
     @Override
-    public AbstractAuthenticationToken convert(Jwt jwt) {
-      Collection<GrantedAuthority> grantedAuthorities = Optional.of(defaultGrantedAuthoritiesConverter.convert(jwt)).orElseGet(List::of);
+    public AbstractAuthenticationToken convert(@NotNull Jwt jwt) {
+      Collection<GrantedAuthority> grantedAuthorities = Optional.of(defaultGrantedAuthoritiesConverter.convert(jwt))
+                                                                .orElseGet(List::of);
 
       final Map<String, List<String>> realmAccess = jwt.getClaim(REALM_ACCESS);
       final List<String> realmRoles = (realmAccess == null) ? List.of() : realmAccess.getOrDefault(ROLES, List.of());
@@ -78,9 +90,9 @@ public class SecurityConfig {
 
     private static List<SimpleGrantedAuthority> getAuthorities(List<String> resourceRoles) {
       return resourceRoles.stream()
-                                      .map(role -> "ROLE_" + role)
-                                      .map(SimpleGrantedAuthority::new)
-                                      .toList();
+                          .map(role -> "ROLE_" + role)
+                          .map(SimpleGrantedAuthority::new)
+                          .toList();
     }
   }
 }

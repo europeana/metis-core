@@ -26,9 +26,9 @@ import org.springframework.stereotype.Service;
  * Service class that controls the communication between the different DAOs of the system for
  * controlling scheduled workflows.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-05
+ * @deprecated replaced by {@link SecuredScheduleWorkflowService}
  */
+@Deprecated(forRemoval = true)
 @Service
 public class ScheduleWorkflowService {
 

@@ -333,8 +333,6 @@ class TestSecuredScheduleWorkflowController {
   @Test
   void deleteScheduledWorkflowExecution_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
-        .when(securedScheduleWorkflowService).deleteScheduledWorkflow(any());
     mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
