@@ -318,7 +318,7 @@ public class SecuredOrchestratorService {
    * @param workflowProvided optional, the workflow to use instead of retrieving the saved one from the db
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
    * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
-   * @param email the email of the user
+   * @param userId the userId of the user
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -336,16 +336,16 @@ public class SecuredOrchestratorService {
    * </ul>
    */
   public WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
-      @Nullable ExecutablePluginType enforcedPredecessorType, int priority, String email)
+      @Nullable ExecutablePluginType enforcedPredecessorType, int priority, String userId)
       throws GenericMetisException {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
-    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, priority, email);
+    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, priority, userId);
   }
 
   private WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(Dataset dataset,
       @Nullable Workflow workflowProvided,
       @Nullable ExecutablePluginType enforcedPredecessorType,
-      int priority, String email)
+      int priority, String userId)
       throws GenericMetisException {
 
     // Get the workflow or use the one provided.
@@ -387,10 +387,10 @@ public class SecuredOrchestratorService {
                 storedWorkflowExecutionId));
       }
       workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-      if (StringUtils.isBlank(email)) {
+      if (StringUtils.isBlank(userId)) {
         workflowExecution.setStartedBy(SystemId.STARTED_BY_SYSTEM.name());
       } else {
-        workflowExecution.setStartedBy(email);
+        workflowExecution.setStartedBy(userId);
       }
       workflowExecution.setCreatedDate(new Date());
       objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
@@ -411,7 +411,7 @@ public class SecuredOrchestratorService {
    * {@link WorkflowStatus#CANCELLED} from the system
    *
    * @param executionId the execution identifier of the execution to cancel
-   * @param email the email of the user
+   * @param userId the userId of the user
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoWorkflowExecutionFoundException} if no worklfowExecution could be found</li>
@@ -419,7 +419,7 @@ public class SecuredOrchestratorService {
    * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
-  public void cancelWorkflowExecution(String executionId, String email) throws GenericMetisException {
+  public void cancelWorkflowExecution(String executionId, String userId) throws GenericMetisException {
     WorkflowExecution workflowExecution = workflowExecutionDao.getById(executionId);
     if (workflowExecution != null) {
       datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());
@@ -427,7 +427,7 @@ public class SecuredOrchestratorService {
     if (workflowExecution != null && (
         workflowExecution.getWorkflowStatus() == WorkflowStatus.RUNNING
             || workflowExecution.getWorkflowStatus() == WorkflowStatus.INQUEUE)) {
-      workflowExecutionDao.setCancellingState(workflowExecution, email);
+      workflowExecutionDao.setCancellingState(workflowExecution, userId);
       LOGGER.info("Cancelling user workflow execution with id: {}", workflowExecution.getId());
     } else {
       throw new NoWorkflowExecutionFoundException(String

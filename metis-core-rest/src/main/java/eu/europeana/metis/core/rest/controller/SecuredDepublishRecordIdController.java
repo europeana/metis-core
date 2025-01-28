@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserEmail;
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getSubClaim;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -208,10 +208,10 @@ public class SecuredDepublishRecordIdController {
       @RequestParam(value = "priority", defaultValue = "0") int priority,
       @RequestBody(required = false) String recordIdsInSeparateLines)
       throws GenericMetisException {
-    final String email = getUserEmail(authentication);
+    final String subClaim = getSubClaim(authentication);
     return securedDepublishRecordIdService
         .createAndAddInQueueDepublishWorkflowExecution(datasetId,
-            datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason, email);
+            datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason, subClaim);
   }
 
   /**

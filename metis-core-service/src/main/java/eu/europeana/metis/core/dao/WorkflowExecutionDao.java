@@ -215,17 +215,17 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * <code>cancelledBy</code> field will remain <code>null</code></p>
    *
    * @param workflowExecution the workflowExecution to be cancelled
-   * @param email the user email that triggered the cancellation or null if it was the system
+   * @param userId the user email that triggered the cancellation or null if it was the system
    */
-  public void setCancellingState(WorkflowExecution workflowExecution, String email) {
+  public void setCancellingState(WorkflowExecution workflowExecution, String userId) {
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)
                                                              .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()));
     String cancelledBy;
-    if (StringUtils.isBlank(email)) {
+    if (StringUtils.isBlank(userId)) {
       cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
     } else {
-      cancelledBy = email;
+      cancelledBy = userId;
     }
     final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
     final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, cancelledBy);

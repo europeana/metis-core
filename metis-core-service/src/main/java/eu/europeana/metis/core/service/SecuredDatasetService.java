@@ -99,7 +99,7 @@ public class SecuredDatasetService {
   /**
    * Creates a dataset.
    *
-   * @param email the email of the user
+   * @param userId the userId of the user
    * @param dataset the dataset to be created
    * @return the created {@link Dataset} including the extra fields generated from the system
    * @throws GenericMetisException which can be one of:
@@ -109,7 +109,7 @@ public class SecuredDatasetService {
    * <li>{@link BadContentException} if some contents were invalid</li>
    * </ul>
    */
-  public Dataset createDataset(String email, Dataset dataset) throws GenericMetisException {
+  public Dataset createDataset(String userId, Dataset dataset) throws GenericMetisException {
 
     dataset.setOrganizationId(ORGANIZATION_ID);
     dataset.setOrganizationName(ORGANIZATION_NAME);
@@ -130,7 +130,7 @@ public class SecuredDatasetService {
                 dataset.getOrganizationId(), dataset.getDatasetName()));
       }
 
-      dataset.setCreatedByUserId(email);
+      dataset.setCreatedByUserId(userId);
       dataset.setId(null);
       dataset.setUpdatedDate(null);
 

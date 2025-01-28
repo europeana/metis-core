@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserEmail;
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getSubClaim;
 import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
 import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
@@ -83,8 +83,8 @@ public class SecuredDatasetController {
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public Dataset createDataset(Authentication authentication, @RequestBody Dataset dataset) throws GenericMetisException {
-    final String email = getUserEmail(authentication);
-    Dataset createdDataset = securedDatasetService.createDataset(email, dataset);
+    final String subClaim = getSubClaim(authentication);
+    Dataset createdDataset = securedDatasetService.createDataset(subClaim, dataset);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
         createdDataset.getDatasetId(), createdDataset.getDatasetName(),
         createdDataset.getOrganizationId());

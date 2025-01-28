@@ -74,6 +74,7 @@ public class TestObjectFactory {
               .header("alg", "none")
               .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
               .claim("email", "user@example.com")
+              .claim("sub", UUID.randomUUID().toString())
               .build();
   }
 

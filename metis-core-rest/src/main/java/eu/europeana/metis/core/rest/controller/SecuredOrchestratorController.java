@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserEmail;
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getSubClaim;
 import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import eu.europeana.metis.core.common.DaoFieldNames;
@@ -217,10 +217,10 @@ public class SecuredOrchestratorController {
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
       @RequestParam(value = "priority", defaultValue = "0") int priority)
       throws GenericMetisException {
-    final String email = getUserEmail(authentication);
+    final String subClaim = getSubClaim(authentication);
     WorkflowExecution workflowExecution = securedOrchestratorService
         .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType,
-            priority, email);
+            priority, subClaim);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("WorkflowExecution for datasetId '{}' added to queue",
           datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
@@ -248,8 +248,8 @@ public class SecuredOrchestratorController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void cancelWorkflowExecution(Authentication authentication, @PathVariable("executionId") String executionId) throws GenericMetisException {
-    final String email = getUserEmail(authentication);
-    securedOrchestratorService.cancelWorkflowExecution(executionId, email);
+    final String subClaim = getSubClaim(authentication);
+    securedOrchestratorService.cancelWorkflowExecution(executionId, subClaim);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("WorkflowExecution for executionId '{}' is cancelling",
           executionId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
