@@ -53,8 +53,8 @@ class TestSecurityConfig {
   public static final String SECURED = "/secured";
   private static final String BEARER = "Bearer ";
   private static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
-  private static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.name()));
-  private static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.name()));
+  private static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.toString()));
+  private static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.toString()));
   private static final String MOCK_INVALID_TOKEN = "invalidToken";
   private static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
 

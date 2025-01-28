@@ -61,11 +61,10 @@ public class TestObjectFactory {
   private static final int OCCURRENCES = 2;
   public static final String BEARER = "Bearer ";
   public static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
-  public static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.name()));
-  public static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.name()));
+  public static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.toString()));
+  public static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.toString()));
   public static final String MOCK_INVALID_TOKEN = "invalidToken";
   public static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
-
 
   private TestObjectFactory() {
   }
