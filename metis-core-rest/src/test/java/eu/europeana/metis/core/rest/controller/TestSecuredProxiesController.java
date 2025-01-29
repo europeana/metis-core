@@ -1,11 +1,9 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_DATA_OFFICER;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_INVALID_ROLE;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,11 +27,13 @@ import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
+import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.stats.AttributeStatistics;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.service.SecuredProxiesService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
@@ -46,24 +46,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(SecuredProxiesController.class)
 @ContextConfiguration(classes = {SecuredProxiesController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
-@TestPropertySource(properties = "spring.security.oauth2.resourceserver.jwt.resourceNames=secured-service")
 class TestSecuredProxiesController {
 
   @MockBean
@@ -73,6 +71,12 @@ class TestSecuredProxiesController {
   private JwtDecoder jwtDecoder;
 
   private static MockMvc mockMvc;
+  private final TestJwtUtils testJwtUtils;
+
+  @Autowired
+  public TestSecuredProxiesController(SecurityConfigurationProperties securityConfigurationProperties) {
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+  }
 
   @BeforeAll
   static void setup(WebApplicationContext context) {
@@ -90,7 +94,7 @@ class TestSecuredProxiesController {
 
   @Test
   void getExternalTaskLogs() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     int from = 1;
     int to = 100;
@@ -115,7 +119,7 @@ class TestSecuredProxiesController {
 
   @Test
   void existsExternalTaskReport() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     when(securedProxiesService.existsExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(true);
 
@@ -130,7 +134,7 @@ class TestSecuredProxiesController {
 
   @Test
   void getExternalTaskReport() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     List<SubTaskInfo> listOfSubTaskInfo = TestObjectFactory.createListOfSubTaskInfo();
     for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
       subTaskInfo.setAdditionalInformations(null);
@@ -157,7 +161,7 @@ class TestSecuredProxiesController {
 
   @Test
   void getExternalTaskStatistics() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     // Create response object.
     final NodeValueStatistics nodeValue = new NodeValueStatistics();
@@ -192,7 +196,7 @@ class TestSecuredProxiesController {
 
   @Test
   void getExternalTaskNodeStatistics() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     // Create response object.
     final AttributeStatistics attribute1 = new AttributeStatistics();
@@ -239,7 +243,7 @@ class TestSecuredProxiesController {
 
   @Test
   void getListOfFileContentsFromPluginExecution() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     ArrayList<Record> records = new ArrayList<>();
     Record record1 = new Record("ECLOUDID1",
@@ -270,7 +274,7 @@ class TestSecuredProxiesController {
 
   @Test
   void testGetRecordEvolutionForVersion() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     // Create nonempty ID list and result list.
     final Record record1 = new Record("ID 1", "content 1");
@@ -351,7 +355,7 @@ class TestSecuredProxiesController {
            .andExpect(status().isUnauthorized());
 
     // Test for unauthorized user
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     doThrow(new UserUnauthorizedException("")).when(securedProxiesService)
                                               .getListOfFileContentsFromPluginExecution(
                                                   eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());

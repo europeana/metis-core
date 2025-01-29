@@ -6,12 +6,14 @@ import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
 import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
 
+import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -31,11 +33,16 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(SecurityConfigurationProperties.class)
 public class SecurityConfig {
 
   public static final String SECURED = "/secured";
-  @Value("${spring.security.oauth2.resourceserver.jwt.resourceNames}")
-  private String[] resourceNames;
+  private final List<String> resourceNames;
+
+  @Autowired
+  public SecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
+    this.resourceNames = securityConfigurationProperties.getResourceNames();
+  }
 
   /**
    * Spring security configuration.

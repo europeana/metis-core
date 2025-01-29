@@ -1,7 +1,8 @@
 package eu.europeana.metis.core.rest.config;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_DATASETID;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
@@ -16,21 +17,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import eu.europeana.metis.core.rest.config.TestSecurityConfig.TestController;
+import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -44,28 +43,18 @@ import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(TestController.class)
 @ContextConfiguration(classes = {TestController.class, SecurityConfig.class})
-@TestPropertySource(properties = "spring.security.oauth2.resourceserver.jwt.resourceNames=secured-service")
 class TestSecurityConfig {
 
   @MockBean
   private JwtDecoder jwtDecoder;
 
-  public static final String SECURED = "/secured";
-  private static final String BEARER = "Bearer ";
-  private static final String MOCK_VALID_TOKEN = "xxx.yyy.zzz";
-  private static final Jwt JWT_DATA_OFFICER = getJwt(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.toString()));
-  private static final Jwt JWT_ADMIN = getJwt(MOCK_VALID_TOKEN, List.of(ADMIN.toString()));
-  private static final String MOCK_INVALID_TOKEN = "invalidToken";
-  private static final Jwt JWT_INVALID_ROLE = getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
-
+  private static final String SECURED = "/secured";
   private static MockMvc mockMvc;
+  private final TestJwtUtils testJwtUtils;
 
-  private static @NotNull Jwt getJwt(String token, List<String> resourceAccessRoles) {
-    return Jwt.withTokenValue(token)
-              .header("alg", "none")
-              .claim("resource_access", Map.of("secured-service", Map.of("roles", resourceAccessRoles)))
-              .claim("email", "user@example.com")
-              .build();
+  @Autowired
+  public TestSecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
   }
 
   @BeforeAll
@@ -121,15 +110,15 @@ class TestSecurityConfig {
       ResultMatcher expectedStatusAdmin, ResultMatcher expectedStatusDataOfficer, ResultMatcher expectedStatusOther,
       ResultMatcher expectedStatusUnauthenticated)
       throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_ADMIN);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getAdminJwt());
     mockMvc.perform(requestSupplier.get().header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(expectedStatusAdmin);
 
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     mockMvc.perform(requestSupplier.get().header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(expectedStatusDataOfficer);
 
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     mockMvc.perform(requestSupplier.get().header("Authorization", BEARER + MOCK_INVALID_TOKEN))
            .andExpect(expectedStatusOther);
 

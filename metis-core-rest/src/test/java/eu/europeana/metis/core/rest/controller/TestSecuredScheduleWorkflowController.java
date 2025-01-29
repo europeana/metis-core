@@ -1,12 +1,10 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
 import static eu.europeana.metis.core.rest.utils.TestObjectFactory.DATASETID;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_DATA_OFFICER;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.JWT_INVALID_ROLE;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
 import static eu.europeana.metis.core.rest.utils.TestObjectFactory.createListOfScheduledWorkflows;
 import static eu.europeana.metis.core.rest.utils.TestObjectFactory.createScheduledWorkflowObject;
 import static org.hamcrest.core.Is.is;
@@ -32,7 +30,9 @@ import eu.europeana.metis.core.exceptions.NoScheduledWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.ScheduledWorkflowAlreadyExistsException;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
+import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
@@ -45,20 +45,19 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(SecuredScheduleWorkflowController.class)
 @ContextConfiguration(classes = {SecuredScheduleWorkflowController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
-@TestPropertySource(properties = "spring.security.oauth2.resourceserver.jwt.resourceNames=secured-service")
 class TestSecuredScheduleWorkflowController {
 
   @MockBean
@@ -68,6 +67,12 @@ class TestSecuredScheduleWorkflowController {
   private JwtDecoder jwtDecoder;
 
   private static MockMvc mockMvc;
+  private final TestJwtUtils testJwtUtils;
+
+  @Autowired
+  public TestSecuredScheduleWorkflowController(SecurityConfigurationProperties securityConfigurationProperties) {
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+  }
 
   @BeforeAll
   static void setup(WebApplicationContext context) {
@@ -85,7 +90,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void scheduleWorkflowExecution() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -108,7 +113,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void scheduleWorkflowExecution_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED)).when(securedScheduleWorkflowService)
                                                                            .scheduleWorkflow(any());
@@ -121,7 +126,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void scheduleWorkflowExecution_BadContentException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new BadContentException("Some error")).when(securedScheduleWorkflowService)
                                                   .scheduleWorkflow(any(ScheduledWorkflow.class));
@@ -135,7 +140,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void scheduleWorkflowExecution_ScheduledWorkflowAlreadyExistsException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new ScheduledWorkflowAlreadyExistsException("Some error")).when(securedScheduleWorkflowService)
                                                                       .scheduleWorkflow(
@@ -150,7 +155,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void scheduleWorkflowExecution_NoWorkflowFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoWorkflowFoundException("Some error")).when(securedScheduleWorkflowService)
                                                        .scheduleWorkflow(any(ScheduledWorkflow.class));
@@ -164,7 +169,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void scheduleWorkflowExecution_NoDatasetFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoDatasetFoundException("Some error")).when(securedScheduleWorkflowService)
                                                       .scheduleWorkflow(any(ScheduledWorkflow.class));
@@ -178,7 +183,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void getScheduledWorkflow() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     when(securedScheduleWorkflowService.getScheduledWorkflowByDatasetId(anyString()))
         .thenReturn(scheduledWorkflow);
@@ -195,7 +200,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void getAllScheduledWorkflows() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     int listSize = 2;
     List<ScheduledWorkflow> listOfScheduledWorkflows = createListOfScheduledWorkflows(listSize + 1);//To get the effect of next page
 
@@ -219,7 +224,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void getAllScheduledWorkflowsNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("nextPage", "-1")
@@ -230,7 +235,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void updateScheduledWorkflow() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -253,7 +258,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void updateScheduledWorkflow_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
         .when(securedScheduleWorkflowService).updateScheduledWorkflow(any());
@@ -266,7 +271,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void updateScheduledWorkflow_NoWorkflowFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoWorkflowFoundException("Some error"))
         .when(securedScheduleWorkflowService).updateScheduledWorkflow(any(ScheduledWorkflow.class));
@@ -280,7 +285,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void updateScheduledWorkflow_NoScheduledWorkflowFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoScheduledWorkflowFoundException("Some error"))
         .when(securedScheduleWorkflowService).updateScheduledWorkflow(any(ScheduledWorkflow.class));
@@ -294,7 +299,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void updateScheduledWorkflow_BadContentException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new BadContentException("Some error"))
         .when(securedScheduleWorkflowService).updateScheduledWorkflow(any(ScheduledWorkflow.class));
@@ -308,7 +313,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void deleteScheduledWorkflowExecution() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(JWT_DATA_OFFICER);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -332,7 +337,7 @@ class TestSecuredScheduleWorkflowController {
 
   @Test
   void deleteScheduledWorkflowExecution_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(JWT_INVALID_ROLE);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
