@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getSubClaim;
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -25,7 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -172,7 +173,7 @@ public class SecuredDepublishRecordIdController {
    * status of the WorkflowExecution to {@link eu.europeana.metis.core.workflow.WorkflowStatus#INQUEUE}, adds it to the database
    * and also it's identifier goes into the distributed queue of WorkflowExecutions.
    *
-   * @param authentication the authentication request object
+   * @param jwtPrincipal the jwt principal
    * @param datasetId the dataset identifier for which the execution will take place
    * @param datasetDepublish true for dataset depublication, false for record depublication
    * @param depublicationReason the reason of depublication
@@ -201,17 +202,17 @@ public class SecuredDepublishRecordIdController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public WorkflowExecution addDepublishWorkflowInQueueOfWorkflowExecutions(
-      Authentication authentication,
+      @AuthenticationPrincipal Jwt jwtPrincipal,
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "datasetDepublish", defaultValue = "" + true) boolean datasetDepublish,
       @RequestParam(value = "depublicationReason") DepublicationReason depublicationReason,
       @RequestParam(value = "priority", defaultValue = "0") int priority,
       @RequestBody(required = false) String recordIdsInSeparateLines)
       throws GenericMetisException {
-    final String subClaim = getSubClaim(authentication);
+    final String userId = getUserId(jwtPrincipal);
     return securedDepublishRecordIdService
         .createAndAddInQueueDepublishWorkflowExecution(datasetId,
-            datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason, subClaim);
+            datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason, userId);
   }
 
   /**

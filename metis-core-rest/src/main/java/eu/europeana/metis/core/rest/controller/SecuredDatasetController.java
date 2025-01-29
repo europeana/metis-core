@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getSubClaim;
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
 import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
 import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
@@ -32,7 +32,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -72,7 +73,7 @@ public class SecuredDatasetController {
    * <p> The expected input should follow the rule Bearer
    * accessTokenHere </p>
    *
-   * @param authentication the authentication request object
+   * @param jwtPrincipal the jwt principal
    * @param dataset the provided dataset to be created
    * @return the dataset created including all other fields that are auto generated
    * @throws GenericMetisException which can be one of:
@@ -82,9 +83,9 @@ public class SecuredDatasetController {
    */
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public Dataset createDataset(Authentication authentication, @RequestBody Dataset dataset) throws GenericMetisException {
-    final String subClaim = getSubClaim(authentication);
-    Dataset createdDataset = securedDatasetService.createDataset(subClaim, dataset);
+  public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset) throws GenericMetisException {
+    final String userId = getUserId(jwtPrincipal);
+    Dataset createdDataset = securedDatasetService.createDataset(userId, dataset);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
         createdDataset.getDatasetId(), createdDataset.getDatasetName(),
         createdDataset.getOrganizationId());

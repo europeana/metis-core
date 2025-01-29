@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getSubClaim;
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
 import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import eu.europeana.metis.core.common.DaoFieldNames;
@@ -33,7 +33,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -185,7 +186,7 @@ public class SecuredOrchestratorController {
    * {@code enforcedPredecessorType}, which means that the last valid plugin that is provided with that parameter, will be used as
    * the source data.
    *
-   * @param authentication the authentication request object
+   * @param jwtPrincipal the jwt principal
    * @param datasetId the dataset identifier for which the execution will take place
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
    * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
@@ -212,15 +213,15 @@ public class SecuredOrchestratorController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(
-      Authentication authentication,
+      @AuthenticationPrincipal Jwt jwtPrincipal,
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
       @RequestParam(value = "priority", defaultValue = "0") int priority)
       throws GenericMetisException {
-    final String subClaim = getSubClaim(authentication);
+    final String userId = getUserId(jwtPrincipal);
     WorkflowExecution workflowExecution = securedOrchestratorService
         .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType,
-            priority, subClaim);
+            priority, userId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("WorkflowExecution for datasetId '{}' added to queue",
           datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
@@ -232,7 +233,7 @@ public class SecuredOrchestratorController {
    * Request to cancel a workflow execution. The execution will go into a cancelling state until it's properly
    * {@link WorkflowStatus#CANCELLED} from the system
    *
-   * @param authentication the authentication request object
+   * @param jwtPrincipal the jwt principal
    * @param executionId the execution identifier of the execution to cancel
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -247,9 +248,9 @@ public class SecuredOrchestratorController {
   @DeleteMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void cancelWorkflowExecution(Authentication authentication, @PathVariable("executionId") String executionId) throws GenericMetisException {
-    final String subClaim = getSubClaim(authentication);
-    securedOrchestratorService.cancelWorkflowExecution(executionId, subClaim);
+  public void cancelWorkflowExecution(@AuthenticationPrincipal Jwt jwtPrincipal, @PathVariable("executionId") String executionId) throws GenericMetisException {
+    final String userId = getUserId(jwtPrincipal);
+    securedOrchestratorService.cancelWorkflowExecution(executionId, userId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("WorkflowExecution for executionId '{}' is cancelling",
           executionId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));

@@ -66,6 +66,7 @@ public class SecurityConfig {
     public static final String REALM_ACCESS = "realm_access";
     public static final String RESOURCE_ACCESS = "resource_access";
     public static final String ROLES = "roles";
+    public static final String ROLE_PREFIX = "ROLE_";
     private final JwtGrantedAuthoritiesConverter defaultGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
     @Override
@@ -90,7 +91,7 @@ public class SecurityConfig {
 
     private static List<SimpleGrantedAuthority> getAuthorities(List<String> resourceRoles) {
       return resourceRoles.stream()
-                          .map(role -> "ROLE_" + role)
+                          .map(role -> ROLE_PREFIX + role)
                           .map(SimpleGrantedAuthority::new)
                           .toList();
     }
