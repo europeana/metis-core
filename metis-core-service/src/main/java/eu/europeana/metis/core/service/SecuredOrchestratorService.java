@@ -623,7 +623,6 @@ public class SecuredOrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public DatasetExecutionInformation getDatasetExecutionInformation(String datasetId) throws GenericMetisException {

@@ -89,7 +89,6 @@ public class SecuredDepublishRecordIdService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
@@ -119,7 +118,6 @@ public class SecuredDepublishRecordIdService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * </ul>
    */
   public ResponseListWrapper<DepublishRecordIdView> getDepublishRecordIds(
@@ -160,8 +158,6 @@ public class SecuredDepublishRecordIdService {
    * <li>{@link BadContentException} if the workflow is empty or no plugin enabled</li>
    * <li>{@link NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if there was an exception when
    * contacting the external resource(ECloud)</li>
    * <li>{@link PluginExecutionNotAllowed} if the execution of
@@ -190,8 +186,7 @@ public class SecuredDepublishRecordIdService {
     depublishPluginMetadata.setDepublicationReason(depublicationReason);
     if (StringUtils.isNotBlank(recordIdsInSeparateLines)) {
       // Check and normalize the record IDs (Just in case).
-      final Set<String> normalizedRecordIds = checkAndNormalizeRecordIds(datasetId,
-          recordIdsInSeparateLines);
+      final Set<String> normalizedRecordIds = checkAndNormalizeRecordIds(datasetId, recordIdsInSeparateLines);
       depublishPluginMetadata.setRecordIdsToDepublish(normalizedRecordIds);
     }
     workflow.setMetisPluginsMetadata(Collections.singletonList(depublishPluginMetadata));
@@ -220,8 +215,6 @@ public class SecuredDepublishRecordIdService {
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   public boolean canTriggerDepublication(String datasetId)
