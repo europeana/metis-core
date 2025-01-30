@@ -19,7 +19,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -109,7 +108,7 @@ class TestSecuredOrchestratorController {
   static void setup(WebApplicationContext context) {
     mockMvc = MockMvcBuilders.webAppContextSetup(context)
                              .apply(SecurityMockMvcConfigurers.springSecurity())
-                             .defaultRequest(get("/").with(csrf().asHeader()))
+                             .defaultRequest(get("/"))
                              .build();
   }
 

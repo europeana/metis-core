@@ -2,9 +2,9 @@ package eu.europeana.metis.core.rest.controller;
 
 import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestObjectFactory.DATASETID;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestObjectFactory.DATASETID;
 import static eu.europeana.metis.core.rest.utils.TestObjectFactory.createListOfScheduledWorkflows;
 import static eu.europeana.metis.core.rest.utils.TestObjectFactory.createScheduledWorkflowObject;
 import static org.hamcrest.core.Is.is;
@@ -16,7 +16,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -78,7 +77,7 @@ class TestSecuredScheduleWorkflowController {
   static void setup(WebApplicationContext context) {
     mockMvc = MockMvcBuilders.webAppContextSetup(context)
                              .apply(SecurityMockMvcConfigurers.springSecurity())
-                             .defaultRequest(get("/").with(csrf().asHeader()))
+                             .defaultRequest(get("/"))
                              .build();
   }
 
