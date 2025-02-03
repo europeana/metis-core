@@ -80,6 +80,13 @@ public class SecuredScheduleWorkflowService {
     scheduledWorkflowDao.create(scheduledWorkflow);
   }
 
+  /**
+   * Retrieves all scheduled workflows based on the given schedule frequency and page number.
+   *
+   * @param scheduleFrequence the frequency of the schedules to filter the workflows
+   * @param nextPage the page number to retrieve the results for
+   * @return a list of scheduled workflows matching the specified schedule frequency and page number
+   */
   public List<ScheduledWorkflow> getAllScheduledWorkflows(ScheduleFrequence scheduleFrequence, int nextPage) {
     return scheduledWorkflowDao.getAllScheduledWorkflows(scheduleFrequence, nextPage);
   }
@@ -94,6 +101,14 @@ public class SecuredScheduleWorkflowService {
     }
   }
 
+  /**
+   * Updates the details of an existing scheduled workflow in the database.
+   * Ensures the dataset associated with the scheduled workflow exists and validates
+   * restrictions related to the update before proceeding.
+   *
+   * @param scheduledWorkflow The scheduled workflow object containing updated details.
+   * @throws GenericMetisException If the dataset does not exist or if validation fails.
+   */
   public void updateScheduledWorkflow(ScheduledWorkflow scheduledWorkflow)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(scheduledWorkflow.getDatasetId());
@@ -134,6 +149,12 @@ public class SecuredScheduleWorkflowService {
     return storedId;
   }
 
+  /**
+   * Deletes the scheduled workflow associated with the specified dataset ID.
+   *
+   * @param datasetId the unique identifier of the dataset whose scheduled workflow is to be deleted
+   * @throws NoDatasetFoundException if no dataset is found with the specified ID
+   */
   public void deleteScheduledWorkflow(String datasetId) throws NoDatasetFoundException {
     datasetDao.getDatasetOrThrow(datasetId);
     scheduledWorkflowDao.deleteScheduledWorkflow(datasetId);

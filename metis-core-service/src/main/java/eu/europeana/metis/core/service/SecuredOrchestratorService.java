@@ -97,6 +97,10 @@ public class SecuredOrchestratorService {
   public static final Set<ExecutablePluginType> NO_XML_PREVIEW_TYPES = Sets
       .immutableEnumSet(ExecutablePluginType.LINK_CHECKING, ExecutablePluginType.DEPUBLISH);
 
+  //TODO: 2025-01-17 - Remove when in-code authorization complete.
+  //Temp static organization so that the service methods will still work.
+  private static final String ORGANIZATION_ID = "1482250000001617026";
+
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowValidationUtils workflowValidationUtils;
   private final DataEvolutionUtils dataEvolutionUtils;
@@ -107,10 +111,6 @@ public class SecuredOrchestratorService {
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
   private int solrCommitPeriodInMins; // Use getter and setter for this field!
-
-  //TODO: 2025-01-17 - Remove when in-code authorization complete.
-  //Temp static organization so that the service methods will still work.
-  private static final String ORGANIZATION_ID = "1482250000001617026";
 
   /**
    * Constructor with all the required parameters

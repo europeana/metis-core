@@ -41,6 +41,12 @@ public class SecurityConfig {
   public static final String SECURED = "/secured";
   private final List<String> resourceNames;
 
+  /**
+   * Constructs a SecurityConfig object using the provided SecurityConfigurationProperties.
+   *
+   * @param securityConfigurationProperties the configuration properties containing resource names for security configuration.
+   * This parameter is used to initialize the internal resources required for the security setup.
+   */
   @Autowired
   public SecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
     this.resourceNames = securityConfigurationProperties.getResourceNames();

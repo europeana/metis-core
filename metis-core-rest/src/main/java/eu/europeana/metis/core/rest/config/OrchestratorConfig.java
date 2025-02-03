@@ -174,6 +174,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return orchestratorService;
   }
 
+  /**
+   * Creates and configures a {@link ValidationProperties} bean for external validation properties.
+   *
+   * @param validationConfigurationProperties the configuration properties that provide details needed to initialize external
+   * validation properties, including the schema zip URL, schema root path, and schematron root path.
+   * @return an instance of {@link ValidationProperties} initialized with the provided external validation configuration
+   * properties.
+   */
   @Bean(name = "validationExternalProperties")
   public ValidationProperties getValidationExternalProperties(
       ValidationConfigurationProperties validationConfigurationProperties) {
@@ -183,6 +191,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         validationConfigurationProperties.getValidationExternalSchematronRoot());
   }
 
+  /**
+   * Creates and configures a {@link ValidationProperties} bean for internal validation properties.
+   *
+   * @param validationConfigurationProperties the configuration properties that provide details needed to initialize internal
+   * validation properties, including the schema zip URL, schema root path, and schematron root path.
+   * @return an instance of {@link ValidationProperties} initialized with the provided internal validation configuration
+   * properties.
+   */
   @Bean(name = "validationInternalProperties")
   public ValidationProperties getValidationInternalProperties(
       ValidationConfigurationProperties validationConfigurationProperties) {
@@ -192,6 +208,16 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         validationConfigurationProperties.getValidationInternalSchematronRoot());
   }
 
+  /**
+   * Creates and configures a {@link WorkflowExecutionFactory} bean. This factory is used for the execution of workflows and
+   * supports validation, redirection inference, and other dataset-specific functionalities.
+   *
+   * @param validationExternalProperties the external validation properties used for workflow validation
+   * @param validationInternalProperties the internal validation properties used for workflow validation
+   * @param redirectionInferrer the component responsible for inferring redirection behavior for workflows
+   * @param datasetXsltDao the DAO for managing XSLT transformations for workflows
+   * @param depublishRecordIdDao the DAO for handling depublish record IDs
+   */
   @Bean
   public WorkflowExecutionFactory getWorkflowExecutionFactory(
       @Qualifier("validationExternalProperties") ValidationProperties validationExternalProperties,
@@ -224,6 +250,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new ScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao, authorizer);
   }
 
+  /**
+   * Creates and returns an instance of SecuredScheduleWorkflowService.
+   *
+   * @param scheduledWorkflowDao the DAO responsible for managing scheduled workflows.
+   * @param workflowDao the DAO responsible for managing workflows.
+   * @param datasetDao the DAO responsible for managing datasets.
+   * @return a new instance of SecuredScheduleWorkflowService configured with the given DAOs.
+   */
   @Bean
   public SecuredScheduleWorkflowService getSecuredScheduleWorkflowService(ScheduledWorkflowDao scheduledWorkflowDao,
       WorkflowDao workflowDao, DatasetDao datasetDao) {
@@ -241,6 +275,19 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         fileServiceClient, dpsClient, uisClient, ecloudConfigurationProperties.getProvider(), authorizer);
   }
 
+  /**
+   * Creates and returns an instance of SecuredProxiesService with the provided dependencies.
+   *
+   * @param workflowExecutionDao the data access object for workflow execution.
+   * @param ecloudDataSetServiceClient the client service for eCloud datasets.
+   * @param recordServiceClient the client for interacting with record services.
+   * @param fileServiceClient the client for managing file services.
+   * @param dpsClient the client for Data Processing Services.
+   * @param uisClient the client for Unified Information Services.
+   * @param datasetDao the data access object for datasets.
+   * @param ecloudConfigurationProperties the configuration properties for eCloud integration.
+   * @return an initialized instance of SecuredProxiesService.
+   */
   @Bean
   public SecuredProxiesService getSecuredProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,

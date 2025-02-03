@@ -424,7 +424,6 @@ public class SecuredDatasetService {
    */
   public List<Record> transformRecordsUsingLatestDefaultXslt(String datasetId,
       List<Record> records) throws GenericMetisException {
-    //Used for authentication and dataset existence
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     //Using default dataset identifier
     DatasetXslt datasetXslt = datasetXsltDao.getLatestDefaultXslt();

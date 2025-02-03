@@ -11,10 +11,10 @@ public class SecurityConfigurationProperties {
   private List<String> resourceNames;
 
   public List<String> getResourceNames() {
-    return resourceNames;
+    return resourceNames == null ? List.of() : List.copyOf(resourceNames);
   }
 
   public void setResourceNames(List<String> resourceNames) {
-    this.resourceNames = resourceNames;
+    this.resourceNames = resourceNames == null ? null : List.copyOf(resourceNames);
   }
 }
