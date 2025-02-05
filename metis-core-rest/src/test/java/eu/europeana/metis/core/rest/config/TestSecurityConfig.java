@@ -36,7 +36,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -47,7 +46,6 @@ class TestSecurityConfig {
   @MockBean
   private JwtDecoder jwtDecoder;
 
-  private static final String SECURED = "/secured";
   private static MockMvc mockMvc;
   private final TestJwtUtils testJwtUtils;
 
@@ -71,37 +69,37 @@ class TestSecurityConfig {
 
   @Test
   void testGetXsltDefault() throws Exception {
-    performRequest(() -> get(SECURED + DATASETS_XSLT_DEFAULT),
+    performRequest(() -> get(DATASETS_XSLT_DEFAULT),
         status().isOk(), status().isOk(), status().isOk(), status().isOk());
   }
 
   @Test
   void testPostXsltDefault() throws Exception {
-    performRequest(() -> post(SECURED + DATASETS_XSLT_DEFAULT),
+    performRequest(() -> post(DATASETS_XSLT_DEFAULT),
         status().isOk(), status().isForbidden(), status().isForbidden(), status().isUnauthorized());
   }
 
   @Test
   void testGetXsltXsltId() throws Exception {
-    performRequest(() -> get(SECURED + DATASETS_XSLT_XSLTID, TestObjectFactory.XSLTID),
+    performRequest(() -> get(DATASETS_XSLT_XSLTID, TestObjectFactory.XSLTID),
         status().isOk(), status().isOk(), status().isOk(), status().isOk());
   }
 
   @Test
   void testGetDepublishReasons() throws Exception {
-    performRequest(() -> get(SECURED + DEPUBLISH_REASONS, TestObjectFactory.XSLTID),
+    performRequest(() -> get(DEPUBLISH_REASONS, TestObjectFactory.XSLTID),
         status().isOk(), status().isOk(), status().isOk(), status().isOk());
   }
 
   @Test
   void testGetDataset() throws Exception {
-    performRequest(() -> get(SECURED + DATASETS_DATASETID, TestObjectFactory.DATASETID),
+    performRequest(() -> get(DATASETS_DATASETID, TestObjectFactory.DATASETID),
         status().isOk(), status().isOk(), status().isForbidden(), status().isUnauthorized());
   }
 
   @Test
   void testPostDataset() throws Exception {
-    performRequest(() -> post(SECURED + DATASETS),
+    performRequest(() -> post(DATASETS),
         status().isOk(), status().isOk(), status().isForbidden(), status().isUnauthorized());
   }
 
@@ -128,7 +126,6 @@ class TestSecurityConfig {
    * Fake controller for testing paths from the {@link SecurityConfig}.
    */
   @RestController
-  @RequestMapping(SECURED)
   static class TestController {
 
     @PostMapping(DATASETS_XSLT_DEFAULT)

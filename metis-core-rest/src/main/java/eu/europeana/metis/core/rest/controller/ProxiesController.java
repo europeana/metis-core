@@ -2,14 +2,12 @@ package eu.europeana.metis.core.rest.controller;
 
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
-import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
-import eu.europeana.metis.core.service.ProxiesService;
+import eu.europeana.metis.core.service.SecuredProxiesService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.GenericMetisException;
@@ -28,42 +26,35 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Proxies Controller which encapsulates functionality that has to be proxied to an external resource.
- *
- * @deprecated replaced by {@link SecuredProxiesController}
  */
-@Deprecated(forRemoval = true)
 @RestController
+@RequestMapping({"/secured", "/"})
 public class ProxiesController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ProxiesController.class);
   private static final int NUMBER_OF_RECORDS = 5;
-  private final ProxiesService proxiesService;
-  private final AuthenticationClient authenticationClient;
+  private final SecuredProxiesService securedProxiesService;
 
   /**
    * Constructor with required parameters
    *
-   * @param proxiesService {@link ProxiesService}
-   * @param authenticationClient the client for the authentication service
+   * @param securedProxiesService {@link SecuredProxiesService}
    */
   @Autowired
-  public ProxiesController(ProxiesService proxiesService,
-      AuthenticationClient authenticationClient) {
-    this.proxiesService = proxiesService;
-    this.authenticationClient = authenticationClient;
+  public ProxiesController(SecuredProxiesService securedProxiesService) {
+    this.securedProxiesService = securedProxiesService;
   }
 
   /**
    * Get logs from a specific topology task paged.
    *
-   * @param authorization the authorization header with the access token
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @param from integer to start getting logs from
@@ -83,7 +74,6 @@ public class ProxiesController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<SubTaskInfo> getExternalTaskLogs(
-      @RequestHeader("Authorization") String authorization,
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") long externalTaskId,
       @RequestParam(value = "from") int from,
@@ -94,14 +84,12 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId, from, to);
     }
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService.getExternalTaskLogs(metisUserView, topologyName, externalTaskId, from, to);
+    return securedProxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
   }
 
   /**
    * Check if final report is available.
    *
-   * @param authorization the authorization header with the access token
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @return true if final report available, false if not or ecloud response {@link jakarta.ws.rs.core.Response.Status)} is not
@@ -118,7 +106,6 @@ public class ProxiesController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Map<String, Boolean> existsExternalTaskReport(
-      @RequestHeader("Authorization") String authorization,
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") long externalTaskId) throws GenericMetisException {
     if (LOGGER.isInfoEnabled()) {
@@ -127,16 +114,14 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
     return Collections.singletonMap("existsExternalTaskReport",
-        proxiesService.existsExternalTaskReport(metisUserView, topologyName, externalTaskId));
+        securedProxiesService.existsExternalTaskReport(topologyName, externalTaskId));
   }
 
   /**
    * Get the final report that includes all the errors grouped. The number of ids per error can be specified through the
    * parameters.
    *
-   * @param authorization the authorization header with the access token
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @param idsPerError the number of ids that should be displayed per error group
@@ -155,7 +140,6 @@ public class ProxiesController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public TaskErrorsInfo getExternalTaskReport(
-      @RequestHeader("Authorization") String authorization,
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") long externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
@@ -164,15 +148,12 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService
-        .getExternalTaskReport(metisUserView, topologyName, externalTaskId, idsPerError);
+    return securedProxiesService.getExternalTaskReport(topologyName, externalTaskId, idsPerError);
   }
 
   /**
    * Get the statistics on the given task.
    *
-   * @param authorization the authorization header with the access token
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @return the task statistics
@@ -190,7 +171,6 @@ public class ProxiesController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordStatistics getExternalTaskStatistics(
-      @RequestHeader("Authorization") String authorization,
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") long externalTaskId) throws GenericMetisException {
     if (LOGGER.isInfoEnabled()) {
@@ -198,15 +178,13 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService.getExternalTaskStatistics(metisUserView, topologyName, externalTaskId);
+    return securedProxiesService.getExternalTaskStatistics(topologyName, externalTaskId);
   }
 
   /**
    * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by
-   * {@link #getExternalTaskStatistics(String, String, long)}.
+   * {@link #getExternalTaskStatistics(String, long)}.
    *
-   * @param authorization the authorization header with the access token
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @param nodePath the path of the node for which this request is made
@@ -225,7 +203,6 @@ public class ProxiesController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public NodePathStatistics getAdditionalNodeStatistics(
-      @RequestHeader("Authorization") String authorization,
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") long externalTaskId,
       @RequestParam("nodePath") String nodePath) throws GenericMetisException {
@@ -235,15 +212,13 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService
-        .getAdditionalNodeStatistics(metisUserView, topologyName, externalTaskId, nodePath);
+    return securedProxiesService
+        .getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
 
   /**
    * Get a list with record contents from the external resource based on an workflow execution and {@link PluginType}.
    *
-   * @param authorization the authorization header with the access token
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link PluginType} that is to be located inside the workflow
    * @param nextPage the string representation of the next page which is provided from the response and can be used to get the
@@ -264,22 +239,18 @@ public class ProxiesController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPluginExecution(
-      @RequestHeader("Authorization") String authorization,
       @RequestParam("workflowExecutionId") String workflowExecutionId,
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestParam(value = "nextPage", required = false) String nextPage
   ) throws GenericMetisException {
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService
-        .getListOfFileContentsFromPluginExecution(metisUserView, workflowExecutionId, pluginType,
-            StringUtils.isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
+    return securedProxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId, pluginType,
+        StringUtils.isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
   }
 
   /**
    * Get a list with record contents from the external resource for a specific list of IDS based on a workflow execution and
    * {@link PluginType}.
    *
-   * @param authorization the authorization header with the access token
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param ecloudIds the list of ecloud IDs of the records we wish to obtain
@@ -300,21 +271,19 @@ public class ProxiesController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPluginExecution(
-      @RequestHeader("Authorization") String authorization,
       @RequestParam("workflowExecutionId") String workflowExecutionId,
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestBody ListOfIds ecloudIds
   ) throws GenericMetisException {
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService.getListOfFileContentsFromPluginExecution(metisUserView, workflowExecutionId,
+    return securedProxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId,
         pluginType, ecloudIds);
   }
 
   /**
    * Get an eCloudId from the external resource for a specific searchId.
    *
-   * @param authorization the authorization header with the access token
    * @param workflowExecutionId the execution identifier of the workflow
+   * @param pluginType the plugin from the execution
    * @param idToSearch the ID we are searching for and for which we want to find a record
    * @return the CloudId from the external resource matching the input ID. If no record with the matching ID was found, it will
    * return an empty string.
@@ -332,20 +301,17 @@ public class ProxiesController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Record searchRecordByIdFromPluginExecution(
-      @RequestHeader("Authorization") String authorization,
       @RequestParam("workflowExecutionId") String workflowExecutionId,
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestParam("idToSearch") String idToSearch
   ) throws GenericMetisException {
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService.searchRecordByIdFromPluginExecution(metisUserView, workflowExecutionId, pluginType, idToSearch);
+    return securedProxiesService.searchRecordByIdFromPluginExecution(workflowExecutionId, pluginType, idToSearch);
   }
 
   /**
    * Get a list with record contents from the external resource for a specific list of IDS based on a workflow execution and the
    * predecessor of the given {@link PluginType}.
    *
-   * @param authorization the authorization header with the access token
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param ecloudIds the list of ecloud IDs of the records we wish to obtain
@@ -366,13 +332,11 @@ public class ProxiesController {
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPredecessorOfPluginExecution(
-      @RequestHeader("Authorization") String authorization,
       @RequestParam("workflowExecutionId") String workflowExecutionId,
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestBody ListOfIds ecloudIds
   ) throws GenericMetisException {
-    final MetisUserView metisUserView = authenticationClient.getUserByAccessTokenInHeader(authorization);
-    return proxiesService.getListOfFileContentsFromPredecessorPluginExecution(metisUserView, workflowExecutionId, pluginType,
+    return securedProxiesService.getListOfFileContentsFromPredecessorPluginExecution(workflowExecutionId, pluginType,
         ecloudIds);
   }
 

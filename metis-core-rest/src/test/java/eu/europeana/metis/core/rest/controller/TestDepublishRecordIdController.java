@@ -48,10 +48,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@WebMvcTest(SecuredDepublishRecordIdController.class)
-@ContextConfiguration(classes = {SecuredDepublishRecordIdController.class, SecurityConfig.class,
+@WebMvcTest(DepublishRecordIdController.class)
+@ContextConfiguration(classes = {DepublishRecordIdController.class, SecurityConfig.class,
     RestResponseExceptionHandler.class})
-class TestSecuredDepublishRecordIdController {
+class TestDepublishRecordIdController {
 
   @MockBean
   private SecuredDepublishRecordIdService securedDepublishRecordIdService;
@@ -64,7 +64,7 @@ class TestSecuredDepublishRecordIdController {
   private final TestJwtUtils testJwtUtils;
 
   @Autowired
-  public TestSecuredDepublishRecordIdController(SecurityConfigurationProperties securityConfigurationProperties) {
+  public TestDepublishRecordIdController(SecurityConfigurationProperties securityConfigurationProperties) {
     testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
   }
 
