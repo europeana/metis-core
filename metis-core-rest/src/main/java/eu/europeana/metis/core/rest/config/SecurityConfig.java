@@ -53,12 +53,15 @@ public class SecurityConfig {
   }
 
   /**
-   * Spring security configuration.
+   * Configures the security filter chain for the application. It disables CSRF (as the API is stateless and uses JWT for
+   * authentication), enables CORS, sets up authorization rules, and configures the OAuth2 resource server with JWT
+   * authentication.
    *
-   * @param httpSecurity the http security
-   * @return the security filter chain
-   * @throws Exception if something went wrong
+   * @param httpSecurity the HttpSecurity to be configured with the security settings
+   * @return the configured SecurityFilterChain
+   * @throws Exception if an error occurs during the security configuration
    */
+  @SuppressWarnings("squid:S4502")
   @Bean
   public SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
     httpSecurity.csrf(AbstractHttpConfigurer::disable)
