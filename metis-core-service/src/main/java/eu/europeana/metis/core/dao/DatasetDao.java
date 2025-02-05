@@ -22,6 +22,7 @@ import eu.europeana.cloud.service.mcs.exception.DataSetAlreadyExistsException;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
+import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.exception.ExternalTaskException;
@@ -413,6 +414,22 @@ public class DatasetDao implements MetisDao<Dataset, String> {
         .sort(Sort.ascending(DATASET_ID.getFieldName())).skip(nextPage * getDatasetsPerRequest())
         .limit(getDatasetsPerRequest());
     return getListOfQueryRetryable(query, findOptions);
+  }
+
+  /**
+   * Get the dataset or throw exception if it does not exist.
+   *
+   * @param datasetId the dataset id
+   * @return the dataset
+   * @throws NoDatasetFoundException if the dataset was not found
+   */
+  public Dataset getDatasetOrThrow(String datasetId) throws NoDatasetFoundException {
+    final Dataset dataset = getDatasetByDatasetId(datasetId);
+    if (dataset == null) {
+      throw new NoDatasetFoundException(
+          String.format("No dataset found with datasetId: '%s' in METIS", datasetId));
+    }
+    return dataset;
   }
 
   /**

@@ -933,13 +933,11 @@ class TestOrchestratorController {
         .andExpect(
             jsonPath("$.evolutionSteps[0].workflowExecutionId", is(step1.getWorkflowExecutionId())))
         .andExpect(jsonPath("$.evolutionSteps[0].pluginType", is(step1.getPluginType().name())))
-        .andExpect(jsonPath("$.evolutionSteps[0].finishedTime",
-            is((int) step1.getFinishedTime().getTime())))
+        .andExpect(jsonPath("$.evolutionSteps[0].finishedTime", is(simpleDateFormat.format(step1.getFinishedTime().getTime()))))
         .andExpect(
             jsonPath("$.evolutionSteps[1].workflowExecutionId", is(step2.getWorkflowExecutionId())))
         .andExpect(jsonPath("$.evolutionSteps[1].pluginType", is(step2.getPluginType().name())))
-        .andExpect(jsonPath("$.evolutionSteps[1].finishedTime",
-            is((int) step2.getFinishedTime().getTime())));
+        .andExpect(jsonPath("$.evolutionSteps[1].finishedTime", is(simpleDateFormat.format(step2.getFinishedTime().getTime()))));
 
     // Test happy flow with empty evolution
     final VersionEvolution resultEmpty = new VersionEvolution();

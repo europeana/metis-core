@@ -531,7 +531,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         >= periodOfNoProcessedRecordsChangeInSeconds;
     if (isMinuteCapOverWithoutChangeInProcessedRecords) {
       //Request cancelling of the execution
-      workflowExecutionDao.setCancellingState(workflowExecution, null);
+      workflowExecutionDao.setCancellingState(workflowExecution, "");
     }
     return isMinuteCapOverWithoutChangeInProcessedRecords;
   }

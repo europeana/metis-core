@@ -55,7 +55,6 @@ public class TestObjectFactory {
   public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
   private static final int OCCURRENCES = 2;
 
-
   private TestObjectFactory() {
   }
 
@@ -304,5 +303,4 @@ public class TestObjectFactory {
     }
     return records;
   }
-
 }
