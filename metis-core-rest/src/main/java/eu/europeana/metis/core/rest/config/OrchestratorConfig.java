@@ -23,11 +23,10 @@ import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.Authorizer;
-import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.ScheduleWorkflowService;
-import eu.europeana.metis.core.service.SecuredOrchestratorService;
+import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.SecuredProxiesService;
 import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
@@ -125,27 +124,11 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return redissonClient;
   }
 
-  @Deprecated(forRemoval = true)
-  @Bean
-  public OrchestratorService getOrchestratorService(WorkflowDao workflowDao,
-      WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
-      DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
-      WorkflowExecutionFactory workflowExecutionFactory,
-      WorkflowExecutorManager workflowExecutorManager, Authorizer authorizer,
-      DepublishRecordIdDao depublishRecordIdDao,
-      MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
-        workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
-        workflowExecutorManager, redissonClient, authorizer, depublishRecordIdDao);
-    orchestratorService.setSolrCommitPeriodInMins(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());
-    return orchestratorService;
-  }
-
   /**
-   * Creates and configures a {@link SecuredOrchestratorService} bean.
+   * Creates and configures a {@link OrchestratorService} bean.
    * <p>
    * This service orchestrates secured workflows and handles the execution, validation, and evolution of workflows across
-   * datasets. The method initializes the {@link SecuredOrchestratorService} with various dependencies required for its operation,
+   * datasets. The method initializes the {@link OrchestratorService} with various dependencies required for its operation,
    * including DAOs, utility classes, and configuration properties.
    *
    * @param workflowDao the DAO for managing workflows
@@ -157,17 +140,17 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param workflowExecutorManager manager for handling workflow execution processes
    * @param depublishRecordIdDao the DAO for managing depublished record IDs
    * @param metisCoreConfigurationProperties the core configuration properties for the system
-   * @return a configured instance of {@link SecuredOrchestratorService}
+   * @return a configured instance of {@link OrchestratorService}
    */
   @Bean
-  public SecuredOrchestratorService getSecuredOrchestratorService(WorkflowDao workflowDao,
+  public OrchestratorService getOrchestratorService(WorkflowDao workflowDao,
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
       DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
       WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowExecutorManager workflowExecutorManager,
       DepublishRecordIdDao depublishRecordIdDao,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    SecuredOrchestratorService orchestratorService = new SecuredOrchestratorService(workflowExecutionFactory,
+    OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
         workflowExecutorManager, redissonClient, depublishRecordIdDao);
     orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());

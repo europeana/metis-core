@@ -14,11 +14,9 @@ import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.Authorizer;
+import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.service.OrchestratorService;
-import eu.europeana.metis.core.service.DatasetService;
-import eu.europeana.metis.core.service.SecuredDepublishRecordIdService;
-import eu.europeana.metis.core.service.SecuredOrchestratorService;
 import eu.europeana.metis.mongo.connection.MongoClientProvider;
 import eu.europeana.metis.mongo.connection.MongoProperties;
 import eu.europeana.metis.mongo.connection.MongoProperties.ReadPreferenceValue;
@@ -200,28 +198,19 @@ public class ApplicationConfiguration {
     datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.getBaseUrl());
     return datasetService;
   }
-
-  @Deprecated(forRemoval = true)
+  /**
+   * Creates and configures a {@link DepublishRecordIdService} bean.
+   *
+   * @param depublishRecordIdDao the DAO used for managing depublished record IDs
+   * @param orchestratorService the secured orchestrator service for handling secured operations
+   * @param datasetDao the DAO for accessing dataset information
+   * @return a configured instance of {@link DepublishRecordIdService}
+   */
   @Bean
   public DepublishRecordIdService getDepublishedRecordService(
       DepublishRecordIdDao depublishRecordIdDao, OrchestratorService orchestratorService,
-      Authorizer authorizer) {
-    return new DepublishRecordIdService(authorizer, orchestratorService, depublishRecordIdDao);
-  }
-
-  /**
-   * Creates and configures a {@link SecuredDepublishRecordIdService} bean.
-   *
-   * @param depublishRecordIdDao the DAO used for managing depublished record IDs
-   * @param securedOrchestratorService the secured orchestrator service for handling secured operations
-   * @param datasetDao the DAO for accessing dataset information
-   * @return a configured instance of {@link SecuredDepublishRecordIdService}
-   */
-  @Bean
-  public SecuredDepublishRecordIdService getSecuredDepublishedRecordService(
-      DepublishRecordIdDao depublishRecordIdDao, SecuredOrchestratorService securedOrchestratorService,
       DatasetDao datasetDao) {
-    return new SecuredDepublishRecordIdService(securedOrchestratorService, depublishRecordIdDao, datasetDao);
+    return new DepublishRecordIdService(orchestratorService, depublishRecordIdDao, datasetDao);
   }
 
   /**

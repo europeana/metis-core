@@ -5,7 +5,7 @@ import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserI
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.rest.DepublicationInfoView;
-import eu.europeana.metis.core.service.SecuredDepublishRecordIdService;
+import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -50,16 +50,16 @@ public class DepublishRecordIdController {
   private static final Pattern CRLF_PATTERN = Pattern
       .compile(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX);
 
-  private final SecuredDepublishRecordIdService securedDepublishRecordIdService;
+  private final DepublishRecordIdService depublishRecordIdService;
 
   /**
    * Autowired constructor with all required parameters.
    *
-   * @param securedDepublishRecordIdService the service for depublished records.
+   * @param depublishRecordIdService the service for depublished records.
    */
   @Autowired
-  public DepublishRecordIdController(SecuredDepublishRecordIdService securedDepublishRecordIdService) {
-    this.securedDepublishRecordIdService = securedDepublishRecordIdService;
+  public DepublishRecordIdController(DepublishRecordIdService depublishRecordIdService) {
+    this.depublishRecordIdService = depublishRecordIdService;
   }
 
   /**
@@ -80,7 +80,7 @@ public class DepublishRecordIdController {
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    final int added = securedDepublishRecordIdService
+    final int added = depublishRecordIdService
         .addRecordIdsToBeDepublished(datasetId, recordIdsInSeparateLines);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("{} Depublish record ids added to dataset with datasetId: {}", added,
@@ -129,7 +129,7 @@ public class DepublishRecordIdController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deletePendingRecordIds(@PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    final Long removedRecordIds = securedDepublishRecordIdService.deletePendingRecordIds(datasetId, recordIdsInSeparateLines);
+    final Long removedRecordIds = depublishRecordIdService.deletePendingRecordIds(datasetId, recordIdsInSeparateLines);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("{} Depublish record ids removed from database with datasetId: {}",
           removedRecordIds, CRLF_PATTERN.matcher(datasetId).replaceAll(""));
@@ -161,10 +161,10 @@ public class DepublishRecordIdController {
       @RequestParam(value = "sortAscending", defaultValue = "" + true) boolean sortAscending,
       @RequestParam(value = "searchQuery", required = false) String searchQuery
   ) throws GenericMetisException {
-    final var recordIds = securedDepublishRecordIdService.getDepublishRecordIds(datasetId, page,
+    final var recordIds = depublishRecordIdService.getDepublishRecordIds(datasetId, page,
         sortField == null ? DepublishRecordIdSortField.RECORD_ID : sortField,
         sortAscending ? SortDirection.ASCENDING : SortDirection.DESCENDING, searchQuery);
-    final var canDepublish = securedDepublishRecordIdService.canTriggerDepublication(datasetId);
+    final var canDepublish = depublishRecordIdService.canTriggerDepublication(datasetId);
     return new DepublicationInfoView(recordIds, canDepublish);
   }
 
@@ -210,7 +210,7 @@ public class DepublishRecordIdController {
       @RequestBody(required = false) String recordIdsInSeparateLines)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
-    return securedDepublishRecordIdService
+    return depublishRecordIdService
         .createAndAddInQueueDepublishWorkflowExecution(datasetId,
             datasetDepublish, priority, recordIdsInSeparateLines, depublicationReason, userId);
   }

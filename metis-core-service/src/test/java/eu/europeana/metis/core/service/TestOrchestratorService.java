@@ -22,8 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import eu.europeana.metis.authentication.user.AccountRole;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
@@ -107,13 +105,13 @@ import org.mockito.Mockito;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-06
- */
 class TestOrchestratorService {
 
-  private static final int SOLR_COMMIT_PERIOD_IN_MINS = 15;
+  //TODO: 2025-01-17 - Remove when in-code authorization complete.
+  //Temp static organization so that the service methods will still work.
+  private static final String ORGANIZATION_ID = "1482250000001617026";
+  private static final String ORGANIZATION_NAME = "Europeana Foundation";
+  private static final int SOLR_COMMIT_PERIOD_IN_MINUTES = 15;
   private static WorkflowExecutionDao workflowExecutionDao;
   private static DataEvolutionUtils dataEvolutionUtils;
   private static RedirectionInferrer redirectionInferrer;
@@ -126,7 +124,6 @@ class TestOrchestratorService {
   private static WorkflowExecutionFactory workflowExecutionFactory;
   private static OrchestratorService orchestratorService;
   private static RedissonClient redissonClient;
-  private static Authorizer authorizer;
 
   @BeforeAll
   static void prepare() {
@@ -139,7 +136,6 @@ class TestOrchestratorService {
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
     workflowExecutorManager = mock(WorkflowExecutorManager.class);
     redissonClient = mock(RedissonClient.class);
-    authorizer = mock(Authorizer.class);
 
     redirectionInferrer = new RedirectionInferrer(workflowExecutionDao, dataEvolutionUtils);
     workflowExecutionFactory = spy(new WorkflowExecutionFactory(datasetXsltDao,
@@ -151,8 +147,8 @@ class TestOrchestratorService {
 
     orchestratorService = spy(new OrchestratorService(workflowExecutionFactory, workflowDao,
         workflowExecutionDao, validationUtils, dataEvolutionUtils, datasetDao,
-        workflowExecutorManager, redissonClient, authorizer, depublishRecordIdDao));
-    orchestratorService.setSolrCommitPeriodInMins(SOLR_COMMIT_PERIOD_IN_MINS);
+        workflowExecutorManager, redissonClient, depublishRecordIdDao));
+    orchestratorService.setSolrCommitPeriodInMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES);
   }
 
   @AfterEach
@@ -163,23 +159,18 @@ class TestOrchestratorService {
     Mockito.reset(datasetDao);
     Mockito.reset(workflowExecutorManager);
     Mockito.reset(redissonClient);
-    Mockito.reset(authorizer);
     Mockito.reset(workflowExecutionFactory);
     Mockito.reset(orchestratorService);
   }
 
   @Test
   void createWorkflow() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     Dataset dataset = TestObjectFactory.createDataset("datasetName");
     workflow.setDatasetId(dataset.getDatasetId());
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
-    orchestratorService.createWorkflow(metisUserView, workflow.getDatasetId(), workflow, null);
+    orchestratorService.createWorkflow(workflow.getDatasetId(), workflow, null);
 
-    verify(authorizer, times(1))
-        .authorizeWriteExistingDatasetById(metisUserView, workflow.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
     InOrder inOrder = Mockito.inOrder(workflowDao);
     inOrder.verify(workflowDao, times(1)).workflowExistsForDataset(workflow.getDatasetId());
     inOrder.verify(workflowDao, times(1)).create(workflow);
@@ -188,27 +179,20 @@ class TestOrchestratorService {
 
   @Test
   void createWorkflowOrderOfPluginsNotAllowed() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     Dataset dataset = TestObjectFactory.createDataset("datasetName");
     workflow.setDatasetId(dataset.getDatasetId());
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
-    doThrow(PluginExecutionNotAllowed.class).when(validationUtils)
-        .validateWorkflowPlugins(workflow, null);
+    doThrow(PluginExecutionNotAllowed.class).when(validationUtils).validateWorkflowPlugins(workflow, null);
     assertThrows(PluginExecutionNotAllowed.class,
-        () -> orchestratorService
-            .createWorkflow(metisUserView, workflow.getDatasetId(), workflow, null));
+        () -> orchestratorService.createWorkflow(workflow.getDatasetId(), workflow, null));
 
-    verify(authorizer, times(1))
-        .authorizeWriteExistingDatasetById(metisUserView, workflow.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
     verify(workflowDao, times(1)).workflowExistsForDataset(workflow.getDatasetId());
     verifyNoMoreInteractions(workflowDao);
   }
 
   @Test
   void createWorkflow_AlreadyExists() {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     Dataset dataset = TestObjectFactory.createDataset("datasetName");
     workflow.setDatasetId(dataset.getDatasetId());
@@ -216,8 +200,7 @@ class TestOrchestratorService {
     when(workflowDao.workflowExistsForDataset(workflow.getDatasetId())).thenReturn(true);
 
     assertThrows(WorkflowAlreadyExistsException.class,
-        () -> orchestratorService
-            .createWorkflow(metisUserView, workflow.getDatasetId(), workflow, null));
+        () -> orchestratorService.createWorkflow(workflow.getDatasetId(), workflow, null));
 
     InOrder inOrder = Mockito.inOrder(workflowDao);
     inOrder.verify(workflowDao, times(1)).workflowExistsForDataset(workflow.getDatasetId());
@@ -226,16 +209,12 @@ class TestOrchestratorService {
 
   @Test
   void updateWorkflow() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     Dataset dataset = TestObjectFactory.createDataset("datasetName");
     workflow.setDatasetId(dataset.getDatasetId());
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(dataset.getDatasetId())).thenReturn(workflow);
-    orchestratorService.updateWorkflow(metisUserView, workflow.getDatasetId(), workflow, null);
-    verify(authorizer, times(1))
-        .authorizeWriteExistingDatasetById(metisUserView, workflow.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
+    orchestratorService.updateWorkflow(workflow.getDatasetId(), workflow, null);
     InOrder inOrder = Mockito.inOrder(workflowDao);
     inOrder.verify(workflowDao, times(1)).getWorkflow(dataset.getDatasetId());
     inOrder.verify(workflowDao, times(1)).update(workflow);
@@ -244,14 +223,12 @@ class TestOrchestratorService {
 
   @Test
   void updateUserWorkflow_NoUserWorkflowFound() {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     Dataset dataset = TestObjectFactory.createDataset("datasetName");
     workflow.setDatasetId(dataset.getDatasetId());
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
     assertThrows(NoWorkflowFoundException.class,
-        () -> orchestratorService
-            .updateWorkflow(metisUserView, workflow.getDatasetId(), workflow, null));
+        () -> orchestratorService.updateWorkflow(workflow.getDatasetId(), workflow, null));
     InOrder inOrder = Mockito.inOrder(workflowDao);
     inOrder.verify(workflowDao, times(1)).getWorkflow(anyString());
     inOrder.verifyNoMoreInteractions();
@@ -259,30 +236,19 @@ class TestOrchestratorService {
 
   @Test
   void deleteWorkflow() throws GenericMetisException {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    orchestratorService.deleteWorkflow(metisUserView, workflow.getDatasetId());
-    verify(authorizer, times(1))
-        .authorizeWriteExistingDatasetById(metisUserView, workflow.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
-    ArgumentCaptor<String> workflowDatasetIdArgumentCaptor = ArgumentCaptor
-        .forClass(String.class);
+    orchestratorService.deleteWorkflow(workflow.getDatasetId());
+    ArgumentCaptor<String> workflowDatasetIdArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(workflowDao, times(1)).deleteWorkflow(workflowDatasetIdArgumentCaptor.capture());
-    assertEquals(workflow.getDatasetId(),
-        workflowDatasetIdArgumentCaptor.getValue());
+    assertEquals(workflow.getDatasetId(), workflowDatasetIdArgumentCaptor.getValue());
   }
 
   @Test
   void getWorkflow() throws GenericMetisException {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
 
-    Workflow retrievedWorkflow = orchestratorService
-        .getWorkflow(metisUserView, workflow.getDatasetId());
-    verify(authorizer, times(1))
-        .authorizeReadExistingDatasetById(metisUserView, workflow.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
+    Workflow retrievedWorkflow = orchestratorService.getWorkflow(workflow.getDatasetId());
     assertSame(workflow, retrievedWorkflow);
   }
 
@@ -290,7 +256,6 @@ class TestOrchestratorService {
   void getWorkflowExecutionByExecutionId() throws GenericMetisException {
 
     // Create some objects
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String workflowExecutionId = "workflow execution ID";
     final WorkflowExecution workflowExecution = mock(WorkflowExecution.class);
     final String datasetId = "dataset ID";
@@ -298,36 +263,21 @@ class TestOrchestratorService {
 
     // Test the happy flow
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
-    when(authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId)).thenReturn(null);
-    assertSame(workflowExecution,
-        orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId));
+    assertSame(workflowExecution, orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId));
 
     // Test when the workflow execution does not exist
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
-    assertNull(
-        orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId));
+    assertNull(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId));
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
-    assertSame(workflowExecution,
-        orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId));
-
-    // Test when the user is not allowed
-    when(authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId))
-        .thenThrow(new UserUnauthorizedException(""));
-    assertThrows(UserUnauthorizedException.class, () -> orchestratorService
-        .getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId));
-    doReturn(null).when(authorizer).authorizeReadExistingDatasetById(metisUserView, datasetId);
-    assertSame(workflowExecution,
-        orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId));
+    assertSame(workflowExecution, orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId));
   }
 
   @Test
   void getWorkflowExecutionByExecutionId_NonExistingWorkflowExecution()
       throws GenericMetisException {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String workflowExecutionId = "workflow execution id";
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
-    orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId);
-    verifyNoMoreInteractions(authorizer);
+    orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId);
     InOrder inOrder = Mockito.inOrder(workflowExecutionDao);
     inOrder.verify(workflowExecutionDao, times(1)).getById(workflowExecutionId);
     inOrder.verifyNoMoreInteractions();
@@ -337,11 +287,9 @@ class TestOrchestratorService {
   void addWorkflowInQueueOfWorkflowExecutions() throws Exception {
 
     // Create the test objects
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     RLock rlock = mock(RLock.class);
@@ -359,35 +307,24 @@ class TestOrchestratorService {
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
 
     // Add the workflow
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
-    verify(authorizer, times(1))
-        .authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
-
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(dataset.getDatasetId(), null,
-            null,
-            0);
-    verifyNoMoreInteractions(authorizer);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(dataset.getDatasetId(), null, null, 0);
 
     // Verify the validation parameters
     final Map<ExecutablePluginType, AbstractExecutablePluginMetadata> pluginsByType = workflow
         .getMetisPluginsMetadata().stream().collect(Collectors
             .toMap(AbstractExecutablePluginMetadata::getExecutablePluginType, Function.identity(),
                 (m1, m2) -> m1));
-    final ValidationInternalPluginMetadata metadataInternal =
-        (ValidationInternalPluginMetadata) pluginsByType
-            .get(ExecutablePluginType.VALIDATION_INTERNAL);
+    final ValidationInternalPluginMetadata metadataInternal = (ValidationInternalPluginMetadata) pluginsByType.get(
+        ExecutablePluginType.VALIDATION_INTERNAL);
     assertEquals(workflowExecutionFactory.getValidationInternalProperties().getUrlOfSchemasZip(),
         metadataInternal.getUrlOfSchemasZip());
     assertEquals(workflowExecutionFactory.getValidationInternalProperties().getSchemaRootPath(),
         metadataInternal.getSchemaRootPath());
     assertEquals(workflowExecutionFactory.getValidationInternalProperties().getSchematronRootPath(),
         metadataInternal.getSchematronRootPath());
-    final ValidationExternalPluginMetadata metadataExternal =
-        (ValidationExternalPluginMetadata) pluginsByType
-            .get(ExecutablePluginType.VALIDATION_EXTERNAL);
+    final ValidationExternalPluginMetadata metadataExternal = (ValidationExternalPluginMetadata) pluginsByType.get(
+        ExecutablePluginType.VALIDATION_EXTERNAL);
     assertEquals(workflowExecutionFactory.getValidationExternalProperties().getUrlOfSchemasZip(),
         metadataExternal.getUrlOfSchemasZip());
     assertEquals(workflowExecutionFactory.getValidationExternalProperties().getSchemaRootPath(),
@@ -399,7 +336,6 @@ class TestOrchestratorService {
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_TransformationUsesCustomXslt()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     workflow.getMetisPluginsMetadata().forEach(abstractMetisPluginMetadata -> {
@@ -407,8 +343,7 @@ class TestOrchestratorService {
         ((TransformationPluginMetadata) abstractMetisPluginMetadata).setCustomXslt(true);
       }
     });
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(anyString())).thenReturn(rlock);
@@ -421,26 +356,22 @@ class TestOrchestratorService {
     WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
     workflowExecutionTest.setId(objectId);
     when(datasetXsltDao.getById(dataset.getXsltId().toString())).thenReturn(datasetXslt);
-    when(workflowExecutionDao.create(any(WorkflowExecution.class)))
-        .thenReturn(workflowExecutionTest);
+    when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(rlock).unlock();
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_AddHTTPHarvest()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     HTTPHarvestPluginMetadata httpHarvestPluginMetadata = new HTTPHarvestPluginMetadata();
     httpHarvestPluginMetadata.setUrl("http://harvest.url.org");
     httpHarvestPluginMetadata.setEnabled(true);
     workflow.getMetisPluginsMetadata().set(0, httpHarvestPluginMetadata);
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
@@ -449,29 +380,26 @@ class TestOrchestratorService {
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoHarvestPlugin() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     workflow.getMetisPluginsMetadata().remove(0);
 
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = (OaipmhHarvestPlugin) ExecutablePluginFactory
-        .createPlugin(new OaipmhHarvestPluginMetadata());
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = (OaipmhHarvestPlugin) ExecutablePluginFactory.createPlugin(
+        new OaipmhHarvestPluginMetadata());
     oaipmhHarvestPlugin.setPluginMetadata(new OaipmhHarvestPluginMetadata());
     oaipmhHarvestPlugin.setStartedDate(new Date());
     ExecutionProgress executionProgress = new ExecutionProgress();
     executionProgress.setProcessedRecords(5);
     oaipmhHarvestPlugin.setExecutionProgress(executionProgress);
-    when(validationUtils.validateWorkflowPlugins(workflow, null))
-        .thenReturn(new PluginWithExecutionId<>("execution id", oaipmhHarvestPlugin));
+    when(validationUtils.validateWorkflowPlugins(workflow, null)).thenReturn(
+        new PluginWithExecutionId<>("execution id", oaipmhHarvestPlugin));
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(anyString())).thenReturn(rlock);
     doNothing().when(rlock).lock();
@@ -482,35 +410,30 @@ class TestOrchestratorService {
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(rlock).unlock();
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoHarvestPlugin_NoProcessPlugin()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(validationUtils.validateWorkflowPlugins(workflow, null))
         .thenThrow(new PluginExecutionNotAllowed(""));
     assertThrows(PluginExecutionNotAllowed.class, () -> orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0));
+        .addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_EcloudDatasetAlreadyGenerated()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     dataset.setEcloudDatasetId("f525f64c-fea0-44bf-8c56-88f30962734c");
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
@@ -519,18 +442,15 @@ class TestOrchestratorService {
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
   }
 
   @Test
-  void addWorkflowInQueueOfWorkflowExecutions_EcloudDatasetAlreadyExistsInEcloud()
+  void addWorkflowInQueueOfWorkflowExecutions_DatasetAlreadyExistsInEcloud()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     when(datasetDao.checkAndCreateDatasetInEcloud(any(Dataset.class)))
         .thenReturn(UUID.randomUUID().toString());
@@ -544,21 +464,17 @@ class TestOrchestratorService {
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(rlock).unlock();
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_EcloudDatasetCreationFails()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
-    when(datasetDao.checkAndCreateDatasetInEcloud(any(Dataset.class)))
-        .thenReturn(UUID.randomUUID().toString());
+    when(datasetDao.checkAndCreateDatasetInEcloud(any(Dataset.class))).thenReturn(UUID.randomUUID().toString());
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
@@ -566,90 +482,77 @@ class TestOrchestratorService {
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
-    orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0);
+    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0, TestObjectFactory.USER_ID);
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoDatasetFoundException()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, datasetId))
-        .thenThrow(NoDatasetFoundException.class);
+    when(datasetDao.getDatasetOrThrow(datasetId)).thenThrow(new NoDatasetFoundException(datasetId));
     assertThrows(NoDatasetFoundException.class, () -> orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, datasetId, null, null, 0));
+        .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, null, 0, TestObjectFactory.USER_ID));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoDatasetFoundException_Unauthorized() {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     when(datasetDao.getDatasetByDatasetId(datasetId)).thenReturn(null);
-    assertThrows(NoDatasetFoundException.class, () -> orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(datasetId, null, null, 0));
+    assertThrows(NoDatasetFoundException.class,
+        () -> orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(datasetId, null, null, 0));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoWorkflowFoundException()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(dataset.getDatasetId())).thenReturn(null);
-    assertThrows(NoWorkflowFoundException.class, () -> orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0));
+    assertThrows(NoWorkflowFoundException.class,
+        () -> orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0,
+            TestObjectFactory.USER_ID));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_WorkflowIsEmpty() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = new Workflow();
     workflow.setDatasetId(dataset.getDatasetId());
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(dataset.getDatasetId())).thenReturn(workflow);
-    when(validationUtils.validateWorkflowPlugins(workflow, null))
-        .thenThrow(new BadContentException(""));
-    assertThrows(BadContentException.class, () -> orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0));
+    when(validationUtils.validateWorkflowPlugins(workflow, null)).thenThrow(new BadContentException(""));
+    assertThrows(BadContentException.class,
+        () -> orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0,
+            TestObjectFactory.USER_ID));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_WorkflowExecutionAlreadyExistsException()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(authorizer.authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId()))
-        .thenReturn(dataset);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(dataset.getDatasetId())).thenReturn(workflow);
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
-    when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId()))
-        .thenReturn(new ObjectId().toString());
-    assertThrows(WorkflowExecutionAlreadyExistsException.class, () -> orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(metisUserView, dataset.getDatasetId(), null, null, 0));
+    when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(new ObjectId().toString());
+    assertThrows(WorkflowExecutionAlreadyExistsException.class,
+        () -> orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, 0,
+            TestObjectFactory.USER_ID));
   }
 
   @Test
   void cancelWorkflowExecution() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(workflowExecution);
     doNothing().when(workflowExecutionDao).setCancellingState(workflowExecution, "");
-    orchestratorService.cancelWorkflowExecution(metisUserView, TestObjectFactory.EXECUTIONID);
-    verify(authorizer, times(1))
-        .authorizeWriteExistingDatasetById(metisUserView, workflowExecution.getDatasetId());
-    verifyNoMoreInteractions(authorizer);
+    orchestratorService.cancelWorkflowExecution(TestObjectFactory.EXECUTIONID, TestObjectFactory.USER_ID);
   }
 
   @Test
   void cancelWorkflowExecution_NoWorkflowExecutionFoundException() {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(null);
-    assertThrows(NoWorkflowExecutionFoundException.class, () -> orchestratorService
-        .cancelWorkflowExecution(metisUserView, TestObjectFactory.EXECUTIONID));
+    assertThrows(NoWorkflowExecutionFoundException.class,
+        () -> orchestratorService.cancelWorkflowExecution(TestObjectFactory.EXECUTIONID, TestObjectFactory.USER_ID));
     verifyNoMoreInteractions(workflowExecutorManager);
   }
 
@@ -662,32 +565,28 @@ class TestOrchestratorService {
   @Test
   void getLatestSuccessfulFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution_ProcessPlugin()
       throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     final AbstractExecutablePlugin oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
-    when(authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId)).thenReturn(null);
+
     doReturn(new PluginWithExecutionId<>("execution ID", oaipmhHarvestPlugin))
         .when(dataEvolutionUtils)
         .computePredecessorPlugin(ExecutablePluginType.VALIDATION_EXTERNAL, null, datasetId);
     assertSame(oaipmhHarvestPlugin, orchestratorService
-        .getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(metisUserView, datasetId,
+        .getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(datasetId,
             ExecutablePluginType.VALIDATION_EXTERNAL, null));
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
-    verifyNoMoreInteractions(authorizer);
   }
 
   @Test
   void getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution_PluginExecutionNotAllowed()
       throws NoDatasetFoundException, UserUnauthorizedException, PluginExecutionNotAllowed {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
-    when(authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId)).thenReturn(null);
+
     when(dataEvolutionUtils.computePredecessorPlugin(ExecutablePluginType.VALIDATION_EXTERNAL, null,
         datasetId)).thenThrow(new PluginExecutionNotAllowed(""));
     assertThrows(PluginExecutionNotAllowed.class, () -> orchestratorService
-        .getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(metisUserView,
-            datasetId, ExecutablePluginType.VALIDATION_EXTERNAL, null));
+        .getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(datasetId, ExecutablePluginType.VALIDATION_EXTERNAL,
+            null));
   }
 
   @Test
@@ -695,17 +594,16 @@ class TestOrchestratorService {
 
     // Define some constants
     final int nextPage = 1;
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     final Set<WorkflowStatus> workflowStatuses = Collections.singleton(WorkflowStatus.INQUEUE);
 
     // Check with specific dataset ID: should query only that dataset.
     doReturn(new ResultList<>(Collections.emptyList(), false)).when(workflowExecutionDao)
-        .getAllWorkflowExecutions(any(), any(), any(), anyBoolean(), anyInt(), anyInt(), anyBoolean());
-    orchestratorService.getAllWorkflowExecutions(metisUserView, datasetId, workflowStatuses,
+                                                              .getAllWorkflowExecutions(any(), any(), any(), anyBoolean(),
+                                                                  anyInt(), anyInt(), anyBoolean());
+    orchestratorService.getAllWorkflowExecutions(datasetId, workflowStatuses,
         DaoFieldNames.ID, false, nextPage);
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
-    verifyNoMoreInteractions(authorizer);
+
     verify(workflowExecutionDao, times(1)).getAllWorkflowExecutions(
         Collections.singleton(datasetId), workflowStatuses, DaoFieldNames.ID, false,
         nextPage, 1, false);
@@ -714,11 +612,10 @@ class TestOrchestratorService {
   }
 
   @Test
-  void getAllWorkflowExecutionsForRegularUser() throws GenericMetisException {
+  void getAllWorkflowExecutionsFor() throws GenericMetisException {
 
     // Define some constants
     final int nextPage = 1;
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final Set<String> datasetIds = new HashSet<>(Arrays.asList("A", "B", "C"));
     final List<Dataset> datasets = datasetIds.stream().map(id -> {
       final Dataset result = new Dataset();
@@ -729,14 +626,12 @@ class TestOrchestratorService {
 
     // Check for all datasets and for regular user: should query all datasets to which that user's
     // organization has rights.
-    when(datasetDao.getAllDatasetsByOrganizationId(metisUserView.getOrganizationId()))
-        .thenReturn(datasets);
+    when(datasetDao.getAllDatasetsByOrganizationId(ORGANIZATION_ID)).thenReturn(datasets);
     doReturn(new ResultList<>(Collections.emptyList(), false)).when(workflowExecutionDao)
-        .getAllWorkflowExecutions(any(), any(), any(), anyBoolean(), anyInt(), anyInt(), anyBoolean());
-    orchestratorService.getAllWorkflowExecutions(metisUserView, null, workflowStatuses,
+                                                              .getAllWorkflowExecutions(any(), any(), any(), anyBoolean(),
+                                                                  anyInt(), anyInt(), anyBoolean());
+    orchestratorService.getAllWorkflowExecutions(null, workflowStatuses,
         DaoFieldNames.CREATED_DATE, false, nextPage);
-    verify(authorizer, times(1)).authorizeReadAllDatasets(metisUserView);
-    verifyNoMoreInteractions(authorizer);
     verify(workflowExecutionDao, times(1)).getAllWorkflowExecutions(datasetIds,
         workflowStatuses, DaoFieldNames.CREATED_DATE, false, nextPage, 1, false);
     verify(workflowExecutionDao, times(1)).getWorkflowExecutionsPerRequest();
@@ -744,34 +639,11 @@ class TestOrchestratorService {
   }
 
   @Test
-  void getAllWorkflowExecutionsForAdmin() throws GenericMetisException {
-
-    // Define some constants
-    final int nextPage = 1;
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    final Set<WorkflowStatus> workflowStatuses = Collections.singleton(WorkflowStatus.INQUEUE);
-
-    // Check for all datasets and for admin user: should query all datasets.
-    doReturn(AccountRole.METIS_ADMIN).when(metisUserView).getAccountRole();
-    doReturn(new ResultList<>(Collections.emptyList(), false)).when(workflowExecutionDao)
-        .getAllWorkflowExecutions(any(), any(), any(), anyBoolean(), anyInt(), anyInt(), anyBoolean());
-    orchestratorService.getAllWorkflowExecutions(metisUserView, null, workflowStatuses,
-        DaoFieldNames.CREATED_DATE, true, nextPage);
-    verify(authorizer, times(1)).authorizeReadAllDatasets(metisUserView);
-    verifyNoMoreInteractions(authorizer);
-    verify(workflowExecutionDao, times(1)).getAllWorkflowExecutions(isNull(), eq(workflowStatuses),
-        eq(DaoFieldNames.CREATED_DATE), eq(true), eq(nextPage), eq(1), eq(false));
-    verify(workflowExecutionDao, times(1)).getWorkflowExecutionsPerRequest();
-    verifyNoMoreInteractions(workflowExecutionDao);
-  }
-
-  @Test
-  void getWorkflowExecutionOverviewForRegularUser() throws GenericMetisException {
+  void getWorkflowExecutionOverview() throws GenericMetisException {
 
     // Define some constants
     final int nextPage = 1;
     final int pageCount = 2;
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final Set<String> datasetIds = new HashSet<>(Arrays.asList("A", "B", "C"));
     final List<Dataset> datasets = datasetIds.stream().map(id -> {
       final Dataset result = new Dataset();
@@ -782,17 +654,14 @@ class TestOrchestratorService {
 
     // Check for all datasets and for regular user: should query all datasets to which that user's
     // organization has rights.
-    when(datasetDao.getAllDatasetsByOrganizationId(metisUserView.getOrganizationId()))
-        .thenReturn(datasets);
+    when(datasetDao.getAllDatasetsByOrganizationId(ORGANIZATION_ID)).thenReturn(datasets);
     when(workflowExecutionDao
         .getWorkflowExecutionsOverview(eq(datasetIds), isNull(), isNull(), isNull(), isNull(),
             eq(nextPage), eq(pageCount)))
         .thenReturn(new ResultList<>(data, false));
     final List<ExecutionAndDatasetView> result = orchestratorService
-        .getWorkflowExecutionsOverview(metisUserView, null, null, null, null, nextPage, pageCount)
+        .getWorkflowExecutionsOverview(null, null, null, null, nextPage, pageCount)
         .getResults();
-    verify(authorizer, times(1)).authorizeReadAllDatasets(metisUserView);
-    verifyNoMoreInteractions(authorizer);
     verify(workflowExecutionDao, times(1))
         .getWorkflowExecutionsOverview(eq(datasetIds), isNull(), isNull(), isNull(), isNull(),
             eq(nextPage), eq(pageCount));
@@ -801,67 +670,31 @@ class TestOrchestratorService {
     assertEquals(data.size(), result.size());
     assertEquals(data.stream().map(ExecutionDatasetPair::getDataset).map(Dataset::getDatasetId).toList(),
         result.stream().map(ExecutionAndDatasetView::getDataset)
-            .map(DatasetSummaryView::getDatasetId).toList());
+              .map(DatasetSummaryView::getDatasetId).toList());
     assertEquals(data.stream().map(ExecutionDatasetPair::getExecution).map(WorkflowExecution::getId)
-            .map(ObjectId::toString).toList(),
+                     .map(ObjectId::toString).toList(),
         result.stream().map(ExecutionAndDatasetView::getExecution)
-            .map(ExecutionSummaryView::getId).toList());
-  }
-
-  @Test
-  void getWorkflowExecutionOverviewForAdmin() throws GenericMetisException {
-
-    // Define some constants
-    final int nextPage = 1;
-    final int pageCount = 2;
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    final List<ExecutionDatasetPair> data = TestObjectFactory.createExecutionsWithDatasets(4);
-
-    // Check for all datasets and for admin user: should query all datasets.
-    doReturn(AccountRole.METIS_ADMIN).when(metisUserView).getAccountRole();
-    when(workflowExecutionDao
-        .getWorkflowExecutionsOverview(isNull(), isNull(), isNull(), isNull(), isNull(),
-            eq(nextPage), eq(pageCount)))
-        .thenReturn(new ResultList<>(data, false));
-    final List<ExecutionAndDatasetView> result = orchestratorService
-        .getWorkflowExecutionsOverview(metisUserView, null, null, null, null, nextPage, pageCount)
-        .getResults();
-    verify(authorizer, times(1)).authorizeReadAllDatasets(metisUserView);
-    verifyNoMoreInteractions(authorizer);
-    verify(workflowExecutionDao, times(1))
-        .getWorkflowExecutionsOverview(isNull(), isNull(), isNull(), isNull(), isNull(),
-            eq(nextPage), eq(pageCount));
-    verify(workflowExecutionDao, times(1)).getWorkflowExecutionsPerRequest();
-    verifyNoMoreInteractions(workflowExecutionDao);
-    assertEquals(data.size(), result.size());
-    assertEquals(data.stream().map(ExecutionDatasetPair::getDataset).map(Dataset::getDatasetId).toList(),
-        result.stream().map(ExecutionAndDatasetView::getDataset)
-            .map(DatasetSummaryView::getDatasetId).toList());
-    assertEquals(data.stream().map(ExecutionDatasetPair::getExecution).map(WorkflowExecution::getId)
-            .map(ObjectId::toString).toList(),
-        result.stream().map(ExecutionAndDatasetView::getExecution)
-            .map(ExecutionSummaryView::getId).toList());
+              .map(ExecutionSummaryView::getId).toList());
   }
 
   @Test
   void getDatasetExecutionInformation() throws GenericMetisException {
     ExecutionProgress executionProgress = getExecutionProgress(100, 20);
-    final Date longEnoughToBeValidDate = DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINS + 3),
+    final Date longEnoughToBeValidDate = DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 3),
         TimeUnit.MINUTES);
-    final Date notLongEnoughToBeValidDate = DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINS + 2),
+    final Date notLongEnoughToBeValidDate = DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 2),
         TimeUnit.MINUTES);
-
 
     // Create preview plugin
-    AbstractExecutablePlugin<IndexToPreviewPluginMetadata> previewPlugin = ExecutablePluginFactory
-        .createPlugin(new IndexToPreviewPluginMetadata());
+    AbstractExecutablePlugin<IndexToPreviewPluginMetadata> previewPlugin = ExecutablePluginFactory.createPlugin(
+        new IndexToPreviewPluginMetadata());
     previewPlugin.setFinishedDate(longEnoughToBeValidDate);
     previewPlugin.setDataStatus(null); // Is default status, means valid.
     previewPlugin.setExecutionProgress(executionProgress);
 
     // Create second publish plugin
-    AbstractExecutablePlugin<IndexToPublishPluginMetadata> lastPublishPlugin = ExecutablePluginFactory
-        .createPlugin(new IndexToPublishPluginMetadata());
+    AbstractExecutablePlugin<IndexToPublishPluginMetadata> lastPublishPlugin = ExecutablePluginFactory.createPlugin(
+        new IndexToPublishPluginMetadata());
     lastPublishPlugin.setFinishedDate(notLongEnoughToBeValidDate);
     lastPublishPlugin.setDataStatus(null); // Is default status, means valid.
     lastPublishPlugin.setExecutionProgress(executionProgress);
@@ -889,7 +722,7 @@ class TestOrchestratorService {
     AbstractExecutablePlugin oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
     oaipmhHarvestPlugin.setFinishedDate(
-        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINS + 5),
+        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 5),
             TimeUnit.MINUTES));
     oaipmhHarvestPlugin.setDataStatus(null); // Is default status, means valid.
     oaipmhHarvestPlugin.setExecutionProgress(executionProgress);
@@ -898,7 +731,7 @@ class TestOrchestratorService {
     AbstractExecutablePlugin firstPublishPlugin = ExecutablePluginFactory
         .createPlugin(new IndexToPublishPluginMetadata());
     firstPublishPlugin.setFinishedDate(
-        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINS + 4),
+        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 4),
             TimeUnit.MINUTES));
     firstPublishPlugin.setDataStatus(null); // Is default status, means valid.
     firstPublishPlugin.setExecutionProgress(executionProgress);
@@ -920,7 +753,7 @@ class TestOrchestratorService {
     AbstractMetisPlugin reindexToPreviewPlugin = new ReindexToPreviewPlugin(
         new ReindexToPreviewPluginMetadata());
     reindexToPreviewPlugin.setFinishedDate(
-        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINS + 1),
+        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 1),
             TimeUnit.MINUTES));
     final WorkflowExecution executionWithReindexToPreview = TestObjectFactory
         .createWorkflowExecutionObject();
@@ -938,7 +771,6 @@ class TestOrchestratorService {
     workflowExecutionObject.setMetisPlugins(metisPlugins);
 
     // Mock the workflow execution
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(datasetId,
         EnumSet.of(ExecutablePluginType.HTTP_HARVEST, ExecutablePluginType.OAIPMH_HARVEST), false))
@@ -952,28 +784,20 @@ class TestOrchestratorService {
         .thenReturn(new PluginWithExecutionId<>("", previewPlugin));
     when(workflowExecutionDao.getLatestSuccessfulPlugin(datasetId,
         EnumSet.of(PluginType.PREVIEW, PluginType.REINDEX_TO_PREVIEW)))
-        .thenReturn(
-            new PluginWithExecutionId<>(executionWithReindexToPreview.getId().toString(),
-                reindexToPreviewPlugin));
+        .thenReturn(new PluginWithExecutionId<>(executionWithReindexToPreview.getId().toString(), reindexToPreviewPlugin));
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(datasetId,
         EnumSet.of(ExecutablePluginType.PUBLISH), false))
         .thenReturn(new PluginWithExecutionId<>("", lastPublishPlugin));
     when(workflowExecutionDao.getLatestSuccessfulPlugin(datasetId,
-        EnumSet.of(PluginType.PUBLISH, PluginType.REINDEX_TO_PUBLISH)))
-        .thenReturn(new PluginWithExecutionId<>(
-            executionWithLastPublishPlugin.getId().toString(), lastPublishPlugin));
+        EnumSet.of(PluginType.PUBLISH, PluginType.REINDEX_TO_PUBLISH))).thenReturn(
+        new PluginWithExecutionId<>(executionWithLastPublishPlugin.getId().toString(), lastPublishPlugin));
     if (enableRunningPublish) {
-      when(workflowExecutionDao.getRunningOrInQueueExecution(datasetId))
-          .thenReturn(workflowExecutionObject);
+      when(workflowExecutionDao.getRunningOrInQueueExecution(datasetId)).thenReturn(workflowExecutionObject);
     } else {
       when(workflowExecutionDao.getRunningOrInQueueExecution(datasetId)).thenReturn(null);
     }
 
-    DatasetExecutionInformation executionInfo = orchestratorService
-        .getDatasetExecutionInformation(metisUserView, datasetId);
-
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
-    verifyNoMoreInteractions(authorizer);
+    DatasetExecutionInformation executionInfo = orchestratorService.getDatasetExecutionInformation(datasetId);
 
     assertEquals(oaipmhHarvestPlugin.getFinishedDate(), executionInfo.getLastHarvestedDate());
     assertEquals(reindexToPreviewPlugin.getFinishedDate(), executionInfo.getLastPreviewDate());
@@ -981,14 +805,13 @@ class TestOrchestratorService {
     assertEquals(lastPublishPlugin.getFinishedDate(), executionInfo.getLastPublishedDate());
 
     assertEquals(
-        oaipmhHarvestPlugin.getExecutionProgress().getProcessedRecords() - oaipmhHarvestPlugin
-            .getExecutionProgress().getErrors(), executionInfo.getLastHarvestedRecords());
+        oaipmhHarvestPlugin.getExecutionProgress().getProcessedRecords() - oaipmhHarvestPlugin.getExecutionProgress().getErrors(),
+        executionInfo.getLastHarvestedRecords());
+    assertEquals(previewPlugin.getExecutionProgress().getProcessedRecords() - previewPlugin.getExecutionProgress().getErrors(),
+        executionInfo.getLastPreviewRecords());
     assertEquals(
-        previewPlugin.getExecutionProgress().getProcessedRecords() - previewPlugin
-            .getExecutionProgress().getErrors(), executionInfo.getLastPreviewRecords());
-    assertEquals(
-        lastPublishPlugin.getExecutionProgress().getProcessedRecords() - lastPublishPlugin
-            .getExecutionProgress().getErrors(), executionInfo.getLastPublishedRecords());
+        lastPublishPlugin.getExecutionProgress().getProcessedRecords() - lastPublishPlugin.getExecutionProgress().getErrors(),
+        executionInfo.getLastPublishedRecords());
 
     assertEquals(previewReadyForViewing, executionInfo.isLastPreviewRecordsReadyForViewing());
     assertEquals(publishReadyForViewing, executionInfo.isLastPublishedRecordsReadyForViewing());
@@ -1028,23 +851,21 @@ class TestOrchestratorService {
     when(plugin4.getFinishedDate()).thenReturn(new Date(4));
 
     // Create other objects
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = "dataset ID";
-    final WorkflowExecution execution1 = createWorkflowExecution(metisUserView, datasetId, plugin1,
+    final WorkflowExecution execution1 = createWorkflowExecution(datasetId, plugin1,
         plugin2);
     execution1.setStartedDate(new Date(12345));
-    final WorkflowExecution execution2 = createWorkflowExecution(metisUserView, datasetId, plugin3);
-    final WorkflowExecution execution3 = createWorkflowExecution(metisUserView, datasetId, plugin4);
+    final WorkflowExecution execution2 = createWorkflowExecution(datasetId, plugin3);
+    final WorkflowExecution execution3 = createWorkflowExecution(datasetId, plugin4);
 
     // Mock the dao and call the method.
     doReturn(new ResultList<>(List.of(execution1, execution2, execution3), false))
         .when(workflowExecutionDao).getAllWorkflowExecutions(any(), any(), any(), anyBoolean(),
             anyInt(), any(), anyBoolean());
-    final ExecutionHistory result = orchestratorService.getDatasetExecutionHistory(metisUserView, datasetId);
+    final ExecutionHistory result = orchestratorService.getDatasetExecutionHistory(datasetId);
 
     // Verify the interactions
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
-    verifyNoMoreInteractions(authorizer);
+
     verify(workflowExecutionDao, times(1)).getAllWorkflowExecutions(
         eq(Collections.singleton(datasetId)), isNull(), eq(DaoFieldNames.STARTED_DATE), eq(false),
         eq(0), isNull(), eq(false));
@@ -1082,15 +903,14 @@ class TestOrchestratorService {
     when(plugin4.getFinishedDate()).thenReturn(new Date(4));
 
     // Create other objects
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = "dataset ID";
-    final WorkflowExecution execution = createWorkflowExecution(metisUserView, datasetId, plugin1,
+    final WorkflowExecution execution = createWorkflowExecution(datasetId, plugin1,
         plugin2, plugin3, plugin4);
     final String workflowExecutionId = execution.getId().toString();
 
     // Test happy flow
     final PluginsWithDataAvailability result = orchestratorService
-        .getExecutablePluginsWithDataAvailability(metisUserView, workflowExecutionId);
+        .getExecutablePluginsWithDataAvailability(workflowExecutionId);
     assertNotNull(result);
     assertNotNull(result.getPlugins());
     assertEquals(1, result.getPlugins().size());
@@ -1098,77 +918,67 @@ class TestOrchestratorService {
     assertTrue(result.getPlugins().getFirst().isCanDisplayRawXml());
 
     // Test when the workflow execution does not exist
-    doReturn(null).when(orchestratorService)
-        .getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId);
-    assertThrows(NoWorkflowExecutionFoundException.class, () -> orchestratorService
-        .getExecutablePluginsWithDataAvailability(metisUserView, workflowExecutionId));
+    doReturn(null).when(orchestratorService).getWorkflowExecutionByExecutionId(workflowExecutionId);
+    assertThrows(NoWorkflowExecutionFoundException.class,
+        () -> orchestratorService.getExecutablePluginsWithDataAvailability(workflowExecutionId));
 
     // Test when the user is not allowed
-    when(orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId))
+    when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId))
         .thenAnswer(invocation -> {
           throw new UserUnauthorizedException("");
         });
     assertThrows(UserUnauthorizedException.class, () -> orchestratorService
-        .getExecutablePluginsWithDataAvailability(metisUserView, workflowExecutionId));
+        .getExecutablePluginsWithDataAvailability(workflowExecutionId));
   }
 
   @Test
   void testGetRecordEvolutionForVersionExceptions() throws GenericMetisException {
 
     // Create some objects
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String workflowExecutionId = "workflow execution ID";
     final PluginType pluginType = PluginType.MEDIA_PROCESS;
     final WorkflowExecution workflowExecution = mock(WorkflowExecution.class);
 
     // Test when the workflow execution does not exist
-    when(orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId))
-        .thenReturn(null);
+    when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId)).thenReturn(null);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> orchestratorService
-        .getRecordEvolutionForVersion(metisUserView, workflowExecutionId, pluginType));
+        .getRecordEvolutionForVersion(workflowExecutionId, pluginType));
 
     // Test when the user is not allowed
-    when(orchestratorService.getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId))
+    when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId))
         .thenAnswer(invocation -> {
           throw new UserUnauthorizedException("");
         });
-    assertThrows(UserUnauthorizedException.class, () -> orchestratorService
-        .getRecordEvolutionForVersion(metisUserView, workflowExecutionId, pluginType));
+    assertThrows(UserUnauthorizedException.class,
+        () -> orchestratorService.getRecordEvolutionForVersion(workflowExecutionId, pluginType));
 
     // Test when the workflow execution does not have a plugin of the right type
-    doReturn(workflowExecution).when(orchestratorService)
-        .getWorkflowExecutionByExecutionId(metisUserView, workflowExecutionId);
+    doReturn(workflowExecution).when(orchestratorService).getWorkflowExecutionByExecutionId(workflowExecutionId);
     when(workflowExecution.getMetisPluginWithType(pluginType)).thenReturn(Optional.empty());
-    assertThrows(NoWorkflowExecutionFoundException.class, () -> orchestratorService
-        .getRecordEvolutionForVersion(metisUserView, workflowExecutionId, pluginType));
+    assertThrows(NoWorkflowExecutionFoundException.class,
+        () -> orchestratorService.getRecordEvolutionForVersion(workflowExecutionId, pluginType));
   }
 
   @Test
   void testGetRecordEvolutionForVersionHappyFlow() throws GenericMetisException {
 
     // Create two workflow executions with three plugins and link them together
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     final String datasetId = "dataset ID";
-    final AbstractExecutablePlugin plugin1 = createMetisPlugin(ExecutablePluginType.OAIPMH_HARVEST,
-        new Date(1));
-    final AbstractExecutablePlugin plugin2 = createMetisPlugin(ExecutablePluginType.TRANSFORMATION,
-        new Date(2));
-    final AbstractExecutablePlugin plugin3 = createMetisPlugin(ExecutablePluginType.MEDIA_PROCESS,
-        new Date(3));
-    final WorkflowExecution execution1 = createWorkflowExecution(metisUserView, datasetId, plugin1);
-    final WorkflowExecution execution2 = createWorkflowExecution(metisUserView, datasetId, plugin2,
-        plugin3);
+    final AbstractExecutablePlugin plugin1 = createMetisPlugin(ExecutablePluginType.OAIPMH_HARVEST, new Date(1));
+    final AbstractExecutablePlugin plugin2 = createMetisPlugin(ExecutablePluginType.TRANSFORMATION, new Date(2));
+    final AbstractExecutablePlugin plugin3 = createMetisPlugin(ExecutablePluginType.MEDIA_PROCESS, new Date(3));
+    final WorkflowExecution execution1 = createWorkflowExecution(datasetId, plugin1);
+    final WorkflowExecution execution2 = createWorkflowExecution(datasetId, plugin2, plugin3);
 
     // Mock the methods in workflow utils.
-    final List<Pair<AbstractExecutablePlugin, WorkflowExecution>> evolutionWithContent = Arrays
-        .asList(
-            ImmutablePair.of(plugin1, execution1), ImmutablePair.of(plugin2, execution2));
+    final List<Pair<AbstractExecutablePlugin, WorkflowExecution>> evolutionWithContent = Arrays.asList(
+        ImmutablePair.of(plugin1, execution1), ImmutablePair.of(plugin2, execution2));
     doReturn(evolutionWithContent).when(dataEvolutionUtils).compileVersionEvolution(plugin3, execution2);
     doReturn(new ArrayList<>()).when(dataEvolutionUtils).compileVersionEvolution(plugin1, execution1);
 
     // Execute the call and expect an evolution with content.
-    final VersionEvolution resultForThree = orchestratorService.getRecordEvolutionForVersion(
-        metisUserView, execution2.getId().toString(), plugin3.getPluginType());
+    final VersionEvolution resultForThree = orchestratorService.getRecordEvolutionForVersion(execution2.getId().toString(),
+        plugin3.getPluginType());
     assertNotNull(resultForThree);
     assertNotNull(resultForThree.getEvolutionSteps());
     assertEquals(2, resultForThree.getEvolutionSteps().size());
@@ -1177,35 +987,32 @@ class TestOrchestratorService {
 
     // Execute the call and expect an evolution without content.
     final VersionEvolution resultForOne = orchestratorService.getRecordEvolutionForVersion(
-        metisUserView, execution1.getId().toString(), plugin1.getPluginType());
+        execution1.getId().toString(), plugin1.getPluginType());
     assertNotNull(resultForOne);
     assertNotNull(resultForOne.getEvolutionSteps());
     assertTrue(resultForOne.getEvolutionSteps().isEmpty());
   }
 
   private void assertEvolutionStepEquals(VersionEvolutionStep evolutionStep,
-                                         WorkflowExecution execution, AbstractExecutablePlugin<?> plugin) {
+      WorkflowExecution execution, AbstractExecutablePlugin<?> plugin) {
     assertNotNull(evolutionStep);
     assertEquals(plugin.getFinishedDate(), evolutionStep.getFinishedTime());
-    assertEquals(plugin.getPluginMetadata().getExecutablePluginType(),
-        evolutionStep.getPluginType());
+    assertEquals(plugin.getPluginMetadata().getExecutablePluginType(), evolutionStep.getPluginType());
     assertEquals(execution.getId().toString(), evolutionStep.getWorkflowExecutionId());
   }
 
-  private WorkflowExecution createWorkflowExecution(MetisUserView metisUserView, String datasetId,
-                                                    AbstractMetisPlugin... plugins) throws GenericMetisException {
+  private WorkflowExecution createWorkflowExecution(String datasetId,
+      AbstractMetisPlugin... plugins) throws GenericMetisException {
     final WorkflowExecution result = new WorkflowExecution();
     result.setId(new ObjectId());
     result.setDatasetId(datasetId);
     result.setMetisPlugins(Arrays.asList(plugins));
-    when(orchestratorService.getWorkflowExecutionByExecutionId(metisUserView,
-        result.getId().toString())).thenReturn(result);
+    when(orchestratorService.getWorkflowExecutionByExecutionId(result.getId().toString())).thenReturn(result);
     return result;
   }
 
   private AbstractExecutablePlugin createMetisPlugin(ExecutablePluginType type, Date date) {
-    AbstractExecutablePlugin<AbstractExecutablePluginMetadata> result = mock(
-        AbstractExecutablePlugin.class);
+    AbstractExecutablePlugin<AbstractExecutablePluginMetadata> result = mock(AbstractExecutablePlugin.class);
     AbstractExecutablePluginMetadata metadata = mock(AbstractExecutablePluginMetadata.class);
     when(metadata.getExecutablePluginType()).thenReturn(type);
     when(result.getPluginType()).thenReturn(type.toPluginType());

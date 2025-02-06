@@ -49,7 +49,7 @@ import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
-import eu.europeana.metis.core.service.SecuredOrchestratorService;
+import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -84,7 +84,7 @@ import org.springframework.web.context.WebApplicationContext;
 class TestOrchestratorController {
 
   @MockBean
-  private SecuredOrchestratorService securedOrchestratorService;
+  private OrchestratorService orchestratorService;
 
   @MockBean
   private JwtDecoder jwtDecoder;
@@ -114,7 +114,7 @@ class TestOrchestratorController {
 
   @BeforeEach
   void cleanUp() {
-    reset(securedOrchestratorService);
+    reset(orchestratorService);
     reset(jwtDecoder);
   }
 
@@ -129,7 +129,7 @@ class TestOrchestratorController {
            .andExpect(status().isCreated())
            .andExpect(content().string(""));
 
-    verify(securedOrchestratorService, times(1)).createWorkflow(anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).createWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
@@ -140,7 +140,7 @@ class TestOrchestratorController {
                .content(TestUtils.convertObjectToJsonBytes(workflow)))
            .andExpect(status().isUnauthorized());
 
-    verify(securedOrchestratorService, never()).createWorkflow(anyString(), any(Workflow.class), any());
+    verify(orchestratorService, never()).createWorkflow(anyString(), any(Workflow.class), any());
   }
 
   @Test
@@ -153,14 +153,14 @@ class TestOrchestratorController {
                .content(TestUtils.convertObjectToJsonBytes(workflow)))
            .andExpect(status().isForbidden());
 
-    verify(securedOrchestratorService, never()).createWorkflow(anyString(), any(Workflow.class), any());
+    verify(orchestratorService, never()).createWorkflow(anyString(), any(Workflow.class), any());
   }
 
   @Test
   void createWorkflow_WorkflowAlreadyExistsException() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    doThrow(new WorkflowAlreadyExistsException("Some error")).when(securedOrchestratorService)
+    doThrow(new WorkflowAlreadyExistsException("Some error")).when(orchestratorService)
                                                              .createWorkflow(anyString(), any(Workflow.class), any());
     mockMvc.perform(post("/secured" + ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -169,7 +169,7 @@ class TestOrchestratorController {
            .andExpect(status().isConflict())
            .andExpect(jsonPath("$.errorMessage", is("Some error")));
 
-    verify(securedOrchestratorService, times(1)).createWorkflow(anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).createWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
@@ -184,7 +184,7 @@ class TestOrchestratorController {
            .andExpect(status().isNoContent())
            .andExpect(content().string(""));
 
-    verify(securedOrchestratorService, times(1)).updateWorkflow(anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).updateWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
@@ -212,7 +212,7 @@ class TestOrchestratorController {
   void updateWorkflow_NoWorkflowFoundException() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    doThrow(new NoWorkflowFoundException("Some error")).when(securedOrchestratorService)
+    doThrow(new NoWorkflowFoundException("Some error")).when(orchestratorService)
                                                        .updateWorkflow(anyString(), any(Workflow.class), isNull());
     mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
                Integer.toString(TestObjectFactory.DATASETID))
@@ -222,7 +222,7 @@ class TestOrchestratorController {
            .andExpect(status().isNotFound())
            .andExpect(jsonPath("$.errorMessage", is("Some error")));
 
-    verify(securedOrchestratorService, times(1)).updateWorkflow(anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).updateWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
@@ -235,7 +235,7 @@ class TestOrchestratorController {
                    .content(""))
            .andExpect(status().isNoContent())
            .andExpect(content().string(""));
-    verify(securedOrchestratorService, times(1)).deleteWorkflow(anyString());
+    verify(orchestratorService, times(1)).deleteWorkflow(anyString());
   }
 
   @Test
@@ -261,7 +261,7 @@ class TestOrchestratorController {
   void getWorkflow() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(securedOrchestratorService.getWorkflow(anyString())).thenReturn(workflow);
+    when(orchestratorService.getWorkflow(anyString())).thenReturn(workflow);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
                Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -270,7 +270,7 @@ class TestOrchestratorController {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.datasetId", is(workflow.getDatasetId())));
 
-    verify(securedOrchestratorService, times(1)).getWorkflow(anyString());
+    verify(orchestratorService, times(1)).getWorkflow(anyString());
   }
 
   @Test
@@ -278,7 +278,7 @@ class TestOrchestratorController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(
-        securedOrchestratorService.addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyInt(), anyString()))
+        orchestratorService.addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyInt(), anyString()))
         .thenReturn(workflowExecution);
     mockMvc.perform(
                post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
@@ -314,7 +314,7 @@ class TestOrchestratorController {
   void addWorkflowInQueueOfWorkflowExecutions_WorkflowExecutionAlreadyExistsException() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     doThrow(new WorkflowExecutionAlreadyExistsException("Some error"))
-        .when(securedOrchestratorService)
+        .when(orchestratorService)
         .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyInt(), anyString());
     mockMvc.perform(
                post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
@@ -331,7 +331,7 @@ class TestOrchestratorController {
       throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     doThrow(new NoDatasetFoundException("Some error"))
-        .when(securedOrchestratorService)
+        .when(orchestratorService)
         .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyInt(), anyString());
     mockMvc.perform(
                post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
@@ -348,7 +348,7 @@ class TestOrchestratorController {
       throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     doThrow(new NoWorkflowFoundException("Some error"))
-        .when(securedOrchestratorService)
+        .when(orchestratorService)
         .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyInt(), anyString());
     mockMvc.perform(
                post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
@@ -363,7 +363,7 @@ class TestOrchestratorController {
   @Test
   void cancelWorkflowExecution() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    doNothing().when(securedOrchestratorService).cancelWorkflowExecution(anyString(), anyString());
+    doNothing().when(orchestratorService).cancelWorkflowExecution(anyString(), anyString());
     mockMvc.perform(
                delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, TestObjectFactory.EXECUTIONID)
                    .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -396,7 +396,7 @@ class TestOrchestratorController {
   void cancelWorkflowExecution_NoWorkflowExecutionFoundException() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     doThrow(new NoWorkflowExecutionFoundException("Some error"))
-        .when(securedOrchestratorService).cancelWorkflowExecution(anyString(), anyString());
+        .when(orchestratorService).cancelWorkflowExecution(anyString(), anyString());
     mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
                TestObjectFactory.EXECUTIONID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -412,7 +412,7 @@ class TestOrchestratorController {
     WorkflowExecution workflowExecution = TestObjectFactory
         .createWorkflowExecutionObject();
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
-    when(securedOrchestratorService.getWorkflowExecutionByExecutionId(anyString())).thenReturn(workflowExecution);
+    when(orchestratorService.getWorkflowExecutionByExecutionId(anyString())).thenReturn(workflowExecution);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
                TestObjectFactory.EXECUTIONID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -427,7 +427,7 @@ class TestOrchestratorController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     AbstractExecutablePlugin plugin = ExecutablePluginFactory.createPlugin(new ValidationExternalPluginMetadata());
     plugin.setId("validation_external_id");
-    when(securedOrchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
+    when(orchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
         Integer.toString(TestObjectFactory.DATASETID),
         ExecutablePluginType.VALIDATION_EXTERNAL,
         null))
@@ -448,7 +448,7 @@ class TestOrchestratorController {
   void getLatestFinishedPluginWorkflowExecutionByDatasetIdIfPluginTypeAllowedForExecution_HarvestingPlugin()
       throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    when(securedOrchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
+    when(orchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
         Integer.toString(TestObjectFactory.DATASETID), ExecutablePluginType.OAIPMH_HARVEST, null))
         .thenReturn(null);
 
@@ -471,7 +471,7 @@ class TestOrchestratorController {
     datasetExecutionInformation.setFirstPublishedDate(new Date(2000));
     datasetExecutionInformation.setLastPublishedDate(new Date(3000));
     datasetExecutionInformation.setLastPublishedRecords(100);
-    when(securedOrchestratorService
+    when(orchestratorService
         .getDatasetExecutionInformation(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn(datasetExecutionInformation);
 
@@ -500,10 +500,10 @@ class TestOrchestratorController {
     ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
-        securedOrchestratorService.getWorkflowExecutionsPerRequest(), 0);
+        orchestratorService.getWorkflowExecutionsPerRequest(), 0);
 
-    when(securedOrchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(listSize);
-    when(securedOrchestratorService.getAllWorkflowExecutions(anyString(),
+    when(orchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(listSize);
+    when(orchestratorService.getAllWorkflowExecutions(anyString(),
         ArgumentMatchers.anySet(), any(DaoFieldNames.class), anyBoolean(), anyInt()))
         .thenReturn(listOfWorkflowExecutions);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID,
@@ -542,10 +542,10 @@ class TestOrchestratorController {
     ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
-        securedOrchestratorService.getWorkflowExecutionsPerRequest(), 0);
+        orchestratorService.getWorkflowExecutionsPerRequest(), 0);
 
-    when(securedOrchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(listSize);
-    when(securedOrchestratorService.getAllWorkflowExecutions(isNull(),
+    when(orchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(listSize);
+    when(orchestratorService.getAllWorkflowExecutions(isNull(),
         ArgumentMatchers.anySet(), any(DaoFieldNames.class), anyBoolean(), anyInt()))
         .thenReturn(listOfWorkflowExecutions);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS)
@@ -584,10 +584,10 @@ class TestOrchestratorController {
     final ResponseListWrapper<ExecutionAndDatasetView> listOfWorkflowExecutionAndDatasetViews = new ResponseListWrapper<>();
     listOfWorkflowExecutionAndDatasetViews.setResultsAndLastPage(
         TestObjectFactory.createListOfExecutionOverviews(pageSize * pageCount),
-        securedOrchestratorService.getWorkflowExecutionsPerRequest(), nextPage, pageCount);
+        orchestratorService.getWorkflowExecutionsPerRequest(), nextPage, pageCount);
 
-    when(securedOrchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(pageSize);
-    when(securedOrchestratorService
+    when(orchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(pageSize);
+    when(orchestratorService
         .getWorkflowExecutionsOverview(isNull(), isNull(), isNull(), isNull(),
             eq(nextPage), eq(pageCount)))
         .thenReturn(listOfWorkflowExecutionAndDatasetViews);
@@ -633,7 +633,7 @@ class TestOrchestratorController {
     resultNonEmpty.setExecutions(Arrays.asList(execution1, execution2));
 
     // Test happy flow with non-empty evolution
-    when(securedOrchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenReturn(resultNonEmpty);
+    when(orchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenReturn(resultNonEmpty);
     mockMvc.perform(
                get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
                    .header("Authorization", BEARER + MOCK_VALID_TOKEN))
@@ -647,7 +647,7 @@ class TestOrchestratorController {
     // Test happy flow with empty evolution
     final ExecutionHistory resultEmpty = new ExecutionHistory();
     resultEmpty.setExecutions(Collections.emptyList());
-    when(securedOrchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenReturn(resultEmpty);
+    when(orchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenReturn(resultEmpty);
     mockMvc.perform(
                get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
                    .header("Authorization", BEARER + MOCK_VALID_TOKEN))
@@ -655,7 +655,7 @@ class TestOrchestratorController {
            .andExpect(jsonPath("$.executions", hasSize(0)));
 
     // Test for bad input
-    when(securedOrchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenThrow(
+    when(orchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenThrow(
         new NoDatasetFoundException(""));
     mockMvc.perform(
                get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
@@ -685,7 +685,7 @@ class TestOrchestratorController {
     resultNonEmpty.setPlugins(Arrays.asList(plugin1, plugin2));
 
     // Test happy flow with non-empty evolution
-    when(securedOrchestratorService
+    when(orchestratorService
         .getExecutablePluginsWithDataAvailability(TestObjectFactory.EXECUTIONID))
         .thenReturn(resultNonEmpty);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
@@ -701,7 +701,7 @@ class TestOrchestratorController {
     // Test happy flow with empty evolution
     final PluginsWithDataAvailability resultEmpty = new PluginsWithDataAvailability();
     resultEmpty.setPlugins(Collections.emptyList());
-    when(securedOrchestratorService
+    when(orchestratorService
         .getExecutablePluginsWithDataAvailability(TestObjectFactory.EXECUTIONID))
         .thenReturn(resultEmpty);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
@@ -711,7 +711,7 @@ class TestOrchestratorController {
            .andExpect(jsonPath("$.plugins", hasSize(0)));
 
     // Test for bad input
-    when(securedOrchestratorService
+    when(orchestratorService
         .getExecutablePluginsWithDataAvailability(TestObjectFactory.EXECUTIONID))
         .thenThrow(new NoWorkflowExecutionFoundException(""));
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
@@ -745,7 +745,7 @@ class TestOrchestratorController {
 
       // Test happy flow with non-empty evolution
       final PluginType pluginType = PluginType.MEDIA_PROCESS;
-      when(securedOrchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultNonEmpty);
+      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultNonEmpty);
       mockMvc
           .perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
@@ -761,14 +761,14 @@ class TestOrchestratorController {
       // Test happy flow with empty evolution
       final VersionEvolution resultEmpty = new VersionEvolution();
       resultEmpty.setEvolutionSteps(Collections.emptyList());
-      when(securedOrchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultEmpty);
+      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultEmpty);
       mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.evolutionSteps", hasSize(0)));
 
       // Test for bad input
-      when(securedOrchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenThrow(new NoWorkflowExecutionFoundException(""));
+      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenThrow(new NoWorkflowExecutionFoundException(""));
       mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
           .andExpect(status().isNotFound());

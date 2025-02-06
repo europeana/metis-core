@@ -120,7 +120,8 @@ class TestDatasetService {
     scheduledWorkflowDao = mock(ScheduledWorkflowDao.class);
     redissonClient = mock(RedissonClient.class);
 
-    datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao, workflowExecutionDao, scheduledWorkflowDao, redissonClient);
+    datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao, workflowExecutionDao, scheduledWorkflowDao,
+        redissonClient);
     datasetService.setMetisCoreUrl(String.format("http://localhost:%d", portForWireMock));
   }
 
@@ -129,7 +130,8 @@ class TestDatasetService {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(DATASET_CREATION_LOCK)).thenReturn(rlock);
-    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(), dataset.getDatasetName())).thenReturn(null);
+    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(), dataset.getDatasetName())).thenReturn(
+        null);
     when(datasetDao.findNextInSequenceDatasetId()).thenReturn(1);
     datasetService.createDataset(TestObjectFactory.USER_ID, dataset);
     ArgumentCaptor<Dataset> datasetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
@@ -163,7 +165,8 @@ class TestDatasetService {
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
-    datasetService.updateDataset(dataset, TestObjectFactory.createXslt(TestObjectFactory.createDataset(dataset.getDatasetName())).getXslt());
+    datasetService.updateDataset(dataset,
+        TestObjectFactory.createXslt(TestObjectFactory.createDataset(dataset.getDatasetName())).getXslt());
 
     ArgumentCaptor<Dataset> dataSetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
     verify(datasetDao, times(1)).update(dataSetArgumentCaptor.capture());
@@ -200,7 +203,8 @@ class TestDatasetService {
     Dataset storedDataset = TestObjectFactory.createDataset(String.format("%s%s", TestObjectFactory.DATASETNAME, 10));
     storedDataset.setOrganizationId(ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(storedDataset);
-    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(), dataset.getDatasetName())).thenReturn(new Dataset());
+    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(), dataset.getDatasetName())).thenReturn(
+        new Dataset());
     assertThrows(DatasetAlreadyExistsException.class, () -> datasetService.updateDataset(dataset, null));
   }
 
@@ -367,7 +371,8 @@ class TestDatasetService {
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
     listOfRecords.getFirst().setXmlRecord("invalid xml");
 
-    String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID, Collections.singletonList(datasetXslt.getId().toString()));
+    String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
+        Collections.singletonList(datasetXslt.getId().toString()));
     wireMockServer.stubFor(get(urlEqualTo(xsltUrl))
         .willReturn(aResponse()
             .withStatus(200)
@@ -408,7 +413,8 @@ class TestDatasetService {
     when(datasetXsltDao.getById(dataset.getXsltId().toString())).thenReturn(datasetXslt);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
 
-    String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID, Collections.singletonList(datasetXslt.getId().toString()));
+    String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
+        Collections.singletonList(datasetXslt.getId().toString()));
     wireMockServer.stubFor(get(urlEqualTo(xsltUrl))
         .willReturn(aResponse()
             .withStatus(200)
@@ -433,7 +439,8 @@ class TestDatasetService {
     dataset.setOrganizationId(ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(1);
-    assertThrows(NoXsltFoundException.class, () -> datasetService.transformRecordsUsingLatestDatasetXslt(dataset.getDatasetId(), listOfRecords));
+    assertThrows(NoXsltFoundException.class,
+        () -> datasetService.transformRecordsUsingLatestDatasetXslt(dataset.getDatasetId(), listOfRecords));
   }
 
   @Test
