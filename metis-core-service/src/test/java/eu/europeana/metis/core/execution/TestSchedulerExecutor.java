@@ -31,10 +31,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisConnectionException;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-17
- */
 class TestSchedulerExecutor {
 
   private static int periodicSchedulerCheckInSecs = 1;
@@ -88,11 +84,12 @@ class TestSchedulerExecutor {
         any(LocalDateTime.class), anyInt()))
         .thenReturn(listOfScheduledWorkflowsWithDateONCE);
     when(
-        scheduleWorkflowService.getAllScheduledWorkflowsWithoutAuthorization(any(ScheduleFrequence.class), anyInt()))
+        scheduleWorkflowService.getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt()))
         .thenReturn(listOfScheduledWorkflowsWithDateDAILY).thenReturn(
-        listOfScheduledWorkflowsWithDateWEEKLY).thenReturn(
-        listOfScheduledWorkflowsWithDateMONTHLY);
-    when(orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(anyString(), isNull(), isNull(), anyInt()))
+            listOfScheduledWorkflowsWithDateWEEKLY).thenReturn(
+            listOfScheduledWorkflowsWithDateMONTHLY);
+    when(
+        orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(anyString(), isNull(), isNull(), anyInt()))
         .thenThrow(new NoDatasetFoundException("Some Error"))
         .thenReturn(null); //Throw an exception as well, should continue execution after that
     doNothing().when(rlock).unlock();
@@ -104,7 +101,7 @@ class TestSchedulerExecutor {
         .getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
             any(LocalDateTime.class), anyInt());
     verify(scheduleWorkflowService, times(3))
-        .getAllScheduledWorkflowsWithoutAuthorization(any(ScheduleFrequence.class), anyInt());
+        .getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt());
     verify(orchestratorService, atMost(listSize * 4))
         .addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(anyString(), isNull(), isNull(), anyInt());
   }
@@ -139,10 +136,10 @@ class TestSchedulerExecutor {
         any(LocalDateTime.class), anyInt()))
         .thenReturn(new ArrayList<>());
     when(
-        scheduleWorkflowService.getAllScheduledWorkflowsWithoutAuthorization(any(ScheduleFrequence.class), anyInt()))
+        scheduleWorkflowService.getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt()))
         .thenReturn(listOfScheduledWorkflowsWithDateDAILY).thenReturn(
-        listOfScheduledWorkflowsWithDateWEEKLY).thenReturn(
-        listOfScheduledWorkflowsWithDateMONTHLY);
+            listOfScheduledWorkflowsWithDateWEEKLY).thenReturn(
+            listOfScheduledWorkflowsWithDateMONTHLY);
     when(orchestratorService
         .addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(anyString(), isNull(), isNull(), anyInt()))
         .thenThrow(new NoDatasetFoundException("Some Error"))
@@ -156,7 +153,7 @@ class TestSchedulerExecutor {
         .getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
             any(LocalDateTime.class), anyInt());
     verify(scheduleWorkflowService, times(3))
-        .getAllScheduledWorkflowsWithoutAuthorization(any(ScheduleFrequence.class), anyInt());
+        .getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt());
     verify(orchestratorService, times(0))
         .addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(anyString(), isNull(), isNull(), anyInt());
   }

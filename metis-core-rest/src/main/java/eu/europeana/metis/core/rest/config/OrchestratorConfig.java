@@ -22,12 +22,10 @@ import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
-import eu.europeana.metis.core.service.Authorizer;
-import eu.europeana.metis.core.service.RedirectionInferrer;
-import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ProxiesService;
-import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
+import eu.europeana.metis.core.service.RedirectionInferrer;
+import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
@@ -60,9 +58,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Orchestrator configuration class.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-11-22
  */
 @Configuration
 @EnableConfigurationProperties({
@@ -224,14 +219,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new RedirectionInferrer(workflowExecutionDao, dataEvolutionUtils);
   }
 
-  @Deprecated(forRemoval = true)
-  @Bean
-  public ScheduleWorkflowService getScheduleWorkflowService(
-      ScheduledWorkflowDao scheduledWorkflowDao, WorkflowDao workflowDao, DatasetDao datasetDao,
-      Authorizer authorizer) {
-    return new ScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao, authorizer);
-  }
-
   /**
    * Creates and returns an instance of SecuredScheduleWorkflowService.
    *
@@ -241,9 +228,9 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @return a new instance of SecuredScheduleWorkflowService configured with the given DAOs.
    */
   @Bean
-  public SecuredScheduleWorkflowService getSecuredScheduleWorkflowService(ScheduledWorkflowDao scheduledWorkflowDao,
+  public ScheduleWorkflowService getScheduleWorkflowService(ScheduledWorkflowDao scheduledWorkflowDao,
       WorkflowDao workflowDao, DatasetDao datasetDao) {
-    return new SecuredScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao);
+    return new ScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao);
   }
 
   /**

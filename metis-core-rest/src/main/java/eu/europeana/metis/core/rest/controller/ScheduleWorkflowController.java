@@ -8,7 +8,7 @@ import eu.europeana.metis.core.exceptions.NoScheduledWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.ScheduledWorkflowAlreadyExistsException;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
+import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.exception.BadContentException;
@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Contains all the calls that are related to scheduling workflows.
- * <p>The {@link SecuredScheduleWorkflowService} has control on how to schedule workflows</p>
+ * <p>The {@link ScheduleWorkflowService} has control on how to schedule workflows</p>
  *
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2018-04-05
@@ -43,15 +43,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScheduleWorkflowController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleWorkflowController.class);
-  private final SecuredScheduleWorkflowService securedScheduleWorkflowService;
+  private final ScheduleWorkflowService scheduleWorkflowService;
 
   /**
    * Constructor.
    *
-   * @param securedScheduleWorkflowService the scheduled workflow service
+   * @param scheduleWorkflowService the scheduled workflow service
    */
-  public ScheduleWorkflowController(SecuredScheduleWorkflowService securedScheduleWorkflowService) {
-    this.securedScheduleWorkflowService = securedScheduleWorkflowService;
+  public ScheduleWorkflowController(ScheduleWorkflowService scheduleWorkflowService) {
+    this.scheduleWorkflowService = scheduleWorkflowService;
   }
 
   /**
@@ -72,7 +72,7 @@ public class ScheduleWorkflowController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public void scheduleWorkflowExecution(@RequestBody ScheduledWorkflow scheduledWorkflow) throws GenericMetisException {
-    securedScheduleWorkflowService.scheduleWorkflow(scheduledWorkflow);
+    scheduleWorkflowService.scheduleWorkflow(scheduledWorkflow);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info(
           "ScheduledWorkflowExecution for datasetId '{}', pointerDate at '{}', scheduled '{}'",
@@ -98,7 +98,7 @@ public class ScheduleWorkflowController {
   @ResponseStatus(HttpStatus.OK)
   public ScheduledWorkflow getScheduledWorkflow(
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    ScheduledWorkflow scheduledWorkflow = securedScheduleWorkflowService.getScheduledWorkflowByDatasetId(datasetId);
+    ScheduledWorkflow scheduledWorkflow = scheduleWorkflowService.getScheduledWorkflowByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("ScheduledWorkflow with with datasetId '{}' found",
           datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
@@ -129,8 +129,8 @@ public class ScheduleWorkflowController {
     }
     ResponseListWrapper<ScheduledWorkflow> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper.setResultsAndLastPage(
-        securedScheduleWorkflowService.getAllScheduledWorkflows(ScheduleFrequence.NULL, nextPage),
-        securedScheduleWorkflowService.getScheduledWorkflowsPerRequest(), nextPage);
+        scheduleWorkflowService.getAllScheduledWorkflows(ScheduleFrequence.NULL, nextPage),
+        scheduleWorkflowService.getScheduledWorkflowsPerRequest(), nextPage);
     LOGGER.info("Batch of: {} scheduledWorkflows returned, using batch nextPage: {}",
         responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
@@ -154,7 +154,7 @@ public class ScheduleWorkflowController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void updateScheduledWorkflow(@RequestBody ScheduledWorkflow scheduledWorkflow) throws GenericMetisException {
-    securedScheduleWorkflowService.updateScheduledWorkflow(scheduledWorkflow);
+    scheduleWorkflowService.updateScheduledWorkflow(scheduledWorkflow);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("ScheduledWorkflow with with datasetId '{}' updated",
           CRLF_PATTERN.matcher(scheduledWorkflow.getDatasetId()).replaceAll(""));
@@ -178,7 +178,7 @@ public class ScheduleWorkflowController {
   public void deleteScheduledWorkflowExecution(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     datasetId = sanitizeCRLF(datasetId);
 
-    securedScheduleWorkflowService.deleteScheduledWorkflow(datasetId);
+    scheduleWorkflowService.deleteScheduledWorkflow(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("ScheduledWorkflowExecution for datasetId '{}' deleted",
           datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
