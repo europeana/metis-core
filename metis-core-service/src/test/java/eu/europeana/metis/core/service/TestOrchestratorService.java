@@ -110,7 +110,6 @@ class TestOrchestratorService {
   //TODO: 2025-01-17 - Remove when in-code authorization complete.
   //Temp static organization so that the service methods will still work.
   private static final String ORGANIZATION_ID = "1482250000001617026";
-  private static final String ORGANIZATION_NAME = "Europeana Foundation";
   private static final int SOLR_COMMIT_PERIOD_IN_MINUTES = 15;
   private static WorkflowExecutionDao workflowExecutionDao;
   private static DataEvolutionUtils dataEvolutionUtils;
@@ -544,8 +543,9 @@ class TestOrchestratorService {
   void cancelWorkflowExecution() throws Exception {
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(workflowExecution);
-    doNothing().when(workflowExecutionDao).setCancellingState(workflowExecution, "");
+    doNothing().when(workflowExecutionDao).setCancellingState(workflowExecution, TestObjectFactory.USER_ID);
     orchestratorService.cancelWorkflowExecution(TestObjectFactory.EXECUTIONID, TestObjectFactory.USER_ID);
+    verify(workflowExecutionDao, times(1)).setCancellingState(workflowExecution, TestObjectFactory.USER_ID);
   }
 
   @Test
@@ -578,8 +578,7 @@ class TestOrchestratorService {
   }
 
   @Test
-  void getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution_PluginExecutionNotAllowed()
-      throws NoDatasetFoundException, UserUnauthorizedException, PluginExecutionNotAllowed {
+  void getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution_PluginExecutionNotAllowed() throws PluginExecutionNotAllowed {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
 
     when(dataEvolutionUtils.computePredecessorPlugin(ExecutablePluginType.VALIDATION_EXTERNAL, null,

@@ -24,7 +24,6 @@ import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.exception.BadContentException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import java.time.LocalDateTime;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
@@ -73,6 +72,7 @@ class TestScheduleWorkflowService {
     when(scheduledWorkflowDao.existsForDatasetId(datasetId)).thenReturn(null);
     when(scheduledWorkflowDao.create(scheduledWorkflow)).thenReturn(new ScheduledWorkflow(null, datasetId, null, 0));
     scheduleWorkflowService.scheduleWorkflow(scheduledWorkflow);
+    verify(scheduledWorkflowDao, times(1)).create(scheduledWorkflow);
   }
 
   @Test
@@ -168,6 +168,7 @@ class TestScheduleWorkflowService {
     when(scheduledWorkflowDao.existsForDatasetId(datasetId)).thenReturn(new ObjectId().toString());
     when(scheduledWorkflowDao.update(scheduledWorkflow)).thenReturn(new ObjectId().toString());
     scheduleWorkflowService.updateScheduledWorkflow(scheduledWorkflow);
+    verify(scheduledWorkflowDao, times(1)).update(scheduledWorkflow);
   }
 
   @Test
@@ -228,7 +229,7 @@ class TestScheduleWorkflowService {
   }
 
   @Test
-  void deleteScheduledWorkflow() throws UserUnauthorizedException, NoDatasetFoundException {
+  void deleteScheduledWorkflow() throws NoDatasetFoundException {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     scheduleWorkflowService.deleteScheduledWorkflow(datasetId);
     verify(scheduledWorkflowDao, times(1)).deleteScheduledWorkflow(anyString());

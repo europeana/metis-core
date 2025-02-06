@@ -186,14 +186,7 @@ public class ApplicationConfiguration {
     datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.getBaseUrl());
     return datasetService;
   }
-  /**
-   * Creates and configures a {@link DepublishRecordIdService} bean.
-   *
-   * @param depublishRecordIdDao the DAO used for managing depublished record IDs
-   * @param orchestratorService the secured orchestrator service for handling secured operations
-   * @param datasetDao the DAO for accessing dataset information
-   * @return a configured instance of {@link DepublishRecordIdService}
-   */
+
   @Bean
   public DepublishRecordIdService getDepublishedRecordService(
       DepublishRecordIdDao depublishRecordIdDao, OrchestratorService orchestratorService,
