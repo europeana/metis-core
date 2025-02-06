@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.service;
 
 import com.google.common.collect.Sets;
-import eu.europeana.metis.authentication.user.AccountRole;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
@@ -597,16 +596,9 @@ public class OrchestratorService {
   }
 
   /**
-   * Get the list of dataset ids that the provided user owns.
-   * <p>The return value can be one of the following:
-   * <ul>
-   *  <li>null when a user has role {@link AccountRole#METIS_ADMIN}, which means the user owns everything</li>
-   *  <li>Empty set if the user owns nothing</li>
-   *  <li>Non-Empty set with the dataset ids that the user owns, for users that have a role other than {@link AccountRole#METIS_ADMIN}</li>
-   * </ul>
-   * </p>
+   * Retrieves a set of dataset IDs to filter on based on the datasets associated with a specific organization.
    *
-   * @return a set of dataset ids
+   * @return a set of dataset IDs belonging to the specified organization
    */
   private Set<String> getDatasetIdsToFilterOn() {
     final Set<String> datasetIds;

@@ -2,7 +2,6 @@ package eu.europeana.metis.core.rest.config;
 
 import com.mongodb.client.MongoClient;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -13,7 +12,6 @@ import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
-import eu.europeana.metis.core.service.Authorizer;
 import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.service.OrchestratorService;
@@ -116,20 +114,10 @@ public class ApplicationConfiguration {
   }
 
   @Bean
-  AuthenticationClient getAuthenticationClient(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return new AuthenticationClient(metisCoreConfigurationProperties.getAuthenticationBaseUrl());
-  }
-
-  @Bean
   MorphiaDatastoreProvider getMorphiaDatastoreProvider(MongoConfigurationProperties mongoConfigurationProperties)
       throws IOException {
     return new MorphiaDatastoreProviderImpl(mongoClient, mongoConfigurationProperties.getDatabase(),
         defaultTransformation::getInputStream);
-  }
-
-  @Bean
-  Authorizer geAuthorizer(DatasetDao datasetDao) {
-    return new Authorizer(datasetDao);
   }
 
   /**

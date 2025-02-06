@@ -2,7 +2,6 @@ package eu.europeana.metis.core.service;
 
 import static java.util.function.Predicate.not;
 
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.TransformationParameters;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -17,6 +16,7 @@ import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.exceptions.XsltSetupException;
+import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
@@ -408,7 +408,7 @@ public class DatasetService {
    * Transform a list of xmls using the latest default xslt stored.
    * <p>
    * This method can be used, for example, after a response from
-   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(MetisUserView, String, ExecutablePluginType, String, int)} to
+   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to
    * try a transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
@@ -444,7 +444,7 @@ public class DatasetService {
    * Transform a list of xmls using the latest dataset xslt stored.
    * <p>
    * This method can be used, for example, after a response from
-   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(MetisUserView, String, ExecutablePluginType, String, int)} to
+   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, String, int)} to
    * try a transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *

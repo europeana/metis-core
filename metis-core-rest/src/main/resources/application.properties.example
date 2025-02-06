@@ -43,8 +43,6 @@ metis-core.maxDepublishRecordIdsPerDataset=1000
 metis-core.linkCheckingDefaultSamplingSize=1000
 #Solr
 metis-core.solrCommitPeriodInMinutes=15
-# Authentication
-metis-core.authenticationBaseUrl=
 # CORS
 metis-core.allowedCorsHosts=
 

@@ -1,16 +1,10 @@
 package eu.europeana.metis.core.rest.utils;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.RecordState;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
-import eu.europeana.metis.authentication.user.AccountRole;
-import eu.europeana.metis.authentication.user.MetisUserView;
-import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -33,24 +27,19 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.utils.Country;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.bson.types.ObjectId;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2019-03-15
- */
 public class TestObjectFactory {
 
   public static final int DATASETID = 100;
   public static final String XSLTID = "5a9821af34f04b794dcf63df";
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
-  public static final String EMAIL = "user.metis@europeana.eu";
-  public static final String AUTHORIZATION_HEADER = "Bearer 1234567890qwertyuiopasdfghjklQWE";
   public static final String TOPOLOGY_NAME = "topology_name";
   public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
   private static final int OCCURRENCES = 2;
@@ -227,28 +216,9 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a dummy metis user
+   * Create a dummy subtask info
    *
-   * @param email the email for the dummy user
-   * @return the created metis user
-   */
-  public static MetisUserView createMetisUser(String email) {
-    MetisUserView metisUserView = spy(new MetisUserView());
-    doReturn(email).when(metisUserView).getEmail();
-    doReturn(AccountRole.EUROPEANA_DATA_OFFICER).when(metisUserView).getAccountRole();
-    doReturn("Organization_12345").when(metisUserView).getOrganizationId();
-    doReturn("OrganizationName").when(metisUserView).getOrganizationName();
-    doReturn(true).when(metisUserView).isMetisUserFlag();
-    doReturn("FirstName").when(metisUserView).getFirstName();
-    doReturn("LastName").when(metisUserView).getLastName();
-    doReturn("User_12345").when(metisUserView).getUserId();
-    return metisUserView;
-  }
-
-  /**
-   * Create a dummy sub task info
-   *
-   * @return the created sub task info
+   * @return the created subtask info
    */
   public static List<SubTaskInfo> createListOfSubTaskInfo() {
 

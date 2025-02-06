@@ -36,7 +36,6 @@ import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
 import dev.morphia.query.updates.UpdateOperator;
 import dev.morphia.query.updates.UpdateOperators;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
@@ -171,39 +170,6 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
         () -> query.update(new UpdateOptions(), updateOperators.toArray(UpdateOperator[]::new)));
     LOGGER.debug(
         "WorkflowExecution monitor information for datasetId '{}' updated in Mongo. (UpdateResults: {})",
-        workflowExecution.getDatasetId(),
-        updateResult == null ? 0 : updateResult.getModifiedCount());
-  }
-
-  /**
-   * Set the cancelling field in the database.
-   * <p>Also adds information of the user identifier that cancelled the execution or if it was by a
-   * system operation, using {@link SystemId} values as identifiers. For historical executions the value of the
-   * <code>cancelledBy</code> field will remain <code>null</code></p>
-   *
-   * @param workflowExecution the workflowExecution to be cancelled
-   * @param metisUserView the user that triggered the cancellation or null if it was the system
-   *
-   * @deprecated replaced by {@link #setCancellingState(WorkflowExecution, String)}
-   */
-  @Deprecated(forRemoval = true)
-  public void setCancellingState(WorkflowExecution workflowExecution, MetisUserView metisUserView) {
-    Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
-                                                             .find(WorkflowExecution.class)
-                                                             .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()));
-    String cancelledBy;
-    if (metisUserView == null || metisUserView.getUserId() == null) {
-      cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    } else {
-      cancelledBy = metisUserView.getUserId();
-    }
-    final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
-    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, cancelledBy);
-
-    UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
-        () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));
-    LOGGER.debug(
-        "WorkflowExecution cancelling for datasetId '{}' set to true in Mongo. (UpdateResults: {})",
         workflowExecution.getDatasetId(),
         updateResult == null ? 0 : updateResult.getModifiedCount());
   }
