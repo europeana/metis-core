@@ -17,7 +17,7 @@ import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.exceptions.XsltSetupException;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.service.SecuredDatasetService;
+import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.exception.BadContentException;
@@ -47,23 +47,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Contains all the calls that are related to Datasets.
- * <p>The {@link SecuredDatasetService} has control on how to manipulate a dataset</p>
+ * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
  */
 @RestController
 @RequestMapping({"/secured", "/"})
 public class DatasetController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatasetController.class);
-  private final SecuredDatasetService securedDatasetService;
+  private final DatasetService datasetService;
 
   /**
    * Autowired constructor with all required parameters.
    *
-   * @param securedDatasetService the datasetService
+   * @param datasetService the datasetService
    */
   @Autowired
-  public DatasetController(SecuredDatasetService securedDatasetService) {
-    this.securedDatasetService = securedDatasetService;
+  public DatasetController(DatasetService datasetService) {
+    this.datasetService = datasetService;
   }
 
   /**
@@ -85,7 +85,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.CREATED)
   public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset) throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
-    Dataset createdDataset = securedDatasetService.createDataset(userId, dataset);
+    Dataset createdDataset = datasetService.createDataset(userId, dataset);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
         createdDataset.getDatasetId(), createdDataset.getDatasetName(),
         createdDataset.getOrganizationId());
@@ -115,7 +115,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void updateDataset(@RequestBody DatasetXsltStringWrapper datasetXsltStringWrapper)
       throws GenericMetisException {
-    securedDatasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
+    datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Dataset with datasetId {} updated",
           CRLF_PATTERN.matcher(datasetXsltStringWrapper.getDataset().getDatasetId()).replaceAll(""));
@@ -139,7 +139,7 @@ public class DatasetController {
   public void deleteDataset(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     datasetId = sanitizeCRLF(datasetId);
 
-    securedDatasetService.deleteDatasetByDatasetId(datasetId);
+    datasetService.deleteDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Dataset with datasetId '{}' deleted",
           datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
@@ -165,7 +165,7 @@ public class DatasetController {
   public Dataset getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
 
-    Dataset storedDataset = securedDatasetService.getDatasetByDatasetId(datasetId);
+    Dataset storedDataset = datasetService.getDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Dataset with datasetId '{}' found",
           datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
@@ -193,7 +193,7 @@ public class DatasetController {
   public DatasetXslt getDatasetXsltByDatasetId(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     datasetId = sanitizeCRLF(datasetId);
 
-    DatasetXslt datasetXslt = securedDatasetService.getDatasetXsltByDatasetId(datasetId);
+    DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", sanitizeCRLF(datasetId), datasetXslt.getId());
     }
@@ -219,7 +219,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public String getXsltByXsltId(@PathVariable("xsltId") String xsltId)
       throws GenericMetisException {
-    DatasetXslt datasetXslt = securedDatasetService.getDatasetXsltByXsltId(xsltId);
+    DatasetXslt datasetXslt = datasetService.getDatasetXsltByXsltId(xsltId);
     LOGGER.info("XSLT with xsltId '{}' found", datasetXslt.getId());
     return datasetXslt.getXslt();
   }
@@ -243,7 +243,7 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public DatasetXslt createDefaultXslt(@RequestBody String xsltString) {
-    DatasetXslt defaultDatasetXslt = securedDatasetService.createDefaultXslt(xsltString);
+    DatasetXslt defaultDatasetXslt = datasetService.createDefaultXslt(xsltString);
     LOGGER.info("New default xslt created with xsltId: {}", defaultDatasetXslt.getId());
     return defaultDatasetXslt;
   }
@@ -264,7 +264,7 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_XSLT_DEFAULT, produces = {MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public String getLatestDefaultXslt() throws GenericMetisException {
-    DatasetXslt datasetXslt = securedDatasetService.getLatestDefaultXslt();
+    DatasetXslt datasetXslt = datasetService.getLatestDefaultXslt();
     LOGGER.info("Default XSLT with xsltId '{}' found", datasetXslt.getId());
     return datasetXslt.getXslt();
   }
@@ -295,7 +295,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public List<Record> transformRecordsUsingLatestDatasetXslt(@PathVariable("datasetId") String datasetId,
       @RequestBody List<Record> records) throws GenericMetisException {
-    return securedDatasetService.transformRecordsUsingLatestDatasetXslt(datasetId, records);
+    return datasetService.transformRecordsUsingLatestDatasetXslt(datasetId, records);
   }
 
   /**
@@ -324,7 +324,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public List<Record> transformRecordsUsingLatestDefaultXslt(@PathVariable("datasetId") String datasetId,
       @RequestBody List<Record> records) throws GenericMetisException {
-    return securedDatasetService.transformRecordsUsingLatestDefaultXslt(datasetId, records);
+    return datasetService.transformRecordsUsingLatestDefaultXslt(datasetId, records);
   }
 
   /**
@@ -344,7 +344,7 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Dataset getByDatasetName(@PathVariable("datasetName") String datasetName) throws GenericMetisException {
-    Dataset dataset = securedDatasetService.getDatasetByDatasetName(datasetName);
+    Dataset dataset = datasetService.getDatasetByDatasetName(datasetName);
     LOGGER.info("Dataset with datasetName '{}' found", dataset.getDatasetName());
     return dataset;
   }
@@ -377,8 +377,8 @@ public class DatasetController {
     ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
-            securedDatasetService.getAllDatasetsByProvider(provider, nextPage),
-            securedDatasetService.getDatasetsPerRequestLimit(), nextPage);
+            datasetService.getAllDatasetsByProvider(provider, nextPage),
+            datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
         responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
@@ -411,9 +411,9 @@ public class DatasetController {
     ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
-            securedDatasetService
+            datasetService
                 .getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage),
-            securedDatasetService.getDatasetsPerRequestLimit(), nextPage);
+            datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
         responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
@@ -447,8 +447,8 @@ public class DatasetController {
     ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
-            securedDatasetService.getAllDatasetsByDataProvider(dataProvider, nextPage),
-            securedDatasetService.getDatasetsPerRequestLimit(), nextPage);
+            datasetService.getAllDatasetsByDataProvider(dataProvider, nextPage),
+            datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
         responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
@@ -482,8 +482,8 @@ public class DatasetController {
     ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
-            securedDatasetService.getAllDatasetsByOrganizationId(organizationId, nextPage),
-            securedDatasetService.getDatasetsPerRequestLimit(), nextPage);
+            datasetService.getAllDatasetsByOrganizationId(organizationId, nextPage),
+            datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
         responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
@@ -517,8 +517,8 @@ public class DatasetController {
     ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
-            securedDatasetService.getAllDatasetsByOrganizationName(organizationName, nextPage),
-            securedDatasetService.getDatasetsPerRequestLimit(), nextPage);
+            datasetService.getAllDatasetsByOrganizationName(organizationName, nextPage),
+            datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
         responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
@@ -587,8 +587,8 @@ public class DatasetController {
     }
     ResponseListWrapper<DatasetSearchView> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper.setResultsAndLastPage(
-        securedDatasetService.searchDatasetsBasedOnSearchString(searchString, nextPage),
-        securedDatasetService.getDatasetsPerRequestLimit(), nextPage);
+        datasetService.searchDatasetsBasedOnSearchString(searchString, nextPage),
+        datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(),
         nextPage);
     return responseListWrapper;
