@@ -23,11 +23,10 @@ import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.Authorizer;
-import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.OrchestratorService;
-import eu.europeana.metis.core.service.SecuredProxiesService;
+import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.SecuredScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
@@ -247,17 +246,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new SecuredScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao);
   }
 
-  @Deprecated(forRemoval = true)
-  @Bean
-  public ProxiesService getProxiesService(
-      WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
-      RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      DpsClient dpsClient, UISClient uisClient, Authorizer authorizer,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
-    return new ProxiesService(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient,
-        fileServiceClient, dpsClient, uisClient, ecloudConfigurationProperties.getProvider(), authorizer);
-  }
-
   /**
    * Creates and returns an instance of SecuredProxiesService with the provided dependencies.
    *
@@ -272,12 +260,12 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @return an initialized instance of SecuredProxiesService.
    */
   @Bean
-  public SecuredProxiesService getSecuredProxiesService(
+  public ProxiesService getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
       DpsClient dpsClient, UISClient uisClient, DatasetDao datasetDao,
       EcloudConfigurationProperties ecloudConfigurationProperties) {
-    return new SecuredProxiesService(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient,
+    return new ProxiesService(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient,
         fileServiceClient, dpsClient, uisClient, ecloudConfigurationProperties.getProvider(), datasetDao);
   }
 

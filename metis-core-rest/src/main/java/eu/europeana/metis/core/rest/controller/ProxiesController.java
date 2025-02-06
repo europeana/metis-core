@@ -7,7 +7,7 @@ import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
-import eu.europeana.metis.core.service.SecuredProxiesService;
+import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.GenericMetisException;
@@ -40,16 +40,16 @@ public class ProxiesController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ProxiesController.class);
   private static final int NUMBER_OF_RECORDS = 5;
-  private final SecuredProxiesService securedProxiesService;
+  private final ProxiesService proxiesService;
 
   /**
    * Constructor with required parameters
    *
-   * @param securedProxiesService {@link SecuredProxiesService}
+   * @param proxiesService {@link ProxiesService}
    */
   @Autowired
-  public ProxiesController(SecuredProxiesService securedProxiesService) {
-    this.securedProxiesService = securedProxiesService;
+  public ProxiesController(ProxiesService proxiesService) {
+    this.proxiesService = proxiesService;
   }
 
   /**
@@ -84,7 +84,7 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId, from, to);
     }
-    return securedProxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
+    return proxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
   }
 
   /**
@@ -115,7 +115,7 @@ public class ProxiesController {
           externalTaskId);
     }
     return Collections.singletonMap("existsExternalTaskReport",
-        securedProxiesService.existsExternalTaskReport(topologyName, externalTaskId));
+        proxiesService.existsExternalTaskReport(topologyName, externalTaskId));
   }
 
   /**
@@ -148,7 +148,7 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    return securedProxiesService.getExternalTaskReport(topologyName, externalTaskId, idsPerError);
+    return proxiesService.getExternalTaskReport(topologyName, externalTaskId, idsPerError);
   }
 
   /**
@@ -178,7 +178,7 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    return securedProxiesService.getExternalTaskStatistics(topologyName, externalTaskId);
+    return proxiesService.getExternalTaskStatistics(topologyName, externalTaskId);
   }
 
   /**
@@ -212,7 +212,7 @@ public class ProxiesController {
           topologyName.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
           externalTaskId);
     }
-    return securedProxiesService
+    return proxiesService
         .getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
 
@@ -243,7 +243,7 @@ public class ProxiesController {
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestParam(value = "nextPage", required = false) String nextPage
   ) throws GenericMetisException {
-    return securedProxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId, pluginType,
+    return proxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId, pluginType,
         StringUtils.isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
   }
 
@@ -275,7 +275,7 @@ public class ProxiesController {
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestBody ListOfIds ecloudIds
   ) throws GenericMetisException {
-    return securedProxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId,
+    return proxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId,
         pluginType, ecloudIds);
   }
 
@@ -305,7 +305,7 @@ public class ProxiesController {
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestParam("idToSearch") String idToSearch
   ) throws GenericMetisException {
-    return securedProxiesService.searchRecordByIdFromPluginExecution(workflowExecutionId, pluginType, idToSearch);
+    return proxiesService.searchRecordByIdFromPluginExecution(workflowExecutionId, pluginType, idToSearch);
   }
 
   /**
@@ -336,7 +336,7 @@ public class ProxiesController {
       @RequestParam("pluginType") ExecutablePluginType pluginType,
       @RequestBody ListOfIds ecloudIds
   ) throws GenericMetisException {
-    return securedProxiesService.getListOfFileContentsFromPredecessorPluginExecution(workflowExecutionId, pluginType,
+    return proxiesService.getListOfFileContentsFromPredecessorPluginExecution(workflowExecutionId, pluginType,
         ecloudIds);
   }
 

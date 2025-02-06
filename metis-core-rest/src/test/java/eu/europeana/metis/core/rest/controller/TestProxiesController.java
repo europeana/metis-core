@@ -34,7 +34,7 @@ import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
-import eu.europeana.metis.core.service.SecuredProxiesService;
+import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.UserUnauthorizedException;
@@ -64,7 +64,7 @@ import org.springframework.web.context.WebApplicationContext;
 class TestProxiesController {
 
   @MockBean
-  private SecuredProxiesService securedProxiesService;
+  private ProxiesService proxiesService;
 
   @MockBean
   private JwtDecoder jwtDecoder;
@@ -87,7 +87,7 @@ class TestProxiesController {
 
   @BeforeEach
   void cleanUp() {
-    reset(securedProxiesService);
+    reset(proxiesService);
     reset(jwtDecoder);
   }
 
@@ -101,7 +101,7 @@ class TestProxiesController {
     for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
       subTaskInfo.setAdditionalInformations(null);
     }
-    when(securedProxiesService.getExternalTaskLogs(TestObjectFactory.TOPOLOGY_NAME,
+    when(proxiesService.getExternalTaskLogs(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID, from, to)).thenReturn(listOfSubTaskInfo);
 
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS,
@@ -119,7 +119,7 @@ class TestProxiesController {
   @Test
   void existsExternalTaskReport() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    when(securedProxiesService.existsExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
+    when(proxiesService.existsExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(true);
 
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
@@ -140,7 +140,7 @@ class TestProxiesController {
     }
 
     TaskErrorsInfo taskErrorsInfo = TestObjectFactory.createTaskErrorsInfoListWithIdentifiers(2);
-    when(securedProxiesService.getExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
+    when(proxiesService.getExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(taskErrorsInfo);
 
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
@@ -175,7 +175,7 @@ class TestProxiesController {
     recordStatistics.setNodePathStatistics(Collections.singletonList(nodePath));
 
     // Make the call and verify the result.
-    when(securedProxiesService.getExternalTaskStatistics(TestObjectFactory.TOPOLOGY_NAME,
+    when(proxiesService.getExternalTaskStatistics(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
     mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
@@ -215,7 +215,7 @@ class TestProxiesController {
     nodePath.setNodeValueStatistics(Collections.singletonList(nodeValue));
 
     // Mock the securedProxiesService instance.
-    when(securedProxiesService.getAdditionalNodeStatistics(TestObjectFactory.TOPOLOGY_NAME,
+    when(proxiesService.getAdditionalNodeStatistics(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID, nodePath.getxPath())).thenReturn(nodePath);
 
     // Make the call and verify the result.
@@ -253,7 +253,7 @@ class TestProxiesController {
     records.add(record2);
     PaginatedRecordsResponse recordsResponse = new PaginatedRecordsResponse(records, null);
 
-    when(securedProxiesService.getListOfFileContentsFromPluginExecution(
+    when(proxiesService.getListOfFileContentsFromPluginExecution(
         TestObjectFactory.EXECUTIONID, ExecutablePluginType.TRANSFORMATION, null, 5))
         .thenReturn(recordsResponse);
 
@@ -288,7 +288,7 @@ class TestProxiesController {
       final ListOfIds input = invocation.getArgument(2);
       assertEquals(expectedInput, input.getIds());
       return output;
-    }).when(securedProxiesService).getListOfFileContentsFromPluginExecution(
+    }).when(proxiesService).getListOfFileContentsFromPluginExecution(
         eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
 
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
@@ -310,7 +310,7 @@ class TestProxiesController {
       final ListOfIds input = invocation.getArgument(2);
       assertTrue(input.getIds().isEmpty());
       return emptyOutput;
-    }).when(securedProxiesService).getListOfFileContentsFromPluginExecution(
+    }).when(proxiesService).getListOfFileContentsFromPluginExecution(
         eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
 
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
@@ -331,7 +331,7 @@ class TestProxiesController {
            .andExpect(jsonPath("$.records", hasSize(0)));
 
     // Test for bad input
-    when(securedProxiesService.getListOfFileContentsFromPluginExecution(
+    when(proxiesService.getListOfFileContentsFromPluginExecution(
         eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any()))
         .thenThrow(new NoWorkflowExecutionFoundException(""));
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
@@ -343,7 +343,7 @@ class TestProxiesController {
            .andExpect(status().isNotFound());
 
     // Test for unauthenticated user
-    doThrow(new UserUnauthorizedException("")).when(securedProxiesService)
+    doThrow(new UserUnauthorizedException("")).when(proxiesService)
                                               .getListOfFileContentsFromPluginExecution(
                                                   eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
@@ -355,7 +355,7 @@ class TestProxiesController {
 
     // Test for unauthorized user
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    doThrow(new UserUnauthorizedException("")).when(securedProxiesService)
+    doThrow(new UserUnauthorizedException("")).when(proxiesService)
                                               .getListOfFileContentsFromPluginExecution(
                                                   eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)

@@ -17,9 +17,9 @@ import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
+import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -52,10 +52,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
- *
- * @deprecated replaced by {@link SecuredProxiesService}
  */
-@Deprecated(forRemoval = true)
 public class ProxiesService {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat(
@@ -68,7 +65,7 @@ public class ProxiesService {
   private final DpsClient dpsClient;
   private final UISClient uisClient;
   private final String ecloudProvider;
-  private final Authorizer authorizer;
+  private final DatasetDao datasetDao;
   private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
 
@@ -80,21 +77,22 @@ public class ProxiesService {
    * @param recordServiceClient {@link RecordServiceClient}
    * @param fileServiceClient {@link FileServiceClient}
    * @param dpsClient {@link DpsClient}
+   * @param uisClient {@link UISClient}
    * @param ecloudProvider the ecloud provider string
-   * @param authorizer the authorizer
+   * @param datasetDao the Dao instance to access the Dataset database
    */
   public ProxiesService(WorkflowExecutionDao workflowExecutionDao,
       DataSetServiceClient ecloudDataSetServiceClient, RecordServiceClient recordServiceClient,
       FileServiceClient fileServiceClient, DpsClient dpsClient, UISClient uisClient, String ecloudProvider,
-      Authorizer authorizer) {
+      DatasetDao datasetDao) {
     this(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
-        dpsClient, uisClient, ecloudProvider, authorizer, new ProxiesHelper());
+        dpsClient, uisClient, ecloudProvider, datasetDao, new ProxiesHelper());
   }
 
   ProxiesService(WorkflowExecutionDao workflowExecutionDao,
       DataSetServiceClient ecloudDataSetServiceClient, RecordServiceClient recordServiceClient,
       FileServiceClient fileServiceClient, DpsClient dpsClient, UISClient uisClient, String ecloudProvider,
-      Authorizer authorizer, ProxiesHelper proxiesHelper) {
+      DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
     this.workflowExecutionDao = workflowExecutionDao;
     this.ecloudDataSetServiceClient = ecloudDataSetServiceClient;
     this.recordServiceClient = recordServiceClient;
@@ -102,7 +100,7 @@ public class ProxiesService {
     this.dpsClient = dpsClient;
     this.uisClient = uisClient;
     this.ecloudProvider = ecloudProvider;
-    this.authorizer = authorizer;
+    this.datasetDao = datasetDao;
     this.proxiesHelper = proxiesHelper;
     this.dataEvolutionUtils = new DataEvolutionUtils(this.workflowExecutionDao);
   }
@@ -110,7 +108,6 @@ public class ProxiesService {
   /**
    * Get logs from a specific topology task paged.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @param from integer to start getting logs from
@@ -122,14 +119,13 @@ public class ProxiesService {
    * resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public List<SubTaskInfo> getExternalTaskLogs(MetisUserView metisUserView, String topologyName,
-      long externalTaskId, int from, int to) throws GenericMetisException {
-    authorizer.authorizeReadExistingDatasetById(metisUserView,
-        getDatasetIdFromExternalTaskId(externalTaskId));
+  public List<SubTaskInfo> getExternalTaskLogs(String topologyName, long externalTaskId, int from, int to)
+      throws GenericMetisException {
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     List<SubTaskInfo> detailedTaskReportBetweenChunks;
     try {
       detailedTaskReportBetweenChunks =
@@ -148,25 +144,21 @@ public class ProxiesService {
   /**
    * Check if final report is available.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
-   * @return true if final report available, false if not or ecloud response {@link jakarta.ws.rs.core.Response.Status)} is not OK,
-   * based on {@link DpsClient#checkIfErrorReportExists}
+   * @return true if final report available, false if not or ecloud response {@link jakarta.ws.rs.core.Response.Status)} is not
+   * OK, based on {@link DpsClient#checkIfErrorReportExists}
    * @throws GenericMetisException can be one of:
    * <ul>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * <li>{@link ExternalTaskException} containing {@link DpsException} if an error occurred while checking if the error report exists</li>
    * </ul>
    */
-  public boolean existsExternalTaskReport(MetisUserView metisUserView, String topologyName,
-      long externalTaskId)
-      throws GenericMetisException {
-    authorizer.authorizeReadExistingDatasetById(metisUserView,
-        getDatasetIdFromExternalTaskId(externalTaskId));
+  public boolean existsExternalTaskReport(String topologyName, long externalTaskId) throws GenericMetisException {
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     try {
       return dpsClient.checkIfErrorReportExists(topologyName, externalTaskId);
     } catch (DpsException e) {
@@ -180,7 +172,6 @@ public class ProxiesService {
    * Get the final report that includes all the errors grouped. The number of ids per error can be specified through the
    * parameters.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @param idsPerError the number of ids that should be displayed per error group
@@ -191,14 +182,13 @@ public class ProxiesService {
    * resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public TaskErrorsInfo getExternalTaskReport(MetisUserView metisUserView, String topologyName,
-      long externalTaskId, int idsPerError) throws GenericMetisException {
-    authorizer.authorizeReadExistingDatasetById(metisUserView,
-        getDatasetIdFromExternalTaskId(externalTaskId));
+  public TaskErrorsInfo getExternalTaskReport(String topologyName, long externalTaskId, int idsPerError)
+      throws GenericMetisException {
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     TaskErrorsInfo taskErrorsInfo;
     try {
       taskErrorsInfo =
@@ -214,7 +204,6 @@ public class ProxiesService {
   /**
    * Get the statistics of an external task.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @return the record statistics for the given task.
@@ -224,16 +213,12 @@ public class ProxiesService {
    * external resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public RecordStatistics getExternalTaskStatistics(MetisUserView metisUserView, String topologyName,
-      long externalTaskId) throws GenericMetisException {
-
-    // Authorize
-    authorizer.authorizeReadExistingDatasetById(metisUserView,
-        getDatasetIdFromExternalTaskId(externalTaskId));
+  public RecordStatistics getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
 
     // Obtain the report from eCloud.
     final StatisticsReport report;
@@ -250,10 +235,9 @@ public class ProxiesService {
   }
 
   /**
-   * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by {@link
-   * #getExternalTaskStatistics(MetisUserView, String, long)}.
+   * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by
+   * {@link #getExternalTaskStatistics(String, long)}.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
    * @param nodePath the path of the node for which this request is made
@@ -264,16 +248,13 @@ public class ProxiesService {
    * external resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public NodePathStatistics getAdditionalNodeStatistics(MetisUserView metisUserView, String topologyName,
-      long externalTaskId, String nodePath) throws GenericMetisException {
-
-    // Authorize
-    authorizer.authorizeReadExistingDatasetById(metisUserView,
-        getDatasetIdFromExternalTaskId(externalTaskId));
+  public NodePathStatistics getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
+      throws GenericMetisException {
+    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
 
     // Obtain the reports from eCloud.
     final List<NodeReport> nodeReports;
@@ -291,8 +272,7 @@ public class ProxiesService {
 
   private String getDatasetIdFromExternalTaskId(long externalTaskId)
       throws NoWorkflowExecutionFoundException {
-    final WorkflowExecution workflowExecution =
-        this.workflowExecutionDao.getByExternalTaskId(externalTaskId);
+    final WorkflowExecution workflowExecution = this.workflowExecutionDao.getByExternalTaskId(externalTaskId);
     if (workflowExecution == null) {
       throw new NoWorkflowExecutionFoundException(String
           .format("No workflow execution found for externalTaskId: %d, in METIS", externalTaskId));
@@ -303,7 +283,6 @@ public class ProxiesService {
   /**
    * Get a list with record contents from the external resource based on a workflow execution and {@link PluginType}.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param nextPage the string representation of the next page which is provided from the response and can be used to get the
@@ -313,22 +292,20 @@ public class ProxiesService {
    * @return the list of records from the external resource
    * @throws GenericMetisException can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while
+   * <li>{@link ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided identifier</li>
    * </ul>
    */
   public PaginatedRecordsResponse getListOfFileContentsFromPluginExecution(
-      MetisUserView metisUserView,
       String workflowExecutionId, ExecutablePluginType pluginType, String nextPage,
       int numberOfRecords) throws GenericMetisException {
 
     // Get the right workflow execution and plugin type.
-    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(
-        metisUserView, workflowExecutionId, pluginType);
+    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
     if (executionAndPlugin == null) {
       return new PaginatedRecordsResponse(Collections.emptyList(), null);
     }
@@ -352,11 +329,11 @@ public class ProxiesService {
     // Get the records themselves.
     final List<Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
     for (CloudTagsResponse cloudTagsResponse : revisionsWithDeletedFlagSetToFalse) {
-      final Record record = getRecord(executionAndPlugin.getRight(), cloudTagsResponse.getCloudId());
-      if (record == null) {
+      final Record eloudXmlRecord = getRecord(executionAndPlugin.getRight(), cloudTagsResponse.getCloudId());
+      if (eloudXmlRecord == null) {
         throw new IllegalStateException("This can't happen: eCloud just told us the record exists");
       }
-      records.add(record);
+      records.add(eloudXmlRecord);
     }
 
     // Compile the result.
@@ -366,33 +343,26 @@ public class ProxiesService {
   /**
    * Get a list with record contents from the external resource based on an workflow execution and {@link PluginType}.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param ecloudIds the list of ecloud IDs of the records we wish to obtain
    * @return the list of records from the external resource
    * @throws GenericMetisException can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while
+   * <li>{@link ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no workflow
+   * <li>{@link NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
    */
-  public RecordsResponse getListOfFileContentsFromPluginExecution(MetisUserView metisUserView,
-      String workflowExecutionId, ExecutablePluginType pluginType, ListOfIds ecloudIds)
-      throws GenericMetisException {
+  public RecordsResponse getListOfFileContentsFromPluginExecution(String workflowExecutionId, ExecutablePluginType pluginType,
+      ListOfIds ecloudIds) throws GenericMetisException {
 
     // Get the right workflow execution and plugin type.
-    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(
-        metisUserView, workflowExecutionId, pluginType);
-    if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No executable plugin of type %s found for workflowExecution with id: %s",
-              pluginType.name(), workflowExecutionId));
-    }
+    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
     // Get the records.
     final List<Record> records = new ArrayList<>(ecloudIds.getIds().size());
@@ -404,44 +374,47 @@ public class ProxiesService {
     return new RecordsResponse(records);
   }
 
+  private static void existsOrThrowNoWorkflowExecutionFoundException(String workflowExecutionId, ExecutablePluginType pluginType,
+      Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin) throws NoWorkflowExecutionFoundException {
+    if (executionAndPlugin == null) {
+      throw new NoWorkflowExecutionFoundException(String
+          .format("No executable plugin of type %s found for workflowExecution with id: %s",
+              pluginType.name(), workflowExecutionId));
+    }
+  }
+
   /**
-   * Get a list with record contents from the external resource based on a workflow execution and the predecessor
-   * of the given {@link PluginType}.
+   * Get a list with record contents from the external resource based on a workflow execution and the predecessor of the given
+   * {@link PluginType}.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param ecloudIds the list of ecloud IDs of the records we wish to obtain
    * @return the list of records from the external resource
    * @throws GenericMetisException can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while retrieving the records from the external
+   * <li>{@link ExternalTaskException} if an error occurred while retrieving the records from the external
    * resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no workflow
+   * <li>{@link NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
    */
-  public RecordsResponse getListOfFileContentsFromPredecessorPluginExecution(MetisUserView metisUserView,
-          String workflowExecutionId, ExecutablePluginType pluginType, ListOfIds ecloudIds)
-          throws GenericMetisException {
+  public RecordsResponse getListOfFileContentsFromPredecessorPluginExecution(String workflowExecutionId,
+      ExecutablePluginType pluginType, ListOfIds ecloudIds) throws GenericMetisException {
 
     // Get the right workflow execution and plugin type.
-    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(
-            metisUserView, workflowExecutionId, pluginType);
-    if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-              .format("No executable plugin of type %s found for workflowExecution with id: %s",
-                      pluginType.name(), workflowExecutionId));
-    }
+    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
     Pair<MetisPlugin, WorkflowExecution> predecessorPlugin =
-            dataEvolutionUtils.getPreviousExecutionAndPlugin(executionAndPlugin.getRight(), executionAndPlugin.getLeft().getDatasetId());
-    if(predecessorPlugin == null){
+        dataEvolutionUtils.getPreviousExecutionAndPlugin(executionAndPlugin.getRight(),
+            executionAndPlugin.getLeft().getDatasetId());
+    if (predecessorPlugin == null) {
       throw new NoWorkflowExecutionFoundException(String
-              .format("No predecessor for executable plugin of type %s found for workflowExecution with id: %s",
-                      pluginType.name(), workflowExecutionId));
+          .format("No predecessor for executable plugin of type %s found for workflowExecution with id: %s",
+              pluginType.name(), workflowExecutionId));
     }
 
     ExecutablePlugin predecessorExecutablePlugin = (ExecutablePlugin) predecessorPlugin.getLeft();
@@ -459,40 +432,33 @@ public class ProxiesService {
   /**
    * Get a record from the external resource based on o searchId, workflow execution and {@link PluginType}.
    *
-   * @param metisUserView the user wishing to perform this operation
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param idToSearch the ID we are searching for and for which we want to find a record
    * @return the record from the external resource
    * @throws GenericMetisException can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while
+   * <li>{@link ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
    * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
    * authorized to perform this task</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no workflow
+   * <li>{@link NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
    */
-  public Record searchRecordByIdFromPluginExecution(MetisUserView metisUserView,
-      String workflowExecutionId, ExecutablePluginType pluginType, String idToSearch)
-      throws GenericMetisException {
+  public Record searchRecordByIdFromPluginExecution(String workflowExecutionId, ExecutablePluginType pluginType,
+      String idToSearch) throws GenericMetisException {
 
     // Get the right workflow execution and plugin type.
-    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(
-        metisUserView, workflowExecutionId, pluginType);
-    if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No executable plugin of type %s found for workflowExecution with id: %s",
-              pluginType.name(), workflowExecutionId));
-    }
+    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();
     String ecloudId = null;
     try {
       final String normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
-          .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
+                                                     .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
       if (normalizedRecordId != null) {
         ecloudId = uisClient.getCloudId(ecloudProvider, normalizedRecordId).getId();
       }
@@ -515,7 +481,7 @@ public class ProxiesService {
     return ecloudId == null ? null : getRecord(executionAndPlugin.getRight(), ecloudId);
   }
 
-  private String verifyExistenceOfEcloudId(String potentialEcloudId) throws ExternalTaskException {
+  private String verifyExistenceOfEcloudId(String potentialEcloudId) {
     try {
       return uisClient.getRecordId(potentialEcloudId).getResults().isEmpty() ? null
           : potentialEcloudId;
@@ -527,8 +493,8 @@ public class ProxiesService {
     }
   }
 
-  Pair<WorkflowExecution, ExecutablePlugin> getExecutionAndPlugin(MetisUserView metisUserView,
-      String workflowExecutionId, ExecutablePluginType pluginType) throws GenericMetisException {
+  Pair<WorkflowExecution, ExecutablePlugin> getExecutionAndPlugin(String workflowExecutionId, ExecutablePluginType pluginType)
+      throws GenericMetisException {
 
     // Get the workflow execution - check that the user has rights to access this.
     final WorkflowExecution workflowExecution = workflowExecutionDao.getById(workflowExecutionId);
@@ -537,7 +503,7 @@ public class ProxiesService {
           String.format("No workflow execution found for workflowExecutionId: %s, in METIS",
               workflowExecutionId));
     }
-    authorizer.authorizeReadExistingDatasetById(metisUserView, workflowExecution.getDatasetId());
+    datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());
 
     // Get the plugin for which to get the records and return.
     final MetisPlugin plugin = workflowExecution
