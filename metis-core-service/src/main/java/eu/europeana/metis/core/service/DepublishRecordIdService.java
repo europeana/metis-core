@@ -59,7 +59,7 @@ public class DepublishRecordIdService {
    * @param datasetId The ID of the dataset to which the depublished records belong.
    * @param recordIdsInSeparateLines The string containing the record IDs in separate lines.
    * @return How many of the passed records were in fact added. This counter is not thread-safe: if multiple threads try to add
-   * the same records, their combined counters may overrepresent the number of records that were actually added.
+   * the same records, their combined counters may over-represent the number of records that were actually added.
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>

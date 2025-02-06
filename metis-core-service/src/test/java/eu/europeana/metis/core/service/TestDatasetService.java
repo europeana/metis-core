@@ -476,7 +476,7 @@ class TestDatasetService {
   }
 
   @Test
-  void testGetAllDatasetsByOrganizationId() throws Exception {
+  void testGetAllDatasetsByOrganizationId() {
     List<Dataset> list = new ArrayList<>();
     String organizationId = "organizationId";
     int nextPage = 1;

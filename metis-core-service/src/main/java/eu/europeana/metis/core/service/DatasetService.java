@@ -55,6 +55,7 @@ import org.springframework.stereotype.Service;
  * is checked for user authentication.
  */
 @Service
+@Deprecated(forRemoval = true)
 public class DatasetService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatasetService.class);
