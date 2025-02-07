@@ -110,7 +110,7 @@ public class RestResponseExceptionHandler {
    * message for the client
    */
   @ExceptionHandler(value = {IllegalStateException.class,
-      MethodArgumentTypeMismatchException.class})
+      MethodArgumentTypeMismatchException.class, IllegalArgumentException.class})
   @ResponseBody
   public StructuredExceptionWrapper handleMessageNotReadable(Exception exception,
       HttpServletResponse response) {

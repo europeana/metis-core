@@ -530,8 +530,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         System.currentTimeMillis() - checkPointDateOfProcessedRecordsPeriodInMillis.get())
         >= periodOfNoProcessedRecordsChangeInSeconds;
     if (isMinuteCapOverWithoutChangeInProcessedRecords) {
-      //Request cancelling of the execution
-      workflowExecutionDao.setCancellingState(workflowExecution, "");
+      workflowExecutionDao.setCancellingStateSystem(workflowExecution);
     }
     return isMinuteCapOverWithoutChangeInProcessedRecords;
   }

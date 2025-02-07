@@ -117,8 +117,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link DpsException} if an error occurred while retrieving the logs from the external
    * resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
@@ -150,8 +148,6 @@ public class ProxiesService {
    * OK, based on {@link DpsClient#checkIfErrorReportExists}
    * @throws GenericMetisException can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * <li>{@link ExternalTaskException} containing {@link DpsException} if an error occurred while checking if the error report exists</li>
@@ -180,8 +176,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link DpsException} if an error occurred while retrieving the report from the external
    * resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
@@ -211,8 +205,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link DpsException} if an error occurred while retrieving the statistics from the
    * external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
@@ -246,8 +238,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link DpsException} if an error occurred while retrieving the statistics from the
    * external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
@@ -294,8 +284,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided identifier</li>
    * </ul>
@@ -341,7 +329,7 @@ public class ProxiesService {
   }
 
   /**
-   * Get a list with record contents from the external resource based on an workflow execution and {@link PluginType}.
+   * Get a list with record contents from the external resource based on a workflow execution and {@link PluginType}.
    *
    * @param workflowExecutionId the execution identifier of the workflow
    * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
@@ -351,8 +339,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
@@ -395,8 +381,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link ExternalTaskException} if an error occurred while retrieving the records from the external
    * resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
@@ -440,8 +424,6 @@ public class ProxiesService {
    * <ul>
    * <li>{@link ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>

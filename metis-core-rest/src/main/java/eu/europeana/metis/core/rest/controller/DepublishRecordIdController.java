@@ -11,7 +11,6 @@ import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.utils.RestEndpoints;
@@ -70,7 +69,6 @@ public class DepublishRecordIdController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
@@ -96,7 +94,6 @@ public class DepublishRecordIdController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    * @throws IOException In case something unexpected went wrong reading the request body.
@@ -120,7 +117,6 @@ public class DepublishRecordIdController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
@@ -148,7 +144,6 @@ public class DepublishRecordIdController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, produces = {
@@ -187,8 +182,6 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if the workflow is empty or no plugin enabled</li>
    * <li>{@link NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if there was an exception when
    * contacting the external resource(ECloud)</li>
    * <li>{@link eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed} if the execution of

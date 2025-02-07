@@ -76,7 +76,6 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.utils.DateUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -917,14 +916,6 @@ class TestOrchestratorService {
     doReturn(null).when(orchestratorService).getWorkflowExecutionByExecutionId(workflowExecutionId);
     assertThrows(NoWorkflowExecutionFoundException.class,
         () -> orchestratorService.getExecutablePluginsWithDataAvailability(workflowExecutionId));
-
-    // Test when the user is not allowed
-    when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId))
-        .thenAnswer(invocation -> {
-          throw new UserUnauthorizedException("");
-        });
-    assertThrows(UserUnauthorizedException.class, () -> orchestratorService
-        .getExecutablePluginsWithDataAvailability(workflowExecutionId));
   }
 
   @Test
@@ -939,14 +930,6 @@ class TestOrchestratorService {
     when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId)).thenReturn(null);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> orchestratorService
         .getRecordEvolutionForVersion(workflowExecutionId, pluginType));
-
-    // Test when the user is not allowed
-    when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId))
-        .thenAnswer(invocation -> {
-          throw new UserUnauthorizedException("");
-        });
-    assertThrows(UserUnauthorizedException.class,
-        () -> orchestratorService.getRecordEvolutionForVersion(workflowExecutionId, pluginType));
 
     // Test when the workflow execution does not have a plugin of the right type
     doReturn(workflowExecution).when(orchestratorService).getWorkflowExecutionByExecutionId(workflowExecutionId);

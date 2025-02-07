@@ -81,8 +81,6 @@ public class OrchestratorController {
    * for the dataset identifier provided already exists</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   //WORKFLOWS
@@ -112,8 +110,6 @@ public class OrchestratorController {
    * dataset identifier provided does not exist</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @PutMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, produces = {
@@ -134,8 +130,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @DeleteMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
@@ -161,8 +155,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, produces = {
@@ -198,8 +190,6 @@ public class OrchestratorController {
    * <li>{@link BadContentException} if the workflow is empty or no plugin enabled</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if there was an exception when
    * contacting the external resource(ECloud)</li>
    * <li>{@link eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed} if the execution of
@@ -237,10 +227,7 @@ public class OrchestratorController {
    * @param executionId the execution identifier of the execution to cancel
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
-   * worklfowExecution could be found</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
+   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no worklfow execution could be found</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier of the workflow does not exist</li>
    * </ul>
@@ -248,7 +235,8 @@ public class OrchestratorController {
   @DeleteMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void cancelWorkflowExecution(@AuthenticationPrincipal Jwt jwtPrincipal, @PathVariable("executionId") String executionId) throws GenericMetisException {
+  public void cancelWorkflowExecution(@AuthenticationPrincipal Jwt jwtPrincipal, @PathVariable("executionId") String executionId)
+      throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     orchestratorService.cancelWorkflowExecution(executionId, userId);
     if (LOGGER.isInfoEnabled()) {
@@ -266,8 +254,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, produces = {
@@ -294,8 +280,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this task</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_ALLOWED_INCREMENTAL, produces = {
@@ -323,8 +307,6 @@ public class OrchestratorController {
    * found so the {@code pluginType} will be based upon.</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_ALLOWED_PLUGIN, produces = {
@@ -356,8 +338,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_INFORMATION, produces = {
@@ -386,8 +366,6 @@ public class OrchestratorController {
    * <li>{@link BadContentException} if paging is not correctly provided</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID, produces = {
@@ -423,8 +401,6 @@ public class OrchestratorController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link BadContentException} if paging is not correctly provided</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS, produces = {
@@ -461,8 +437,6 @@ public class OrchestratorController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link BadContentException} if paging is not correctly provided</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW, produces = {
@@ -503,8 +477,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoDatasetFoundException} if the dataset
    * identifier provided does not exist</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, produces = {
@@ -528,8 +500,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if an
    * non-existing execution ID or version is provided.</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY, produces = {
@@ -554,8 +524,6 @@ public class OrchestratorController {
    * <ul>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if an
    * non-existing execution ID or version is provided.</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, produces = {

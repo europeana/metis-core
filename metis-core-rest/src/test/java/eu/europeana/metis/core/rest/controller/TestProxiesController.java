@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,7 +36,6 @@ import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -343,9 +341,6 @@ class TestProxiesController {
            .andExpect(status().isNotFound());
 
     // Test for unauthenticated user
-    doThrow(new UserUnauthorizedException("")).when(proxiesService)
-                                              .getListOfFileContentsFromPluginExecution(
-                                                  eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())
@@ -355,9 +350,6 @@ class TestProxiesController {
 
     // Test for unauthorized user
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    doThrow(new UserUnauthorizedException("")).when(proxiesService)
-                                              .getListOfFileContentsFromPluginExecution(
-                                                  eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)

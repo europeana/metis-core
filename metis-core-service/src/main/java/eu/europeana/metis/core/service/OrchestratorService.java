@@ -49,7 +49,6 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.utils.DateUtils;
 import java.util.Collection;
 import java.util.Collections;
@@ -149,7 +148,6 @@ public class OrchestratorService {
    * <li>{@link WorkflowAlreadyExistsException} if a workflow for the dataset identifier provided
    * already exists</li>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * <li>{@link BadContentException} if the workflow parameters have unexpected values</li>
    * </ul>
    */
@@ -186,7 +184,6 @@ public class OrchestratorService {
    * <li>{@link NoWorkflowFoundException} if a workflow for the dataset identifier provided does
    * not exist</li>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * <li>{@link BadContentException} if the workflow parameters have unexpected values</li>
    * </ul>
    */
@@ -219,7 +216,6 @@ public class OrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public void deleteWorkflow(String datasetId) throws GenericMetisException {
@@ -235,7 +231,6 @@ public class OrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public Workflow getWorkflow(String datasetId) throws GenericMetisException {
@@ -251,7 +246,6 @@ public class OrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public WorkflowExecution getWorkflowExecutionByExecutionId(String executionId) throws GenericMetisException {
@@ -304,7 +298,7 @@ public class OrchestratorService {
 
   /**
    * Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates the status of the WorkflowExecution
-   * to {@link WorkflowStatus#INQUEUE}, adds it to the database and also it's identifier goes into the distributed queue of
+   * to {@link WorkflowStatus#INQUEUE}, adds it to the database, and also it's identifier goes into the distributed queue of
    * WorkflowExecutions. The source data for the first plugin in the workflow can be controlled, if required, from the
    * {@code enforcedPredecessorType}, which means that the last valid plugin that is provided with that parameter, will be used as
    * the source data.
@@ -321,7 +315,6 @@ public class OrchestratorService {
    * not exist</li>
    * <li>{@link BadContentException} if the workflow is empty or no plugin enabled</li>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * <li>{@link ExternalTaskException} if there was an exception when contacting the external
    * resource(ECloud)</li>
    * <li>{@link PluginExecutionNotAllowed} if the execution of the first plugin was not allowed,
@@ -411,7 +404,6 @@ public class OrchestratorService {
    * <ul>
    * <li>{@link NoWorkflowExecutionFoundException} if no workflowExecution could be found</li>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public void cancelWorkflowExecution(String executionId, String userId) throws GenericMetisException {
@@ -455,7 +447,6 @@ public class OrchestratorService {
    * <li>{@link PluginExecutionNotAllowed} if the no plugin was found so the {@code pluginType}
    * will be based upon</li>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public ExecutablePlugin getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(String datasetId,
@@ -480,7 +471,6 @@ public class OrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutions(
@@ -562,14 +552,9 @@ public class OrchestratorService {
    * @param nextPage the nextPage token, the end of the list is marked with -1 on the response
    * @param pageCount the number of pages that are requested
    * @return a list of all the WorkflowExecutions together with the datasets that they belong to.
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
-   * </ul>
    */
   public ResponseListWrapper<ExecutionAndDatasetView> getWorkflowExecutionsOverview(Set<PluginStatus> pluginStatuses,
-      Set<PluginType> pluginTypes, Date fromDate, Date toDate, int nextPage, int pageCount) throws GenericMetisException {
+      Set<PluginType> pluginTypes, Date fromDate, Date toDate, int nextPage, int pageCount) {
     final Set<String> datasetIds = getDatasetIdsToFilterOn();
     final ResultList<ExecutionDatasetPair> resultList;
     if (datasetIds == null || !datasetIds.isEmpty()) {
@@ -813,7 +798,6 @@ public class OrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public ExecutionHistory getDatasetExecutionHistory(String datasetId)
@@ -852,10 +836,8 @@ public class OrchestratorService {
    * @return the structured class containing all the execution history, ordered by date descending.
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link NoWorkflowExecutionFoundException} if an
+   * <li>{@link NoWorkflowExecutionFoundException} if a
    * non-existing execution ID or version is provided.</li>
-   * <li>{@link UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   public PluginsWithDataAvailability getExecutablePluginsWithDataAvailability(String executionId) throws GenericMetisException {
@@ -912,10 +894,7 @@ public class OrchestratorService {
    * @return The record evolution.
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link NoWorkflowExecutionFoundException} if an
-   * non-existing execution ID or version is provided.</li>
-   * <li>{@link UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
+   * <li>{@link NoWorkflowExecutionFoundException} if a non-existing execution ID or version is provided.</li>
    * </ul>
    */
   public VersionEvolution getRecordEvolutionForVersion(String executionId, PluginType pluginType) throws GenericMetisException {
@@ -957,7 +936,6 @@ public class OrchestratorService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is not authorized to perform this task</li>
    * </ul>
    */
   public boolean isIncrementalHarvestingAllowed(String datasetId)

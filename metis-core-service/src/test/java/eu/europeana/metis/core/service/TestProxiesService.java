@@ -52,7 +52,6 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -355,13 +354,6 @@ class TestProxiesService {
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             pluginType, null, 5));
 
-    // If the user has no rights
-    doThrow(UserUnauthorizedException.class).when(proxiesService)
-                                            .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, pluginType);
-    assertThrows(UserUnauthorizedException.class, () -> proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            pluginType, null, 5));
-
     // If the execution does not have the plugin an empty result should be returned.
     doReturn(null).when(proxiesService)
                   .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, pluginType);
@@ -473,13 +465,6 @@ class TestProxiesService {
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
                                                         pluginType);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            pluginType, new ListOfIds()));
-
-    // If the user has no rights
-    doThrow(UserUnauthorizedException.class).when(proxiesService)
-                                            .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, pluginType);
-    assertThrows(UserUnauthorizedException.class, () -> proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             pluginType, new ListOfIds()));
 

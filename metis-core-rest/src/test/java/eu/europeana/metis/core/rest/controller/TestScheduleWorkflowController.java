@@ -37,8 +37,6 @@ import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.exception.BadContentException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
-import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -114,8 +112,6 @@ class TestScheduleWorkflowController {
   void scheduleWorkflowExecution_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED)).when(scheduleWorkflowService)
-                                                                           .scheduleWorkflow(any());
     mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -259,8 +255,6 @@ class TestScheduleWorkflowController {
   void updateScheduledWorkflow_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
-        .when(scheduleWorkflowService).updateScheduledWorkflow(any());
     mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)

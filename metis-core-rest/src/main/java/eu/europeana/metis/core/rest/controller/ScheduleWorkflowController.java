@@ -13,7 +13,6 @@ import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
 import org.slf4j.Logger;
@@ -61,7 +60,6 @@ public class ScheduleWorkflowController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some content send was not acceptable</li>
    * <li>{@link NoWorkflowFoundException} if the workflow for a dataset was not found</li>
    * <li>{@link ScheduledWorkflowAlreadyExistsException} if a scheduled workflow already exists</li>
@@ -82,14 +80,12 @@ public class ScheduleWorkflowController {
   }
 
   /**
-   * Get a scheduled workflow based on datasets identifier.
+   * Get a scheduled workflow based on a dataset identifier.
    *
    * @param datasetId the dataset identifier of which a scheduled workflow is to be retrieved
    * @return the scheduled workflow
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
-   * workflow</li>
    * <li>{@link NoDatasetFoundException} if dataset identifier does not exist</li>
    * </ul>
    */
@@ -113,8 +109,7 @@ public class ScheduleWorkflowController {
    * @return the list of scheduled workflows
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
-   * workflow</li>
+   * <li>{@link BadContentException} if some content send was not acceptable</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE, produces = {
@@ -142,8 +137,6 @@ public class ScheduleWorkflowController {
    * @param scheduledWorkflow the scheduled workflow
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
-   * workflow</li>
    * <li>{@link NoDatasetFoundException} if dataset identifier does not exist</li>
    * <li>{@link NoScheduledWorkflowFoundException} if the workflow for a dataset was not found</li>
    * <li>{@link BadContentException} if some content send was not acceptable</li>
@@ -167,8 +160,6 @@ public class ScheduleWorkflowController {
    * @param datasetId the dataset identifier of which a scheduled workflow is to be deleted
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if user is unauthorized to access the scheduled
-   * workflow</li>
    * <li>{@link NoDatasetFoundException} if dataset identifier does not exist</li>
    * </ul>
    */

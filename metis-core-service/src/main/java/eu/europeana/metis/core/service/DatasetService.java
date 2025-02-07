@@ -24,7 +24,6 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.transformation.service.EuropeanaGeneratedIdsMap;
 import eu.europeana.metis.transformation.service.EuropeanaIdCreator;
 import eu.europeana.metis.transformation.service.EuropeanaIdException;
@@ -101,7 +100,6 @@ public class DatasetService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link DatasetAlreadyExistsException} if the dataset for the same organizationId and datasetName already exists in the system.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some contents were invalid</li>
    * </ul>
    */
@@ -153,7 +151,6 @@ public class DatasetService {
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
    * <li>{@link BadContentException} if the dataset has an execution running, contents are invalid.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists for organizationId.</li>
    * </ul>
    */
@@ -241,8 +238,7 @@ public class DatasetService {
    * @param datasetId the identifier to find the dataset with
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link BadContentException} if the dataset is has an execution running.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
+   * <li>{@link BadContentException} if the dataset has an execution running.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * </ul>
    */
@@ -283,7 +279,6 @@ public class DatasetService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset is not found in the system.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
   public Dataset getDatasetByDatasetName(String datasetName)
@@ -304,7 +299,6 @@ public class DatasetService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
   public Dataset getDatasetByDatasetId(String datasetId)
@@ -321,7 +315,6 @@ public class DatasetService {
    * <ul>
    * <li>{@link NoXsltFoundException} if the xslt was not found.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
   public DatasetXslt getDatasetXsltByDatasetId(String datasetId) throws GenericMetisException {
@@ -404,8 +397,8 @@ public class DatasetService {
    * Transform a list of xmls using the latest default xslt stored.
    * <p>
    * This method can be used, for example, after a response from
-   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to
-   * try a transformation on a list of xmls just after validation external to preview an example result.
+   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
+   * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
@@ -413,8 +406,6 @@ public class DatasetService {
    * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if the authorization header is un-parsable or the
-   * user cannot be authorized.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * <li>{@link NoXsltFoundException} if there is no xslt found</li>
    * <li>{@link XsltSetupException} if the XSL transform could not be set up</li>
@@ -440,8 +431,8 @@ public class DatasetService {
    * Transform a list of xmls using the latest dataset xslt stored.
    * <p>
    * This method can be used, for example, after a response from
-   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, String, int)} to
-   * try a transformation on a list of xmls just after validation external to preview an example result.
+   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, String, int)} to try a
+   * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
@@ -449,8 +440,6 @@ public class DatasetService {
    * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if the authorization header is un-parsable or the
-   * user cannot be authorized.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * <li>{@link NoXsltFoundException} if there is no xslt found</li>
    * <li>{@link XsltSetupException} if the XSL transform could not be set up</li>
@@ -515,13 +504,8 @@ public class DatasetService {
    * @param provider the provider string used to find the datasets
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByProvider(String provider, int nextPage)
-      throws GenericMetisException {
+  public List<Dataset> getAllDatasetsByProvider(String provider, int nextPage) {
     return datasetDao.getAllDatasetsByProvider(provider, nextPage);
   }
 
@@ -531,13 +515,8 @@ public class DatasetService {
    * @param intermediateProvider the intermediateProvider string used to find the datasets
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByIntermediateProvider(String intermediateProvider,
-      int nextPage) throws GenericMetisException {
+  public List<Dataset> getAllDatasetsByIntermediateProvider(String intermediateProvider, int nextPage) {
     return datasetDao.getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage);
   }
 
@@ -547,13 +526,8 @@ public class DatasetService {
    * @param dataProvider the dataProvider string used to find the datasets
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByDataProvider(String dataProvider,
-      int nextPage) throws GenericMetisException {
+  public List<Dataset> getAllDatasetsByDataProvider(String dataProvider, int nextPage) {
     return datasetDao.getAllDatasetsByDataProvider(dataProvider, nextPage);
   }
 
@@ -574,13 +548,8 @@ public class DatasetService {
    * @param organizationName the organizationName string used to find the datasets
    * @param nextPage the nextPage number or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByOrganizationName(String organizationName, int nextPage)
-      throws GenericMetisException {
+  public List<Dataset> getAllDatasetsByOrganizationName(String organizationName, int nextPage) {
     return datasetDao.getAllDatasetsByOrganizationName(organizationName, nextPage);
   }
 
@@ -597,7 +566,6 @@ public class DatasetService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    *   <li>{@link BadContentException} if the parameters provided are invalid.</li>
-   *   <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
   public List<DatasetSearchView> searchDatasetsBasedOnSearchString(String searchString,

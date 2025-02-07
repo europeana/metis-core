@@ -22,7 +22,6 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
@@ -395,7 +394,7 @@ public class DatasetController {
    * @return {@link ResponseListWrapper}
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
+   * <li>{@link BadContentException} if the parameters provided are invalid.</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.DATASETS_INTERMEDIATE_PROVIDER, produces = {
@@ -572,7 +571,6 @@ public class DatasetController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    *   <li>{@link BadContentException} if the parameters provided are invalid.</li>
-   *   <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.DATASETS_SEARCH, produces = {

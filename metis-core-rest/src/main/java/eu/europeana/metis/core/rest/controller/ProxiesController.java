@@ -2,6 +2,7 @@ package eu.europeana.metis.core.rest.controller;
 
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
@@ -66,8 +67,6 @@ public class ProxiesController {
    * retrieving the logs from the external resource</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {
@@ -88,18 +87,16 @@ public class ProxiesController {
   }
 
   /**
-   * Check if final report is available.
+   * Checks if a final report is available for the specified external task.
    *
-   * @param topologyName the topology name of the task
-   * @param externalTaskId the task identifier
-   * @return true if final report available, false if not or ecloud response {@link jakarta.ws.rs.core.Response.Status)} is not
-   * OK, based on {@link eu.europeana.cloud.client.dps.rest.DpsClient#checkIfErrorReportExists}
+   * @param topologyName the name of the topology associated with the task
+   * @param externalTaskId the identifier of the external task
+   * @return a map with a single entry where the key is "existsExternalTaskReport" and the value is true if the final report is
+   * available, or false otherwise.
    * @throws GenericMetisException can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
+   * <li>{@link NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS, produces = {
@@ -132,8 +129,6 @@ public class ProxiesController {
    * retrieving the report from the external resource</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT, produces = {
@@ -163,8 +158,6 @@ public class ProxiesController {
    * retrieving the statistics from the external resource</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
@@ -195,8 +188,6 @@ public class ProxiesController {
    * retrieving the statistics from the external resource</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided external task identifier</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
@@ -231,8 +222,6 @@ public class ProxiesController {
    * retrieving the records from the external resource</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
    * workflow execution exists for the provided identifier</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authenticated or authorized to perform this operation</li>
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS,
@@ -260,8 +249,6 @@ public class ProxiesController {
    * <ul>
    * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
@@ -291,8 +278,6 @@ public class ProxiesController {
    * <ul>
    * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>
@@ -321,8 +306,6 @@ public class ProxiesController {
    * <ul>
    * <li>{@link eu.europeana.metis.exception.ExternalTaskException} if an error occurred while
    * retrieving the records from the external resource</li>
-   * <li>{@link eu.europeana.metis.exception.UserUnauthorizedException} if the user is not
-   * authorized to perform this task</li>
    * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no workflow
    * execution exists for the provided identifier</li>
    * </ul>

@@ -13,7 +13,6 @@ import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +68,6 @@ public class ScheduleWorkflowService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset does not exist</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
    * <li>{@link BadContentException} if some content send was not acceptable</li>
    * <li>{@link NoWorkflowFoundException} if the workflow for a dataset was not found</li>
    * <li>{@link ScheduledWorkflowAlreadyExistsException} if a scheduled workflow already exists</li>
