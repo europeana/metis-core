@@ -59,10 +59,6 @@ import org.xml.sax.InputSource;
 class TestDatasetService {
 
   private static int portForWireMock = 9999;
-  //TODO: 2025-01-17 - Remove when in-code authorization complete.
-  //Temp static organization so that the service methods will still work.
-  private static final String ORGANIZATION_ID = "1482250000001617026";
-  private static final String ORGANIZATION_NAME = "Europeana Foundation";
 
   static {
     try {
@@ -139,8 +135,8 @@ class TestDatasetService {
     verify(datasetDao, times(1)).create(any(Dataset.class));
     assertEquals(dataset.getDatasetName(), datasetArgumentCaptor.getValue().getDatasetName());
     assertEquals(TestObjectFactory.USER_ID, datasetArgumentCaptor.getValue().getCreatedByUserId());
-    assertEquals(ORGANIZATION_ID, datasetArgumentCaptor.getValue().getOrganizationId());
-    assertEquals(ORGANIZATION_NAME, datasetArgumentCaptor.getValue().getOrganizationName());
+    assertEquals(DatasetDao.ORGANIZATION_ID, datasetArgumentCaptor.getValue().getOrganizationId());
+    assertEquals(DatasetDao.ORGANIZATION_NAME, datasetArgumentCaptor.getValue().getOrganizationName());
   }
 
   @Test
@@ -149,7 +145,7 @@ class TestDatasetService {
 
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(DATASET_CREATION_LOCK)).thenReturn(rlock);
-    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(ORGANIZATION_ID, dataset.getDatasetName())).thenReturn(dataset);
+    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(DatasetDao.ORGANIZATION_ID, dataset.getDatasetName())).thenReturn(dataset);
     expectException(DatasetAlreadyExistsException.class, () -> datasetService.createDataset(TestObjectFactory.USER_ID, dataset));
     verify(datasetDao, times(0)).create(any(Dataset.class));
     verify(datasetDao, times(0)).getById(null);
@@ -161,7 +157,7 @@ class TestDatasetService {
     dataset.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     storedDataset.setUpdatedDate(new Date(-1000));
-    storedDataset.setOrganizationId(ORGANIZATION_ID);
+    storedDataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
@@ -182,7 +178,7 @@ class TestDatasetService {
     dataset.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     storedDataset.setUpdatedDate(new Date(-1000));
-    storedDataset.setOrganizationId(ORGANIZATION_ID);
+    storedDataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
@@ -199,9 +195,9 @@ class TestDatasetService {
   @Test
   void testUpdateDatasetDatasetAlreadyExistsException() throws NoDatasetFoundException {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     Dataset storedDataset = TestObjectFactory.createDataset(String.format("%s%s", TestObjectFactory.DATASETNAME, 10));
-    storedDataset.setOrganizationId(ORGANIZATION_ID);
+    storedDataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(storedDataset);
     when(datasetDao.getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(), dataset.getDatasetName())).thenReturn(
         new Dataset());
@@ -211,7 +207,7 @@ class TestDatasetService {
   @Test
   void testUpdateDatasetDatasetExecutionIsActive() throws NoDatasetFoundException {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn("ObjectId");
     assertThrows(BadContentException.class, () -> datasetService.updateDataset(dataset, null));
@@ -227,7 +223,7 @@ class TestDatasetService {
   @Test
   void testDeleteDatasetByDatasetId() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(null);
     datasetService.deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(datasetDao, times(1)).deleteByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
@@ -246,7 +242,7 @@ class TestDatasetService {
   @Test
   void testDeleteDatasetDatasetExecutionIsActive() {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn("ObjectId");
     assertThrows(BadContentException.class, () -> datasetService
@@ -256,7 +252,7 @@ class TestDatasetService {
   @Test
   void testGetDatasetByDatasetName() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetByDatasetName(dataset.getDatasetName())).thenReturn(dataset);
     Dataset returnedDataset = datasetService.getDatasetByDatasetName(TestObjectFactory.DATASETNAME);
     assertNotNull(returnedDataset);
@@ -271,7 +267,7 @@ class TestDatasetService {
   @Test
   void testGetDatasetByDatasetId() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     Dataset returnedDataset = datasetService.getDatasetByDatasetId(dataset.getDatasetId());
     assertNotNull(returnedDataset);
@@ -287,7 +283,7 @@ class TestDatasetService {
   @Test
   void getDatasetXsltByDatasetId() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     dataset.setXsltId(new ObjectId());
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
@@ -301,7 +297,7 @@ class TestDatasetService {
   @Test
   void getDatasetXsltByDatasetIdNoXsltFoundException() throws NoDatasetFoundException {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getById(anyString())).thenReturn(null);
     assertThrows(NoXsltFoundException.class, () -> datasetService.getDatasetXsltByDatasetId(dataset.getDatasetId()));
@@ -364,7 +360,7 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDefaultXslt() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(datasetXslt);
@@ -395,7 +391,7 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDefaultXslt_NoXsltFoundException() {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(null);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(1);
@@ -406,7 +402,7 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDatasetXslt() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     dataset.setXsltId(new ObjectId());
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
@@ -436,7 +432,7 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDatasetXslt_NoXsltFoundException() throws NoDatasetFoundException {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(1);
     assertThrows(NoXsltFoundException.class,

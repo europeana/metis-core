@@ -60,10 +60,6 @@ public class DatasetService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatasetService.class);
   private static final String DATASET_CREATION_LOCK = "datasetCreationLock";
   private static final int MINIMUM_WORD_LENGTH = 3;
-  //TODO: 2025-01-17 - Remove when in-code authorization complete.
-  //Temp static organization so that the service methods will still work.
-  private static final String ORGANIZATION_ID = "1482250000001617026";
-  private static final String ORGANIZATION_NAME = "Europeana Foundation";
 
   private final DatasetDao datasetDao;
   private final DatasetXsltDao datasetXsltDao;
@@ -111,8 +107,8 @@ public class DatasetService {
    */
   public Dataset createDataset(String userId, Dataset dataset) throws GenericMetisException {
 
-    dataset.setOrganizationId(ORGANIZATION_ID);
-    dataset.setOrganizationName(ORGANIZATION_NAME);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
+    dataset.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
 
     //Lock required for find in the next empty datasetId
     RLock lock = redissonClient.getFairLock(DATASET_CREATION_LOCK);
@@ -170,11 +166,11 @@ public class DatasetService {
     // Check that the new dataset name does not already exist.
     final String newDatasetName = dataset.getDatasetName();
     if (!storedDataset.getDatasetName().equals(newDatasetName)
-        && datasetDao.getDatasetByOrganizationIdAndDatasetName(ORGANIZATION_ID,
+        && datasetDao.getDatasetByOrganizationIdAndDatasetName(DatasetDao.ORGANIZATION_ID,
         newDatasetName) != null) {
       throw new DatasetAlreadyExistsException(String.format(
           "Trying to change dataset with datasetName: %s but dataset with organizationId: %s and datasetName: %s already exists",
-          storedDataset.getDatasetName(), ORGANIZATION_ID, newDatasetName));
+          storedDataset.getDatasetName(), DatasetDao.ORGANIZATION_ID, newDatasetName));
     }
 
     // Check that there is no workflow execution pending for the given dataset.
@@ -184,8 +180,8 @@ public class DatasetService {
     }
 
     // Set/overwrite dataset properties that the user may not determine.
-    dataset.setOrganizationId(ORGANIZATION_ID);
-    dataset.setOrganizationName(ORGANIZATION_NAME);
+    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
+    dataset.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
     dataset.setCreatedByUserId(storedDataset.getCreatedByUserId());
     dataset.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
     dataset.setCreatedDate(storedDataset.getCreatedDate());

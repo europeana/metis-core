@@ -47,6 +47,8 @@ import org.springframework.stereotype.Repository;
 public class DatasetDao implements MetisDao<Dataset, String> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatasetDao.class);
+  public static final String ORGANIZATION_ID = "1482250000001617026";
+  public static final String ORGANIZATION_NAME = "Europeana Foundation";
   private int datasetsPerRequest = RequestLimits.DATASETS_PER_REQUEST.getLimit();
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;

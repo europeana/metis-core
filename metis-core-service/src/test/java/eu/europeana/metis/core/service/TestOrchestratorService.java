@@ -107,9 +107,6 @@ import org.redisson.api.RedissonClient;
 
 class TestOrchestratorService {
 
-  //TODO: 2025-01-17 - Remove when in-code authorization complete.
-  //Temp static organization so that the service methods will still work.
-  private static final String ORGANIZATION_ID = "1482250000001617026";
   private static final int SOLR_COMMIT_PERIOD_IN_MINUTES = 15;
   private static WorkflowExecutionDao workflowExecutionDao;
   private static DataEvolutionUtils dataEvolutionUtils;
@@ -625,7 +622,7 @@ class TestOrchestratorService {
 
     // Check for all datasets and for regular user: should query all datasets to which that user's
     // organization has rights.
-    when(datasetDao.getAllDatasetsByOrganizationId(ORGANIZATION_ID)).thenReturn(datasets);
+    when(datasetDao.getAllDatasetsByOrganizationId(DatasetDao.ORGANIZATION_ID)).thenReturn(datasets);
     doReturn(new ResultList<>(Collections.emptyList(), false)).when(workflowExecutionDao)
                                                               .getAllWorkflowExecutions(any(), any(), any(), anyBoolean(),
                                                                   anyInt(), anyInt(), anyBoolean());
@@ -653,7 +650,7 @@ class TestOrchestratorService {
 
     // Check for all datasets and for regular user: should query all datasets to which that user's
     // organization has rights.
-    when(datasetDao.getAllDatasetsByOrganizationId(ORGANIZATION_ID)).thenReturn(datasets);
+    when(datasetDao.getAllDatasetsByOrganizationId(DatasetDao.ORGANIZATION_ID)).thenReturn(datasets);
     when(workflowExecutionDao
         .getWorkflowExecutionsOverview(eq(datasetIds), isNull(), isNull(), isNull(), isNull(),
             eq(nextPage), eq(pageCount)))
