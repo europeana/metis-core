@@ -440,7 +440,7 @@ class TestDatasetService {
   }
 
   @Test
-  void testGetAllDatasetsByProvider() throws Exception {
+  void testGetAllDatasetsByProvider() {
     List<Dataset> list = new ArrayList<>();
     String provider = "myProvider";
     int nextPage = 1;
@@ -450,7 +450,7 @@ class TestDatasetService {
   }
 
   @Test
-  void testGetAllDatasetsByIntermidiateProvider() throws Exception {
+  void testGetAllDatasetsByIntermediateProvider() {
     List<Dataset> list = new ArrayList<>();
     String provider = "myProvider";
     int nextPage = 1;
@@ -461,7 +461,7 @@ class TestDatasetService {
   }
 
   @Test
-  void testGetAllDatasetsByDataProvider() throws Exception {
+  void testGetAllDatasetsByDataProvider() {
     List<Dataset> list = new ArrayList<>();
     String provider = "myProvider";
     int nextPage = 1;
@@ -483,7 +483,7 @@ class TestDatasetService {
   }
 
   @Test
-  void testGetAllDatasetsByOrganizationName() throws Exception {
+  void testGetAllDatasetsByOrganizationName() {
     List<Dataset> list = new ArrayList<>();
     String organizationName = "organizationName";
     int nextPage = 1;

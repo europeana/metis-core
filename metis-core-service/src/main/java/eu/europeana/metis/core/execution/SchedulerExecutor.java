@@ -48,15 +48,12 @@ public class SchedulerExecutor {
    * Makes a run to check if there are executions scheduled in a range of dates and if some are found it will send them in the
    * distributed queue. It is meant that this method is ran periodically.
    */
-  @SuppressWarnings("squid:S2222")
-  //There is a lock.unlock() code within the `finally` code block, which will be run if an exception is thrown or not
   public void performScheduling() {
     RLock lock = redissonClient.getFairLock(SCHEDULER_LOCK);
     try {
       lock.lock();
       final LocalDateTime thisExecutionTime = LocalDateTime.now();
-      LOGGER.info("Date range checking lowerbound: {}, upperBound:{}", this.lastExecutionTime,
-          thisExecutionTime);
+      LOGGER.info("Date range checking lowerbound: {}, upperBound:{}", this.lastExecutionTime, thisExecutionTime);
       List<ScheduledWorkflow> allCleanedScheduledWorkflows =
           getCleanedScheduledUserWorkflows(lastExecutionTime, thisExecutionTime);
 

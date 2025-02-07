@@ -634,7 +634,7 @@ class TestOrchestratorService {
   }
 
   @Test
-  void getWorkflowExecutionOverview() throws GenericMetisException {
+  void getWorkflowExecutionOverview() {
 
     // Define some constants
     final int nextPage = 1;
