@@ -112,8 +112,8 @@ public class OrchestratorService {
    * @param workflowExecutionFactory the orchestratorHelper instance
    * @param workflowDao the Dao instance to access the Workflow database
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param workflowValidationUtils A utilities class providing more functionality on top of DAOs.
-   * @param dataEvolutionUtils A utilities class providing more functionality on top of DAOs.
+   * @param workflowValidationUtils utilities class providing more functionality on top of DAOs.
+   * @param dataEvolutionUtils utilities class providing more functionality on top of DAOs.
    * @param datasetDao the Dao instance to access the Dataset database
    * @param workflowExecutorManager the instance that handles the production and consumption of workflowExecutions
    * @param redissonClient the instance of Redisson library that handles distributed locks

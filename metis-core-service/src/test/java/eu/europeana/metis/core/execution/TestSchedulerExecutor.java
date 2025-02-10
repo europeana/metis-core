@@ -80,7 +80,7 @@ class TestSchedulerExecutor {
     when(scheduleWorkflowService.getScheduledWorkflowsPerRequest())
         .thenReturn(userWorkflowExecutionsPerRequest);
 
-    when(scheduleWorkflowService.getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
+    when(scheduleWorkflowService.getAllScheduledWorkflowsByDateRange(any(LocalDateTime.class),
         any(LocalDateTime.class), anyInt()))
         .thenReturn(listOfScheduledWorkflowsWithDateONCE);
     when(
@@ -98,7 +98,7 @@ class TestSchedulerExecutor {
 
     verify(scheduleWorkflowService, times(4)).getScheduledWorkflowsPerRequest();
     verify(scheduleWorkflowService, times(1))
-        .getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
+        .getAllScheduledWorkflowsByDateRange(any(LocalDateTime.class),
             any(LocalDateTime.class), anyInt());
     verify(scheduleWorkflowService, times(3))
         .getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt());
@@ -132,7 +132,7 @@ class TestSchedulerExecutor {
     when(scheduleWorkflowService.getScheduledWorkflowsPerRequest())
         .thenReturn(userWorkflowExecutionsPerRequest);
 
-    when(scheduleWorkflowService.getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
+    when(scheduleWorkflowService.getAllScheduledWorkflowsByDateRange(any(LocalDateTime.class),
         any(LocalDateTime.class), anyInt()))
         .thenReturn(new ArrayList<>());
     when(
@@ -150,7 +150,7 @@ class TestSchedulerExecutor {
 
     verify(scheduleWorkflowService, times(4)).getScheduledWorkflowsPerRequest();
     verify(scheduleWorkflowService, times(1))
-        .getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
+        .getAllScheduledWorkflowsByDateRange(any(LocalDateTime.class),
             any(LocalDateTime.class), anyInt());
     verify(scheduleWorkflowService, times(3))
         .getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt());

@@ -179,7 +179,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     }
 
     // Compute the finished date
-    final AbstractMetisPlugin<?> lastPlugin = metisPlugins.get(metisPlugins.size() - 1);
+    final AbstractMetisPlugin<?> lastPlugin = metisPlugins.getLast();
     final Date finishDate;
     if (lastPlugin.getPluginStatus() == PluginStatus.FINISHED) {
       finishDate = lastPlugin.getFinishedDate();

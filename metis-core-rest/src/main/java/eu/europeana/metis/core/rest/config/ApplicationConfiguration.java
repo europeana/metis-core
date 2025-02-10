@@ -18,7 +18,6 @@ import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.mongo.connection.MongoClientProvider;
 import eu.europeana.metis.mongo.connection.MongoProperties;
 import eu.europeana.metis.mongo.connection.MongoProperties.ReadPreferenceValue;
-import eu.europeana.metis.mongo.utils.CustomObjectMapper;
 import eu.europeana.metis.utils.CustomTruststoreAppender;
 import eu.europeana.metis.utils.CustomTruststoreAppender.TrustStoreConfigurationException;
 import eu.europeana.metis.utils.apm.ElasticAPMConfiguration;
@@ -41,10 +40,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
-import org.springframework.web.servlet.View;
-import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.view.BeanNameViewResolver;
-import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
 /**
  * Entry class with configuration fields and beans initialization for the application.
@@ -65,6 +60,8 @@ public class ApplicationConfiguration {
   /**
    * Autowired constructor for Spring Configuration class.
    *
+   * @param truststoreConfigurationProperties The properties for configuring the truststore.
+   * @param mongoConfigurationProperties The properties for configuring the MongoDB connection.
    * @throws TrustStoreConfigurationException if the configuration of the truststore failed
    */
   @Autowired
@@ -92,6 +89,12 @@ public class ApplicationConfiguration {
     }
   }
 
+  /**
+   * Gets a {@link MongoClient} instance based on the configuration properties.
+   *
+   * @param mongoConfigurationProperties The properties for configuring the MongoDB connection.
+   * @return The created MongoClient instance.
+   */
   public static MongoClient getMongoClient(MongoConfigurationProperties mongoConfigurationProperties) {
     final MongoProperties<IllegalArgumentException> mongoProperties = new MongoProperties<>(
         IllegalArgumentException::new);
@@ -125,6 +128,7 @@ public class ApplicationConfiguration {
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider}
    * @param ecloudDataSetServiceClient the ecloud dataset client
+   * @param ecloudConfigurationProperties the properties for ecloud configuration
    * @return {@link DatasetDao} used to access the database for datasets
    */
   @Bean
@@ -152,6 +156,7 @@ public class ApplicationConfiguration {
    * Get the DAO for depublished records.
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider}
+   * @param metisCoreConfigurationProperties the properties configuration for Metis Core
    * @return DAO used to access the database for depublished records.
    */
   @Bean
@@ -210,28 +215,5 @@ public class ApplicationConfiguration {
     if (mongoClient != null) {
       mongoClient.close();
     }
-  }
-
-  /**
-   * Required for json serialization for REST.
-   *
-   * @return {@link View}
-   */
-  @Bean
-  public View json() {
-    MappingJackson2JsonView view = new MappingJackson2JsonView();
-    view.setPrettyPrint(true);
-    view.setObjectMapper(new CustomObjectMapper());
-    return view;
-  }
-
-  /**
-   * Required for json serialization for REST.
-   *
-   * @return {@link ViewResolver}
-   */
-  @Bean
-  public ViewResolver viewResolver() {
-    return new BeanNameViewResolver();
   }
 }

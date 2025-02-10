@@ -38,6 +38,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * RabbitMQ configuration class.
+ */
 @Configuration
 @EnableConfigurationProperties({RabbitmqConfigurationProperties.class, TruststoreConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})

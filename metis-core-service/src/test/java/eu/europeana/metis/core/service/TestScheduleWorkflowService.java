@@ -153,7 +153,7 @@ class TestScheduleWorkflowService {
 
   @Test
   void getAllScheduledUserWorkflowsByDateRangeONCE() {
-    scheduleWorkflowService.getAllScheduledWorkflowsByDateRangeONCE(LocalDateTime.now(), LocalDateTime.now(), 0);
+    scheduleWorkflowService.getAllScheduledWorkflowsByDateRange(LocalDateTime.now(), LocalDateTime.now(), 0);
     verify(scheduledWorkflowDao, times(1)).getAllScheduledWorkflowsByDateRangeONCE(any(LocalDateTime.class),
         any(LocalDateTime.class), anyInt());
   }

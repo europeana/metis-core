@@ -29,22 +29,13 @@ import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
-import jakarta.annotation.PreDestroy;
-import java.net.MalformedURLException;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import metis.common.config.properties.TruststoreConfigurationProperties;
 import metis.common.config.properties.ecloud.EcloudConfigurationProperties;
 import metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
 import metis.common.config.properties.redis.RedisConfigurationProperties;
-import metis.common.config.properties.redis.RedissonConfigurationProperties;
 import metis.common.config.properties.validation.ValidationConfigurationProperties;
-import org.apache.commons.lang3.StringUtils;
-import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
-import org.redisson.config.SingleServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -71,52 +62,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   private static final Logger LOGGER = LoggerFactory.getLogger(OrchestratorConfig.class);
   private SchedulerExecutor schedulerExecutor;
   private WorkflowExecutionMonitor workflowExecutionMonitor;
-  private RedissonClient redissonClient;
-
-  @Bean
-  RedissonClient getRedissonClient(
-      TruststoreConfigurationProperties truststoreConfigurationProperties,
-      RedisConfigurationProperties redisConfigurationProperties)
-      throws MalformedURLException {
-    Config config = new Config();
-
-    SingleServerConfig singleServerConfig;
-    if (redisConfigurationProperties.isEnableSsl()) {
-      singleServerConfig = config.useSingleServer().setAddress(String
-          .format("rediss://%s:%s", redisConfigurationProperties.getHost(),
-              redisConfigurationProperties.getPort()));
-      LOGGER.info("Redis enabled SSL");
-      if (redisConfigurationProperties.isEnableCustomTruststore()) {
-        singleServerConfig
-            .setSslTruststore(Paths.get(truststoreConfigurationProperties.getPath()).toUri().toURL());
-        singleServerConfig.setSslTruststorePassword(truststoreConfigurationProperties.getPassword());
-        LOGGER.info("Redis enabled SSL using custom Truststore");
-      }
-    } else {
-      singleServerConfig = config.useSingleServer().setAddress(String
-          .format("redis://%s:%s", redisConfigurationProperties.getHost(),
-              redisConfigurationProperties.getPort()));
-      LOGGER.info("Redis disabled SSL");
-    }
-    if (StringUtils.isNotEmpty(redisConfigurationProperties.getUsername())) {
-      singleServerConfig.setUsername(redisConfigurationProperties.getUsername());
-    }
-    if (StringUtils.isNotEmpty(redisConfigurationProperties.getPassword())) {
-      singleServerConfig.setPassword(redisConfigurationProperties.getPassword());
-    }
-
-    RedissonConfigurationProperties redisson = redisConfigurationProperties.getRedisson();
-    singleServerConfig.setConnectionPoolSize(redisson.getConnectionPoolSize())
-                      .setConnectionMinimumIdleSize(redisson.getConnectionPoolSize())
-                      .setConnectTimeout((int) TimeUnit.SECONDS.toMillis(redisson.getConnectTimeoutInSeconds()))
-                      .setDnsMonitoringInterval((int) TimeUnit.SECONDS.toMillis(redisson.getDnsMonitorIntervalInSeconds()))
-                      .setIdleConnectionTimeout((int) TimeUnit.SECONDS.toMillis(redisson.getIdleConnectionTimeoutInSeconds()))
-                      .setRetryAttempts(redisson.getRetryAttempts());
-    //Give some secs to unlock if connection lost, or if too long to unlock
-    config.setLockWatchdogTimeout(TimeUnit.SECONDS.toMillis(redisson.getLockWatchdogTimeoutInSeconds()));
-    redissonClient = Redisson.create(config);
-    return redissonClient;
-  }
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -133,6 +78,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param workflowExecutionFactory factory for creating workflow execution instances
    * @param workflowExecutorManager manager for handling workflow execution processes
    * @param depublishRecordIdDao the DAO for managing depublished record IDs
+   * @param redissonClient the Redisson client instance for distributed locking and caching
    * @param metisCoreConfigurationProperties the core configuration properties for the system
    * @return a configured instance of {@link OrchestratorService}
    */
@@ -143,7 +89,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowExecutorManager workflowExecutorManager,
       DepublishRecordIdDao depublishRecordIdDao,
-      MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+      RedissonClient redissonClient, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
         workflowExecutorManager, redissonClient, depublishRecordIdDao);
@@ -194,6 +140,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param redirectionInferrer the component responsible for inferring redirection behavior for workflows
    * @param datasetXsltDao the DAO for managing XSLT transformations for workflows
    * @param depublishRecordIdDao the DAO for handling depublish record IDs
+   * @param metisCoreConfigurationProperties the Metis core configuration properties
    */
   @Bean
   public WorkflowExecutionFactory getWorkflowExecutionFactory(
@@ -275,6 +222,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   /**
    * Bean semaphore plugin manager.
    *
+   * @param metisCoreConfigurationProperties the Metis core configuration properties
    * @return the semaphore plugin manager
    */
   @Bean
@@ -399,16 +347,5 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   public void runSchedulingExecutor() {
     this.schedulerExecutor.performScheduling();
     LOGGER.info("Scheduler task finished.");
-  }
-
-  /**
-   * Close resources
-   */
-  @PreDestroy
-  public void close() {
-    // Shut down Redisson
-    if (redissonClient != null && !redissonClient.isShuttingDown()) {
-      redissonClient.shutdown();
-    }
   }
 }

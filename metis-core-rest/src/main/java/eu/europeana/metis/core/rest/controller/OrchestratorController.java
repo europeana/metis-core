@@ -293,7 +293,7 @@ public class OrchestratorController {
 
   /**
    * Check if a specified {@code pluginType} is allowed for execution. This is checked based on, if there was a previous
-   * successful finished plugin that follows a specific order (unless the {@code enforcedPredecessorType} is used) and that has
+   * successfully finished plugin that follows a specific order (unless the {@code enforcedPredecessorType} is used) and that has
    * the latest successful harvest plugin as an ancestor.
    *
    * @param datasetId the dataset identifier of which the executions are based on
@@ -522,7 +522,7 @@ public class OrchestratorController {
    * @return The record evolution.
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if an
+   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if a
    * non-existing execution ID or version is provided.</li>
    * </ul>
    */

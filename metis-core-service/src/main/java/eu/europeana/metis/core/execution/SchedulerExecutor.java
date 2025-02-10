@@ -99,7 +99,7 @@ public class SchedulerExecutor {
       scheduledUserWorkflowResponseListWrapper.clear();
       scheduledUserWorkflowResponseListWrapper
           .setResultsAndLastPage(
-              scheduleWorkflowService.getAllScheduledWorkflowsByDateRangeONCE(lowerBound, upperBound, nextPage),
+              scheduleWorkflowService.getAllScheduledWorkflowsByDateRange(lowerBound, upperBound, nextPage),
               scheduleWorkflowService.getScheduledWorkflowsPerRequest(), nextPage);
       scheduledWorkflows
           .addAll(scheduledUserWorkflowResponseListWrapper.getResults());

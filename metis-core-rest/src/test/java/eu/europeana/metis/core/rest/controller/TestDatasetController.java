@@ -52,6 +52,8 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -691,17 +693,6 @@ class TestDatasetController {
   }
 
   @Test
-  void getAllDatasetsByProviderNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(get("/secured/datasets/provider/myProvider")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "-1")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isNotAcceptable());
-  }
-
-  @Test
   void getAllDatasetsByProviderUnauthenticated() throws Exception {
     mockMvc.perform(get("/secured/datasets/provider/myProvider")
                .param("nextPage", "3")
@@ -751,17 +742,6 @@ class TestDatasetController {
 
     assertEquals("myIntermediateProvider", provider.getValue());
     assertEquals(3, page.getValue().intValue());
-  }
-
-  @Test
-  void getAllDatasetsByIntermediateProviderNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(get("/secured/datasets/intermediate_provider/myIntermediateProvider")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "-1")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isNotAcceptable());
   }
 
   @Test
@@ -819,17 +799,6 @@ class TestDatasetController {
   }
 
   @Test
-  void getAllDatasetsByDataProviderNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(get("/secured/datasets/data_provider/myDataProvider")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "-1")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isNotAcceptable());
-  }
-
-  @Test
   void getAllDatasetsByDataProviderUnauthenticated() throws Exception {
     mockMvc.perform(get("/secured/datasets/data_provider/myDataProvider")
                .param("nextPage", "3")
@@ -878,17 +847,6 @@ class TestDatasetController {
 
     assertEquals("myOrganizationId", provider.getValue());
     assertEquals(3, page.getValue().intValue());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationIdNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(get("/secured/datasets/organization_id/myOrganizationId")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "-1")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isNotAcceptable());
   }
 
   @Test
@@ -945,17 +903,6 @@ class TestDatasetController {
 
     assertEquals("myOrganizationName", provider.getValue());
     assertEquals(3, page.getValue().intValue());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationNameNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(get("/secured/datasets/organization_name/myOrganizationName")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "-1")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isNotAcceptable());
   }
 
   @Test
@@ -1086,6 +1033,24 @@ class TestDatasetController {
 
     assertEquals("test", searchString.getValue());
     assertEquals(3, page.getValue().intValue());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "/secured/datasets/provider/myProvider",
+      "/secured/datasets/intermediate_provider/myIntermediateProvider",
+      "/secured/datasets/data_provider/myDataProvider",
+      "/secured/datasets/organization_id/myOrganizationId",
+      "/secured/datasets/organization_name/myOrganizationName"
+  })
+  void getWithNegativeNextPage(String endpoint) throws Exception {
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    mockMvc.perform(get(endpoint)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("nextPage", "-1")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(null)))
+           .andExpect(status().isNotAcceptable());
   }
 
   private List<DatasetSearchView> getDatasetSearchViews() {

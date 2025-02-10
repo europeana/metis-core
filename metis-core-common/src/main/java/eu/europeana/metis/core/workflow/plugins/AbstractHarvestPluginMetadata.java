@@ -9,7 +9,7 @@ public abstract class AbstractHarvestPluginMetadata extends AbstractExecutablePl
   //Default false. If false, it indicates that the ProvidedCHO rdf:about should be used to set the identifier for ECloud
   private boolean useDefaultIdentifiers;
 
-  public AbstractHarvestPluginMetadata() {
+  protected AbstractHarvestPluginMetadata() {
     //Required for json serialization
   }
 

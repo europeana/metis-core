@@ -90,11 +90,17 @@ public class ScheduleWorkflowService {
     return scheduledWorkflowDao.getAllScheduledWorkflows(scheduleFrequence, nextPage);
   }
 
-  // This method does not require authorization. It is called from a scheduled task.
-  public List<ScheduledWorkflow> getAllScheduledWorkflowsByDateRangeONCE(
+  /**
+   * Retrieves a list of scheduled workflows that fall within the specified date range.
+   *
+   * @param lowerBound the lower bound of the date range (inclusive)
+   * @param upperBound the upper bound of the date range (inclusive)
+   * @param nextPage the page number to retrieve the results for
+   * @return a list of scheduled workflows that fall within the specified date range and page number
+   */
+  public List<ScheduledWorkflow> getAllScheduledWorkflowsByDateRange(
       LocalDateTime lowerBound, LocalDateTime upperBound, int nextPage) {
-    return scheduledWorkflowDao
-        .getAllScheduledWorkflowsByDateRangeONCE(lowerBound, upperBound, nextPage);
+    return scheduledWorkflowDao.getAllScheduledWorkflowsByDateRangeONCE(lowerBound, upperBound, nextPage);
   }
 
   private void checkScheduledWorkflowExistenceForDatasetId(String datasetId)
@@ -108,9 +114,8 @@ public class ScheduleWorkflowService {
   }
 
   /**
-   * Updates the details of an existing scheduled workflow in the database.
-   * Ensures the dataset associated with the scheduled workflow exists and validates
-   * restrictions related to the update before proceeding.
+   * Updates the details of an existing scheduled workflow in the database. Ensures the dataset associated with the scheduled
+   * workflow exists and validates restrictions related to the update before proceeding.
    *
    * @param scheduledWorkflow The scheduled workflow object containing updated details.
    * @throws GenericMetisException If the dataset does not exist or if validation fails.
