@@ -96,16 +96,19 @@ public class DepublishRecordIdController {
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
-   * @throws IOException In case something unexpected went wrong reading the request body.
    */
   @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
       MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
-      @RequestPart("depublicationFile") MultipartFile recordIdsFile
-  ) throws GenericMetisException, IOException {
-    createRecordIdsToBeDepublished(datasetId,
-        new String(recordIdsFile.getBytes(), StandardCharsets.UTF_8));
+      @RequestPart("depublicationFile") MultipartFile recordIdsFile) throws GenericMetisException {
+    final String fileContent;
+    try {
+      fileContent = new String(recordIdsFile.getBytes(), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new GenericMetisException("Failed to read the request body", e);
+    }
+    createRecordIdsToBeDepublished(datasetId, fileContent);
   }
 
   /**
