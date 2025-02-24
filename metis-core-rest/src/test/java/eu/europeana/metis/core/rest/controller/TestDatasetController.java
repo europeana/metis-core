@@ -243,7 +243,7 @@ class TestDatasetController {
   @Test
   void deleteDataset() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(delete(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(delete("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .accept(MediaType.APPLICATION_JSON)
                .contentType(MediaType.APPLICATION_JSON)
@@ -258,7 +258,7 @@ class TestDatasetController {
 
   @Test
   void deleteDatasetUnauthenticated() throws Exception {
-    mockMvc.perform(delete(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(delete("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .accept(MediaType.APPLICATION_JSON)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -269,7 +269,7 @@ class TestDatasetController {
   @Test
   void deleteDatasetInvalidUser() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(delete(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(delete("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .accept(MediaType.APPLICATION_JSON)
                .contentType(MediaType.APPLICATION_JSON)
@@ -283,7 +283,7 @@ class TestDatasetController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     doThrow(new BadContentException("Bad Content")).when(datasetService)
                                                    .deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
-    mockMvc.perform(delete(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(delete("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .accept(MediaType.APPLICATION_JSON)
                .contentType(MediaType.APPLICATION_JSON)
@@ -298,7 +298,7 @@ class TestDatasetController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     when(datasetService.getDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(dataset);
-    mockMvc.perform(get(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -315,7 +315,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetIdUnauthenticated() throws Exception {
-    mockMvc.perform(get(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
@@ -325,7 +325,7 @@ class TestDatasetController {
   @Test
   void getByDatasetIdInvalidUser() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(get(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -338,7 +338,7 @@ class TestDatasetController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     when(datasetService.getDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenThrow(new NoDatasetFoundException("Does not exist"));
-    mockMvc.perform(get(String.format("/secured/datasets/%s", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -354,7 +354,7 @@ class TestDatasetController {
     DatasetXslt xsltObject = new DatasetXslt(dataset.getDatasetId(),
         "<xslt attribute:\"value\"></xslt>");
     when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(xsltObject);
-    mockMvc.perform(get(String.format("/secured/datasets/%s/xslt", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -376,7 +376,7 @@ class TestDatasetController {
         .thenThrow(new NoDatasetFoundException("Does not exist"));
     mockMvc
         .perform(
-            get(String.format("/secured/datasets/%s/xslt", TestObjectFactory.DATASETID))
+            get("/secured/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
                 .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -390,7 +390,7 @@ class TestDatasetController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenThrow(new NoXsltFoundException("Does not exist"));
-    mockMvc.perform(get(String.format("/secured/datasets/%s/xslt", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -407,7 +407,7 @@ class TestDatasetController {
 
     when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn(xsltObject);
-    mockMvc.perform(get(String.format("/secured/datasets/%s/xslt", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
@@ -423,7 +423,7 @@ class TestDatasetController {
 
     when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn(xsltObject);
-    mockMvc.perform(get(String.format("/secured/datasets/%s/xslt", TestObjectFactory.DATASETID))
+    mockMvc.perform(get("/secured/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -439,7 +439,7 @@ class TestDatasetController {
 
     when(datasetService.getDatasetXsltByXsltId(TestObjectFactory.XSLTID))
         .thenReturn(xsltObject);
-    mockMvc.perform(get(String.format("/secured/datasets/xslt/%s", TestObjectFactory.XSLTID))
+    mockMvc.perform(get("/secured/datasets/xslt/{xsltId}", TestObjectFactory.XSLTID)
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isOk())
            .andExpect(content().contentType(
@@ -456,7 +456,7 @@ class TestDatasetController {
   void getXsltByXsltId_NoXsltFound_404() throws Exception {
     when(datasetService.getDatasetXsltByXsltId(TestObjectFactory.XSLTID))
         .thenThrow(new NoXsltFoundException("No xslt found"));
-    mockMvc.perform(get(String.format("/secured/datasets/xslt/%s", TestObjectFactory.XSLTID))
+    mockMvc.perform(get("/secured/datasets/xslt/{xsltId}", TestObjectFactory.XSLTID)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isNotFound());
@@ -614,7 +614,7 @@ class TestDatasetController {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
 
     when(datasetService.getDatasetByDatasetName(TestObjectFactory.DATASETNAME)).thenReturn(dataset);
-    mockMvc.perform(get(String.format("/secured/datasets/dataset_name/%s", TestObjectFactory.DATASETNAME))
+    mockMvc.perform(get("/secured/datasets/dataset_name/{datasetName}", TestObjectFactory.DATASETNAME)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -630,7 +630,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetNameUnauthenticated() throws Exception {
-    mockMvc.perform(get(String.format("/secured/datasets/dataset_name/%s", TestObjectFactory.DATASETNAME))
+    mockMvc.perform(get("/secured/datasets/dataset_name/{datasetName}", TestObjectFactory.DATASETNAME)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
            .andExpect(status().isUnauthorized());
@@ -641,7 +641,7 @@ class TestDatasetController {
   @Test
   void getByDatasetNameInvalidUser() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(get(String.format("/secured/datasets/dataset_name/%s", TestObjectFactory.DATASETNAME))
+    mockMvc.perform(get("/secured/datasets/dataset_name/{datasetName}", TestObjectFactory.DATASETNAME)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
@@ -655,7 +655,7 @@ class TestDatasetController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     when(datasetService.getDatasetByDatasetName(TestObjectFactory.DATASETNAME)).thenThrow(
         new NoDatasetFoundException("Does not exist"));
-    mockMvc.perform(get(String.format("/secured/datasets/dataset_name/%s", TestObjectFactory.DATASETNAME))
+    mockMvc.perform(get("/secured/datasets/dataset_name/{datasetName}", TestObjectFactory.DATASETNAME)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(null)))
