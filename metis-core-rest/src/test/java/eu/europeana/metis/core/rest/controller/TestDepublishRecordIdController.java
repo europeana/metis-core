@@ -89,7 +89,7 @@ class TestDepublishRecordIdController {
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, recordIds)).thenReturn(3);
 
-    mockMvc.perform(post("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
@@ -102,7 +102,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
-    mockMvc.perform(post("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/record_ids/{datasetId}", datasetId)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
            .andExpect(status().isUnauthorized());
@@ -114,7 +114,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
-    mockMvc.perform(post("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
@@ -128,7 +128,7 @@ class TestDepublishRecordIdController {
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
     when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
 
-    mockMvc.perform(multipart("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(multipart("/depublish/record_ids/{datasetId}", datasetId)
                .file(file)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(status().isCreated());
@@ -140,7 +140,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
 
-    mockMvc.perform(multipart("/secured/depublish/record_ids/{datasetId}", datasetId).file(file))
+    mockMvc.perform(multipart("/depublish/record_ids/{datasetId}", datasetId).file(file))
            .andExpect(status().isUnauthorized());
   }
 
@@ -151,7 +151,7 @@ class TestDepublishRecordIdController {
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
     when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
 
-    mockMvc.perform(multipart("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(multipart("/depublish/record_ids/{datasetId}", datasetId)
                .file(file)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
            .andExpect(status().isForbidden());
@@ -165,7 +165,7 @@ class TestDepublishRecordIdController {
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenReturn(3L);
 
-    mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(delete("/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
@@ -178,7 +178,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
-    mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(delete("/depublish/record_ids/{datasetId}", datasetId)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
            .andExpect(status().isUnauthorized());
@@ -190,7 +190,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
-    mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(delete("/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
@@ -205,7 +205,7 @@ class TestDepublishRecordIdController {
     when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
         new NoDatasetFoundException("Dataset not found"));
 
-    mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(delete("/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
@@ -222,7 +222,7 @@ class TestDepublishRecordIdController {
     when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
         new BadContentException("Bad content"));
 
-    mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(delete("/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
@@ -241,7 +241,7 @@ class TestDepublishRecordIdController {
         result);
     when(depublishRecordIdService.canTriggerDepublication(anyString())).thenReturn(true);
 
-    mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(get("/depublish/record_ids/{datasetId}", datasetId)
                .param("page", "0")
                .param("sortField", "RECORD_ID")
                .param("sortAscending", "true")
@@ -264,7 +264,7 @@ class TestDepublishRecordIdController {
     when(depublishRecordIdService.canTriggerDepublication(anyString())).thenThrow(
         new NoDatasetFoundException("Dataset not found")).thenReturn(true);
 
-    mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(get("/depublish/record_ids/{datasetId}", datasetId)
                .param("page", "0")
                .param("sortField", "RECORD_ID")
                .param("sortAscending", "true")
@@ -273,7 +273,7 @@ class TestDepublishRecordIdController {
            .andExpect(status().isNotFound())
            .andExpect(jsonPath("$.errorMessage").value("Dataset not found"));
 
-    mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(get("/depublish/record_ids/{datasetId}", datasetId)
                .param("page", "0")
                .param("sortField", "RECORD_ID")
                .param("sortAscending", "true")
@@ -291,7 +291,7 @@ class TestDepublishRecordIdController {
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
 
-    mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(get("/depublish/record_ids/{datasetId}", datasetId)
                .param("page", "0")
                .param("sortField", "RECORD_ID")
                .param("sortAscending", "true")
@@ -306,7 +306,7 @@ class TestDepublishRecordIdController {
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
 
-    mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
+    mockMvc.perform(get("/depublish/record_ids/{datasetId}", datasetId)
                .param("page", "0")
                .param("sortField", "RECORD_ID")
                .param("sortAscending", "true")
@@ -324,7 +324,7 @@ class TestDepublishRecordIdController {
     when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
         anyString(), any(), any())).thenReturn(execution);
 
-    mockMvc.perform(post("/secured/depublish/execute/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
                .param("priority", "0")
@@ -332,7 +332,7 @@ class TestDepublishRecordIdController {
                .content(recordIds))
            .andExpect(status().isCreated());
 
-    mockMvc.perform(post("/secured/depublish/execute/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "true")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
                .param("priority", "0")
@@ -357,7 +357,7 @@ class TestDepublishRecordIdController {
                                    .thenThrow(new BadContentException("Bad content"));
 
 
-    final MockHttpServletRequestBuilder operation = post("/secured/depublish/execute/{datasetId}", datasetId)
+    final MockHttpServletRequestBuilder operation = post("/depublish/execute/{datasetId}", datasetId)
         .param("datasetDepublish", "false")
         .param("depublicationReason", "BROKEN_MEDIA_LINKS")
         .param("priority", "0")
@@ -387,7 +387,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
-    mockMvc.perform(post("/secured/depublish/execute/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
                .param("priority", "0")
@@ -401,7 +401,7 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
-    mockMvc.perform(post("/secured/depublish/execute/{datasetId}", datasetId)
+    mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
                .param("priority", "0")
@@ -412,7 +412,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void getDepublicationReasons() throws Exception {
-    mockMvc.perform(get("/secured/depublish/reasons"))
+    mockMvc.perform(get("/depublish/reasons"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$").isArray());
   }

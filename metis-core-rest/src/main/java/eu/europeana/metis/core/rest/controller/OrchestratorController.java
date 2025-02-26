@@ -52,7 +52,6 @@ import org.springframework.web.bind.annotation.RestController;
  * system</p>
  */
 @RestController
-@RequestMapping({"/secured", "/"})
 public class OrchestratorController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OrchestratorController.class);

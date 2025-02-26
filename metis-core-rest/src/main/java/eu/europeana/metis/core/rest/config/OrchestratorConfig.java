@@ -66,7 +66,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   /**
    * Creates and configures a {@link OrchestratorService} bean.
    * <p>
-   * This service orchestrates secured workflows and handles the execution, validation, and evolution of workflows across
+   * This service orchestrates workflows and handles the execution, validation, and evolution of workflows across
    * datasets. The method initializes the {@link OrchestratorService} with various dependencies required for its operation,
    * including DAOs, utility classes, and configuration properties.
    *

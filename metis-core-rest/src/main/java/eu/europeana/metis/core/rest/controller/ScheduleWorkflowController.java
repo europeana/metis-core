@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,12 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Contains all the calls that are related to scheduling workflows.
  * <p>The {@link ScheduleWorkflowService} has control on how to schedule workflows</p>
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-05
  */
 @RestController
-@RequestMapping({"/secured", "/"})
 public class ScheduleWorkflowController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleWorkflowController.class);

@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.RestController;
  * Proxies Controller which encapsulates functionality that has to be proxied to an external resource.
  */
 @RestController
-@RequestMapping({"/secured", "/"})
 public class ProxiesController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ProxiesController.class);
