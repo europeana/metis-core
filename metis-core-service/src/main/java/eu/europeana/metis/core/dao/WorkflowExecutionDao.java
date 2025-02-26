@@ -12,6 +12,7 @@ import static eu.europeana.metis.core.common.DaoFieldNames.STARTED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.WORKFLOW_STATUS;
 import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_ID;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
@@ -36,7 +37,6 @@ import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
 import dev.morphia.query.updates.UpdateOperator;
 import dev.morphia.query.updates.UpdateOperators;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
@@ -51,7 +51,6 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
-import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -70,9 +69,6 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * Data Access Object for workflow executions using mongo.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-26
  */
 @Repository
 public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String> {
@@ -176,59 +172,34 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   }
 
   /**
-   * Set the cancelling field in the database.
-   * <p>Also adds information of the user identifier that cancelled the execution or if it was by a
-   * system operation, using {@link SystemId} values as identifiers. For historical executions the value of the
-   * <code>cancelledBy</code> field will remain <code>null</code></p>
+   * Sets the cancelling state of the given workflow execution in the system with a specific identifier.
    *
-   * @param workflowExecution the workflowExecution to be cancelled
-   * @param metisUserView the user that triggered the cancellation or null if it was the system
-   *
-   * @deprecated replaced by {@link #setCancellingState(WorkflowExecution, String)}
+   * @param workflowExecution the workflow execution instance whose cancelling state needs to be set
    */
-  @Deprecated(forRemoval = true)
-  public void setCancellingState(WorkflowExecution workflowExecution, MetisUserView metisUserView) {
-    Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
-                                                             .find(WorkflowExecution.class)
-                                                             .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()));
-    String cancelledBy;
-    if (metisUserView == null || metisUserView.getUserId() == null) {
-      cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    } else {
-      cancelledBy = metisUserView.getUserId();
-    }
-    final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
-    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, cancelledBy);
-
-    UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
-        () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));
-    LOGGER.debug(
-        "WorkflowExecution cancelling for datasetId '{}' set to true in Mongo. (UpdateResults: {})",
-        workflowExecution.getDatasetId(),
-        updateResult == null ? 0 : updateResult.getModifiedCount());
+  public void setCancellingStateSystem(WorkflowExecution workflowExecution) {
+    setCancellingState(workflowExecution, SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
   }
 
+
   /**
-   * Set the cancelling field in the database.
-   * <p>Also adds information of the user identifier that cancelled the execution or if it was by a
-   * system operation, using {@link SystemId} values as identifiers. For historical executions the value of the
-   * <code>cancelledBy</code> field will remain <code>null</code></p>
+   * Sets the cancelling state of the specified workflow execution and records the user initiating the cancellation.
+   * This method updates the database to mark the workflow as cancelling and sets the canceling user's identifier.
    *
-   * @param workflowExecution the workflowExecution to be cancelled
-   * @param userId the user email that triggered the cancellation or null if it was the system
+   * @param workflowExecution the WorkflowExecution object representing the workflow to be updated
+   * @param userId the identifier of the user requesting the cancellation; must not be null or blank
+   * @throws IllegalArgumentException if the userId is null or blank
    */
   public void setCancellingState(WorkflowExecution workflowExecution, String userId) {
+    if (isBlank(userId)) {
+      throw new IllegalArgumentException("The user identifier cannot be null or blank");
+    }
+
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)
                                                              .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()));
-    String cancelledBy;
-    if (StringUtils.isBlank(userId)) {
-      cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    } else {
-      cancelledBy = userId;
-    }
+
     final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
-    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, cancelledBy);
+    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, userId);
 
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));

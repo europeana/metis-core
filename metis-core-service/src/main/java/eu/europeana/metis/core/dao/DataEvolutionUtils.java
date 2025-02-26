@@ -348,7 +348,7 @@ public class DataEvolutionUtils {
    *
    * @param datasetId The dataset ID for which to obtain the chain.
    * @return The chain, in the form of plugin-execution pairs that are ordered chronologically. Is never null, but can be empty if
-   * no such chain exists (i.e. the dataset does not have a published harvest or we find an index after the last full harvest that
+   * no such chain exists (i.e. the dataset does not have a published harvest, or we find an index after the last full harvest that
    * is invalid or did somehow not originate from a harvest).
    */
   public List<PluginWithExecutionId<ExecutablePlugin>> getPublishedHarvestIncrements(String datasetId) {
@@ -360,7 +360,7 @@ public class DataEvolutionUtils {
     // Note: we assume that workflows don't cross each other (i.e. an earlier publish cannot have a
     // later harvest). We stop when we find a full harvest (the latest full harvest).
     boolean fullHarvestFound = false;
-    final Map<ExecutedMetisPluginId, PluginWithExecutionId<ExecutablePlugin>> resultHarvests = new LinkedHashMap<>(
+    final Map<ExecutedMetisPluginId, PluginWithExecutionId<ExecutablePlugin>> resultHarvests = LinkedHashMap.newLinkedHashMap(
         allPublishOperations.size());
     for (PluginWithExecutionId<IndexToPublishPlugin> publishOperation : allPublishOperations) {
 

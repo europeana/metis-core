@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -15,7 +15,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import eu.europeana.metis.authentication.user.MetisUserView;
+import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation.PublicationStatus;
@@ -26,8 +26,8 @@ import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.exception.GenericMetisException;
+import eu.europeana.metis.utils.DepublicationReason;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,40 +37,33 @@ import org.mockito.ArgumentCaptor;
 
 class TestDepublishRecordIdService {
 
-  private static Authorizer authorizer;
   private static OrchestratorService orchestratorService;
+  private static DatasetDao datasetDao;
   private static DepublishRecordIdDao depublishRecordIdDao;
   private static DepublishRecordIdService depublishRecordIdService;
-  private static MetisUserView metisUserView;
   private static String datasetId;
 
   @BeforeAll
   static void setUp() {
-
-    authorizer = mock(Authorizer.class);
     orchestratorService = mock(OrchestratorService.class);
+    datasetDao = mock(DatasetDao.class);
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
-    metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
     datasetId = Integer.toString(TestObjectFactory.DATASETID);
-
-    depublishRecordIdService = spy(new DepublishRecordIdService(authorizer, orchestratorService,
-        depublishRecordIdDao));
-
+    depublishRecordIdService = spy(new DepublishRecordIdService(orchestratorService, depublishRecordIdDao, datasetDao));
   }
 
   @BeforeEach
   void cleanUp() {
-    reset(authorizer);
     reset(orchestratorService);
+    reset(datasetDao);
     reset(depublishRecordIdDao);
     reset(depublishRecordIdService);
   }
 
   @Test
   void addRecordIdsToBeDepublishedTest() throws GenericMetisException {
-    depublishRecordIdService.addRecordIdsToBeDepublished(metisUserView, datasetId, "1002");
+    depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1002");
 
-    verify(authorizer, times(1)).authorizeWriteExistingDatasetById(metisUserView, datasetId);
     verify(depublishRecordIdService, times(1)).checkAndNormalizeRecordIds(any(), any());
     verify(depublishRecordIdDao, times(1)).createRecordIdsToBeDepublished(any(), any());
     verifyNoMoreInteractions(orchestratorService);
@@ -80,9 +73,8 @@ class TestDepublishRecordIdService {
 
   @Test
   void deletePendingRecordIdsTest() throws GenericMetisException {
-    depublishRecordIdService.deletePendingRecordIds(metisUserView, datasetId, "1002");
+    depublishRecordIdService.deletePendingRecordIds(datasetId, "1002");
 
-    verify(authorizer, times(1)).authorizeWriteExistingDatasetById(metisUserView, datasetId);
     verify(depublishRecordIdService, times(1)).checkAndNormalizeRecordIds(any(), any());
     verify(depublishRecordIdDao, times(1)).deletePendingRecordIds(any(), any());
     verifyNoMoreInteractions(orchestratorService);
@@ -98,12 +90,8 @@ class TestDepublishRecordIdService {
     doReturn(List.of(new DepublishRecordIdView(depublishRecordId))).when(depublishRecordIdDao)
         .getDepublishRecordIds(eq(datasetId), anyInt(), any(), any(), anyString());
 
-    // Make the actual call
-    final var result = depublishRecordIdService.getDepublishRecordIds(metisUserView, datasetId, 1,
-            DepublishRecordIdSortField.RECORD_ID, SortDirection.ASCENDING, "search");
+    final var result = depublishRecordIdService.getDepublishRecordIds(datasetId, 1, DepublishRecordIdSortField.RECORD_ID, SortDirection.ASCENDING, "search");
 
-    // Verify the interactions
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
     verify(depublishRecordIdDao, times(1)).getDepublishRecordIds(datasetId,
             1, DepublishRecordIdSortField.RECORD_ID, SortDirection.ASCENDING, "search");
     verify(depublishRecordIdDao, times(1)).getDepublishRecordIds(anyString(),
@@ -125,19 +113,15 @@ class TestDepublishRecordIdService {
         mockRecordIdsSeparateLines);
 
     //Do the actual call
-    depublishRecordIdService
-        .createAndAddInQueueDepublishWorkflowExecution(metisUserView, datasetId, true, 1, mockRecordIdsSeparateLines,
-            DepublicationReason.GENERIC);
+    depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(datasetId, true, 1, mockRecordIdsSeparateLines, DepublicationReason.GENERIC, TestObjectFactory.USER_ID);
 
-    //Verify interactions
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
     verify(orchestratorService, times(1))
-        .addWorkflowInQueueOfWorkflowExecutions(any(), anyString(), any(), any(), anyInt());
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), any(), any(), anyInt(), anyString());
 
     //Verify values
     ArgumentCaptor<Workflow> workflowArgumentCaptor = ArgumentCaptor.forClass(Workflow.class);
     verify(orchestratorService, times(1))
-        .addWorkflowInQueueOfWorkflowExecutions(any(), anyString(), workflowArgumentCaptor.capture(), any(), anyInt());
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), workflowArgumentCaptor.capture(), any(), anyInt(), anyString());
     Workflow sentWorkflow = workflowArgumentCaptor.getValue();
     assertEquals(datasetId, sentWorkflow.getDatasetId());
   }
@@ -152,9 +136,8 @@ class TestDepublishRecordIdService {
     doReturn(PublicationStatus.PUBLISHED).when(mockExecutionInformation).getPublicationStatus();
     doReturn(true).when(mockExecutionInformation).isLastPreviewRecordsReadyForViewing();
     doReturn(true).when(mockExecutionInformation).isLastPublishedRecordsReadyForViewing();
-    boolean result = depublishRecordIdService.canTriggerDepublication(metisUserView, datasetId);
+    boolean result = depublishRecordIdService.canTriggerDepublication(datasetId);
 
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
     verify(orchestratorService, times(1)).getRunningOrInQueueExecution(datasetId);
     verify(orchestratorService, times(1)).getDatasetExecutionInformation(datasetId);
     verify(mockExecutionInformation, times(1)).getPublicationStatus();
@@ -167,9 +150,8 @@ class TestDepublishRecordIdService {
     final WorkflowExecution mockWorkflow = mock(WorkflowExecution.class);
 
     doReturn(mockWorkflow).when(orchestratorService).getRunningOrInQueueExecution(datasetId);
-    boolean result = depublishRecordIdService.canTriggerDepublication(metisUserView, datasetId);
+    boolean result = depublishRecordIdService.canTriggerDepublication(datasetId);
 
-    verify(authorizer, times(1)).authorizeReadExistingDatasetById(metisUserView, datasetId);
     verify(orchestratorService, times(1)).getRunningOrInQueueExecution(datasetId);
     assertFalse(result);
   }

@@ -2,7 +2,6 @@ package eu.europeana.metis.core.rest.config;
 
 import com.mongodb.client.MongoClient;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -13,17 +12,12 @@ import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
-import eu.europeana.metis.core.service.Authorizer;
 import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.service.OrchestratorService;
-import eu.europeana.metis.core.service.SecuredDatasetService;
-import eu.europeana.metis.core.service.SecuredDepublishRecordIdService;
-import eu.europeana.metis.core.service.SecuredOrchestratorService;
 import eu.europeana.metis.mongo.connection.MongoClientProvider;
 import eu.europeana.metis.mongo.connection.MongoProperties;
 import eu.europeana.metis.mongo.connection.MongoProperties.ReadPreferenceValue;
-import eu.europeana.metis.mongo.utils.CustomObjectMapper;
 import eu.europeana.metis.utils.CustomTruststoreAppender;
 import eu.europeana.metis.utils.CustomTruststoreAppender.TrustStoreConfigurationException;
 import eu.europeana.metis.utils.apm.ElasticAPMConfiguration;
@@ -46,10 +40,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
-import org.springframework.web.servlet.View;
-import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.view.BeanNameViewResolver;
-import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
 /**
  * Entry class with configuration fields and beans initialization for the application.
@@ -70,6 +60,8 @@ public class ApplicationConfiguration {
   /**
    * Autowired constructor for Spring Configuration class.
    *
+   * @param truststoreConfigurationProperties The properties for configuring the truststore.
+   * @param mongoConfigurationProperties The properties for configuring the MongoDB connection.
    * @throws TrustStoreConfigurationException if the configuration of the truststore failed
    */
   @Autowired
@@ -97,6 +89,12 @@ public class ApplicationConfiguration {
     }
   }
 
+  /**
+   * Gets a {@link MongoClient} instance based on the configuration properties.
+   *
+   * @param mongoConfigurationProperties The properties for configuring the MongoDB connection.
+   * @return The created MongoClient instance.
+   */
   public static MongoClient getMongoClient(MongoConfigurationProperties mongoConfigurationProperties) {
     final MongoProperties<IllegalArgumentException> mongoProperties = new MongoProperties<>(
         IllegalArgumentException::new);
@@ -119,20 +117,10 @@ public class ApplicationConfiguration {
   }
 
   @Bean
-  AuthenticationClient getAuthenticationClient(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return new AuthenticationClient(metisCoreConfigurationProperties.getAuthenticationBaseUrl());
-  }
-
-  @Bean
   MorphiaDatastoreProvider getMorphiaDatastoreProvider(MongoConfigurationProperties mongoConfigurationProperties)
       throws IOException {
     return new MorphiaDatastoreProviderImpl(mongoClient, mongoConfigurationProperties.getDatabase(),
         defaultTransformation::getInputStream);
-  }
-
-  @Bean
-  Authorizer geAuthorizer(DatasetDao datasetDao) {
-    return new Authorizer(datasetDao);
   }
 
   /**
@@ -140,6 +128,7 @@ public class ApplicationConfiguration {
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider}
    * @param ecloudDataSetServiceClient the ecloud dataset client
+   * @param ecloudConfigurationProperties the properties for ecloud configuration
    * @return {@link DatasetDao} used to access the database for datasets
    */
   @Bean
@@ -167,6 +156,7 @@ public class ApplicationConfiguration {
    * Get the DAO for depublished records.
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider}
+   * @param metisCoreConfigurationProperties the properties configuration for Metis Core
    * @return DAO used to access the database for depublished records.
    */
   @Bean
@@ -187,68 +177,34 @@ public class ApplicationConfiguration {
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
    * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient {@link RedissonClient}
-   * @param authorizer the authorizer for this service
+   * @param metisCoreConfigurationProperties the metis configuration properties
    * @return the dataset service instance instantiated
    */
-  @Deprecated(forRemoval = true)
   @Bean
   public DatasetService getDatasetService(
       DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient,
-      Authorizer authorizer, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    DatasetService datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao,
-        workflowExecutionDao, scheduledWorkflowDao, redissonClient, authorizer);
-    datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.getBaseUrl());
-    return datasetService;
-  }
-
-  /**
-   * Get the Service for datasets.
-   * <p>It encapsulates several DAOs and combines their functionality into methods</p>
-   *
-   * @param datasetDao the Dao instance to access the Dataset database
-   * @param datasetXsltDao the Dao instance to access the DatasetXslt database
-   * @param workflowDao the Dao instance to access the Workflow database
-   * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
-   * @param redissonClient {@link RedissonClient}
-   * @param metisCoreConfigurationProperties the metis configuration properties
-   * @return the dataset service instance instantiated
-   */
-  @Bean
-  public SecuredDatasetService getSecuredDatasetService(
-      DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
-      WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
-      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    SecuredDatasetService datasetService = new SecuredDatasetService(datasetDao, datasetXsltDao, workflowDao,
+    DatasetService datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao,
         workflowExecutionDao, scheduledWorkflowDao, redissonClient);
     datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.getBaseUrl());
     return datasetService;
   }
 
-  @Deprecated(forRemoval = true)
+  /**
+   * Creates and configures a {@link DepublishRecordIdService} bean.
+   *
+   * @param depublishRecordIdDao the DAO used for managing depublished record IDs
+   * @param orchestratorService the secured orchestrator service for handling secured operations
+   * @param datasetDao the DAO for accessing dataset information
+   * @return a configured instance of {@link DepublishRecordIdService}
+   */
   @Bean
   public DepublishRecordIdService getDepublishedRecordService(
       DepublishRecordIdDao depublishRecordIdDao, OrchestratorService orchestratorService,
-      Authorizer authorizer) {
-    return new DepublishRecordIdService(authorizer, orchestratorService, depublishRecordIdDao);
-  }
-
-  /**
-   * Creates and configures a {@link SecuredDepublishRecordIdService} bean.
-   *
-   * @param depublishRecordIdDao the DAO used for managing depublished record IDs
-   * @param securedOrchestratorService the secured orchestrator service for handling secured operations
-   * @param datasetDao the DAO for accessing dataset information
-   * @return a configured instance of {@link SecuredDepublishRecordIdService}
-   */
-  @Bean
-  public SecuredDepublishRecordIdService getSecuredDepublishedRecordService(
-      DepublishRecordIdDao depublishRecordIdDao, SecuredOrchestratorService securedOrchestratorService,
       DatasetDao datasetDao) {
-    return new SecuredDepublishRecordIdService(securedOrchestratorService, depublishRecordIdDao, datasetDao);
+    return new DepublishRecordIdService(orchestratorService, depublishRecordIdDao, datasetDao);
   }
 
   /**
@@ -259,28 +215,5 @@ public class ApplicationConfiguration {
     if (mongoClient != null) {
       mongoClient.close();
     }
-  }
-
-  /**
-   * Required for json serialization for REST.
-   *
-   * @return {@link View}
-   */
-  @Bean
-  public View json() {
-    MappingJackson2JsonView view = new MappingJackson2JsonView();
-    view.setPrettyPrint(true);
-    view.setObjectMapper(new CustomObjectMapper());
-    return view;
-  }
-
-  /**
-   * Required for json serialization for REST.
-   *
-   * @return {@link ViewResolver}
-   */
-  @Bean
-  public ViewResolver viewResolver() {
-    return new BeanNameViewResolver();
   }
 }

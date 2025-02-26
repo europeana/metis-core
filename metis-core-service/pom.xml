@@ -18,11 +18,6 @@
 
     <!-- Owned -->
     <dependency>
-      <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-authentication-common</artifactId>
-      <version>${version.metis-framework}</version>
-    </dependency>
-    <dependency>
       <artifactId>metis-transformation-service</artifactId>
       <groupId>eu.europeana.metis</groupId>
       <version>${version.metis-framework}</version>

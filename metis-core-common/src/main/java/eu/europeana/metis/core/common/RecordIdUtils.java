@@ -27,13 +27,14 @@ public final class RecordIdUtils {
 
   /**
    * Composes full record IDs.
+   *
    * @param datasetId The ID of the dataset.
    * @param recordIds The (simple) IDs of the records.
    * @return The full/qualified IDs of the records.
    */
   public static Set<String> composeFullRecordIds(String datasetId, Collection<String> recordIds) {
     return recordIds.stream().map(recordId -> composeFullRecordId(datasetId, recordId)).collect(
-            Collectors.toSet());
+        Collectors.toSet());
   }
 
   /**
@@ -65,13 +66,13 @@ public final class RecordIdUtils {
    * This method checks/validates and normalizes incoming depublished record IDs for persistence.
    *
    * @param datasetId The dataset ID to which the depublished record belongs.
-   * @param recordIdsInSeparateLines The unchecked and non-normalized record ID, in a
-   * newline-separated string. The method accepts and ignores empty lines.
+   * @param recordIdsInSeparateLines The unchecked and non-normalized record ID, in a newline-separated string. The method accepts
+   * and ignores empty lines.
    * @return The checked and normalized record IDs.
    * @throws BadContentException In case any of the incoming record IDs does not validate.
    */
   public static Set<String> checkAndNormalizeRecordIds(String datasetId,
-          String recordIdsInSeparateLines) throws BadContentException {
+      String recordIdsInSeparateLines) throws BadContentException {
     final String[] recordIds = LINE_SEPARATION_PATTERN.split(recordIdsInSeparateLines);
     final Set<String> normalizedRecordIds = HashSet.newHashSet(recordIds.length);
     for (String recordId : recordIds) {
@@ -89,7 +90,7 @@ public final class RecordIdUtils {
    * @throws BadContentException In case the incoming record ID does not validate.
    */
   public static Optional<String> checkAndNormalizeRecordId(String datasetId, String recordId)
-          throws BadContentException {
+      throws BadContentException {
 
     // Trim and check that string is not empty. We allow empty record IDs, we return empty optional.
     final String recordIdTrimmed = recordId.trim();
@@ -103,14 +104,14 @@ public final class RecordIdUtils {
   }
 
   private static String validateNonEmptyRecordId(String datasetId, String recordIdTrimmed)
-          throws BadContentException {
+      throws BadContentException {
 
     // Check if it is a valid URI. This also checks for spaces. Relative URIs pass this test too.
     try {
       new URI(recordIdTrimmed);
     } catch (URISyntaxException e) {
       throw new BadContentException("Invalid record ID (is not a valid URI): " + recordIdTrimmed,
-              e);
+          e);
     }
 
     // Split in segments based on the slash - don't discard empty segments at the end.
@@ -125,21 +126,20 @@ public final class RecordIdUtils {
     // Check last segment: cannot contain invalid characters
     if (INVALID_CHAR_IN_RECORD_ID.matcher(lastSegment).find()) {
       throw new BadContentException(
-              "Invalid record ID (contains invalid characters): " + lastSegment);
+          "Invalid record ID (contains invalid characters): " + lastSegment);
     }
 
     final String penultimateSegment = segments.length > 1 ? segments[segments.length - 2] : "";
     // Check penultimate segment: if it is empty, it must be because it is the start of the ID.
     if (penultimateSegment.isEmpty() && segments.length > 2) {
       throw new BadContentException(
-              "Invalid record ID (dataset ID seems to be missing): " + recordIdTrimmed);
+          "Invalid record ID (dataset ID seems to be missing): " + recordIdTrimmed);
     }
 
     // Check penultimate segment: if it is not empty, it must be equal to the dataset ID.
     if (!penultimateSegment.isEmpty() && !penultimateSegment.equals(datasetId)) {
       throw new BadContentException(
-              "Invalid record ID (doesn't seem to belong to the correct dataset): "
-                      + recordIdTrimmed);
+          "Invalid record ID (doesn't seem to belong to the correct dataset): " + recordIdTrimmed);
     }
 
     // Return the last segment (the record ID without the dataset ID).

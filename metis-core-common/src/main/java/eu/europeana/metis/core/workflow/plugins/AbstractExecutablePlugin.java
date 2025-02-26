@@ -89,13 +89,11 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     this.executionProgress = executionProgress;
   }
 
-  // TODO: 24/08/2023 This last boolean needs to be cleaned.
-  private Revision createOutputRevisionForExecution(String ecloudProvider, boolean published) {
+  private Revision createOutputRevisionForExecution(String ecloudProvider) {
     return new Revision(getPluginType().name(), ecloudProvider, getStartedDate(), false);
   }
 
-  private DpsTask createDpsTaskForPluginWithExistingDataset(Map<String, String> parameters,
-      DpsTaskSettings dpsTaskSettings, boolean publish) {
+  private DpsTask createDpsTaskForPluginWithExistingDataset(Map<String, String> parameters, DpsTaskSettings dpsTaskSettings) {
     DpsTask dpsTask = new DpsTask();
 
     Map<InputDataType, List<String>> dataEntries = new EnumMap<>(InputDataType.class);
@@ -105,7 +103,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     dpsTask.setInputData(dataEntries);
 
     dpsTask.setParameters(parameters);
-    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.getEcloudProvider(), publish));
+    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.getEcloudProvider()));
     return dpsTask;
   }
 
@@ -133,7 +131,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     parameters.put(PluginParameterKeys.NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     dpsTask.setParameters(parameters);
 
-    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.getEcloudProvider(), false));
+    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.getEcloudProvider()));
     return dpsTask;
   }
 
@@ -155,7 +153,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     parameters.put(PluginParameterKeys.OUTPUT_DATA_SETS, String
         .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.getEcloudBaseUrl(),
             dpsTaskSettings.getEcloudProvider(), dpsTaskSettings.getEcloudDatasetId()));
-    return createDpsTaskForPluginWithExistingDataset(parameters, dpsTaskSettings, false);
+    return createDpsTaskForPluginWithExistingDataset(parameters, dpsTaskSettings);
   }
 
   DpsTask createDpsTaskForIndexPlugin(DpsTaskSettings dpsTaskSettings, String datasetId,

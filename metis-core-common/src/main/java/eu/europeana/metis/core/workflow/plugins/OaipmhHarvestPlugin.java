@@ -10,9 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * OAIPMH Harvest Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-24
  */
 public class OaipmhHarvestPlugin extends AbstractExecutablePlugin<OaipmhHarvestPluginMetadata> {
 

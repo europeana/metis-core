@@ -7,9 +7,6 @@ import java.util.Map;
 
 /**
  * HTTP Harvest Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-24
  */
 public class HTTPHarvestPlugin extends AbstractExecutablePlugin<HTTPHarvestPluginMetadata> {
 

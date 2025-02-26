@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This class represents the vital information on a workflow execution needed for the execution
@@ -36,8 +35,7 @@ public class ExecutionSummaryView {
     this.startedDate = execution.getStartedDate();
     this.updatedDate = execution.getUpdatedDate();
     this.finishedDate = execution.getFinishedDate();
-    this.plugins = execution.getMetisPlugins().stream().map(PluginSummaryView::new).collect(
-        Collectors.toList());
+    this.plugins = execution.getMetisPlugins().stream().map(PluginSummaryView::new).toList();
   }
 
   public String getId() {

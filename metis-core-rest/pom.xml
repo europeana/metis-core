@@ -18,11 +18,6 @@
     <!-- Owned -->
     <dependency>
       <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-authentication-rest-client</artifactId>
-      <version>${version.metis-framework}</version>
-    </dependency>
-    <dependency>
-      <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-common-spring-properties</artifactId>
       <version>${version.metis-framework}</version>
     </dependency>
@@ -154,6 +149,10 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>

@@ -28,7 +28,7 @@ import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
-import eu.europeana.metis.core.service.SecuredDepublishRecordIdService;
+import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
@@ -48,13 +48,13 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@WebMvcTest(SecuredDepublishRecordIdController.class)
-@ContextConfiguration(classes = {SecuredDepublishRecordIdController.class, SecurityConfig.class,
+@WebMvcTest(DepublishRecordIdController.class)
+@ContextConfiguration(classes = {DepublishRecordIdController.class, SecurityConfig.class,
     RestResponseExceptionHandler.class})
-class TestSecuredDepublishRecordIdController {
+class TestDepublishRecordIdController {
 
   @MockBean
-  private SecuredDepublishRecordIdService securedDepublishRecordIdService;
+  private DepublishRecordIdService depublishRecordIdService;
 
   @MockBean
   private JwtDecoder jwtDecoder;
@@ -64,7 +64,7 @@ class TestSecuredDepublishRecordIdController {
   private final TestJwtUtils testJwtUtils;
 
   @Autowired
-  public TestSecuredDepublishRecordIdController(SecurityConfigurationProperties securityConfigurationProperties) {
+  public TestDepublishRecordIdController(SecurityConfigurationProperties securityConfigurationProperties) {
     testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
   }
 
@@ -78,7 +78,7 @@ class TestSecuredDepublishRecordIdController {
 
   @BeforeEach
   void cleanUp() {
-    reset(securedDepublishRecordIdService);
+    reset(depublishRecordIdService);
     reset(jwtDecoder);
   }
 
@@ -87,14 +87,14 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    when(securedDepublishRecordIdService.addRecordIdsToBeDepublished(datasetId, recordIds)).thenReturn(3);
+    when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, recordIds)).thenReturn(3);
 
     mockMvc.perform(post("/secured/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
            .andExpect(status().isCreated());
-    verify(securedDepublishRecordIdService, times(1)).addRecordIdsToBeDepublished(any(String.class), any(String.class));
+    verify(depublishRecordIdService, times(1)).addRecordIdsToBeDepublished(any(String.class), any(String.class));
   }
 
   @Test
@@ -126,13 +126,13 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
-    when(securedDepublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
+    when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
 
     mockMvc.perform(multipart("/secured/depublish/record_ids/{datasetId}", datasetId)
                .file(file)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(status().isCreated());
-    verify(securedDepublishRecordIdService, times(1)).addRecordIdsToBeDepublished(any(String.class), any(String.class));
+    verify(depublishRecordIdService, times(1)).addRecordIdsToBeDepublished(any(String.class), any(String.class));
   }
 
   @Test
@@ -149,13 +149,13 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     String datasetId = "dataset123";
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
-    when(securedDepublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
+    when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
 
     mockMvc.perform(multipart("/secured/depublish/record_ids/{datasetId}", datasetId)
                .file(file)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
            .andExpect(status().isForbidden());
-    verify(securedDepublishRecordIdService, times(0)).addRecordIdsToBeDepublished(any(String.class), any(String.class));
+    verify(depublishRecordIdService, times(0)).addRecordIdsToBeDepublished(any(String.class), any(String.class));
   }
 
   @Test
@@ -163,14 +163,14 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    when(securedDepublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenReturn(3L);
+    when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenReturn(3L);
 
     mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.TEXT_PLAIN)
                .content(recordIds))
            .andExpect(status().isNoContent());
-    verify(securedDepublishRecordIdService, times(1)).deletePendingRecordIds(any(String.class), any(String.class));
+    verify(depublishRecordIdService, times(1)).deletePendingRecordIds(any(String.class), any(String.class));
   }
 
   @Test
@@ -202,7 +202,7 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    when(securedDepublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
+    when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
         new NoDatasetFoundException("Dataset not found"));
 
     mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
@@ -211,7 +211,7 @@ class TestSecuredDepublishRecordIdController {
                .content(recordIds))
            .andExpect(status().isNotFound())
            .andExpect(jsonPath("$.errorMessage").value("Dataset not found"));
-    verify(securedDepublishRecordIdService, times(1)).deletePendingRecordIds(any(String.class), any(String.class));
+    verify(depublishRecordIdService, times(1)).deletePendingRecordIds(any(String.class), any(String.class));
   }
 
   @Test
@@ -219,7 +219,7 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    when(securedDepublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
+    when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
         new BadContentException("Bad content"));
 
     mockMvc.perform(delete("/secured/depublish/record_ids/{datasetId}", datasetId)
@@ -228,7 +228,7 @@ class TestSecuredDepublishRecordIdController {
                .content(recordIds))
            .andExpect(status().isNotAcceptable())
            .andExpect(jsonPath("$.errorMessage").value("Bad content"));
-    verify(securedDepublishRecordIdService, times(1)).deletePendingRecordIds(any(String.class), any(String.class));
+    verify(depublishRecordIdService, times(1)).deletePendingRecordIds(any(String.class), any(String.class));
   }
 
   @Test
@@ -237,9 +237,9 @@ class TestSecuredDepublishRecordIdController {
     String datasetId = "dataset123";
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
-    when(securedDepublishRecordIdService.getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString())).thenReturn(
+    when(depublishRecordIdService.getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString())).thenReturn(
         result);
-    when(securedDepublishRecordIdService.canTriggerDepublication(anyString())).thenReturn(true);
+    when(depublishRecordIdService.canTriggerDepublication(anyString())).thenReturn(true);
 
     mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
                .param("page", "0")
@@ -249,8 +249,8 @@ class TestSecuredDepublishRecordIdController {
                .header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.depublicationTriggerable").value(true));
-    verify(securedDepublishRecordIdService, times(1)).getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString());
-    verify(securedDepublishRecordIdService, times(1)).canTriggerDepublication(anyString());
+    verify(depublishRecordIdService, times(1)).getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString());
+    verify(depublishRecordIdService, times(1)).canTriggerDepublication(anyString());
   }
 
   @Test
@@ -259,9 +259,9 @@ class TestSecuredDepublishRecordIdController {
     String datasetId = "dataset123";
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
-    when(securedDepublishRecordIdService.getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString()))
+    when(depublishRecordIdService.getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString()))
         .thenReturn(result).thenThrow(new NoDatasetFoundException("Dataset not found"));
-    when(securedDepublishRecordIdService.canTriggerDepublication(anyString())).thenThrow(
+    when(depublishRecordIdService.canTriggerDepublication(anyString())).thenThrow(
         new NoDatasetFoundException("Dataset not found")).thenReturn(true);
 
     mockMvc.perform(get("/secured/depublish/record_ids/{datasetId}", datasetId)
@@ -281,8 +281,8 @@ class TestSecuredDepublishRecordIdController {
                .header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(status().isNotFound())
            .andExpect(jsonPath("$.errorMessage").value("Dataset not found"));
-    verify(securedDepublishRecordIdService, times(2)).getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString());
-    verify(securedDepublishRecordIdService, times(1)).canTriggerDepublication(anyString());
+    verify(depublishRecordIdService, times(2)).getDepublishRecordIds(anyString(), anyInt(), any(), any(), anyString());
+    verify(depublishRecordIdService, times(1)).canTriggerDepublication(anyString());
   }
 
   @Test
@@ -321,7 +321,7 @@ class TestSecuredDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     WorkflowExecution execution = new WorkflowExecution();
-    when(securedDepublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
+    when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
         anyString(), any(), any())).thenReturn(execution);
 
     mockMvc.perform(post("/secured/depublish/execute/{datasetId}", datasetId)
@@ -338,9 +338,9 @@ class TestSecuredDepublishRecordIdController {
                .param("priority", "0")
                .header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(status().isCreated());
-    verify(securedDepublishRecordIdService, times(1))
+    verify(depublishRecordIdService, times(1))
         .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(), anyString(), any(), any());
-    verify(securedDepublishRecordIdService, times(1))
+    verify(depublishRecordIdService, times(1))
         .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(), isNull(), any(), any());
   }
 
@@ -349,7 +349,7 @@ class TestSecuredDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    when(securedDepublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
+    when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
         anyString(), any(), any())).thenThrow(new NoDatasetFoundException("Dataset not found"))
                                    .thenThrow(new PluginExecutionNotAllowed("Plugin not allowed"))
                                    .thenThrow(new NoWorkflowFoundException("No workflow found"))
@@ -378,7 +378,7 @@ class TestSecuredDepublishRecordIdController {
     mockMvc.perform(operation)
            .andExpect(status().isNotAcceptable())
            .andExpect(jsonPath("$.errorMessage").value("Bad content"));
-    verify(securedDepublishRecordIdService, times(5))
+    verify(depublishRecordIdService, times(5))
         .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(), anyString(), any(), any());
   }
 

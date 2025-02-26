@@ -67,16 +67,21 @@ public class SecurityConfig {
     httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(registry -> registry
+                    .requestMatchers(HttpMethod.GET, DATASETS_XSLT_DEFAULT).permitAll()
+                    .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
+                    .requestMatchers(HttpMethod.GET, DATASETS_XSLT_XSLTID).permitAll()
+                    .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
+                    //TODO: 2025-02-05 - Remove when ui switches
                     .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_DEFAULT).permitAll()
                     .requestMatchers(HttpMethod.POST, SECURED + DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
                     .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_XSLTID).permitAll()
                     .requestMatchers(HttpMethod.GET, SECURED + DEPUBLISH_REASONS).permitAll()
-                    .requestMatchers(SECURED + "/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
+                    .requestMatchers( "/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
                     .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
                     .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
                     )
-                ).securityMatcher(SECURED + "/**");
+                ).securityMatcher( "/**");
 
     return httpSecurity.build();
   }

@@ -28,7 +28,6 @@ public class MetisCoreConfigurationProperties {
     private int linkCheckingDefaultSamplingSize;
     private int solrCommitPeriodInMinutes;
 
-    private String authenticationBaseUrl;
     private String[] allowedCorsHosts;
 
 
@@ -167,14 +166,6 @@ public class MetisCoreConfigurationProperties {
 
     public void setSolrCommitPeriodInMinutes(int solrCommitPeriodInMinutes) {
         this.solrCommitPeriodInMinutes = solrCommitPeriodInMinutes;
-    }
-
-    public String getAuthenticationBaseUrl() {
-        return authenticationBaseUrl;
-    }
-
-    public void setAuthenticationBaseUrl(String authenticationBaseUrl) {
-        this.authenticationBaseUrl = authenticationBaseUrl;
     }
 
     public String[] getAllowedCorsHosts() {

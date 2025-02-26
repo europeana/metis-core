@@ -12,6 +12,7 @@ import eu.europeana.cloud.common.model.dps.TaskState;
 @Entity
 public class ExecutionProgress {
 
+  private static final double PERCENTAGE_SCALE = 100.0;
   // The total number of expected records excluding deleted records.
   private int expectedRecords;
 
@@ -101,8 +102,14 @@ public class ExecutionProgress {
     this.totalDatabaseRecords = totalDatabaseRecords;
   }
 
+  /**
+   * Recalculates the progress percentage based on the expected and processed records. The progress percentage is computed as the
+   * ratio of processed and deleted records to the sum of expected and deleted records, scaled to a percentage. If the expected
+   * records count is zero, the progress percentage is set to zero.
+   */
   public void recalculateProgressPercentage() {
     this.progressPercentage = this.expectedRecords == 0 ? 0
-        : (int) Math.round(100.0 * (this.processedRecords + this.deletedRecords)/ (this.expectedRecords + this.deletedRecords));
+        : (int) Math.round(PERCENTAGE_SCALE *
+            (this.processedRecords + this.deletedRecords) / (this.expectedRecords + this.deletedRecords));
   }
 }
