@@ -13,6 +13,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.filters.Filters;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
+import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetXsltDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
 

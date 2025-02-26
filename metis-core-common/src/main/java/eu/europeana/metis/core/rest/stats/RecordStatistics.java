@@ -1,31 +1,25 @@
 package eu.europeana.metis.core.rest.stats;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Statistics object that reflect the record level: statistics cover all records.
+ * Represents statistical data associated with a task.
+ *
+ * @param taskId The ID of the task.
+ * @param nodePathStatistics A list of node path statistics, stored as an immutable list.
  */
-public class RecordStatistics {
+public record RecordStatistics(long taskId, List<NodePathStatistics> nodePathStatistics) {
 
-  private long taskId;
-  private List<NodePathStatistics> nodePathStatistics;
-
-  public long getTaskId() {
-    return taskId;
-  }
-
-  public void setTaskId(long taskId) {
-    this.taskId = taskId;
-  }
-
-  public List<NodePathStatistics> getNodePathStatistics() {
-    return Collections.unmodifiableList(nodePathStatistics);
-  }
-
-  public void setNodePathStatistics(
-      List<NodePathStatistics> nodePathStatistics) {
-    this.nodePathStatistics = new ArrayList<>(nodePathStatistics);
+  /**
+   * Constructs a {@code RecordStatistics} instance.
+   *
+   * <p>The provided list of node path statistics is copied to ensure immutability.</p>
+   *
+   * @param taskId The ID of the task.
+   * @param nodePathStatistics The list of node path statistics. Must not be {@code null}.
+   * @throws NullPointerException if {@code nodePathStatistics} is {@code null}.
+   */
+  public RecordStatistics {
+    nodePathStatistics = List.copyOf(nodePathStatistics); // Ensures immutability
   }
 }

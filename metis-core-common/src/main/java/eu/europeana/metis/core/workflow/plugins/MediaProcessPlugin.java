@@ -46,7 +46,7 @@ public class MediaProcessPlugin extends AbstractExecutablePlugin<MediaProcessPlu
             ThrottlingLevel.WEAK : getPluginMetadata().getThrottlingLevel();
 
     return createDpsTaskForProcessPlugin(dpsTaskSettings, Map.of(PluginParameterKeys.MAXIMUM_PARALLELIZATION,
-            String.valueOf(dpsTaskSettings.getThrottlingValues().getThreadNumberFromThrottlingLevel(throttlingLevel))));
+            String.valueOf(dpsTaskSettings.throttlingValues().getThreadNumberFromThrottlingLevel(throttlingLevel))));
   }
 
 }

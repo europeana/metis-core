@@ -312,19 +312,19 @@ class TestOrchestratorService {
                 (m1, m2) -> m1));
     final ValidationInternalPluginMetadata metadataInternal = (ValidationInternalPluginMetadata) pluginsByType.get(
         ExecutablePluginType.VALIDATION_INTERNAL);
-    assertEquals(workflowExecutionFactory.getValidationInternalProperties().getUrlOfSchemasZip(),
+    assertEquals(workflowExecutionFactory.getValidationInternalProperties().urlOfSchemasZip(),
         metadataInternal.getUrlOfSchemasZip());
-    assertEquals(workflowExecutionFactory.getValidationInternalProperties().getSchemaRootPath(),
+    assertEquals(workflowExecutionFactory.getValidationInternalProperties().schemaRootPath(),
         metadataInternal.getSchemaRootPath());
-    assertEquals(workflowExecutionFactory.getValidationInternalProperties().getSchematronRootPath(),
+    assertEquals(workflowExecutionFactory.getValidationInternalProperties().schematronRootPath(),
         metadataInternal.getSchematronRootPath());
     final ValidationExternalPluginMetadata metadataExternal = (ValidationExternalPluginMetadata) pluginsByType.get(
         ExecutablePluginType.VALIDATION_EXTERNAL);
-    assertEquals(workflowExecutionFactory.getValidationExternalProperties().getUrlOfSchemasZip(),
+    assertEquals(workflowExecutionFactory.getValidationExternalProperties().urlOfSchemasZip(),
         metadataExternal.getUrlOfSchemasZip());
-    assertEquals(workflowExecutionFactory.getValidationExternalProperties().getSchemaRootPath(),
+    assertEquals(workflowExecutionFactory.getValidationExternalProperties().schemaRootPath(),
         metadataExternal.getSchemaRootPath());
-    assertEquals(workflowExecutionFactory.getValidationExternalProperties().getSchematronRootPath(),
+    assertEquals(workflowExecutionFactory.getValidationExternalProperties().schematronRootPath(),
         metadataExternal.getSchematronRootPath());
   }
 

@@ -26,6 +26,7 @@ import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.exception.ExternalTaskException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +47,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class DatasetDao implements MetisDao<Dataset, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   public static final String ORGANIZATION_ID = "1482250000001617026";
   public static final String ORGANIZATION_NAME = "Europeana Foundation";
   private int datasetsPerRequest = RequestLimits.DATASETS_PER_REQUEST.getLimit();

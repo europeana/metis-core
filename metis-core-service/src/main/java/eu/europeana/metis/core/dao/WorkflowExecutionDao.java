@@ -51,6 +51,7 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,7 +74,7 @@ import org.springframework.util.CollectionUtils;
 @Repository
 public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowExecutionDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private static final int INQUEUE_POSITION_IN_OVERVIEW = 1;
   private static final int RUNNING_POSITION_IN_OVERVIEW = 2;
@@ -182,8 +183,8 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
 
 
   /**
-   * Sets the cancelling state of the specified workflow execution and records the user initiating the cancellation.
-   * This method updates the database to mark the workflow as cancelling and sets the canceling user's identifier.
+   * Sets the cancelling state of the specified workflow execution and records the user initiating the cancellation. This method
+   * updates the database to mark the workflow as cancelling and sets the canceling user's identifier.
    *
    * @param workflowExecution the WorkflowExecution object representing the workflow to be updated
    * @param userId the identifier of the user requesting the cancellation; must not be null or blank
@@ -423,7 +424,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
 
     // Prepare pagination and check that there is something to query
     final Pagination pagination = createPagination(nextPage, pageCount, ignoreMaxServedExecutionsLimit);
-    if (pagination.getLimit() < 1) {
+    if (pagination.limit() < 1) {
       return createResultList(Collections.emptyList(), pagination);
     }
 
@@ -440,8 +441,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     }
 
     // Execute query with correct pagination
-    final FindOptions findOptions = new FindOptions().skip(pagination.getSkip())
-                                                     .limit(pagination.getLimit());
+    final FindOptions findOptions = new FindOptions().skip(pagination.skip()).limit(pagination.limit());
 
     // Set ordering
     if (orderField != null) {
@@ -490,7 +490,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     return retryableExternalRequestForNetworkExceptions(() -> {
 
       // Prepare pagination and check that there is something to query
-      if (pagination.getLimit() < 1) {
+      if (pagination.limit() < 1) {
         return createResultList(Collections.emptyList(), pagination);
       }
 
@@ -510,7 +510,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
           .sort(Sort.sort().ascending(statusIndexField).descending(CREATED_DATE.getFieldName()));
 
       // Step 4: Apply pagination
-      aggregation.skip(pagination.getSkip()).limit(pagination.getLimit());
+      aggregation.skip(pagination.skip()).limit(pagination.limit());
 
       // Step 5: Create join of dataset and execution to combine the data information
       joinDatasetAndWorkflowExecution(aggregation);
@@ -794,8 +794,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     return retryableExternalRequestForNetworkExceptions(query::first);
   }
 
-  Pagination createPagination(int firstPage, Integer pageCount,
-      boolean ignoreMaxServedExecutionsLimit) {
+  Pagination createPagination(int firstPage, Integer pageCount, boolean ignoreMaxServedExecutionsLimit) {
 
     // Compute the total number (including skipped pages)
     final int pageSize = getWorkflowExecutionsPerRequest();
@@ -813,27 +812,15 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     return new Pagination(skip, limit, maxRequested);
   }
 
-  static class Pagination {
+  record Pagination(int skip, int limit, boolean maxRequested) {
 
-    private final int skip;
-    private final int limit;
-    private final boolean maxRequested;
-
-    private Pagination(int skip, int limit, boolean maxRequested) {
-      this.skip = skip;
-      this.limit = limit;
-      this.maxRequested = maxRequested;
-    }
-
-    int getSkip() {
-      return skip;
-    }
-
-    int getLimit() {
-      return limit;
-    }
-
-    boolean isMaxReached(int resultSize) {
+    /**
+     * Checks if the maximum number of results has been reached.
+     *
+     * @param resultSize The size of the retrieved results.
+     * @return {@code true} if the maximum requested results were reached, otherwise {@code false}.
+     */
+    public boolean isMaxReached(int resultSize) {
       return maxRequested && resultSize == limit;
     }
   }
@@ -847,29 +834,19 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    *
    * @param <T> The type of the result objects.
    */
-  public static class ResultList<T> {
-
-    private final List<T> results;
-    private final boolean maxResultCountReached;
+  public record ResultList<T>(List<T> results, boolean maxResultCountReached) {
 
     /**
-     * Constructor.
+     * Constructs a {@code ResultList} with the given results and maximum result count status.
      *
-     * @param results The results.
-     * @param maxResultCountReached Whether the maximum result count has been reached (indicating whether next pages will be
-     * served).
+     * <p>The provided list of results is copied to ensure immutability.</p>
+     *
+     * @param results The results list. Must not be {@code null}.
+     * @param maxResultCountReached {@code true} if the maximum result count has been reached, otherwise {@code false}.
+     * @throws NullPointerException if {@code results} is {@code null}.
      */
-    public ResultList(List<T> results, boolean maxResultCountReached) {
-      this.results = new ArrayList<>(results);
-      this.maxResultCountReached = maxResultCountReached;
-    }
-
-    public List<T> getResults() {
-      return Collections.unmodifiableList(results);
-    }
-
-    public boolean isMaxResultCountReached() {
-      return maxResultCountReached;
+    public ResultList {
+      results = List.copyOf(results); // Ensures immutability
     }
   }
 }

@@ -51,7 +51,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
       DpsTaskSettings dpsTaskSettings) {
     Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.XSLT_URL,
-            dpsTaskSettings.getMetisCoreBaseUrl() + RestEndpoints
+            dpsTaskSettings.metisCoreBaseUrl() + RestEndpoints
                     .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
                             Collections.singletonList(getPluginMetadata().getXsltId())));
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);

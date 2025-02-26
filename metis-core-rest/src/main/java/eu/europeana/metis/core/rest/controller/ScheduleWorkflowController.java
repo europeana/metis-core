@@ -15,6 +15,7 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ScheduleWorkflowController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleWorkflowController.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final ScheduleWorkflowService scheduleWorkflowService;
 
   /**

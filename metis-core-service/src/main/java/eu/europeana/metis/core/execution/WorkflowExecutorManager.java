@@ -5,10 +5,10 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class WorkflowExecutorManager extends PersistenceProvider implements
     WorkflowExecutionSettings {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowExecutorManager.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS = 5;
   private static final int DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES = 30;
 

@@ -27,6 +27,7 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.lang.invoke.MethodHandles;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +56,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolean>> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowExecutor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
   private static final String MONITOR_ERROR_PREFIX = "An error occurred while monitoring the external task. ";
   private static final String POSTPROCESS_ERROR_PREFIX = "An error occurred while post-processing the external task. ";
@@ -216,7 +217,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
    * </ol>
    *
    * @param i the index of the plugin in the list of plugins inside the workflow execution
-   * @param plugin the provided plugin to be ran
+   * @param plugin the provided plugin to run
    * @return true if plugin ran, false if plugin did not run
    */
   private boolean runMetisPluginWithSemaphoreAllocation(int i, AbstractMetisPlugin<?> plugin) {
@@ -233,7 +234,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
       throw new IllegalStateException("Plugin type cannot be null.");
     }
 
-    //Try acquire semaphore and run plugin. Don't forget to release
+    //Try to acquire semaphore and run plugin. Don't forget to release
     boolean acquired = semaphoresPerPluginManager
         .tryAcquireForExecutablePluginType(executablePluginType);
     if (acquired) {
@@ -391,7 +392,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         monitorResult = plugin.monitor(dpsClient);
         consecutiveCancelOrMonitorFailures = 0;
 
-        if (monitorResult.getTaskState() == TaskState.REMOVING_FROM_SOLR_AND_MONGO ||
+        if (monitorResult.taskState() == TaskState.REMOVING_FROM_SOLR_AND_MONGO ||
             isIndexingInPostProcessing(monitorResult, plugin)) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
 
@@ -451,13 +452,13 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
 
   private boolean isIndexingInPostProcessing(MonitorResult monitor,
       AbstractExecutablePlugin<?> plugin) {
-    return monitor.getTaskState() == TaskState.IN_POST_PROCESSING &&
+    return monitor.taskState() == TaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.REINDEX_TO_PREVIEW ||
             plugin.getPluginType() == PluginType.REINDEX_TO_PUBLISH);
   }
 
   private boolean isHarvestingInPostProcessing(MonitorResult monitor, AbstractExecutablePlugin<?> plugin) {
-    return monitor.getTaskState() == TaskState.IN_POST_PROCESSING &&
+    return monitor.taskState() == TaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.HTTP_HARVEST ||
             plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
   }
@@ -477,7 +478,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   private boolean applyPostProcessing(MonitorResult monitorResult, AbstractExecutablePlugin<?> plugin,
       String datasetId) {
     boolean processingAppliedOrNotRequired = true;
-    if (monitorResult.getTaskState() == TaskState.PROCESSED) {
+    if (monitorResult.taskState() == TaskState.PROCESSED) {
       try {
         this.workflowPostProcessor.performPluginPostProcessing(plugin, datasetId);
       } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException e) {
@@ -493,8 +494,8 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   }
 
   private boolean isContinueMonitor(MonitorResult monitorResult) {
-    return monitorResult == null || (monitorResult.getTaskState() != TaskState.DROPPED
-        && monitorResult.getTaskState() != TaskState.PROCESSED);
+    return monitorResult == null || (monitorResult.taskState() != TaskState.DROPPED
+        && monitorResult.taskState() != TaskState.PROCESSED);
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
@@ -537,15 +538,15 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
 
   private void preparePluginStateAndFinishedDate(AbstractExecutablePlugin<?> plugin,
       MonitorResult monitorResult) {
-    if (monitorResult.getTaskState() == TaskState.PROCESSED) {
+    if (monitorResult.taskState() == TaskState.PROCESSED) {
       plugin.setFinishedDate(new Date());
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
-    } else if (monitorResult.getTaskState() == TaskState.DROPPED && !workflowExecutionDao
+    } else if (monitorResult.taskState() == TaskState.DROPPED && !workflowExecutionDao
         .isCancelling(workflowExecution.getId())) {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
       final String failMessage =
-          StringUtils.isBlank(monitorResult.getTaskInfo()) ? "No further information received."
-              : monitorResult.getTaskInfo();
+          StringUtils.isBlank(monitorResult.taskInfo()) ? "No further information received."
+              : monitorResult.taskInfo();
       plugin.setFailMessage(EXECUTION_ERROR_PREFIX + failMessage);
     }
     workflowExecutionDao.updateWorkflowPlugins(workflowExecution);

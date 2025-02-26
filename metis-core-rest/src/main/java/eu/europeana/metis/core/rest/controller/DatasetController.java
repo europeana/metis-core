@@ -4,7 +4,6 @@ import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserI
 import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
 import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -15,8 +14,11 @@ import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.exceptions.XsltSetupException;
+import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
+import eu.europeana.metis.core.rest.view.CountryView;
+import eu.europeana.metis.core.rest.view.LanguageView;
 import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
@@ -25,6 +27,7 @@ import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +53,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class DatasetController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetController.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final DatasetService datasetService;
 
   /**
@@ -200,7 +203,7 @@ public class DatasetController {
   /**
    * Get the xslt string as non escaped text using an xslt identifier.
    * <p>
-   * It is a method that does not require authentication and it is meant to be used from external service to download the
+   * It is a method that does not require authentication, and it is meant to be used from external service to download the
    * corresponding xslt. At the point of writing, ECloud transformation topology is using it. {@link TransformationPlugin}
    * </p>
    *
@@ -248,7 +251,7 @@ public class DatasetController {
   /**
    * Get the latest created default xslt.
    * <p>
-   * It is an method that does not require authentication and it is meant to be used from external service to download the
+   * It is a method that does not require authentication, and it is meant to be used from external service to download the
    * corresponding xslt. At the point of writing, ECloud transformation topology is using it. {@link TransformationPlugin}
    * </p>
    *
@@ -270,7 +273,7 @@ public class DatasetController {
    * Transform a list of xmls using the latest dataset xslt stored.
    * <p>
    * This method is meant to be used after a response from
-   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, String, ExecutablePluginType, String)} to try a
+   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
    * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
@@ -299,7 +302,7 @@ public class DatasetController {
    * Transform a list of xmls using the latest default xslt stored.
    * <p>
    * This method is meant to be used after a response from
-   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, String, ExecutablePluginType, String)} to try a
+   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
    * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
@@ -534,8 +537,7 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<CountryView> getDatasetsCountries() {
-    return Country.getCountryListSortedByName().stream().map(CountryView::new)
-                  .toList();
+    return Country.getCountryListSortedByName().stream().map(CountryView::new).toList();
   }
 
   /**
@@ -550,8 +552,7 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<LanguageView> getDatasetsLanguages() {
-    return Language.getLanguageListSortedByName().stream().map(LanguageView::new)
-                   .toList();
+    return Language.getLanguageListSortedByName().stream().map(LanguageView::new).toList();
   }
 
   /**
@@ -585,37 +586,7 @@ public class DatasetController {
     responseListWrapper.setResultsAndLastPage(
         datasetService.searchDatasetsBasedOnSearchString(searchString, nextPage),
         datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(),
-        nextPage);
+    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
-  }
-
-  private static class CountryView {
-
-    @JsonProperty("enum")
-    private final String enumName;
-    @JsonProperty
-    private final String name;
-    @JsonProperty
-    private final String isoCode;
-
-    CountryView(Country country) {
-      this.enumName = country.name();
-      this.name = country.getName();
-      this.isoCode = country.getIsoCode();
-    }
-  }
-
-  private static class LanguageView {
-
-    @JsonProperty("enum")
-    private final String enumName;
-    @JsonProperty
-    private final String name;
-
-    LanguageView(Language language) {
-      this.enumName = language.name();
-      this.name = language.getName();
-    }
   }
 }

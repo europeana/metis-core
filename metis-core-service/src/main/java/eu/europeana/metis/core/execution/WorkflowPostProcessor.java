@@ -29,6 +29,7 @@ import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,7 +49,7 @@ import org.springframework.util.CollectionUtils;
  */
 public class WorkflowPostProcessor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowPostProcessor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private static final int ECLOUD_REQUEST_BATCH_SIZE = 1000;
 

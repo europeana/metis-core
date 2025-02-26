@@ -15,6 +15,7 @@ import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +44,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 public class DepublishRecordIdController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DepublishRecordIdController.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final Pattern CRLF_PATTERN = Pattern
       .compile(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX);
 

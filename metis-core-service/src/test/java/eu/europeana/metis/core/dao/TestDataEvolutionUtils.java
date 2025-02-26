@@ -72,10 +72,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-02-01
- */
 class TestDataEvolutionUtils {
 
   private static final String DATASET_ID = Integer.toString(TestObjectFactory.DATASETID);
@@ -95,11 +91,9 @@ class TestDataEvolutionUtils {
 
   @Test
   void testComputePredecessorPlugin_HarvestPlugin() throws PluginExecutionNotAllowed {
-    assertNull(
-        dataEvolutionUtils
+    assertNull(dataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.OAIPMH_HARVEST, null, DATASET_ID));
-    assertNull(
-        dataEvolutionUtils
+    assertNull(dataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.HTTP_HARVEST, null, DATASET_ID));
     assertNull(dataEvolutionUtils.computePredecessorPlugin(ExecutablePluginType.OAIPMH_HARVEST,
         ExecutablePluginType.TRANSFORMATION, DATASET_ID));
@@ -468,8 +462,7 @@ class TestDataEvolutionUtils {
     assertListSameItems(expected, actual, item -> item);
   }
 
-  private <T, S> void assertListSameItems(List<T> expected, List<S> actual,
-          Function<S, T> extractor) {
+  private <T, S> void assertListSameItems(List<T> expected, List<S> actual, Function<S, T> extractor) {
     assertNotNull(expected);
     assertEquals(expected.size(), actual.size());
     for (int i = 0; i < expected.size(); i++) {
@@ -514,7 +507,7 @@ class TestDataEvolutionUtils {
     final var indexPluginB2 = createIndexToPublish(new Date(3), null).getPlugin();
     final var executionA = createWorkflowExecution(DATASET_ID, otherPluginA, indexPluginA);
     final var executionB = createWorkflowExecution(DATASET_ID, indexPluginB1, indexPluginB2);
-    final var pagination = mock(Pagination.class);
+    final var pagination = new Pagination(0, 10, false);
 
     // Test happy flow
     final var input = new ResultList<>(List.of(new ExecutionDatasetPair(new Dataset(), executionA),

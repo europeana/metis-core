@@ -2,7 +2,6 @@ package eu.europeana.metis.core.service;
 
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.client.uis.rest.CloudException;
-import eu.europeana.cloud.client.uis.rest.UISClient;
 import eu.europeana.cloud.common.model.File;
 import eu.europeana.cloud.common.model.Representation;
 import eu.europeana.cloud.common.model.Revision;
@@ -11,9 +10,6 @@ import eu.europeana.cloud.common.model.dps.StatisticsReport;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.response.CloudTagsResponse;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.mcs.driver.FileServiceClient;
-import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
@@ -28,6 +24,7 @@ import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
@@ -59,47 +56,30 @@ public class ProxiesService {
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
 
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final DataSetServiceClient ecloudDataSetServiceClient;
-  private final RecordServiceClient recordServiceClient;
-  private final FileServiceClient fileServiceClient;
-  private final DpsClient dpsClient;
-  private final UISClient uisClient;
-  private final String ecloudProvider;
   private final DatasetDao datasetDao;
   private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
+  private final EcloudClients ecloudClients;
+  private final String ecloudProvider;
 
   /**
    * Constructor with required parameters.
    *
+   * @param ecloudClients the ecloud components
    * @param workflowExecutionDao {@link WorkflowExecutionDao}
-   * @param ecloudDataSetServiceClient {@link DataSetServiceClient}
-   * @param recordServiceClient {@link RecordServiceClient}
-   * @param fileServiceClient {@link FileServiceClient}
-   * @param dpsClient {@link DpsClient}
-   * @param uisClient {@link UISClient}
-   * @param ecloudProvider the ecloud provider string
+   * @param ecloudProvider the ecloud provider
    * @param datasetDao the Dao instance to access the Dataset database
    */
-  public ProxiesService(WorkflowExecutionDao workflowExecutionDao,
-      DataSetServiceClient ecloudDataSetServiceClient, RecordServiceClient recordServiceClient,
-      FileServiceClient fileServiceClient, DpsClient dpsClient, UISClient uisClient, String ecloudProvider,
+  public ProxiesService(EcloudClients ecloudClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao) {
-    this(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
-        dpsClient, uisClient, ecloudProvider, datasetDao, new ProxiesHelper());
+    this(ecloudClients, ecloudProvider, workflowExecutionDao, datasetDao, new ProxiesHelper());
   }
 
-  ProxiesService(WorkflowExecutionDao workflowExecutionDao,
-      DataSetServiceClient ecloudDataSetServiceClient, RecordServiceClient recordServiceClient,
-      FileServiceClient fileServiceClient, DpsClient dpsClient, UISClient uisClient, String ecloudProvider,
+  ProxiesService(EcloudClients ecloudClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
-    this.workflowExecutionDao = workflowExecutionDao;
-    this.ecloudDataSetServiceClient = ecloudDataSetServiceClient;
-    this.recordServiceClient = recordServiceClient;
-    this.fileServiceClient = fileServiceClient;
-    this.dpsClient = dpsClient;
-    this.uisClient = uisClient;
+    this.ecloudClients = ecloudClients;
     this.ecloudProvider = ecloudProvider;
+    this.workflowExecutionDao = workflowExecutionDao;
     this.datasetDao = datasetDao;
     this.proxiesHelper = proxiesHelper;
     this.dataEvolutionUtils = new DataEvolutionUtils(this.workflowExecutionDao);
@@ -127,7 +107,7 @@ public class ProxiesService {
     List<SubTaskInfo> detailedTaskReportBetweenChunks;
     try {
       detailedTaskReportBetweenChunks =
-          dpsClient.getDetailedTaskReportBetweenChunks(topologyName, externalTaskId, from, to);
+          ecloudClients.dpsClient().getDetailedTaskReportBetweenChunks(topologyName, externalTaskId, from, to);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task detailed logs failed. topologyName: %s, externalTaskId: %s, from: %s, to: %s",
@@ -156,7 +136,7 @@ public class ProxiesService {
   public boolean existsExternalTaskReport(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     try {
-      return dpsClient.checkIfErrorReportExists(topologyName, externalTaskId);
+      return ecloudClients.dpsClient().checkIfErrorReportExists(topologyName, externalTaskId);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Checking if the error report exists failed. topologyName: %s, externalTaskId: %s",
@@ -186,7 +166,7 @@ public class ProxiesService {
     TaskErrorsInfo taskErrorsInfo;
     try {
       taskErrorsInfo =
-          dpsClient.getTaskErrorsReport(topologyName, externalTaskId, null, idsPerError);
+          ecloudClients.dpsClient().getTaskErrorsReport(topologyName, externalTaskId, null, idsPerError);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task error report failed. topologyName: %s, externalTaskId: %s, idsPerError: %s",
@@ -215,7 +195,7 @@ public class ProxiesService {
     // Obtain the report from eCloud.
     final StatisticsReport report;
     try {
-      report = dpsClient.getTaskStatisticsReport(topologyName, externalTaskId);
+      report = ecloudClients.dpsClient().getTaskStatisticsReport(topologyName, externalTaskId);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task statistics failed. topologyName: %s, externalTaskId: %s",
@@ -249,7 +229,7 @@ public class ProxiesService {
     // Obtain the reports from eCloud.
     final List<NodeReport> nodeReports;
     try {
-      nodeReports = dpsClient.getElementReport(topologyName, externalTaskId, nodePath);
+      nodeReports = ecloudClients.dpsClient().getElementReport(topologyName, externalTaskId, nodePath);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
@@ -306,8 +286,9 @@ public class ProxiesService {
         .format(executionAndPlugin.getRight().getStartedDate());
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
     try {
-      revisionsWithDeletedFlagSetToFalse = ecloudDataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-          ecloudProvider, datasetId, representationName, revisionName, ecloudProvider, revisionTimestamp, numberOfRecords);
+      revisionsWithDeletedFlagSetToFalse = ecloudClients.ecloudDataSetServiceClient().getRevisionsWithDeletedFlagSetToFalse(
+          ecloudProvider, datasetId, representationName, revisionName, ecloudProvider,
+          revisionTimestamp, numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(
           "Getting record list with file content failed. workflowExecutionId: %s, pluginType: %s",
@@ -442,7 +423,7 @@ public class ProxiesService {
       final String normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
                                                      .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
       if (normalizedRecordId != null) {
-        ecloudId = uisClient.getCloudId(ecloudProvider, normalizedRecordId).getId();
+        ecloudId = ecloudClients.uisClient().getCloudId(ecloudProvider, normalizedRecordId).getId();
       }
     } catch (BadContentException e) {
       // Normalization failed. Check whether the ID is already an eCloud ID.
@@ -465,7 +446,7 @@ public class ProxiesService {
 
   private String verifyExistenceOfEcloudId(String potentialEcloudId) {
     try {
-      return uisClient.getRecordId(potentialEcloudId).getResults().isEmpty() ? null
+      return ecloudClients.uisClient().getRecordId(potentialEcloudId).getResults().isEmpty() ? null
           : potentialEcloudId;
     } catch (CloudException e) {
       // TODO currently we can't distinguish between a connection issue and a non-existing eCloud ID.
@@ -501,8 +482,10 @@ public class ProxiesService {
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
     try {
-      final Revision revision = new Revision(plugin.getPluginType().name(), ecloudProvider, plugin.getStartedDate());
-      representations = recordServiceClient.getRepresentationsByRevision(ecloudId, MetisPlugin.getRepresentationName(), revision);
+      final Revision revision = new Revision(plugin.getPluginType().name(), ecloudProvider,
+          plugin.getStartedDate());
+      representations = ecloudClients.recordServiceClient().getRepresentationsByRevision(ecloudId,
+          MetisPlugin.getRepresentationName(), revision);
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(
           "Getting record list with file content failed. externalTaskId: %s, pluginType: %s, ecloudId: %s",
@@ -525,7 +508,7 @@ public class ProxiesService {
 
     // Obtain the file contents belonging to this representation version.
     try {
-      final InputStream inputStream = fileServiceClient.getFile(file.getContentUri().toString());
+      final InputStream inputStream = ecloudClients.fileServiceClient().getFile(file.getContentUri().toString());
       return new Record(ecloudId, IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(

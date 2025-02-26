@@ -6,6 +6,7 @@ import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.exception.GenericMetisException;
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SchedulerExecutor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerExecutor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String SCHEDULER_LOCK = "schedulerLock";
 
   private final OrchestratorService orchestratorService;

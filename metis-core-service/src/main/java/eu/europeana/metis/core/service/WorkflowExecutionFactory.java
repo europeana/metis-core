@@ -117,16 +117,16 @@ public class WorkflowExecutionFactory {
 
   private void setupValidationExternalForPluginMetadata(ValidationExternalPluginMetadata metadata,
       ValidationProperties validationProperties) {
-    metadata.setUrlOfSchemasZip(validationProperties.getUrlOfSchemasZip());
-    metadata.setSchemaRootPath(validationProperties.getSchemaRootPath());
-    metadata.setSchematronRootPath(validationProperties.getSchematronRootPath());
+    metadata.setUrlOfSchemasZip(validationProperties.urlOfSchemasZip());
+    metadata.setSchemaRootPath(validationProperties.schemaRootPath());
+    metadata.setSchematronRootPath(validationProperties.schematronRootPath());
   }
 
   private void setupValidationInternalForPluginMetadata(ValidationInternalPluginMetadata metadata,
       ValidationProperties validationProperties) {
-    metadata.setUrlOfSchemasZip(validationProperties.getUrlOfSchemasZip());
-    metadata.setSchemaRootPath(validationProperties.getSchemaRootPath());
-    metadata.setSchematronRootPath(validationProperties.getSchematronRootPath());
+    metadata.setUrlOfSchemasZip(validationProperties.urlOfSchemasZip());
+    metadata.setSchemaRootPath(validationProperties.schemaRootPath());
+    metadata.setSchematronRootPath(validationProperties.schematronRootPath());
   }
 
   private void setupXsltIdForPluginMetadata(Dataset dataset,

@@ -50,6 +50,7 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.DateUtils;
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -76,7 +77,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrchestratorService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(OrchestratorService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   //Use with String.format to suffix the datasetId
   private static final String EXECUTION_FOR_DATASETID_SUBMITION_LOCK = "EXECUTION_FOR_DATASETID_SUBMITION_LOCK_%s";
 
@@ -496,12 +497,12 @@ public class OrchestratorService {
             false);
 
     // Compile and return the result.
-    final List<WorkflowExecutionView> convertedData = data.getResults().stream().map(
+    final List<WorkflowExecutionView> convertedData = data.results().stream().map(
         execution -> new WorkflowExecutionView(execution, isIncremental(execution),
             OrchestratorService::canDisplayRawXml)).toList();
     final ResponseListWrapper<WorkflowExecutionView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(convertedData, getWorkflowExecutionsPerRequest(), nextPage,
-        data.isMaxResultCountReached());
+        data.maxResultCountReached());
     return result;
   }
 
@@ -566,13 +567,13 @@ public class OrchestratorService {
       //Result should be empty if dataset set is empty
       resultList = new ResultList<>(Collections.emptyList(), false);
     }
-    final List<ExecutionAndDatasetView> views = resultList.getResults().stream()
+    final List<ExecutionAndDatasetView> views = resultList.results().stream()
                                                           .map(result -> new ExecutionAndDatasetView(result.getExecution(),
                                                               result.getDataset()))
                                                           .toList();
     final ResponseListWrapper<ExecutionAndDatasetView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(views, getWorkflowExecutionsPerRequest(), nextPage, pageCount,
-        resultList.isMaxResultCountReached());
+        resultList.maxResultCountReached());
     return result;
   }
 
@@ -812,7 +813,7 @@ public class OrchestratorService {
             null, false);
 
     // Filter the executions.
-    final List<Execution> executions = allExecutions.getResults().stream().filter(
+    final List<Execution> executions = allExecutions.results().stream().filter(
                                                         entry -> entry.getMetisPlugins().stream().anyMatch(OrchestratorService::canDisplayRawXml))
                                                     .map(OrchestratorService::convert).toList();
 

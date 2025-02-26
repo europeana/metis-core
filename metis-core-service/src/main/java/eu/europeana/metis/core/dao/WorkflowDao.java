@@ -10,6 +10,7 @@ import dev.morphia.query.filters.Filters;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.network.ExternalRequestUtil;
+import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class WorkflowDao implements MetisDao<Workflow, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
 
   /**

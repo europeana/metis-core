@@ -482,10 +482,10 @@ class TestWorkflowExecutionDao {
       final ResultList<WorkflowExecution> result = workflowExecutionDao.getAllWorkflowExecutions(
           Collections.singleton(Integer.toString(TestObjectFactory.DATASETID)), workflowStatuses,
           DaoFieldNames.ID, false, nextPage, 1, true);
-      assertFalse(result.isMaxResultCountReached());
-      userWorkflowExecutionResponseListWrapper.setResultsAndLastPage(result.getResults(),
+      assertFalse(result.maxResultCountReached());
+      userWorkflowExecutionResponseListWrapper.setResultsAndLastPage(result.results(),
           workflowExecutionDao.getWorkflowExecutionsPerRequest(), nextPage,
-          result.isMaxResultCountReached());
+          result.maxResultCountReached());
       allUserWorkflowsExecutionsCount += userWorkflowExecutionResponseListWrapper.getListSize();
       nextPage = userWorkflowExecutionResponseListWrapper.getNextPage();
     } while (nextPage != -1);
@@ -500,7 +500,7 @@ class TestWorkflowExecutionDao {
     for (int i = 0; i < userWorkflowExecutionsToCreate; i++) {
       WorkflowExecution workflowExecution = TestObjectFactory
           .createWorkflowExecutionObject();
-      workflowExecution.setCreatedDate(new Date(1000 * i));
+      workflowExecution.setCreatedDate(new Date(1000L * i));
       workflowExecutionDao.create(workflowExecution);
     }
     HashSet<WorkflowStatus> workflowStatuses = new HashSet<>();
@@ -512,10 +512,10 @@ class TestWorkflowExecutionDao {
       final ResultList<WorkflowExecution> result = workflowExecutionDao.getAllWorkflowExecutions(
           Collections.singleton(Integer.toString(TestObjectFactory.DATASETID)),
           workflowStatuses, DaoFieldNames.CREATED_DATE, true, nextPage, 1, false);
-      userWorkflowExecutionResponseListWrapper.setResultsAndLastPage(result.getResults(),
+      userWorkflowExecutionResponseListWrapper.setResultsAndLastPage(result.results(),
           workflowExecutionDao.getWorkflowExecutionsPerRequest(), nextPage,
-          result.isMaxResultCountReached());
-      if (!result.getResults().isEmpty()) {
+          result.maxResultCountReached());
+      if (!result.results().isEmpty()) {
         WorkflowExecution beforeWorkflowExecution =
             userWorkflowExecutionResponseListWrapper.getResults().getFirst();
         for (int i = 1; i < userWorkflowExecutionResponseListWrapper.getListSize(); i++) {
@@ -531,7 +531,7 @@ class TestWorkflowExecutionDao {
 
       final boolean hasAll =
           allUserWorkflowsExecutionsCount == workflowExecutionDao.getMaxServedExecutionListLength();
-      assertEquals(hasAll, result.isMaxResultCountReached());
+      assertEquals(hasAll, result.maxResultCountReached());
     } while (nextPage != -1);
 
     assertEquals(workflowExecutionDao.getMaxServedExecutionListLength(),
@@ -607,8 +607,8 @@ class TestWorkflowExecutionDao {
 
   private void assertResultOrder(List<String> expected, ResultList<ExecutionDatasetPair> result) {
     assertNotNull(result);
-    assertFalse(result.isMaxResultCountReached());
-    assertEquals(expected, result.getResults().stream()
+    assertFalse(result.maxResultCountReached());
+    assertEquals(expected, result.results().stream()
                                  .map(ExecutionDatasetPair::getExecution)
                                  .map(WorkflowExecution::getId)
                                  .map(ObjectId::toString)
@@ -669,9 +669,9 @@ class TestWorkflowExecutionDao {
             1);
 
     assertNotNull(result);
-    assertFalse(result.isMaxResultCountReached());
+    assertFalse(result.maxResultCountReached());
     assertEquals(Collections.singletonList(expectedOrder.get(expectedOrder.size() - 2)),
-        result.getResults().stream()
+        result.results().stream()
               .map(ExecutionDatasetPair::getExecution)
               .map(WorkflowExecution::getId)
               .map(ObjectId::toString)

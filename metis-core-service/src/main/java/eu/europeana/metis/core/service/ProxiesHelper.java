@@ -27,14 +27,9 @@ class ProxiesHelper {
         .collect(Collectors.groupingBy(NodeStatistics::getXpath));
     final List<NodePathStatistics> nodePathStatisticsList = nodesByXPath.entrySet().stream()
         .map(ProxiesHelper::compileNodePathStatistics)
-        .sorted(Comparator.comparing(NodePathStatistics::getxPath))
-                                                                        .toList();
+        .sorted(Comparator.comparing(NodePathStatistics::xPath)).toList();
 
-    // Done.
-    final RecordStatistics result = new RecordStatistics();
-    result.setNodePathStatistics(nodePathStatisticsList);
-    result.setTaskId(report.getTaskId());
-    return result;
+    return new RecordStatistics(report.getTaskId(), nodePathStatisticsList);
   }
 
   private static NodePathStatistics compileNodePathStatistics(
@@ -52,11 +47,9 @@ class ProxiesHelper {
       List<I> nodes, Function<I, NodeValueStatistics> nodeValueConverter) {
     final List<NodeValueStatistics> nodeValueStatisticsList = nodes.stream()
         .map(nodeValueConverter)
-        .sorted(Comparator.comparing(NodeValueStatistics::getValue))
+        .sorted(Comparator.comparing(NodeValueStatistics::value))
                                                                    .toList();
-    final NodePathStatistics nodePathStatistics = new NodePathStatistics();
-    nodePathStatistics.setxPath(nodePath);
-    nodePathStatistics.setNodeValueStatistics(nodeValueStatisticsList);
+    final NodePathStatistics nodePathStatistics = new NodePathStatistics(nodePath, nodeValueStatisticsList);
     return nodePathStatistics;
   }
 
@@ -75,22 +68,14 @@ class ProxiesHelper {
       Collection<eu.europeana.cloud.common.model.dps.AttributeStatistics> attributes) {
     final List<AttributeStatistics> attributeStatistics = attributes.stream()
         .map(ProxiesHelper::compileAttributeStatistics)
-        .sorted(Comparator.comparing(AttributeStatistics::getxPath)
-            .thenComparing(AttributeStatistics::getValue))
+        .sorted(Comparator.comparing(AttributeStatistics::xPath)
+            .thenComparing(AttributeStatistics::value))
                                                                     .toList();
-    final NodeValueStatistics nodeValueStatistics = new NodeValueStatistics();
-    nodeValueStatistics.setValue(nodeValue);
-    nodeValueStatistics.setOccurrences(occurrence);
-    nodeValueStatistics.setAttributeStatistics(attributeStatistics);
-    return nodeValueStatistics;
+    return new NodeValueStatistics(nodeValue, occurrence, attributeStatistics);
   }
 
   private static AttributeStatistics compileAttributeStatistics(
       eu.europeana.cloud.common.model.dps.AttributeStatistics input) {
-    final AttributeStatistics attributeStatistics = new AttributeStatistics();
-    attributeStatistics.setxPath(input.getName());
-    attributeStatistics.setValue(input.getValue());
-    attributeStatistics.setOccurrences(input.getOccurrence());
-    return attributeStatistics;
+    return new AttributeStatistics(input.getName(), input.getValue(), input.getOccurrence());
   }
 }

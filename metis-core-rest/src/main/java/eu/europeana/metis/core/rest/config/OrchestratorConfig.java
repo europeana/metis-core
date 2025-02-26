@@ -22,6 +22,7 @@ import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
+import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
@@ -29,6 +30,7 @@ import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
+import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import metis.common.config.properties.TruststoreConfigurationProperties;
 import metis.common.config.properties.ecloud.EcloudConfigurationProperties;
@@ -59,7 +61,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableScheduling
 public class OrchestratorConfig implements WebMvcConfigurer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(OrchestratorConfig.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private SchedulerExecutor schedulerExecutor;
   private WorkflowExecutionMonitor workflowExecutionMonitor;
 
@@ -199,8 +201,10 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
       DpsClient dpsClient, UISClient uisClient, DatasetDao datasetDao,
       EcloudConfigurationProperties ecloudConfigurationProperties) {
-    return new ProxiesService(workflowExecutionDao, ecloudDataSetServiceClient, recordServiceClient,
-        fileServiceClient, dpsClient, uisClient, ecloudConfigurationProperties.getProvider(), datasetDao);
+    final EcloudClients ecloudClients = new EcloudClients(ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
+        dpsClient, uisClient);
+
+    return new ProxiesService(ecloudClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
   }
 
   /**

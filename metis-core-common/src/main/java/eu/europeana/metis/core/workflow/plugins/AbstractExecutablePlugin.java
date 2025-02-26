@@ -12,10 +12,10 @@ import eu.europeana.metis.core.workflow.SystemId;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import eu.europeana.metis.utils.CommonStringValues;
+import java.lang.invoke.MethodHandles;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePluginMetadata> extends
     AbstractMetisPlugin<M> implements ExecutablePlugin {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractExecutablePlugin.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private String externalTaskId;
   private ExecutionProgress executionProgress = new ExecutionProgress();
@@ -98,12 +98,12 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
 
     Map<InputDataType, List<String>> dataEntries = new EnumMap<>(InputDataType.class);
     dataEntries.put(InputDataType.DATASET_URLS, Collections.singletonList(String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.getEcloudBaseUrl(),
-            dpsTaskSettings.getEcloudProvider(), dpsTaskSettings.getEcloudDatasetId())));
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.ecloudBaseUrl(),
+            dpsTaskSettings.ecloudProvider(), dpsTaskSettings.ecloudDatasetId())));
     dpsTask.setInputData(dataEntries);
 
     dpsTask.setParameters(parameters);
-    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.getEcloudProvider()));
+    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.ecloudProvider()));
     return dpsTask;
   }
 
@@ -124,14 +124,14 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     parameters.put(PluginParameterKeys.INCREMENTAL_HARVEST, String.valueOf(incrementalProcessing));
     parameters.put(PluginParameterKeys.HARVEST_DATE, dateFormat.format(getStartedDate()));
-    parameters.put(PluginParameterKeys.PROVIDER_ID, dpsTaskSettings.getEcloudProvider());
+    parameters.put(PluginParameterKeys.PROVIDER_ID, dpsTaskSettings.ecloudProvider());
     parameters.put(PluginParameterKeys.OUTPUT_DATA_SETS, String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.getEcloudBaseUrl(),
-            dpsTaskSettings.getEcloudProvider(), dpsTaskSettings.getEcloudDatasetId()));
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.ecloudBaseUrl(),
+            dpsTaskSettings.ecloudProvider(), dpsTaskSettings.ecloudDatasetId()));
     parameters.put(PluginParameterKeys.NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     dpsTask.setParameters(parameters);
 
-    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.getEcloudProvider()));
+    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.ecloudProvider()));
     return dpsTask;
   }
 
@@ -143,33 +143,35 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     }
     parameters.put(PluginParameterKeys.REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     parameters.put(PluginParameterKeys.REVISION_NAME, getPluginMetadata().getRevisionNamePreviousPlugin());
-    parameters.put(PluginParameterKeys.REVISION_PROVIDER, dpsTaskSettings.getEcloudProvider());
+    parameters.put(PluginParameterKeys.REVISION_PROVIDER, dpsTaskSettings.ecloudProvider());
     DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     parameters
         .put(PluginParameterKeys.REVISION_TIMESTAMP, dateFormat.format(getPluginMetadata().getRevisionTimestampPreviousPlugin()));
-    parameters.put(PluginParameterKeys.PREVIOUS_TASK_ID, dpsTaskSettings.getPreviousExternalTaskId());
+    parameters.put(PluginParameterKeys.PREVIOUS_TASK_ID, dpsTaskSettings.previousExternalTaskId());
     parameters.put(PluginParameterKeys.NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     parameters.put(PluginParameterKeys.OUTPUT_DATA_SETS, String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.getEcloudBaseUrl(),
-            dpsTaskSettings.getEcloudProvider(), dpsTaskSettings.getEcloudDatasetId()));
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.ecloudBaseUrl(),
+            dpsTaskSettings.ecloudProvider(), dpsTaskSettings.ecloudDatasetId()));
     return createDpsTaskForPluginWithExistingDataset(parameters, dpsTaskSettings);
   }
 
   DpsTask createDpsTaskForIndexPlugin(DpsTaskSettings dpsTaskSettings, String datasetId,
-      boolean incrementalIndexing, Date harvestDate, boolean preserveTimestamps,
-      List<String> datasetIdsToRedirectFrom, boolean performRedirects, String targetDatabase) {
+      AbstractIndexPluginMetadata abstractIndexPluginMetadata, String targetDatabase) {
     final DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     final Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
-    extraParameters.put(PluginParameterKeys.INCREMENTAL_INDEXING, String.valueOf(incrementalIndexing));
-    extraParameters.put(PluginParameterKeys.HARVEST_DATE, dateFormat.format(harvestDate));
+    extraParameters.put(PluginParameterKeys.INCREMENTAL_INDEXING,
+        String.valueOf(abstractIndexPluginMetadata.isIncrementalIndexing()));
+    extraParameters.put(PluginParameterKeys.HARVEST_DATE, dateFormat.format(abstractIndexPluginMetadata.getHarvestDate()));
     extraParameters.put(PluginParameterKeys.METIS_TARGET_INDEXING_DATABASE, targetDatabase);
     extraParameters.put(PluginParameterKeys.METIS_RECORD_DATE, dateFormat.format(getStartedDate()));
-    extraParameters.put(PluginParameterKeys.METIS_PRESERVE_TIMESTAMPS, String.valueOf(preserveTimestamps));
-    extraParameters.put(PluginParameterKeys.DATASET_IDS_TO_REDIRECT_FROM, String.join(",", datasetIdsToRedirectFrom));
-    extraParameters.put(PluginParameterKeys.PERFORM_REDIRECTS, String.valueOf(performRedirects));
+    extraParameters.put(PluginParameterKeys.METIS_PRESERVE_TIMESTAMPS,
+        String.valueOf(abstractIndexPluginMetadata.isPreserveTimestamps()));
+    extraParameters.put(PluginParameterKeys.DATASET_IDS_TO_REDIRECT_FROM,
+        String.join(",", abstractIndexPluginMetadata.getDatasetIdsToRedirectFrom()));
+    extraParameters.put(PluginParameterKeys.PERFORM_REDIRECTS, String.valueOf(abstractIndexPluginMetadata.isPerformRedirects()));
     return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
   }
 
@@ -211,7 +213,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
       throws ExternalTaskException {
     String pluginTypeName = getPluginType().name();
     LOGGER.info("Starting execution of {} plugin for ecloudDatasetId {}", pluginTypeName,
-        dpsTaskSettings.getEcloudDatasetId());
+        dpsTaskSettings.ecloudDatasetId());
 
     DpsTask dpsTask = prepareDpsTask(datasetId, dpsTaskSettings);
     try {
@@ -252,36 +254,39 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     int processedRecordCount;
     int deletedRecordCount;
 
-    if (getPluginMetadata() instanceof AbstractHarvestPluginMetadata && ((AbstractHarvestPluginMetadata) this.getPluginMetadata())
-        .isIncrementalHarvest()) {
-      //Incremental Harvest
-      //deletedRecordsCount never used
-      //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-      expectedRecordCount = taskInfo.getExpectedRecordsNumber();
-      processedRecordCount = taskInfo.getProcessedRecordsCount() + taskInfo.getIgnoredRecordsCount();
-      deletedRecordCount = taskInfo.getPostProcessedRecordsCount();
-    } else if (getPluginMetadata() instanceof AbstractHarvestPluginMetadata) {
-      //Full Harvest
-      //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-      //deletedRecordsCount is always 0
-      expectedRecordCount = taskInfo.getExpectedRecordsNumber();
-      processedRecordCount = taskInfo.getProcessedRecordsCount();
-      deletedRecordCount = taskInfo.getDeletedRecordsCount();
-    } else if (getPluginMetadata() instanceof AbstractIndexPluginMetadata && !((AbstractIndexPluginMetadata) this
-        .getPluginMetadata()).isIncrementalIndexing()) {
-      //Full Indexing
-      //ignoredRecordsCount never used
-      //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-      //The deletedRecordsCount is always 0
-      expectedRecordCount = taskInfo.getExpectedRecordsNumber();
-      processedRecordCount = taskInfo.getProcessedRecordsCount();
-      deletedRecordCount = taskInfo.getPostProcessedRecordsCount();
-    } else {
-      //Other plugins including incremental indexing
-      //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-      expectedRecordCount = taskInfo.getExpectedRecordsNumber() - taskInfo.getDeletedRecordsCount();
-      processedRecordCount = taskInfo.getProcessedRecordsCount();
-      deletedRecordCount = taskInfo.getDeletedRecordsCount();
+    switch (getPluginMetadata()) {
+      case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata when abstractHarvestPluginMetadata.isIncrementalHarvest() -> {
+        //Incremental Harvest
+        //deletedRecordsCount never used
+        //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
+        expectedRecordCount = taskInfo.getExpectedRecordsNumber();
+        processedRecordCount = taskInfo.getProcessedRecordsCount() + taskInfo.getIgnoredRecordsCount();
+        deletedRecordCount = taskInfo.getPostProcessedRecordsCount();
+      }
+      case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata -> {
+        //Full Harvest
+        //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
+        //deletedRecordsCount is always 0
+        expectedRecordCount = taskInfo.getExpectedRecordsNumber();
+        processedRecordCount = taskInfo.getProcessedRecordsCount();
+        deletedRecordCount = taskInfo.getDeletedRecordsCount();
+      }
+      case AbstractIndexPluginMetadata abstractIndexPluginMetadata when !abstractIndexPluginMetadata.isIncrementalIndexing() -> {
+        //Full Indexing
+        //ignoredRecordsCount never used
+        //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
+        //The deletedRecordsCount is always 0
+        expectedRecordCount = taskInfo.getExpectedRecordsNumber();
+        processedRecordCount = taskInfo.getProcessedRecordsCount();
+        deletedRecordCount = taskInfo.getPostProcessedRecordsCount();
+      }
+      case null, default -> {
+        //Other plugins including incremental indexing
+        //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
+        expectedRecordCount = taskInfo.getExpectedRecordsNumber() - taskInfo.getDeletedRecordsCount();
+        processedRecordCount = taskInfo.getProcessedRecordsCount();
+        deletedRecordCount = taskInfo.getDeletedRecordsCount();
+      }
     }
 
     int errorCount = taskInfo.getProcessedErrorsCount() + taskInfo.getDeletedErrorsCount();

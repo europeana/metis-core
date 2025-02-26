@@ -16,6 +16,7 @@ import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.network.ExternalRequestUtil;
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -36,7 +37,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ScheduledWorkflowDao implements MetisDao<ScheduledWorkflow, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledWorkflowDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private int scheduledWorkflowPerRequest = RequestLimits.SCHEDULED_EXECUTIONS_PER_REQUEST
       .getLimit();
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;

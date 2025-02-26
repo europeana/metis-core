@@ -326,7 +326,8 @@ public class DepublishRecordIdDao {
    * @param recordIds the records for which to set this. Can be null or empty, in which case the operation will be performed on
    * all records. If it is not empty, a new record will be created if a record with the given record ID is not already present.
    * @param depublicationStatus the depublication status. Cannot be null
-   * @param depublicationDate the depublication date. Can be null only if depublicationStatus is
+   * @param depublicationDate the depublication date. Can be null only if depublicationStatus is not {DepublicationStatus#DEPUBLISHED}
+   * @param depublicationReason the depublication reason. Can be null only if depublicationStatus is {DepublicationStatus#DEPUBLISHED}
    * {@link DepublicationStatus#PENDING_DEPUBLICATION}
    */
   public void markRecordIdsWithDepublicationStatus(String datasetId, Set<String> recordIds,
@@ -336,13 +337,11 @@ public class DepublishRecordIdDao {
     if (Objects.isNull(depublicationStatus) || StringUtils.isBlank(datasetId)) {
       throw new IllegalArgumentException(
           "DepublicationStatus cannot be null and datasetId cannot be empty");
-    } else if (depublicationStatus == DepublicationStatus.DEPUBLISHED && Objects
-        .isNull(depublicationDate)) {
+    } else if (depublicationStatus == DepublicationStatus.DEPUBLISHED && Objects.isNull(depublicationDate)) {
       throw new IllegalArgumentException(String
           .format("DepublicationDate cannot be null if depublicationStatus == %s ",
               DepublicationStatus.DEPUBLISHED.name()));
-    } else if(depublicationStatus == DepublicationStatus.DEPUBLISHED && Objects
-        .isNull(depublicationReason)){
+    } else if(depublicationStatus == DepublicationStatus.DEPUBLISHED && Objects.isNull(depublicationReason)){
       throw new IllegalArgumentException(String
           .format("DepublicationReason cannot be null if depublicationStatus == %s ",
               DepublicationStatus.DEPUBLISHED.name()));
