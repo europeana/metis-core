@@ -67,6 +67,7 @@ public class SecurityConfig {
     httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(registry -> registry
+                    .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_DEFAULT).permitAll()
                     .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_XSLTID).permitAll()
