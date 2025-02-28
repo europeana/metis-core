@@ -27,6 +27,7 @@ import eu.europeana.metis.utils.RestEndpoints;
 import java.lang.invoke.MethodHandles;
 import java.util.Date;
 import java.util.Set;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,6 +93,7 @@ public class OrchestratorController {
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
       @RequestBody Workflow workflow)
       throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     orchestratorService.createWorkflow(datasetId, workflow, enforcedPredecessorType);
   }
 

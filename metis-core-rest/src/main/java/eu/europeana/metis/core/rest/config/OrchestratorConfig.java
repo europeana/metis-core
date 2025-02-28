@@ -10,11 +10,9 @@ import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
-import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
-import eu.europeana.metis.core.execution.SchedulerExecutor;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
@@ -22,12 +20,11 @@ import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
-import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
-import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
+import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.lang.invoke.MethodHandles;
@@ -62,15 +59,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class OrchestratorConfig implements WebMvcConfigurer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private SchedulerExecutor schedulerExecutor;
   private WorkflowExecutionMonitor workflowExecutionMonitor;
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
    * <p>
-   * This service orchestrates workflows and handles the execution, validation, and evolution of workflows across
-   * datasets. The method initializes the {@link OrchestratorService} with various dependencies required for its operation,
-   * including DAOs, utility classes, and configuration properties.
+   * This service orchestrates workflows and handles the execution, validation, and evolution of workflows across datasets. The
+   * method initializes the {@link OrchestratorService} with various dependencies required for its operation, including DAOs,
+   * utility classes, and configuration properties.
    *
    * @param workflowDao the DAO for managing workflows
    * @param workflowExecutionDao the DAO for tracking workflow executions
@@ -143,6 +139,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param datasetXsltDao the DAO for managing XSLT transformations for workflows
    * @param depublishRecordIdDao the DAO for handling depublish record IDs
    * @param metisCoreConfigurationProperties the Metis core configuration properties
+   * @return a configured instance of {@link WorkflowExecutionFactory}
    */
   @Bean
   public WorkflowExecutionFactory getWorkflowExecutionFactory(
@@ -166,20 +163,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   public RedirectionInferrer getRedirectionInferrer(WorkflowExecutionDao workflowExecutionDao,
       DataEvolutionUtils dataEvolutionUtils) {
     return new RedirectionInferrer(workflowExecutionDao, dataEvolutionUtils);
-  }
-
-  /**
-   * Creates and returns an instance of SecuredScheduleWorkflowService.
-   *
-   * @param scheduledWorkflowDao the DAO responsible for managing scheduled workflows.
-   * @param workflowDao the DAO responsible for managing workflows.
-   * @param datasetDao the DAO responsible for managing datasets.
-   * @return a new instance of SecuredScheduleWorkflowService configured with the given DAOs.
-   */
-  @Bean
-  public ScheduleWorkflowService getScheduleWorkflowService(ScheduledWorkflowDao scheduledWorkflowDao,
-      WorkflowDao workflowDao, DatasetDao datasetDao) {
-    return new ScheduleWorkflowService(scheduledWorkflowDao, workflowDao, datasetDao);
   }
 
   /**
@@ -284,12 +267,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  public ScheduledWorkflowDao getScheduledWorkflowDao(
-      MorphiaDatastoreProvider morphiaDatastoreProvider) {
-    return new ScheduledWorkflowDao(morphiaDatastoreProvider);
-  }
-
-  @Bean
   public WorkflowDao getWorkflowDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     return new WorkflowDao(morphiaDatastoreProvider);
   }
@@ -314,14 +291,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  public SchedulerExecutor getSchedulingExecutor(OrchestratorService orchestratorService,
-      ScheduleWorkflowService scheduleWorkflowService, RedissonClient redissonClient) {
-    schedulerExecutor = new SchedulerExecutor(orchestratorService, scheduleWorkflowService,
-        redissonClient);
-    return schedulerExecutor;
-  }
-
-  @Bean
   public ThrottlingValues getThrottlingValues(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     return new ThrottlingValues(metisCoreConfigurationProperties.getThreadLimitThrottlingLevelWeak(),
         metisCoreConfigurationProperties.getThreadLimitThrottlingLevelMedium(),
@@ -332,24 +301,9 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * Failsafe periodic thread.
    * <p>It will find stale executions and will re-submit them in the distributed queue.</p>
    */
-  // TODO: 24/08/2023 Is there a better way to load the configuration here?
   @Scheduled(fixedDelayString = "${metis-core.periodicFailsafeCheckInMilliseconds}")
   public void runFailsafeExecutor() {
     this.workflowExecutionMonitor.performFailsafe();
     LOGGER.info("Failsafe task finished.");
-  }
-
-  /**
-   * Scheduling periodic thread.
-   * <p>Checks if scheduled workflows are valid for starting and sends them to the distributed
-   * queue.</p>
-   */
-  // TODO: 24/08/2023 Is there a better way to load the configuration here?
-  @Scheduled(
-      fixedDelayString = "${metis-core.periodicSchedulerCheckInMilliseconds}",
-      initialDelayString = "${metis-core.periodicSchedulerCheckInMilliseconds}")
-  public void runSchedulingExecutor() {
-    this.schedulerExecutor.performScheduling();
-    LOGGER.info("Scheduler task finished.");
   }
 }
