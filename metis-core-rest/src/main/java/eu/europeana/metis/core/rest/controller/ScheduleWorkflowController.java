@@ -89,10 +89,10 @@ public class ScheduleWorkflowController {
   @ResponseStatus(HttpStatus.OK)
   public ScheduledWorkflow getScheduledWorkflow(
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     ScheduledWorkflow scheduledWorkflow = scheduleWorkflowService.getScheduledWorkflowByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("ScheduledWorkflow with with datasetId '{}' found",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("ScheduledWorkflow with with datasetId '{}' found", datasetId);
     }
     return scheduledWorkflow;
   }
@@ -165,8 +165,7 @@ public class ScheduleWorkflowController {
     datasetId = StringEscapeUtils.escapeJava(datasetId);
     scheduleWorkflowService.deleteScheduledWorkflow(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("ScheduledWorkflowExecution for datasetId '{}' deleted",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("ScheduledWorkflowExecution for datasetId '{}' deleted", datasetId);
     }
   }
 }
