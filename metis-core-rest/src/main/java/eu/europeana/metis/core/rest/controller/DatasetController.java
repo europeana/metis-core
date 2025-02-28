@@ -1,8 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
-import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
@@ -29,6 +27,7 @@ import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +82,8 @@ public class DatasetController {
    */
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset) throws GenericMetisException {
+  public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset)
+      throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     Dataset createdDataset = datasetService.createDataset(userId, dataset);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
@@ -117,8 +117,8 @@ public class DatasetController {
       throws GenericMetisException {
     datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId {} updated",
-          CRLF_PATTERN.matcher(datasetXsltStringWrapper.getDataset().getDatasetId()).replaceAll(""));
+      final String datasetId = StringEscapeUtils.escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId());
+      LOGGER.info("Dataset with datasetId {} updated", datasetId);
     }
   }
 
@@ -137,12 +137,10 @@ public class DatasetController {
   @DeleteMapping(value = RestEndpoints.DATASETS_DATASETID)
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteDataset(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     datasetService.deleteDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' deleted",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("Dataset with datasetId '{}' deleted", datasetId);
     }
   }
 
@@ -164,11 +162,11 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public Dataset getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
 
     Dataset storedDataset = datasetService.getDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' found",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("Dataset with datasetId '{}' found", datasetId);
     }
     return storedDataset;
   }
@@ -191,11 +189,10 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DatasetXslt getDatasetXsltByDatasetId(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", sanitizeCRLF(datasetId), datasetXslt.getId());
+      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", datasetId, datasetXslt.getId());
     }
     return datasetXslt;
   }

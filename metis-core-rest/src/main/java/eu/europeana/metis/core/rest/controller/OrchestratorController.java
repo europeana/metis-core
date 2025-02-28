@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
@@ -120,6 +119,7 @@ public class OrchestratorController {
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
       @RequestBody Workflow workflow) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     orchestratorService.updateWorkflow(datasetId, workflow, enforcedPredecessorType);
   }
 
@@ -138,8 +138,7 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteWorkflow(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     orchestratorService.deleteWorkflow(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Workflow with datasetId '{}' deleted",

@@ -11,7 +11,6 @@ import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.io.IOException;
@@ -19,7 +18,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +44,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class DepublishRecordIdController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final Pattern CRLF_PATTERN = Pattern
-      .compile(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX);
-
   private final DepublishRecordIdService depublishRecordIdService;
 
   /**
@@ -77,11 +73,11 @@ public class DepublishRecordIdController {
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     final int added = depublishRecordIdService
         .addRecordIdsToBeDepublished(datasetId, recordIdsInSeparateLines);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("{} Depublish record ids added to dataset with datasetId: {}", added,
-          CRLF_PATTERN.matcher(datasetId).replaceAll(""));
+      LOGGER.info("{} Depublish record ids added to dataset with datasetId: {}", added, datasetId);
     }
   }
 
@@ -127,10 +123,10 @@ public class DepublishRecordIdController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deletePendingRecordIds(@PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     final Long removedRecordIds = depublishRecordIdService.deletePendingRecordIds(datasetId, recordIdsInSeparateLines);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("{} Depublish record ids removed from database with datasetId: {}",
-          removedRecordIds, CRLF_PATTERN.matcher(datasetId).replaceAll(""));
+      LOGGER.info("{} Depublish record ids removed from database with datasetId: {}", removedRecordIds, datasetId);
     }
   }
 
