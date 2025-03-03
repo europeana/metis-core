@@ -31,6 +31,7 @@ import eu.europeana.metis.transformation.service.TransformationException;
 import eu.europeana.metis.transformation.service.XsltTransformer;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +57,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DatasetService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String DATASET_CREATION_LOCK = "datasetCreationLock";
   private static final int MINIMUM_WORD_LENGTH = 3;
 

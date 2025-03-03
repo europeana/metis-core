@@ -1,31 +1,25 @@
 package eu.europeana.metis.core.rest.stats;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Statistics object that reflect the node level: statistics cover all nodes with the same xPath.
+ * Represents statistics for a specific node path.
+ *
+ * @param xPath The XPath expression representing the node.
+ * @param nodeValueStatistics A list of value statistics for the node, stored as an immutable list.
  */
-public class NodePathStatistics {
+public record NodePathStatistics(String xPath, List<NodeValueStatistics> nodeValueStatistics) {
 
-  private String xPath;
-  private List<NodeValueStatistics> nodeValueStatistics;
-
-  public String getxPath() {
-    return xPath;
-  }
-
-  public void setxPath(String xPath) {
-    this.xPath = xPath;
-  }
-
-  public List<NodeValueStatistics> getNodeValueStatistics() {
-    return Collections.unmodifiableList(nodeValueStatistics);
-  }
-
-  public void setNodeValueStatistics(
-      List<NodeValueStatistics> nodeValueStatistics) {
-    this.nodeValueStatistics = new ArrayList<>(nodeValueStatistics);
+  /**
+   * Constructs a {@code NodePathStatistics} instance.
+   *
+   * <p>The provided list of node value statistics is copied to ensure immutability.</p>
+   *
+   * @param xPath The XPath expression representing the node.
+   * @param nodeValueStatistics The list of node value statistics. Must not be {@code null}.
+   * @throws NullPointerException if {@code nodeValueStatistics} is {@code null}.
+   */
+  public NodePathStatistics {
+    nodeValueStatistics = List.copyOf(nodeValueStatistics); // Ensures immutability
   }
 }

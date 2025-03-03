@@ -1,41 +1,27 @@
 package eu.europeana.metis.core.rest.stats;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Statistics object that reflect the node value level: statistics cover all nodes with the same
- * xPath and the same node value.
+ * Represents statistics for a specific node value.
+ *
+ * @param value The value of the node.
+ * @param occurrences The number of times this value appears.
+ * @param attributeStatistics A list of attribute statistics, stored as an immutable list.
  */
-public class NodeValueStatistics {
+public record NodeValueStatistics(String value, long occurrences, List<AttributeStatistics> attributeStatistics) {
 
-  private String value;
-  private long occurrences;
-  private List<AttributeStatistics> attributeStatistics;
-
-  public String getValue() {
-    return value;
-  }
-
-  public void setValue(String value) {
-    this.value = value;
-  }
-
-  public long getOccurrences() {
-    return occurrences;
-  }
-
-  public void setOccurrences(long occurrences) {
-    this.occurrences = occurrences;
-  }
-
-  public List<AttributeStatistics> getAttributeStatistics() {
-    return Collections.unmodifiableList(attributeStatistics);
-  }
-
-  public void setAttributeStatistics(
-      List<AttributeStatistics> attributeStatistics) {
-    this.attributeStatistics = new ArrayList<>(attributeStatistics);
+  /**
+   * Constructs a {@code NodeValueStatistics} instance.
+   *
+   * <p>The provided list of attribute statistics is copied to ensure immutability.</p>
+   *
+   * @param value The value of the node.
+   * @param occurrences The number of times this value appears.
+   * @param attributeStatistics The list of attribute statistics. Must not be {@code null}.
+   * @throws NullPointerException if {@code attributeStatistics} is {@code null}.
+   */
+  public NodeValueStatistics {
+    attributeStatistics = List.copyOf(attributeStatistics); // Ensures immutability
   }
 }

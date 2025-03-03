@@ -8,8 +8,10 @@ import eu.europeana.metis.core.execution.QueueConsumer;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.exception.GenericMetisException;
+import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +23,6 @@ import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
-import jakarta.annotation.PreDestroy;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import metis.common.config.properties.TruststoreConfigurationProperties;
@@ -47,7 +48,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableScheduling
 public class QueueConfig implements WebMvcConfigurer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(QueueConfig.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private QueueConsumer queueConsumer;
 
   private Connection connection;

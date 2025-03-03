@@ -74,31 +74,7 @@ public interface ExecutablePlugin extends MetisPlugin {
   void cancel(DpsClient dpsClient, String cancelledById) throws ExternalTaskException;
 
   /**
-   * This object represents the result of a monitor call. It contains the information that
-   * monitoring processes need.
+   * This object represents the result of a monitor call. It contains the information that monitoring processes need.
    */
-  class MonitorResult {
-
-    private final TaskState taskState;
-    private final String taskInfo;
-
-    /**
-     * Constructor.
-     *
-     * @param taskState The current state of the task.
-     * @param taskInfo The info message. Can be null or empty.
-     */
-    public MonitorResult(TaskState taskState, String taskInfo) {
-      this.taskState = taskState;
-      this.taskInfo = taskInfo;
-    }
-
-    public TaskState getTaskState() {
-      return taskState;
-    }
-
-    public String getTaskInfo() {
-      return taskInfo;
-    }
-  }
+    record MonitorResult(TaskState taskState, String taskInfo) {}
 }

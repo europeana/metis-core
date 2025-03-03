@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
@@ -24,8 +23,10 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
 import java.util.Date;
 import java.util.Set;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,10 +52,9 @@ import org.springframework.web.bind.annotation.RestController;
  * system</p>
  */
 @RestController
-@RequestMapping({"/secured", "/"})
 public class OrchestratorController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(OrchestratorController.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final OrchestratorService orchestratorService;
 
   /**
@@ -93,6 +92,7 @@ public class OrchestratorController {
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
       @RequestBody Workflow workflow)
       throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     orchestratorService.createWorkflow(datasetId, workflow, enforcedPredecessorType);
   }
 
@@ -119,6 +119,7 @@ public class OrchestratorController {
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
       @RequestBody Workflow workflow) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     orchestratorService.updateWorkflow(datasetId, workflow, enforcedPredecessorType);
   }
 
@@ -137,12 +138,10 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteWorkflow(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     orchestratorService.deleteWorkflow(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Workflow with datasetId '{}' deleted",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("Workflow with datasetId '{}' deleted", datasetId);
     }
   }
 
@@ -161,10 +160,10 @@ public class OrchestratorController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Workflow getWorkflow(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     Workflow workflow = orchestratorService.getWorkflow(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Workflow with datasetId '{}' found",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("Workflow with datasetId '{}' found", datasetId);
     }
     return workflow;
   }
@@ -209,12 +208,12 @@ public class OrchestratorController {
       @RequestParam(value = "priority", defaultValue = "0") int priority)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     WorkflowExecution workflowExecution = orchestratorService
         .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType,
             priority, userId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution for datasetId '{}' added to queue",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("WorkflowExecution for datasetId '{}' added to queue", datasetId);
     }
     return workflowExecution;
   }
@@ -238,10 +237,10 @@ public class OrchestratorController {
   public void cancelWorkflowExecution(@AuthenticationPrincipal Jwt jwtPrincipal, @PathVariable("executionId") String executionId)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
+    executionId = StringEscapeUtils.escapeJava(executionId);
     orchestratorService.cancelWorkflowExecution(executionId, userId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution for executionId '{}' is cancelling",
-          executionId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("WorkflowExecution for executionId '{}' is cancelling", executionId);
     }
   }
 
@@ -261,12 +260,11 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.OK)
   public WorkflowExecution getWorkflowExecutionByExecutionId(
       @PathVariable("executionId") String executionId) throws GenericMetisException {
+    executionId = StringEscapeUtils.escapeJava(executionId);
     WorkflowExecution workflowExecution = orchestratorService
         .getWorkflowExecutionByExecutionId(executionId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution with executionId '{}' {}found.",
-          executionId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""),
-          workflowExecution == null ? "not " : "");
+      LOGGER.info("WorkflowExecution with executionId '{}' {}found.", executionId, workflowExecution == null ? "not " : "");
     }
     return workflowExecution;
   }
@@ -345,9 +343,9 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.OK)
   public DatasetExecutionInformation getDatasetExecutionInformation(
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.debug("Requesting dataset execution information for datasetId: {}",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.debug("Requesting dataset execution information for datasetId: {}", datasetId);
     }
     return orchestratorService.getDatasetExecutionInformation(datasetId);
   }
@@ -483,9 +481,9 @@ public class OrchestratorController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public ExecutionHistory getDatasetExecutionHistory(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.debug("Requesting dataset execution history for datasetId: {}",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.debug("Requesting dataset execution history for datasetId: {}", datasetId);
     }
     return orchestratorService.getDatasetExecutionHistory(datasetId);
   }

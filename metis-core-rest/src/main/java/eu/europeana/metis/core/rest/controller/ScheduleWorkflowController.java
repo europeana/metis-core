@@ -1,8 +1,5 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
-import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
-
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoScheduledWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
@@ -15,6 +12,8 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,15 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Contains all the calls that are related to scheduling workflows.
  * <p>The {@link ScheduleWorkflowService} has control on how to schedule workflows</p>
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-05
  */
 @RestController
-@RequestMapping({"/secured", "/"})
 public class ScheduleWorkflowController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleWorkflowController.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final ScheduleWorkflowService scheduleWorkflowService;
 
   /**
@@ -72,10 +66,11 @@ public class ScheduleWorkflowController {
   public void scheduleWorkflowExecution(@RequestBody ScheduledWorkflow scheduledWorkflow) throws GenericMetisException {
     scheduleWorkflowService.scheduleWorkflow(scheduledWorkflow);
     if (LOGGER.isInfoEnabled()) {
+      final String datasetId = StringEscapeUtils.escapeJava(scheduledWorkflow.getDatasetId());
+      final String frequencyName = StringEscapeUtils.escapeJava(scheduledWorkflow.getScheduleFrequence().name());
       LOGGER.info(
           "ScheduledWorkflowExecution for datasetId '{}', pointerDate at '{}', scheduled '{}'",
-          CRLF_PATTERN.matcher(scheduledWorkflow.getDatasetId()), scheduledWorkflow.getPointerDate(),
-          CRLF_PATTERN.matcher(scheduledWorkflow.getScheduleFrequence().name()).replaceAll(""));
+          datasetId, scheduledWorkflow.getPointerDate(), frequencyName);
     }
   }
 
@@ -94,10 +89,10 @@ public class ScheduleWorkflowController {
   @ResponseStatus(HttpStatus.OK)
   public ScheduledWorkflow getScheduledWorkflow(
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     ScheduledWorkflow scheduledWorkflow = scheduleWorkflowService.getScheduledWorkflowByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("ScheduledWorkflow with with datasetId '{}' found",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("ScheduledWorkflow with with datasetId '{}' found", datasetId);
     }
     return scheduledWorkflow;
   }
@@ -149,8 +144,8 @@ public class ScheduleWorkflowController {
   public void updateScheduledWorkflow(@RequestBody ScheduledWorkflow scheduledWorkflow) throws GenericMetisException {
     scheduleWorkflowService.updateScheduledWorkflow(scheduledWorkflow);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("ScheduledWorkflow with with datasetId '{}' updated",
-          CRLF_PATTERN.matcher(scheduledWorkflow.getDatasetId()).replaceAll(""));
+      final String datasetId = StringEscapeUtils.escapeJava(scheduledWorkflow.getDatasetId());
+      LOGGER.info("ScheduledWorkflow with with datasetId '{}' updated", datasetId);
     }
   }
 
@@ -167,12 +162,10 @@ public class ScheduleWorkflowController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteScheduledWorkflowExecution(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     scheduleWorkflowService.deleteScheduledWorkflow(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("ScheduledWorkflowExecution for datasetId '{}' deleted",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("ScheduledWorkflowExecution for datasetId '{}' deleted", datasetId);
     }
   }
 }

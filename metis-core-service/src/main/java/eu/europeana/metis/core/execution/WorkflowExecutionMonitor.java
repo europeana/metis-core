@@ -6,6 +6,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WorkflowExecutionMonitor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowExecutionMonitor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private static final String FAILSAFE_LOCK = "failsafeLock";
   protected static final Set<WorkflowStatus> CLAIMABLE_STATUSES = EnumSet
@@ -152,9 +153,9 @@ public class WorkflowExecutionMonitor {
       final ResultList<WorkflowExecution> result = workflowExecutionDao
           .getAllWorkflowExecutions(null, EnumSet.of(workflowStatus), DaoFieldNames.ID, true,
               nextPage, 1, true);
-      userWorkflowExecutionResponseListWrapper.setResultsAndLastPage(result.getResults(),
+      userWorkflowExecutionResponseListWrapper.setResultsAndLastPage(result.results(),
           workflowExecutionDao.getWorkflowExecutionsPerRequest(), nextPage,
-          result.isMaxResultCountReached());
+          result.maxResultCountReached());
       workflowExecutions.addAll(userWorkflowExecutionResponseListWrapper.getResults());
       nextPage = userWorkflowExecutionResponseListWrapper.getNextPage();
     } while (nextPage != -1);

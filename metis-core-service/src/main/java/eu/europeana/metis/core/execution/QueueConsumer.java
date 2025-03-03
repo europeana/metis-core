@@ -7,6 +7,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -27,7 +28,7 @@ import org.slf4j.LoggerFactory;
  */
 public class QueueConsumer extends DefaultConsumer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(QueueConsumer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private final WorkflowExecutionSettings workflowExecutionSettings;
   private final WorkflowExecutorManager workflowExecutorManager;

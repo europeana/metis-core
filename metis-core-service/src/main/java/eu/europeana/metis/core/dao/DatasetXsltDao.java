@@ -3,7 +3,6 @@ package eu.europeana.metis.core.dao;
 import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.ID;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
-import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
 
 import com.mongodb.client.result.DeleteResult;
 import dev.morphia.DeleteOptions;
@@ -13,7 +12,9 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.filters.Filters;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
+import java.lang.invoke.MethodHandles;
 import java.util.Optional;
+import org.apache.commons.text.StringEscapeUtils;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetXsltDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
 
@@ -50,8 +51,8 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
     DatasetXslt datasetSaved = retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().save(datasetXslt));
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("DatasetXslt for datasetId: '{}'created in Mongo",
-          CRLF_PATTERN.matcher(datasetXslt.getDatasetId()).replaceAll(""));
+      final String datasetId = StringEscapeUtils.escapeJava(datasetXslt.getDatasetId());
+      LOGGER.debug("DatasetXslt for datasetId: '{}'created in Mongo", datasetId);
     }
     return datasetSaved;
   }

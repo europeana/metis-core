@@ -102,7 +102,7 @@ class TestProxiesController {
     when(proxiesService.getExternalTaskLogs(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID, from, to)).thenReturn(listOfSubTaskInfo);
 
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS,
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("from", Integer.toString(from))
@@ -120,7 +120,7 @@ class TestProxiesController {
     when(proxiesService.existsExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(true);
 
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -141,7 +141,7 @@ class TestProxiesController {
     when(proxiesService.getExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(taskErrorsInfo);
 
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("idsPerError", "10")
@@ -161,34 +161,27 @@ class TestProxiesController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     // Create response object.
-    final NodeValueStatistics nodeValue = new NodeValueStatistics();
-    nodeValue.setOccurrences(3);
-    nodeValue.setValue("node value");
-    nodeValue.setAttributeStatistics(Collections.emptyList());
-    final NodePathStatistics nodePath = new NodePathStatistics();
-    nodePath.setxPath("node path");
-    nodePath.setNodeValueStatistics(Collections.singletonList(nodeValue));
-    final RecordStatistics recordStatistics = new RecordStatistics();
-    recordStatistics.setTaskId(TestObjectFactory.EXTERNAL_TASK_ID);
-    recordStatistics.setNodePathStatistics(Collections.singletonList(nodePath));
+    final NodeValueStatistics nodeValue = new NodeValueStatistics("node value", 3, Collections.emptyList());
+    final NodePathStatistics nodePath = new NodePathStatistics("node path", Collections.singletonList(nodeValue));
+    final RecordStatistics recordStatistics = new RecordStatistics(TestObjectFactory.EXTERNAL_TASK_ID, Collections.singletonList(nodePath));
 
     // Make the call and verify the result.
     when(proxiesService.getExternalTaskStatistics(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON).content(""))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.taskId", is(TestObjectFactory.EXTERNAL_TASK_ID)))
-           .andExpect(jsonPath("$.nodePathStatistics", hasSize(recordStatistics.getNodePathStatistics().size())))
-           .andExpect(jsonPath("$.nodePathStatistics[0].xPath", is(nodePath.getxPath())))
-           .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics", hasSize(nodePath.getNodeValueStatistics().size())))
-           .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].value", is(nodeValue.getValue())))
+           .andExpect(jsonPath("$.nodePathStatistics", hasSize(recordStatistics.nodePathStatistics().size())))
+           .andExpect(jsonPath("$.nodePathStatistics[0].xPath", is(nodePath.xPath())))
+           .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics", hasSize(nodePath.nodeValueStatistics().size())))
+           .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].value", is(nodeValue.value())))
            .andExpect(
-               jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].occurrences", is((int) nodeValue.getOccurrences())))
+               jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].occurrences", is((int) nodeValue.occurrences())))
            .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].attributeStatistics",
-               hasSize(nodeValue.getAttributeStatistics().size())));
+               hasSize(nodeValue.attributeStatistics().size())));
   }
 
   @Test
@@ -196,46 +189,34 @@ class TestProxiesController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
 
     // Create response object.
-    final AttributeStatistics attribute1 = new AttributeStatistics();
-    attribute1.setxPath("attribute path 1");
-    attribute1.setValue("attribute value 1");
-    attribute1.setOccurrences(1);
-    final AttributeStatistics attribute2 = new AttributeStatistics();
-    attribute2.setxPath("attribute path 2");
-    attribute2.setValue("attribute value 2");
-    attribute2.setOccurrences(2);
-    final NodeValueStatistics nodeValue = new NodeValueStatistics();
-    nodeValue.setOccurrences(3);
-    nodeValue.setValue("node value");
-    nodeValue.setAttributeStatistics(Arrays.asList(attribute1, attribute2));
-    final NodePathStatistics nodePath = new NodePathStatistics();
-    nodePath.setxPath("node path");
-    nodePath.setNodeValueStatistics(Collections.singletonList(nodeValue));
+    final AttributeStatistics attribute1 = new AttributeStatistics("attribute path 1", "attribute value 1", 1);
+    final AttributeStatistics attribute2 = new AttributeStatistics("attribute path 1", "attribute value 1", 1);
+    final NodeValueStatistics nodeValue = new NodeValueStatistics("node value", 3, Arrays.asList(attribute1, attribute2));
+    final NodePathStatistics nodePath = new NodePathStatistics("node path", Collections.singletonList(nodeValue));
 
-    // Mock the securedProxiesService instance.
     when(proxiesService.getAdditionalNodeStatistics(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, nodePath.getxPath())).thenReturn(nodePath);
+        TestObjectFactory.EXTERNAL_TASK_ID, nodePath.xPath())).thenReturn(nodePath);
 
     // Make the call and verify the result.
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nodePath", nodePath.getxPath()))
+               .param("nodePath", nodePath.xPath()))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.xPath", is(nodePath.getxPath())))
-           .andExpect(jsonPath("$.nodeValueStatistics", hasSize(nodePath.getNodeValueStatistics().size())))
-           .andExpect(jsonPath("$.nodeValueStatistics[0].value", is(nodeValue.getValue())))
-           .andExpect(jsonPath("$.nodeValueStatistics[0].occurrences", is((int) nodeValue.getOccurrences())))
+           .andExpect(jsonPath("$.xPath", is(nodePath.xPath())))
+           .andExpect(jsonPath("$.nodeValueStatistics", hasSize(nodePath.nodeValueStatistics().size())))
+           .andExpect(jsonPath("$.nodeValueStatistics[0].value", is(nodeValue.value())))
+           .andExpect(jsonPath("$.nodeValueStatistics[0].occurrences", is((int) nodeValue.occurrences())))
            .andExpect(
-               jsonPath("$.nodeValueStatistics[0].attributeStatistics", hasSize(nodeValue.getAttributeStatistics().size())))
-           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[0].xPath", is(attribute1.getxPath())))
-           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[0].value", is(attribute1.getValue())))
+               jsonPath("$.nodeValueStatistics[0].attributeStatistics", hasSize(nodeValue.attributeStatistics().size())))
+           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[0].xPath", is(attribute1.xPath())))
+           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[0].value", is(attribute1.value())))
            .andExpect(
-               jsonPath("$.nodeValueStatistics[0].attributeStatistics[0].occurrences", is((int) attribute1.getOccurrences())))
-           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[1].xPath", is(attribute2.getxPath())))
-           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[1].value", is(attribute2.getValue())))
+               jsonPath("$.nodeValueStatistics[0].attributeStatistics[0].occurrences", is((int) attribute1.occurrences())))
+           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[1].xPath", is(attribute2.xPath())))
+           .andExpect(jsonPath("$.nodeValueStatistics[0].attributeStatistics[1].value", is(attribute2.value())))
            .andExpect(
-               jsonPath("$.nodeValueStatistics[0].attributeStatistics[1].occurrences", is((int) attribute2.getOccurrences())));
+               jsonPath("$.nodeValueStatistics[0].attributeStatistics[1].occurrences", is((int) attribute2.occurrences())));
   }
 
   @Test
@@ -255,7 +236,7 @@ class TestProxiesController {
         TestObjectFactory.EXECUTIONID, ExecutablePluginType.TRANSFORMATION, null, 5))
         .thenReturn(recordsResponse);
 
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS)
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", PluginType.TRANSFORMATION.name())
@@ -289,7 +270,7 @@ class TestProxiesController {
     }).when(proxiesService).getListOfFileContentsFromPluginExecution(
         eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
 
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())
@@ -311,7 +292,7 @@ class TestProxiesController {
     }).when(proxiesService).getListOfFileContentsFromPluginExecution(
         eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any());
 
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())
@@ -319,7 +300,7 @@ class TestProxiesController {
                .content("{\"ids\":[]}"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.records", hasSize(0)));
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())
@@ -332,7 +313,7 @@ class TestProxiesController {
     when(proxiesService.getListOfFileContentsFromPluginExecution(
         eq(TestObjectFactory.EXECUTIONID), eq(pluginType), any()))
         .thenThrow(new NoWorkflowExecutionFoundException(""));
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())
@@ -341,7 +322,7 @@ class TestProxiesController {
            .andExpect(status().isNotFound());
 
     // Test for unauthenticated user
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())
                .contentType(MediaType.APPLICATION_JSON)
@@ -350,7 +331,7 @@ class TestProxiesController {
 
     // Test for unauthorized user
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .param("workflowExecutionId", TestObjectFactory.EXECUTIONID)
                .param("pluginType", pluginType.name())

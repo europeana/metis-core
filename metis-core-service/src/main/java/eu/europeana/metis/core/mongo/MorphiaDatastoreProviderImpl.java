@@ -48,13 +48,13 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Class to initialize the mongo collections and the {@link Datastore} connection. It also performs
@@ -62,7 +62,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MorphiaDatastoreProviderImpl.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private Datastore datastore;
 
   /**

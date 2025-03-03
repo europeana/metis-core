@@ -322,7 +322,7 @@ public class DataEvolutionUtils {
 
     // Extract all (finished) publish plugins inversely sorted by started date (most recent first).
     final List<PluginWithExecutionId<IndexToPublishPlugin>> publishOperations = new ArrayList<>();
-    executionsWithPublishOperations.getResults().stream().map(ExecutionDatasetPair::getExecution).forEach(
+    executionsWithPublishOperations.results().stream().map(ExecutionDatasetPair::getExecution).forEach(
         execution -> execution.getMetisPlugins().stream().filter(IndexToPublishPlugin.class::isInstance)
                               .map(IndexToPublishPlugin.class::cast)
                               .map(plugin -> new PluginWithExecutionId<>(execution.getId().toString(), plugin))

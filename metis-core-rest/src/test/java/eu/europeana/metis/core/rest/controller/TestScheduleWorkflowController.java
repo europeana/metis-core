@@ -89,7 +89,7 @@ class TestScheduleWorkflowController {
   void scheduleWorkflowExecution() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -102,7 +102,7 @@ class TestScheduleWorkflowController {
   @Test
   void scheduleWorkflowExecution_Unauthenticated() throws Exception {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
            .andExpect(status().isUnauthorized());
@@ -112,7 +112,7 @@ class TestScheduleWorkflowController {
   void scheduleWorkflowExecution_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -125,7 +125,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new BadContentException("Some error")).when(scheduleWorkflowService)
                                                   .scheduleWorkflow(any(ScheduledWorkflow.class));
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -140,7 +140,7 @@ class TestScheduleWorkflowController {
     doThrow(new ScheduledWorkflowAlreadyExistsException("Some error")).when(scheduleWorkflowService)
                                                                       .scheduleWorkflow(
                                                                           any(ScheduledWorkflow.class));
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -154,7 +154,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoWorkflowFoundException("Some error")).when(scheduleWorkflowService)
                                                        .scheduleWorkflow(any(ScheduledWorkflow.class));
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -168,7 +168,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoDatasetFoundException("Some error")).when(scheduleWorkflowService)
                                                       .scheduleWorkflow(any(ScheduledWorkflow.class));
-    mockMvc.perform(post("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -182,7 +182,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     when(scheduleWorkflowService.getScheduledWorkflowByDatasetId(anyString()))
         .thenReturn(scheduledWorkflow);
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -203,7 +203,7 @@ class TestScheduleWorkflowController {
     when(scheduleWorkflowService
         .getAllScheduledWorkflows(any(ScheduleFrequence.class), anyInt()))
         .thenReturn(listOfScheduledWorkflows);
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("nextPage", "")
                .contentType(MediaType.APPLICATION_JSON)
@@ -220,7 +220,7 @@ class TestScheduleWorkflowController {
   @Test
   void getAllScheduledWorkflowsNegativeNextPage() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(get("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("nextPage", "-1")
                .contentType(MediaType.APPLICATION_JSON)
@@ -232,7 +232,7 @@ class TestScheduleWorkflowController {
   void updateScheduledWorkflow() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -245,7 +245,7 @@ class TestScheduleWorkflowController {
   @Test
   void updateScheduledWorkflow_Unauthenticated() throws Exception {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
            .andExpect(status().isUnauthorized());
@@ -255,7 +255,7 @@ class TestScheduleWorkflowController {
   void updateScheduledWorkflow_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-    mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -268,7 +268,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoWorkflowFoundException("Some error"))
         .when(scheduleWorkflowService).updateScheduledWorkflow(any(ScheduledWorkflow.class));
-    mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -282,7 +282,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new NoScheduledWorkflowFoundException("Some error"))
         .when(scheduleWorkflowService).updateScheduledWorkflow(any(ScheduledWorkflow.class));
-    mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -296,7 +296,7 @@ class TestScheduleWorkflowController {
     ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
     doThrow(new BadContentException("Some error"))
         .when(scheduleWorkflowService).updateScheduledWorkflow(any(ScheduledWorkflow.class));
-    mockMvc.perform(put("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(TestUtils.convertObjectToJsonBytes(scheduledWorkflow)))
@@ -307,7 +307,7 @@ class TestScheduleWorkflowController {
   @Test
   void deleteScheduledWorkflowExecution() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -321,7 +321,7 @@ class TestScheduleWorkflowController {
 
   @Test
   void deleteScheduledWorkflowExecution_Unauthenticated() throws Exception {
-    mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .contentType(MediaType.APPLICATION_JSON)
                .content(""))
@@ -331,7 +331,7 @@ class TestScheduleWorkflowController {
   @Test
   void deleteScheduledWorkflowExecution_Unauthorized() throws Exception {
     when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(delete("/secured" + RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_SCHEDULE_DATASETID,
                Integer.toString(DATASETID))
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)

@@ -16,7 +16,7 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   private boolean incrementalIndexing; // Default: false (i.e. full processing)
   private Date harvestDate;
 
-  public AbstractIndexPluginMetadata() {
+  protected AbstractIndexPluginMetadata() {
     //Required for json serialization
   }
 
@@ -41,9 +41,7 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   }
 
   public void setDatasetIdsToRedirectFrom(List<String> datasetIdsToRedirectFrom) {
-    this.datasetIdsToRedirectFrom =
-            datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(
-                    datasetIdsToRedirectFrom);
+    this.datasetIdsToRedirectFrom = datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(datasetIdsToRedirectFrom);
   }
 
   public boolean isIncrementalIndexing() {
@@ -55,10 +53,10 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   }
 
   public Date getHarvestDate() {
-    return harvestDate;
+    return harvestDate == null ? null : new Date(harvestDate.getTime());
   }
 
   public void setHarvestDate(Date harvestDate) {
-    this.harvestDate = harvestDate;
+    this.harvestDate = harvestDate == null ? null : new Date(harvestDate.getTime());
   }
 }

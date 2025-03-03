@@ -24,17 +24,11 @@ class ProxiesHelper {
 
     // Group the node statistics by their respective xpath.
     final Map<String, List<NodeStatistics>> nodesByXPath = report.getNodeStatistics().stream()
-        .collect(Collectors.groupingBy(NodeStatistics::getXpath));
-    final List<NodePathStatistics> nodePathStatisticsList = nodesByXPath.entrySet().stream()
-        .map(ProxiesHelper::compileNodePathStatistics)
-        .sorted(Comparator.comparing(NodePathStatistics::getxPath))
-                                                                        .toList();
-
-    // Done.
-    final RecordStatistics result = new RecordStatistics();
-    result.setNodePathStatistics(nodePathStatisticsList);
-    result.setTaskId(report.getTaskId());
-    return result;
+                                                                 .collect(Collectors.groupingBy(NodeStatistics::getXpath));
+    final List<NodePathStatistics> nodePathStatisticsList =
+        nodesByXPath.entrySet().stream().map(ProxiesHelper::compileNodePathStatistics)
+                    .sorted(Comparator.comparing(NodePathStatistics::xPath)).toList();
+    return new RecordStatistics(report.getTaskId(), nodePathStatisticsList);
   }
 
   private static NodePathStatistics compileNodePathStatistics(
@@ -50,14 +44,9 @@ class ProxiesHelper {
 
   private static <I> NodePathStatistics compileNodePathStatistics(String nodePath,
       List<I> nodes, Function<I, NodeValueStatistics> nodeValueConverter) {
-    final List<NodeValueStatistics> nodeValueStatisticsList = nodes.stream()
-        .map(nodeValueConverter)
-        .sorted(Comparator.comparing(NodeValueStatistics::getValue))
-                                                                   .toList();
-    final NodePathStatistics nodePathStatistics = new NodePathStatistics();
-    nodePathStatistics.setxPath(nodePath);
-    nodePathStatistics.setNodeValueStatistics(nodeValueStatisticsList);
-    return nodePathStatistics;
+    final List<NodeValueStatistics> nodeValueStatisticsList =
+        nodes.stream().map(nodeValueConverter).sorted(Comparator.comparing(NodeValueStatistics::value)).toList();
+    return new NodePathStatistics(nodePath, nodeValueStatisticsList);
   }
 
   private static NodeValueStatistics compileNodeValueStatistics(NodeStatistics nodeStatistics) {
@@ -73,24 +62,14 @@ class ProxiesHelper {
   private static NodeValueStatistics compileNodeValueStatistics(String nodeValue,
       long occurrence,
       Collection<eu.europeana.cloud.common.model.dps.AttributeStatistics> attributes) {
-    final List<AttributeStatistics> attributeStatistics = attributes.stream()
-        .map(ProxiesHelper::compileAttributeStatistics)
-        .sorted(Comparator.comparing(AttributeStatistics::getxPath)
-            .thenComparing(AttributeStatistics::getValue))
-                                                                    .toList();
-    final NodeValueStatistics nodeValueStatistics = new NodeValueStatistics();
-    nodeValueStatistics.setValue(nodeValue);
-    nodeValueStatistics.setOccurrences(occurrence);
-    nodeValueStatistics.setAttributeStatistics(attributeStatistics);
-    return nodeValueStatistics;
+    final List<AttributeStatistics> attributeStatistics =
+        attributes.stream().map(ProxiesHelper::compileAttributeStatistics)
+                  .sorted(Comparator.comparing(AttributeStatistics::xPath).thenComparing(AttributeStatistics::value)).toList();
+    return new NodeValueStatistics(nodeValue, occurrence, attributeStatistics);
   }
 
   private static AttributeStatistics compileAttributeStatistics(
       eu.europeana.cloud.common.model.dps.AttributeStatistics input) {
-    final AttributeStatistics attributeStatistics = new AttributeStatistics();
-    attributeStatistics.setxPath(input.getName());
-    attributeStatistics.setValue(input.getValue());
-    attributeStatistics.setOccurrences(input.getOccurrence());
-    return attributeStatistics;
+    return new AttributeStatistics(input.getName(), input.getValue(), input.getOccurrence());
   }
 }

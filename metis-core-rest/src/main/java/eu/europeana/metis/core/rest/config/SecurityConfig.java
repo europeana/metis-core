@@ -38,7 +38,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableConfigurationProperties(SecurityConfigurationProperties.class)
 public class SecurityConfig {
 
-  public static final String SECURED = "/secured";
   private final List<String> resourceNames;
 
   /**
@@ -72,11 +71,6 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_XSLTID).permitAll()
                     .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
-                    //TODO: 2025-02-05 - Remove when ui switches
-                    .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_DEFAULT).permitAll()
-                    .requestMatchers(HttpMethod.POST, SECURED + DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
-                    .requestMatchers(HttpMethod.GET, SECURED + DATASETS_XSLT_XSLTID).permitAll()
-                    .requestMatchers(HttpMethod.GET, SECURED + DEPUBLISH_REASONS).permitAll()
                     .requestMatchers( "/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
                     .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer

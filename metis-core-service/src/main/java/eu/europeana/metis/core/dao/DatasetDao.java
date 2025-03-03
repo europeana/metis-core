@@ -7,7 +7,6 @@ import static eu.europeana.metis.core.common.DaoFieldNames.ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.PROVIDER;
 import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
-import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
 
 import dev.morphia.UpdateOptions;
 import dev.morphia.query.FindOptions;
@@ -26,6 +25,7 @@ import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.exception.ExternalTaskException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class DatasetDao implements MetisDao<Dataset, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   public static final String ORGANIZATION_ID = "1482250000001617026";
   public static final String ORGANIZATION_NAME = "Europeana Foundation";
   private int datasetsPerRequest = RequestLimits.DATASETS_PER_REQUEST.getLimit();
@@ -83,11 +84,11 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     Dataset datasetSaved = retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().save(dataset));
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' created in Mongo",
-          CRLF_PATTERN.matcher(dataset.getDatasetId()).replaceAll(""),
-          CRLF_PATTERN.matcher(dataset.getDatasetName()).replaceAll(""),
-          CRLF_PATTERN.matcher(dataset.getOrganizationId()).replaceAll(""));
+      final String datasetId = StringEscapeUtils.escapeJava(dataset.getDatasetId());
+      final String datasetName = StringEscapeUtils.escapeJava(dataset.getDatasetName());
+      final String datasetOrganizationId = StringEscapeUtils.escapeJava(dataset.getOrganizationId());
+      LOGGER.debug("Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' created in Mongo",
+          datasetId, datasetName, datasetOrganizationId);
     }
     return datasetSaved;
   }
@@ -103,11 +104,11 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     Dataset datasetSaved = retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().save(dataset));
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' updated in Mongo",
-          CRLF_PATTERN.matcher(dataset.getDatasetId()).replaceAll(""),
-          CRLF_PATTERN.matcher(dataset.getDatasetName()).replaceAll(""),
-          CRLF_PATTERN.matcher(dataset.getOrganizationId()).replaceAll(""));
+      final String datasetId = StringEscapeUtils.escapeJava(dataset.getDatasetId());
+      final String datasetName = StringEscapeUtils.escapeJava(dataset.getDatasetName());
+      final String datasetOrganizationId = StringEscapeUtils.escapeJava(dataset.getOrganizationId());
+      LOGGER.debug("Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' updated in Mongo",
+          datasetId, datasetName, datasetOrganizationId);
     }
     return datasetSaved == null ? null : datasetSaved.getId().toString();
   }

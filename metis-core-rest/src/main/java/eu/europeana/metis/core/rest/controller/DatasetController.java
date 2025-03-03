@@ -1,10 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-import static eu.europeana.metis.utils.CommonStringValues.CRLF_PATTERN;
-import static eu.europeana.metis.utils.CommonStringValues.sanitizeCRLF;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -15,8 +12,11 @@ import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.exceptions.XsltSetupException;
+import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
+import eu.europeana.metis.core.rest.view.CountryView;
+import eu.europeana.metis.core.rest.view.LanguageView;
 import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
@@ -25,7 +25,9 @@ import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +41,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,10 +50,9 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
  */
 @RestController
-@RequestMapping({"/secured", "/"})
 public class DatasetController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetController.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final DatasetService datasetService;
 
   /**
@@ -82,7 +82,8 @@ public class DatasetController {
    */
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset) throws GenericMetisException {
+  public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset)
+      throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     Dataset createdDataset = datasetService.createDataset(userId, dataset);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
@@ -116,8 +117,8 @@ public class DatasetController {
       throws GenericMetisException {
     datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId {} updated",
-          CRLF_PATTERN.matcher(datasetXsltStringWrapper.getDataset().getDatasetId()).replaceAll(""));
+      final String datasetId = StringEscapeUtils.escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId());
+      LOGGER.info("Dataset with datasetId {} updated", datasetId);
     }
   }
 
@@ -136,12 +137,10 @@ public class DatasetController {
   @DeleteMapping(value = RestEndpoints.DATASETS_DATASETID)
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteDataset(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     datasetService.deleteDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' deleted",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("Dataset with datasetId '{}' deleted", datasetId);
     }
   }
 
@@ -163,11 +162,11 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public Dataset getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
 
     Dataset storedDataset = datasetService.getDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' found",
-          datasetId.replaceAll(CommonStringValues.REPLACEABLE_CRLF_CHARACTERS_REGEX, ""));
+      LOGGER.info("Dataset with datasetId '{}' found", datasetId);
     }
     return storedDataset;
   }
@@ -190,11 +189,10 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DatasetXslt getDatasetXsltByDatasetId(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = sanitizeCRLF(datasetId);
-
+    datasetId = StringEscapeUtils.escapeJava(datasetId);
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", sanitizeCRLF(datasetId), datasetXslt.getId());
+      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", datasetId, datasetXslt.getId());
     }
     return datasetXslt;
   }
@@ -202,7 +200,7 @@ public class DatasetController {
   /**
    * Get the xslt string as non escaped text using an xslt identifier.
    * <p>
-   * It is a method that does not require authentication and it is meant to be used from external service to download the
+   * It is a method that does not require authentication, and it is meant to be used from external service to download the
    * corresponding xslt. At the point of writing, ECloud transformation topology is using it. {@link TransformationPlugin}
    * </p>
    *
@@ -250,7 +248,7 @@ public class DatasetController {
   /**
    * Get the latest created default xslt.
    * <p>
-   * It is an method that does not require authentication and it is meant to be used from external service to download the
+   * It is a method that does not require authentication, and it is meant to be used from external service to download the
    * corresponding xslt. At the point of writing, ECloud transformation topology is using it. {@link TransformationPlugin}
    * </p>
    *
@@ -272,7 +270,7 @@ public class DatasetController {
    * Transform a list of xmls using the latest dataset xslt stored.
    * <p>
    * This method is meant to be used after a response from
-   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, String, ExecutablePluginType, String)} to try a
+   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
    * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
@@ -301,7 +299,7 @@ public class DatasetController {
    * Transform a list of xmls using the latest default xslt stored.
    * <p>
    * This method is meant to be used after a response from
-   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, String, ExecutablePluginType, String)} to try a
+   * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
    * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
@@ -536,8 +534,7 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<CountryView> getDatasetsCountries() {
-    return Country.getCountryListSortedByName().stream().map(CountryView::new)
-                  .toList();
+    return Country.getCountryListSortedByName().stream().map(CountryView::new).toList();
   }
 
   /**
@@ -552,8 +549,7 @@ public class DatasetController {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<LanguageView> getDatasetsLanguages() {
-    return Language.getLanguageListSortedByName().stream().map(LanguageView::new)
-                   .toList();
+    return Language.getLanguageListSortedByName().stream().map(LanguageView::new).toList();
   }
 
   /**
@@ -587,37 +583,7 @@ public class DatasetController {
     responseListWrapper.setResultsAndLastPage(
         datasetService.searchDatasetsBasedOnSearchString(searchString, nextPage),
         datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(),
-        nextPage);
+    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
-  }
-
-  private static class CountryView {
-
-    @JsonProperty("enum")
-    private final String enumName;
-    @JsonProperty
-    private final String name;
-    @JsonProperty
-    private final String isoCode;
-
-    CountryView(Country country) {
-      this.enumName = country.name();
-      this.name = country.getName();
-      this.isoCode = country.getIsoCode();
-    }
-  }
-
-  private static class LanguageView {
-
-    @JsonProperty("enum")
-    private final String enumName;
-    @JsonProperty
-    private final String name;
-
-    LanguageView(Language language) {
-      this.enumName = language.name();
-      this.name = language.getName();
-    }
   }
 }

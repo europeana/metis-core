@@ -5,12 +5,11 @@ import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
 
 /**
  * Index to Publish Plugin.
- * <b>Note: Adding another layer of hierarchy e.g. AbstractIndexPlugin seems to not work with morphia at this point in time 18/11/2021</b>
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-03
+ * <b>Note: Adding another layer of hierarchy e.g. AbstractIndexPlugin seems to not work with morphia at this point in time
+ * 18/11/2021</b>
  */
 public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublishPluginMetadata> {
+
   protected final String topologyName = Topology.INDEX.getTopologyName();
 
   /**
@@ -33,12 +32,7 @@ public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublis
 
   @Override
   public DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-    return createDpsTaskForIndexPlugin(dpsTaskSettings, datasetId,
-        getPluginMetadata().isIncrementalIndexing(),
-        getPluginMetadata().getHarvestDate(),
-        getPluginMetadata().isPreserveTimestamps(),
-        getPluginMetadata().getDatasetIdsToRedirectFrom(),
-        getPluginMetadata().isPerformRedirects(), getTargetIndexingDatabase().name());
+    return createDpsTaskForIndexPlugin(dpsTaskSettings, datasetId, getPluginMetadata(), getTargetIndexingDatabase().name());
   }
 
   @Override
