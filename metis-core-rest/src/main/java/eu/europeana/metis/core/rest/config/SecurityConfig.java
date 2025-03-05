@@ -1,12 +1,8 @@
 package eu.europeana.metis.core.rest.config;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
-import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
-
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import eu.europeana.metis.core.rest.security.UserInformationClaimsExtractorFilter;
+import eu.europeana.metis.core.service.UserService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +24,14 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+
+import static eu.europeana.metis.core.common.AccountRole.ADMIN;
+import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
+import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
 
 /**
  * Spring security configuration class.
@@ -71,12 +74,13 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_XSLTID).permitAll()
                     .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
-                    .requestMatchers( "/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
+                    .requestMatchers("/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
                     .anyRequest().denyAll())
+                .addFilterAfter(new UserInformationClaimsExtractorFilter(UserService::insertInCache), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
                     .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
                     )
-                ).securityMatcher( "/**");
+                ).securityMatcher("/**");
 
     return httpSecurity.build();
   }

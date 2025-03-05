@@ -9,6 +9,7 @@ import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
@@ -183,6 +184,36 @@ public class TestObjectFactory {
       scheduledWorkflows.add(scheduledWorkflow);
     }
     return scheduledWorkflows;
+  }
+
+  /**
+   * Create a dummy datasetDTO
+   *
+   * @param datasetName the dataset name to be used
+   * @return the created dataset
+   */
+  public static DatasetDTO createDatasetDTO(String datasetName) {
+    DatasetDTO ds = new DatasetDTO();
+    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setDatasetId(Integer.toString(DATASETID));
+    ds.setDatasetName(datasetName);
+    final String organizationId = "1234567890";
+    ds.setOrganizationId(organizationId);
+    ds.setOrganizationName("OrganizationName");
+    ds.setProvider(organizationId);
+    ds.setIntermediateProvider(organizationId);
+    ds.setDataProvider(organizationId);
+    ds.setCreatedByUserId("userId");
+    ds.setCreatedDate(new Date());
+    ds.setUpdatedDate(new Date());
+    ds.setReplacedBy("replacedBy");
+    ds.setReplaces("12345");
+    ds.setCountry(Country.GREECE);
+    ds.setLanguage(Language.AR);
+    ds.setDescription("description");
+    ds.setPublicationFitness(PublicationFitness.PARTIALLY_FIT);
+    ds.setNotes("Notes");
+    return ds;
   }
 
   /**

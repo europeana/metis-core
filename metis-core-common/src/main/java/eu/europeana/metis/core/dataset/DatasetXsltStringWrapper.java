@@ -8,7 +8,7 @@ package eu.europeana.metis.core.dataset;
  */
 public class DatasetXsltStringWrapper {
 
-  private Dataset dataset;
+  private DatasetDTO dataset;
   private String xslt;
 
   public DatasetXsltStringWrapper() {
@@ -18,19 +18,19 @@ public class DatasetXsltStringWrapper {
   /**
    * Constructor with all the required paramets
    *
-   * @param dataset {@link Dataset}
+   * @param dataset {@link DatasetDTO}
    * @param xslt the String representation of the xslt text
    */
-  public DatasetXsltStringWrapper(Dataset dataset, String xslt) {
+  public DatasetXsltStringWrapper(DatasetDTO dataset, String xslt) {
     this.dataset = dataset;
     this.xslt = xslt;
   }
 
-  public Dataset getDataset() {
+  public DatasetDTO getDataset() {
     return dataset;
   }
 
-  public void setDataset(Dataset dataset) {
+  public void setDataset(DatasetDTO dataset) {
     this.dataset = dataset;
   }
 

@@ -19,4 +19,16 @@ public final class AuthenticationUtils {
   public static String getUserId(Jwt jwt) {
     return jwt.getClaimAsString("sub");
   }
+
+  public static String getUserName(Jwt jwt) {
+    return jwt.getClaimAsString("preferred_username");
+  }
+
+  public static String getFirstName(Jwt jwt) {
+    return jwt.getClaimAsString("given_name");
+  }
+
+  public static String getLastName(Jwt jwt) {
+    return jwt.getClaimAsString("family_name");
+  }
 }
