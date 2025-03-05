@@ -16,6 +16,11 @@ import java.util.Date;
 import java.util.List;
 import org.bson.types.ObjectId;
 
+/**
+ * Data Transfer Object (DTO) representing a dataset.
+ * <p>
+ * This class encapsulates the metadata and other relevant information about a dataset.
+ */
 public class DatasetDTO {
 
   @JsonSerialize(using = ObjectIdSerializer.class)
@@ -62,6 +67,34 @@ public class DatasetDTO {
     //Required for json serialization
   }
 
+  /**
+   * Constructs a new DatasetDTO object with the specified parameters.
+   *
+   * @param id the ID of the dataset
+   * @param ecloudDatasetId the ECloud dataset ID
+   * @param datasetId the dataset ID
+   * @param datasetName the name of the dataset
+   * @param organizationId the ID of the organization
+   * @param organizationName the name of the organization
+   * @param provider the provider of the dataset
+   * @param dataProvider the data provider of the dataset
+   * @param intermediateProvider the intermediate provider of the dataset
+   * @param createdByUserId the ID of the user who created the dataset
+   * @param createdByUserName the username of the user who created the dataset
+   * @param createdByFirstName the first name of the user who created the dataset
+   * @param createdByLastName the last name of the user who created the dataset
+   * @param createdDate the date the dataset was created
+   * @param updatedDate the date the dataset was last updated
+   * @param datasetIdsToRedirectFrom the IDs of datasets to redirect from
+   * @param replacedBy the ID of the dataset that replaced this one
+   * @param replaces the ID of the dataset that this one replaces
+   * @param country the country associated with the dataset
+   * @param language the language associated with the dataset
+   * @param description the description of the dataset
+   * @param publicationFitness the publication fitness of the dataset
+   * @param notes the notes associated with the dataset
+   * @param xsltId the ID of the XSLT associated with the dataset
+   */
   public DatasetDTO(
       ObjectId id,
       String ecloudDatasetId,

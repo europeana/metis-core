@@ -1,12 +1,27 @@
 package eu.europeana.metis.core.dataset;
 
 import eu.europeana.metis.core.user.User;
+import java.util.Optional;
 
-public class DatasetConverter {
+/**
+ * A utility class that provides methods for converting between Dataset and DatasetDTO objects.
+ * It contains static methods for converting a DatasetDTO to a Dataset and vice versa.
+ */
+public final class DatasetConverter {
 
+  private DatasetConverter() {
+  }
+
+  /**
+   * Creates a new Dataset object from the given DatasetDTO object.
+   *
+   * @param datasetDTO The datasetDTO to be converted.
+   * @return A Dataset object containing the same information as the given DatasetDTO object.
+   */
   public static Dataset fromDTO(DatasetDTO datasetDTO) {
     Dataset dataset = new Dataset();
 
+    dataset.setId(datasetDTO.getId());
     dataset.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
     dataset.setDatasetId(datasetDTO.getDatasetId());
     dataset.setDatasetName(datasetDTO.getDatasetName());
@@ -31,6 +46,13 @@ public class DatasetConverter {
     return dataset;
   }
 
+  /**
+   * Creates a new DatasetDTO object from the given Dataset and User objects.
+   *
+   * @param dataset The dataset to be converted.
+   * @param user The user associated with the dataset.
+   * @return A DatasetDTO object containing the same information as the given Dataset and User objects.
+   */
   public static DatasetDTO toDTO(Dataset dataset, User user) {
     return new DatasetDTO(
         dataset.getId(),
@@ -43,9 +65,9 @@ public class DatasetConverter {
         dataset.getDataProvider(),
         dataset.getIntermediateProvider(),
         dataset.getCreatedByUserId(),
-        user.getUserName(),
-        user.getFirstName(),
-        user.getLastName(),
+        Optional.ofNullable(user).map(User::getUserName).orElse(null),
+        Optional.ofNullable(user).map(User::getFirstName).orElse(null),
+        Optional.ofNullable(user).map(User::getLastName).orElse(null),
         dataset.getCreatedDate(),
         dataset.getUpdatedDate(),
         dataset.getDatasetIdsToRedirectFrom(),
