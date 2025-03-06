@@ -94,6 +94,7 @@ public class UserDao implements MetisDao<User, String> {
     operators.add(UpdateOperators.set("userName", user.getUserName()));
     operators.add(UpdateOperators.set("firstName", user.getFirstName()));
     operators.add(UpdateOperators.set("lastName", user.getLastName()));
+    operators.add(UpdateOperators.set("expireAt", user.getExpireAt()));
     return operators;
   }
 }

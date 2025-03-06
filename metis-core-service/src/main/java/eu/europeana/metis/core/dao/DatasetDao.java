@@ -1,15 +1,12 @@
 package eu.europeana.metis.core.dao;
 
-import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_NAME;
-import static eu.europeana.metis.core.common.DaoFieldNames.DATA_PROVIDER;
-import static eu.europeana.metis.core.common.DaoFieldNames.ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.PROVIDER;
-import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
-import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
-
 import dev.morphia.UpdateOptions;
+import dev.morphia.aggregation.Aggregation;
+import dev.morphia.aggregation.expressions.Expressions;
+import dev.morphia.aggregation.stages.Group;
+import dev.morphia.aggregation.stages.Projection;
 import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaCursor;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.filters.Filter;
@@ -27,18 +24,32 @@ import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+
+import static dev.morphia.aggregation.expressions.AccumulatorExpressions.addToSet;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_NAME;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATA_PROVIDER;
+import static eu.europeana.metis.core.common.DaoFieldNames.ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.PROVIDER;
+import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
+import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
 
 /**
  * Dataset Access Object for datasets using Mongo. It also contains the {@link DataSetServiceClient} which is used to access
@@ -48,6 +59,7 @@ import org.springframework.stereotype.Repository;
 public class DatasetDao implements MetisDao<Dataset, String> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String CREATED_BY_USER_ID = "createdByUserId";
   public static final String ORGANIZATION_ID = "1482250000001617026";
   public static final String ORGANIZATION_NAME = "Europeana Foundation";
   private int datasetsPerRequest = RequestLimits.DATASETS_PER_REQUEST.getLimit();
@@ -457,6 +469,28 @@ public class DatasetDao implements MetisDao<Dataset, String> {
   private String getEcloudProvider() {
     synchronized (this) {
       return this.ecloudProvider;
+    }
+  }
+
+  /**
+   * Gets a set of distinct user identifiers of the user who created the dataset in the system.
+   *
+   * @return a set of distinct user identifiers
+   */
+  public Set<String> getDistinctUserIdentifiers() {
+    Aggregation<Dataset> aggregation =
+        morphiaDatastoreProvider.getDatastore().aggregate(Dataset.class)
+                                .project(Projection.project().suppressId().include(CREATED_BY_USER_ID))
+                                .group(Group.group()
+                                            .field("distinctCreatedByUserId", addToSet(Expressions.field(CREATED_BY_USER_ID)))
+                                );
+    try (MorphiaCursor<Document> cursor = aggregation.execute(Document.class)) {
+      Set<String> result = new HashSet<>();
+      if (cursor.hasNext()) {
+        Document document = cursor.next();
+        result.addAll(document.getList("distinctCreatedByUserId", String.class));
+      }
+      return result.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
   }
 }

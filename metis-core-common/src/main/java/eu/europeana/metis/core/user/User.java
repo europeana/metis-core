@@ -9,6 +9,7 @@ import dev.morphia.annotations.IndexOptions;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
+import java.time.Instant;
 import org.bson.types.ObjectId;
 
 /**
@@ -28,6 +29,7 @@ public class User implements HasMongoObjectId {
   private String userName;
   private String firstName;
   private String lastName;
+  private Instant expireAt;
 
   @Override
   public ObjectId getId() {
@@ -69,5 +71,13 @@ public class User implements HasMongoObjectId {
 
   public void setLastName(String lastName) {
     this.lastName = lastName;
+  }
+
+  public Instant getExpireAt() {
+    return expireAt;
+  }
+
+  public void setExpireAt(Instant expireAt) {
+    this.expireAt = expireAt;
   }
 }

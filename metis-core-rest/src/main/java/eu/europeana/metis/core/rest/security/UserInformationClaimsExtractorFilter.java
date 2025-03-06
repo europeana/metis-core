@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.Authentication;
@@ -45,6 +46,7 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
       String userName = AuthenticationUtils.getUserName(jwtAuthentication.getToken());
       String firstName = AuthenticationUtils.getFirstName(jwtAuthentication.getToken());
       String lastName = AuthenticationUtils.getLastName(jwtAuthentication.getToken());
+      Instant expireAt = AuthenticationUtils.getExpireAt(jwtAuthentication.getToken());
 
       if (userId != null) {
         User user = new User();
@@ -52,6 +54,7 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
         user.setUserName(userName);
         user.setFirstName(firstName);
         user.setLastName(lastName);
+        user.setExpireAt(expireAt);
 
         cacheInsertConsumer.accept(user);
       }

@@ -1,13 +1,22 @@
 package eu.europeana.metis.core.service;
 
+import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.UserDao;
+import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.user.User;
 import jakarta.annotation.PostConstruct;
+import jakarta.ws.rs.NotFoundException;
 import java.lang.invoke.MethodHandles;
+import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jvnet.hk2.annotations.Service;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +28,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Service
 public class UserService {
 
-  //  private final Keycloak keycloak;
-  //  private final String realm;
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final ConcurrentHashMap<String, User> userCache = new ConcurrentHashMap<>();
+  private final Keycloak keycloak;
+  private final String realm;
   private final UserDao userDao;
+  private final DatasetDao datasetDao;
+  private final WorkflowExecutionDao workflowExecutionDao;
 
   /**
    * Constructs a new UserService instance.
@@ -31,16 +42,24 @@ public class UserService {
    * @param keycloak the Keycloak instance
    * @param realm the realm name
    * @param userDao the UserDao instance
+   * @param datasetDao the DatasetDao instance
+   * @param workflowExecutionDao the WorkflowExecutionDao instance
    */
-  //  @Autowired
-  //  public UserService(Keycloak keycloak, String realm, UserDao userDao) {
-  //    this.keycloak = keycloak;
-  //    this.realm = realm;
-  //    this.userDao = userDao;
-  //  }
   @Autowired
-  public UserService(UserDao userDao) {
+  public UserService(Keycloak keycloak, String realm, UserDao userDao, DatasetDao datasetDao,
+      WorkflowExecutionDao workflowExecutionDao) {
+    this.keycloak = keycloak;
+    this.realm = realm;
     this.userDao = userDao;
+    this.datasetDao = datasetDao;
+    this.workflowExecutionDao = workflowExecutionDao;
+  }
+
+  private Set<String> getDistinctUserIdentifiers() {
+    Set<String> distinctUserIdentifiers = new HashSet<>();
+    distinctUserIdentifiers.addAll(datasetDao.getDistinctUserIdentifiers());
+    distinctUserIdentifiers.addAll(workflowExecutionDao.getDistinctUserIdentifiers());
+    return distinctUserIdentifiers;
   }
 
   /**
@@ -83,7 +102,13 @@ public class UserService {
    * @param user the user to insert into the cache
    */
   public static void insertToInMemoryCache(User user) {
-    userCache.put(user.getUserId(), user);
+    userCache.compute(user.getUserId(), (key, cachedUser) -> {
+      if (cachedUser == null || user.getExpireAt().isAfter(cachedUser.getExpireAt())) {
+        return user;
+      } else {
+        return cachedUser;
+      }
+    });
   }
 
   /**
@@ -94,6 +119,13 @@ public class UserService {
   @PostConstruct
   public void fillInMemoryCacheFromDatabaseOnStartup() {
     fillInMemoryCacheFromDatabase();
+    Set<String> distinctUserIdentifiers = getDistinctUserIdentifiers();
+    distinctUserIdentifiers.removeAll(userCache.keySet());
+    for (String userId : distinctUserIdentifiers) {
+      Optional<User> keycloakUserInformation = getKeycloakUserInformation(userId);
+      keycloakUserInformation.ifPresent(UserService::insertToInMemoryCache);
+    }
+    saveCacheToDatabase();
   }
 
   /**
@@ -101,21 +133,26 @@ public class UserService {
    * updated.
    *
    * @param userId the ID of the user in Keycloak
+   * @return an Optional containing the User object if the user information is found, or an empty Optional if not found
    */
-  //  public void refreshUserCache(String userId) {
-  //    UserRepresentation userRepresentation = keycloak.realm(realm).users().get(userId).toRepresentation();
-  //    User user = new User();
-  //    user.setUserId(userRepresentation.getId());
-  //    user.setUserName(userRepresentation.getUsername());
-  //    user.setFirstName(userRepresentation.getFirstName());
-  //    user.setLastName(userRepresentation.getLastName());
-  //
-  //    User userInDb = userDao.getByUserId(userId);
-  //    if (userInDb == null) {
-  //      userDao.create(user);
-  //    } else {
-  //      user.setId(userInDb.getId());
-  //      userDao.update(user);
-  //    }
-  //  }
+  public Optional<User> getKeycloakUserInformation(String userId) {
+    UserRepresentation userRepresentation = null;
+    try {
+      userRepresentation = keycloak.realm(realm).users().get(userId).toRepresentation();
+    } catch (NotFoundException e) {
+      LOGGER.warn("User with ID {} not found. This can be normal e.g. if the user identifier is an old one", userId);
+      LOGGER.debug("Exception details:", e);
+    }
+    if (userRepresentation == null) {
+      return Optional.empty();
+    } else {
+      User user = new User();
+      user.setUserId(userRepresentation.getId());
+      user.setUserName(userRepresentation.getUsername());
+      user.setFirstName(userRepresentation.getFirstName());
+      user.setLastName(userRepresentation.getLastName());
+      user.setExpireAt(Instant.now());
+      return Optional.of(user);
+    }
+  }
 }

@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.rest.security;
 
+import java.time.Instant;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
@@ -49,5 +50,15 @@ public final class AuthenticationUtils {
    */
   public static String getLastName(Jwt jwt) {
     return jwt.getClaimAsString("family_name");
+  }
+
+  /**
+   * Retrieves the expiration time of a JWT token by accessing the "exp" claim.
+   *
+   * @param jwt the JWT token containing expiration information
+   * @return the expiration time of the JWT token as an Instant
+   */
+  public static Instant getExpireAt(Jwt jwt) {
+    return jwt.getExpiresAt();
   }
 }
