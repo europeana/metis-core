@@ -65,7 +65,7 @@ public class SecurityConfig {
    */
   @SuppressWarnings("squid:S4502")
   @Bean
-  public SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
+  public SecurityFilterChain configure(HttpSecurity httpSecurity, UserService userService) throws Exception {
     httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(registry -> registry
@@ -76,7 +76,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
                     .requestMatchers("/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
                     .anyRequest().denyAll())
-                .addFilterAfter(new UserInformationClaimsExtractorFilter(UserService::insertToInMemoryCache), BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCache), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
                     .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
                     )

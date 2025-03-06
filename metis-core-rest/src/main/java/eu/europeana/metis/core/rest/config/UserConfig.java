@@ -1,11 +1,8 @@
 package eu.europeana.metis.core.rest.config;
 
-import eu.europeana.metis.core.dao.DatasetDao;
-import eu.europeana.metis.core.dao.UserDao;
-import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.config.properties.KeycloakConfigurationProperties;
 import eu.europeana.metis.core.service.UserService;
+import java.util.concurrent.TimeUnit;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -45,30 +42,15 @@ public class UserConfig {
   }
 
   /**
-   * Get the DAO for users.
-   *
-   * @param morphiaDatastoreProvider the provider for accessing the Morphia datastore
-   * @return an instance of UserDao configured with the given datastore provider
-   */
-  @Bean
-  public UserDao getUserDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
-    return new UserDao(morphiaDatastoreProvider);
-  }
-
-  /**
    * Create a UserService instance.
    *
    * @param keycloak the Keycloak instance used for authentication and authorization
    * @param keycloakConfigurationProperties the Keycloak configuration properties
-   * @param userDao the UserDao instance to use for user related database operations
-   * @param datasetDao the DatasetDao instance to use for dataset related database operations
-   * @param workflowExecutionDao the WorkflowExecutionDao instance to use for workflow execution related database operations
    * @return the UserService instance
    */
   @Bean
-  public UserService getUserService(Keycloak keycloak, KeycloakConfigurationProperties keycloakConfigurationProperties,
-      UserDao userDao, DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao) {
-    userService = new UserService(keycloak, keycloakConfigurationProperties.realm(), userDao, datasetDao, workflowExecutionDao);
+  public UserService getUserService(Keycloak keycloak, KeycloakConfigurationProperties keycloakConfigurationProperties) {
+    userService = new UserService(keycloak, keycloakConfigurationProperties.realm());
     return userService;
   }
 
@@ -84,11 +66,11 @@ public class UserConfig {
   }
 
   /**
-   * This method is called periodically to update the user cache in mongo. It is used to ensure that the user cache is up to date
-   * even if the application is restarted.
+   * This method is called once a day and clears the cache for the user service.
+   * This is necessary to refresh the cache when the user information in Keycloak changes.
    */
-  @Scheduled(fixedRate = 20000)
-  public void saveCacheToMongo() {
-    userService.saveCacheToDatabase();
+  @Scheduled(timeUnit = TimeUnit.DAYS, fixedRate = 1)
+  public void clearCache() {
+    userService.clearCache();
   }
 }

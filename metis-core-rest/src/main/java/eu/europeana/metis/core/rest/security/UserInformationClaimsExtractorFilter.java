@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.security;
 
 import eu.europeana.metis.core.user.User;
+import eu.europeana.metis.core.user.User.UserBuilder;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +38,8 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
+  protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response,
+      @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -46,17 +48,17 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
       String userName = AuthenticationUtils.getUserName(jwtAuthentication.getToken());
       String firstName = AuthenticationUtils.getFirstName(jwtAuthentication.getToken());
       String lastName = AuthenticationUtils.getLastName(jwtAuthentication.getToken());
-      Instant expireAt = AuthenticationUtils.getExpireAt(jwtAuthentication.getToken());
+      Instant issuedAt = AuthenticationUtils.getIssuedAt(jwtAuthentication.getToken());
 
       if (userId != null) {
-        User user = new User();
-        user.setUserId(userId);
-        user.setUserName(userName);
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setExpireAt(expireAt);
+        UserBuilder userBuilder = new User.UserBuilder()
+            .userId(userId)
+            .userName(userName)
+            .firstName(firstName)
+            .lastName(lastName)
+            .issuedAt(issuedAt);
 
-        cacheInsertConsumer.accept(user);
+        cacheInsertConsumer.accept(userBuilder.build());
       }
     }
     filterChain.doFilter(request, response);

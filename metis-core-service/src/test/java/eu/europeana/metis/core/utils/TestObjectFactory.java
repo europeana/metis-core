@@ -31,6 +31,7 @@ import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -188,8 +189,8 @@ public class TestObjectFactory {
    * Create a list of dummy scheduled workflows with pointer date and frequency. The dataset name will have a suffix number for
    * each dataset.
    *
-   * @param size              the number of dummy scheduled workflows to create
-   * @param date              the pointer date
+   * @param size the number of dummy scheduled workflows to create
+   * @param date the pointer date
    * @param scheduleFrequence the schedule frequence
    * @return the created list
    */
@@ -267,13 +268,15 @@ public class TestObjectFactory {
     return ds;
   }
 
-  public static User createUser(String userId){
-    User user = new User();
-    user.setUserId(userId);
-    user.setUserName("userName");
-    user.setFirstName("firstName");
-    user.setLastName("lastName");
-    return user;
+  public static User createUser(String userId) {
+    return new User.UserBuilder()
+        .userId(userId)
+        .userName("userName")
+        .firstName("firstName")
+        .lastName("lastName")
+        .issuedAt(Instant.now())
+        .build();
+
   }
 
   /**
@@ -334,7 +337,7 @@ public class TestObjectFactory {
    * {@link ErrorDetails} that in turn contain dummy identifiers.
    *
    * @param errorType the error type to be used for the internal {@link TaskErrorInfo}
-   * @param message   the message type to be used for the internal {@link TaskErrorInfo}
+   * @param message the message type to be used for the internal {@link TaskErrorInfo}
    * @return the created task errors info
    */
   public static TaskErrorsInfo createTaskErrorsInfoWithIdentifiers(String errorType,

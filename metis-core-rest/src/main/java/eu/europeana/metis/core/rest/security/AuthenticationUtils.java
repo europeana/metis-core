@@ -53,12 +53,14 @@ public final class AuthenticationUtils {
   }
 
   /**
-   * Retrieves the expiration time of a JWT token by accessing the "exp" claim.
+   * Retrieves the issued at time from the JWT token.
    *
-   * @param jwt the JWT token containing expiration information
-   * @return the expiration time of the JWT token as an Instant
+   * @param jwt the JWT token containing the issued at time
+   * @return the issued at time extracted from the JWT token
    */
-  public static Instant getExpireAt(Jwt jwt) {
-    return jwt.getExpiresAt();
+  public static Instant getIssuedAt(Jwt jwt) {
+    return jwt.getIssuedAt();
   }
+
+
 }
