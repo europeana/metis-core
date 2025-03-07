@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow;
 
 import eu.europeana.metis.core.user.User;
+import org.bson.types.ObjectId;
 
 public class WorkflowExecutionConverter {
 
@@ -10,7 +11,7 @@ public class WorkflowExecutionConverter {
     }
 
     WorkflowExecution workflowExecution = new WorkflowExecution();
-    workflowExecution.setId(workflowExecutionDTO.getId());
+    workflowExecution.setId(new ObjectId(workflowExecutionDTO.getId()));
     workflowExecution.setDatasetId(workflowExecutionDTO.getDatasetId());
     workflowExecution.setWorkflowStatus(workflowExecutionDTO.getWorkflowStatus());
     workflowExecution.setEcloudDatasetId(workflowExecutionDTO.getEcloudDatasetId());
@@ -33,7 +34,7 @@ public class WorkflowExecutionConverter {
     }
 
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
-    workflowExecutionDTO.setId(workflowExecution.getId());
+    workflowExecutionDTO.setId(workflowExecution.getId() == null ? null : workflowExecution.getId().toString());
     workflowExecutionDTO.setDatasetId(workflowExecution.getDatasetId());
     workflowExecutionDTO.setWorkflowStatus(workflowExecution.getWorkflowStatus());
     workflowExecutionDTO.setEcloudDatasetId(workflowExecution.getEcloudDatasetId());

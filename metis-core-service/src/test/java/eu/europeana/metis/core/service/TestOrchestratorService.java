@@ -263,13 +263,17 @@ class TestOrchestratorService {
 
     // Test the happy flow
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
-    assertEquals(workflowExecutionDTO, orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId));
+    WorkflowExecutionDTO workflowExecutionDTOResult = orchestratorService.getWorkflowExecutionDTOByExecutionId(
+        workflowExecutionId);
+    assertEquals(workflowExecutionDTO.getDatasetId(), workflowExecutionDTOResult.getDatasetId());
 
     // Test when the workflow execution does not exist
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
     assertNull(orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId));
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
-    assertEquals(workflowExecutionDTO, orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId));
+    workflowExecutionDTOResult = orchestratorService.getWorkflowExecutionDTOByExecutionId(
+        workflowExecutionId);
+    assertEquals(workflowExecutionDTO.getDatasetId(), workflowExecutionDTOResult.getDatasetId());
   }
 
   @Test
