@@ -11,13 +11,14 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.rest.Record;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
+import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
@@ -86,28 +87,6 @@ public class TestObjectFactory {
     return workflow;
   }
 
-  /**
-   * Create dummy workflow execution
-   *
-   * @return the created workflow execution
-   */
-  public static WorkflowExecution createWorkflowExecutionObject() {
-    Dataset dataset = createDataset(DATASETNAME);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
-    AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
-        .createPlugin(new OaipmhHarvestPluginMetadata());
-    abstractMetisPlugins.add(oaipmhHarvestPlugin);
-    AbstractMetisPlugin validationExternalPlugin = ExecutablePluginFactory
-        .createPlugin(new ValidationExternalPluginMetadata());
-    abstractMetisPlugins.add(validationExternalPlugin);
-
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, abstractMetisPlugins, 0);
-    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
-
-    return workflowExecution;
-  }
-
   public static WorkflowExecutionDTO createWorkflowExecutionDTOObject() {
     Dataset dataset = createDataset(DATASETNAME);
     ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
@@ -118,7 +97,8 @@ public class TestObjectFactory {
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO(dataset, abstractMetisPlugins, 0);
+    WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO(dataset, abstractMetisPlugins, 0,
+        OrchestratorService::canDisplayRawXml);
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecutionDTO.setCreatedDate(new Date());
 
@@ -134,28 +114,28 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a list of dummy workflow executions. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy workflow executions. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy workflow executions to create
    * @return the created list
    */
-  public static List<WorkflowExecutionView> createListOfWorkflowExecutions(int size) {
+  public static List<WorkflowExecutionDTO> createListOfWorkflowExecutions(int size) {
     return createExecutionsWithDatasets(size).stream().map(ExecutionDatasetPair::getExecution)
-            .map(execution -> new WorkflowExecutionView(execution, false, plugin -> true))
+                                             .map(execution ->
+                                                 WorkflowExecutionConverter.toDTO(execution, false,
+                                                     OrchestratorService::canDisplayRawXml, null, null))
                                              .toList();
   }
 
   /**
-   * Create a list of dummy execution overviews. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy execution overviews. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy execution overviews to create
    * @return the created list
    */
   public static List<ExecutionAndDatasetView> createListOfExecutionOverviews(int size) {
     return createExecutionsWithDatasets(size).stream()
-        .map(pair -> new ExecutionAndDatasetView(pair.getExecution(), pair.getDataset()))
+                                             .map(pair -> new ExecutionAndDatasetView(pair.getExecution(), pair.getDataset()))
                                              .toList();
   }
 
@@ -187,8 +167,7 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy scheduled workflows to create
    * @return the created list
@@ -282,8 +261,8 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These
-   * will also contain a list of {@link ErrorDetails} that in turn contain dummy identifiers.
+   * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These will also contain a list of
+   * {@link ErrorDetails} that in turn contain dummy identifiers.
    *
    * @param numberOfErrorTypes the number of dummy error types
    * @return the created task errors info

@@ -1,4 +1,4 @@
-package eu.europeana.metis.core.rest.execution.details;
+package eu.europeana.metis.core.workflow.execution;
 
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
@@ -6,7 +6,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 /**
  * This class contains executionProgress information on a plugin's execution.
  */
-public class PluginProgressView {
+public class PluginProgressDTO {
 
   private final int expectedRecords;
   private final int processedRecords;
@@ -15,9 +15,9 @@ public class PluginProgressView {
   private final int progressPercentage;
   private final int errors;
   private final TaskState status;
-  private int totalDatabaseRecords;
+  private final int totalDatabaseRecords;
 
-  PluginProgressView(ExecutionProgress progress) {
+  PluginProgressDTO(ExecutionProgress progress) {
     this.expectedRecords = progress.getExpectedRecords();
     this.processedRecords = progress.getProcessedRecords();
     this.ignoredRecords = progress.getIgnoredRecords();

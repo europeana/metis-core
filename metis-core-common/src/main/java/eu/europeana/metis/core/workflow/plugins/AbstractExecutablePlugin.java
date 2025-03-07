@@ -8,7 +8,7 @@ import eu.europeana.cloud.service.dps.InputDataType;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
-import eu.europeana.metis.core.workflow.SystemId;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import eu.europeana.metis.utils.CommonStringValues;

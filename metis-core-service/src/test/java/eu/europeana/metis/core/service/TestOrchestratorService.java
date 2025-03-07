@@ -25,6 +25,7 @@ import eu.europeana.metis.core.rest.ExecutionHistory;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.DatasetSummaryView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionSummaryView;
@@ -32,7 +33,6 @@ import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
@@ -255,17 +255,14 @@ class TestOrchestratorService {
 
     // Create some objects
     final String workflowExecutionId = "workflow execution ID";
-    final String datasetId = "dataset ID";
-    final WorkflowExecution workflowExecution = mock(WorkflowExecution.class);
-    final WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
-    workflowExecutionDTO.setDatasetId(datasetId);
-    when(workflowExecution.getDatasetId()).thenReturn(datasetId);
+    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
 
     // Test the happy flow
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
     WorkflowExecutionDTO workflowExecutionDTOResult = orchestratorService.getWorkflowExecutionDTOByExecutionId(
         workflowExecutionId);
-    assertEquals(workflowExecutionDTO.getDatasetId(), workflowExecutionDTOResult.getDatasetId());
+    assertEquals(workflowExecution.getDatasetId(), workflowExecutionDTOResult.getDatasetId());
 
     // Test when the workflow execution does not exist
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
@@ -273,7 +270,7 @@ class TestOrchestratorService {
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
     workflowExecutionDTOResult = orchestratorService.getWorkflowExecutionDTOByExecutionId(
         workflowExecutionId);
-    assertEquals(workflowExecutionDTO.getDatasetId(), workflowExecutionDTOResult.getDatasetId());
+    assertEquals(workflowExecution.getDatasetId(), workflowExecutionDTOResult.getDatasetId());
   }
 
   @Test

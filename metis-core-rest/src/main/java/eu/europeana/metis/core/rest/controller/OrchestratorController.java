@@ -7,11 +7,10 @@ import eu.europeana.metis.core.rest.IncrementalHarvestingAllowedView;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.workflow.Workflow;
-import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
@@ -368,7 +367,7 @@ public class OrchestratorController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutionsByDatasetId(
+  public ResponseListWrapper<WorkflowExecutionDTO> getAllWorkflowExecutionsByDatasetId(
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "workflowStatus", required = false) Set<WorkflowStatus> workflowStatuses,
       @RequestParam(value = "orderField", required = false, defaultValue = "ID") DaoFieldNames orderField,
@@ -378,7 +377,7 @@ public class OrchestratorController {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    final ResponseListWrapper<WorkflowExecutionView> result =
+    final ResponseListWrapper<WorkflowExecutionDTO> result =
         orchestratorService.getAllWorkflowExecutions(datasetId, workflowStatuses,
             orderField, ascending, nextPage);
     logPaging(result, nextPage);
@@ -403,7 +402,7 @@ public class OrchestratorController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutions(
+  public ResponseListWrapper<WorkflowExecutionDTO> getAllWorkflowExecutions(
       @RequestParam(value = "workflowStatus", required = false) Set<WorkflowStatus> workflowStatuses,
       @RequestParam(value = "orderField", required = false, defaultValue = "ID") DaoFieldNames orderField,
       @RequestParam(value = "ascending", required = false, defaultValue = "true") boolean ascending,
@@ -412,7 +411,7 @@ public class OrchestratorController {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    final ResponseListWrapper<WorkflowExecutionView> result =
+    final ResponseListWrapper<WorkflowExecutionDTO> result =
         orchestratorService.getAllWorkflowExecutions(null, workflowStatuses, orderField,
             ascending, nextPage);
     logPaging(result, nextPage);

@@ -1,17 +1,18 @@
-package eu.europeana.metis.core.workflow;
+package eu.europeana.metis.core.workflow.execution;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.dataset.Dataset;
+import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.utils.CommonStringValues;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
- * Is the structure where the combined plugins of harvesting and the other plugins will be stored.
- * <p>This is the object where the execution of the workflow takes place and will host all
- * information, regarding its execution.</p>
+ * This class represents the full information on a workflow execution needed for the execution history.
  */
 public class WorkflowExecutionDTO {
 
@@ -29,7 +30,6 @@ public class WorkflowExecutionDTO {
   private String startedByLastName;
   private int workflowPriority;
   private boolean cancelling;
-
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date createdDate;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
@@ -38,8 +38,8 @@ public class WorkflowExecutionDTO {
   private Date updatedDate;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date finishedDate;
-
-  private List<AbstractMetisPlugin> metisPlugins = new ArrayList<>();
+  private boolean isIncremental;
+  private List<PluginDTO> metisPlugins;
 
   public WorkflowExecutionDTO() {
     //Required for json serialization
@@ -49,16 +49,17 @@ public class WorkflowExecutionDTO {
    * Constructor with all required parameters and initializes it's internal structure.
    *
    * @param dataset the {@link Dataset} related to the execution
-   * @param metisPlugins the list of {@link AbstractMetisPlugin} including harvest plugin for
-   * execution
+   * @param metisPlugins the list of {@link AbstractMetisPlugin} including harvest plugin for execution
    * @param workflowPriority the positive number of the priority of the execution
    */
   public WorkflowExecutionDTO(Dataset dataset, List<? extends AbstractMetisPlugin> metisPlugins,
-      int workflowPriority) {
+      int workflowPriority, Predicate<AbstractMetisPlugin<?>> canDisplayRawXml) {
     this.datasetId = dataset.getDatasetId();
     this.ecloudDatasetId = dataset.getEcloudDatasetId();
     this.workflowPriority = workflowPriority;
-    this.metisPlugins = new ArrayList<>(metisPlugins);
+    this.metisPlugins = metisPlugins.stream()
+                                 .map(plugin -> new PluginDTO(plugin, canDisplayRawXml.test(plugin)))
+                                 .toList();
   }
 
   public String getId() {
@@ -205,12 +206,21 @@ public class WorkflowExecutionDTO {
     this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
   }
 
-  public List<AbstractMetisPlugin> getMetisPlugins() {
-    return metisPlugins;
+  @JsonProperty("isIncremental")
+  public boolean isIncremental() {
+    return isIncremental;
   }
 
-  public void setMetisPlugins(List<AbstractMetisPlugin> metisPlugins) {
-    if(metisPlugins != null) {
+  public void setIncremental(boolean incremental) {
+    isIncremental = incremental;
+  }
+
+  public List<PluginDTO> getMetisPlugins() {
+    return metisPlugins != null ? new ArrayList<>(metisPlugins) : null;
+  }
+
+  public void setMetisPlugins(List<PluginDTO> metisPlugins) {
+    if (metisPlugins != null) {
       this.metisPlugins = new ArrayList<>(metisPlugins);
     } else {
       this.metisPlugins = null;

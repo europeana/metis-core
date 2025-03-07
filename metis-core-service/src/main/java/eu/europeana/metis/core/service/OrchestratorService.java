@@ -28,14 +28,13 @@ import eu.europeana.metis.core.rest.PluginsWithDataAvailability.PluginWithDataAv
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.user.User;
-import eu.europeana.metis.core.workflow.SystemId;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.core.workflow.WorkflowExecutionConverter;
-import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
@@ -252,7 +251,8 @@ public class OrchestratorService {
       startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
       cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
     }
-    return WorkflowExecutionConverter.toDTO(workflowExecution, startedUser, cancelledUser);
+    return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
+        OrchestratorService::canDisplayRawXml, startedUser, cancelledUser);
   }
 
   /**
@@ -346,7 +346,8 @@ public class OrchestratorService {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     WorkflowExecution workflowExecution = addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided,
         enforcedPredecessorType, priority, userId);
-    return WorkflowExecutionConverter.toDTO(workflowExecution, userService.getUserFromCache(userId), null);
+    return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
+        OrchestratorService::canDisplayRawXml, userService.getUserFromCache(userId), null);
   }
 
   private WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(Dataset dataset,
@@ -492,7 +493,7 @@ public class OrchestratorService {
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
    * </ul>
    */
-  public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutions(
+  public ResponseListWrapper<WorkflowExecutionDTO> getAllWorkflowExecutions(
       String datasetId, Set<WorkflowStatus> workflowStatuses, DaoFieldNames orderField,
       boolean ascending, int nextPage) throws GenericMetisException {
 
@@ -515,10 +516,16 @@ public class OrchestratorService {
             false);
 
     // Compile and return the result.
-    final List<WorkflowExecutionView> convertedData = data.results().stream().map(
-        execution -> new WorkflowExecutionView(execution, isIncremental(execution),
-            OrchestratorService::canDisplayRawXml)).toList();
-    final ResponseListWrapper<WorkflowExecutionView> result = new ResponseListWrapper<>();
+    final List<WorkflowExecutionDTO> convertedData = data.results().stream().map(
+        execution ->
+        {
+          User startedUser = userService.getUserFromCache(execution.getStartedBy());
+          User cancelledUser = userService.getUserFromCache(execution.getCancelledBy());
+          return WorkflowExecutionConverter.toDTO(execution, isIncremental(execution),
+              OrchestratorService::canDisplayRawXml, startedUser, cancelledUser);
+        }).toList();
+
+    final ResponseListWrapper<WorkflowExecutionDTO> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(convertedData, getWorkflowExecutionsPerRequest(), nextPage,
         data.maxResultCountReached());
     return result;
@@ -887,7 +894,7 @@ public class OrchestratorService {
     return result;
   }
 
-  private static boolean canDisplayRawXml(MetisPlugin plugin) {
+  public static boolean canDisplayRawXml(MetisPlugin plugin) {
     final boolean result;
     if (plugin instanceof ExecutablePlugin executablePlugin) {
       final boolean dataIsValid =

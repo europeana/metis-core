@@ -17,7 +17,7 @@ import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
@@ -25,7 +25,6 @@ import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.workflow.Workflow;
-import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
@@ -501,7 +500,7 @@ class TestOrchestratorController {
   void getAllWorkflowExecutionsByDatasetId() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     int listSize = 2;
-    ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
+    ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
         orchestratorService.getWorkflowExecutionsPerRequest(), 0);
@@ -543,7 +542,7 @@ class TestOrchestratorController {
   void getAllWorkflowExecutions() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     int listSize = 2;
-    ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
+    ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
         orchestratorService.getWorkflowExecutionsPerRequest(), 0);

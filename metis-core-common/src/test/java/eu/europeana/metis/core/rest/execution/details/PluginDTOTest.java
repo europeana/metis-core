@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import eu.europeana.metis.core.workflow.execution.PluginDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
@@ -28,9 +29,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class PluginViewTest {
+class PluginDTOTest {
 
-  private PluginView pluginView;
+  private PluginDTO pluginView;
 
   private static Stream<Arguments> providePluginTestData() {
     return Stream.of(
@@ -64,91 +65,91 @@ class PluginViewTest {
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getPluginType(AbstractMetisPlugin metisPlugin, PluginType expectedPluginType) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertEquals(expectedPluginType, pluginView.getPluginType());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getId(AbstractMetisPlugin metisPlugin, PluginType expectedPluginType) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertTrue(pluginView.getId().contains(expectedPluginType.name()));
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getPluginStatus(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertEquals(PluginStatus.INQUEUE, pluginView.getPluginStatus());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getDataStatus(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertEquals(DataStatus.NOT_YET_GENERATED, pluginView.getDataStatus());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getFailMessage(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNull(pluginView.getFailMessage());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getStartedDate(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNull(pluginView.getStartedDate());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getUpdatedDate(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNull(pluginView.getUpdatedDate());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getFinishedDate(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNull(pluginView.getFinishedDate());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getExternalTaskId(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNull(pluginView.getExternalTaskId());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getExecutionProgress(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNotNull(pluginView.getExecutionProgress());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getTopologyName(AbstractMetisPlugin metisPlugin, PluginType pluginType, Topology topology) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertEquals(topology.getTopologyName(), pluginView.getTopologyName());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void isCanDisplayRawXml(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertTrue(pluginView.isCanDisplayRawXml());
   }
 
   @ParameterizedTest
   @MethodSource("providePluginTestData")
   void getPluginMetadata(AbstractMetisPlugin metisPlugin) {
-    pluginView = new PluginView(metisPlugin, true);
+    pluginView = new PluginDTO(metisPlugin, true);
     assertNotNull(pluginView.getPluginMetadata());
   }
 }

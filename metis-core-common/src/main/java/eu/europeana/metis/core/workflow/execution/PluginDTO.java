@@ -1,4 +1,4 @@
-package eu.europeana.metis.core.rest.execution.details;
+package eu.europeana.metis.core.workflow.execution;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -13,7 +13,7 @@ import java.util.Date;
 /**
  * This class represents the complete information on a plugin execution needed for the execution history.
  */
-public class PluginView {
+public class PluginDTO {
 
   private final PluginType pluginType;
   private final String id;
@@ -27,12 +27,12 @@ public class PluginView {
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private final Date finishedDate;
   private final String externalTaskId;
-  private final PluginProgressView executionProgress;
+  private final PluginProgressDTO executionProgress;
   private final String topologyName;
   private final boolean canDisplayRawXml;
   private final MetisPluginMetadata pluginMetadata;
 
-  PluginView(AbstractMetisPlugin plugin, boolean canDisplayRawXml) {
+  public PluginDTO(AbstractMetisPlugin plugin, boolean canDisplayRawXml) {
     this.pluginType = plugin.getPluginType();
     this.id = plugin.getId();
     this.pluginStatus = plugin.getPluginStatus();
@@ -44,7 +44,7 @@ public class PluginView {
     if (plugin instanceof AbstractExecutablePlugin) {
       this.updatedDate = ((AbstractExecutablePlugin<?>) plugin).getUpdatedDate();
       this.externalTaskId = ((AbstractExecutablePlugin<?>) plugin).getExternalTaskId();
-      this.executionProgress = new PluginProgressView(((AbstractExecutablePlugin<?>) plugin).getExecutionProgress());
+      this.executionProgress = new PluginProgressDTO(((AbstractExecutablePlugin<?>) plugin).getExecutionProgress());
       this.topologyName = ((AbstractExecutablePlugin<?>) plugin).getTopologyName();
       this.pluginMetadata = ((AbstractExecutablePlugin<?>) plugin).getPluginMetadata();
     } else {
@@ -92,7 +92,7 @@ public class PluginView {
     return externalTaskId;
   }
 
-  public PluginProgressView getExecutionProgress() {
+  public PluginProgressDTO getExecutionProgress() {
     return executionProgress;
   }
 
