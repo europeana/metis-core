@@ -43,6 +43,11 @@ public class UserService {
    * @return the User object associated with the given user ID, or null if not found in the cache
    */
   public User getUserFromCache(String userId) {
+    //Return early if userId provided is already null
+    if (userId == null) {
+      return null;
+    }
+
     User user = userCache.get(userId);
     if (user == null) {
       User keycloakUserInformation = getKeycloakUserInformationOrDefault(userId);

@@ -23,6 +23,7 @@ import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProp
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
+import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
@@ -87,10 +88,10 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowExecutorManager workflowExecutorManager,
       DepublishRecordIdDao depublishRecordIdDao,
-      RedissonClient redissonClient, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+      RedissonClient redissonClient, UserService userService, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
-        workflowExecutorManager, redissonClient, depublishRecordIdDao);
+        workflowExecutorManager, redissonClient, depublishRecordIdDao, userService);
     orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());
     return orchestratorService;
   }

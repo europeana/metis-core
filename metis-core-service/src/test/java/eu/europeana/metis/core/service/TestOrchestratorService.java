@@ -1,27 +1,5 @@
 package eu.europeana.metis.core.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
@@ -54,6 +32,7 @@ import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
@@ -104,6 +83,28 @@ import org.mockito.Mockito;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 class TestOrchestratorService {
 
   private static final int SOLR_COMMIT_PERIOD_IN_MINUTES = 15;
@@ -119,6 +120,7 @@ class TestOrchestratorService {
   private static WorkflowExecutionFactory workflowExecutionFactory;
   private static OrchestratorService orchestratorService;
   private static RedissonClient redissonClient;
+  private static UserService userService;
 
   @BeforeAll
   static void prepare() {
@@ -131,6 +133,7 @@ class TestOrchestratorService {
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
     workflowExecutorManager = mock(WorkflowExecutorManager.class);
     redissonClient = mock(RedissonClient.class);
+    userService = mock(UserService.class);
 
     redirectionInferrer = new RedirectionInferrer(workflowExecutionDao, dataEvolutionUtils);
     workflowExecutionFactory = spy(new WorkflowExecutionFactory(datasetXsltDao,
@@ -142,7 +145,7 @@ class TestOrchestratorService {
 
     orchestratorService = spy(new OrchestratorService(workflowExecutionFactory, workflowDao,
         workflowExecutionDao, validationUtils, dataEvolutionUtils, datasetDao,
-        workflowExecutorManager, redissonClient, depublishRecordIdDao));
+        workflowExecutorManager, redissonClient, depublishRecordIdDao, userService));
     orchestratorService.setSolrCommitPeriodInMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES);
   }
 
@@ -252,19 +255,21 @@ class TestOrchestratorService {
 
     // Create some objects
     final String workflowExecutionId = "workflow execution ID";
-    final WorkflowExecution workflowExecution = mock(WorkflowExecution.class);
     final String datasetId = "dataset ID";
+    final WorkflowExecution workflowExecution = mock(WorkflowExecution.class);
+    final WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
+    workflowExecutionDTO.setDatasetId(datasetId);
     when(workflowExecution.getDatasetId()).thenReturn(datasetId);
 
     // Test the happy flow
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
-    assertSame(workflowExecution, orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId));
+    assertEquals(workflowExecutionDTO, orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId));
 
     // Test when the workflow execution does not exist
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
-    assertNull(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId));
+    assertNull(orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId));
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(workflowExecution);
-    assertSame(workflowExecution, orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId));
+    assertEquals(workflowExecutionDTO, orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId));
   }
 
   @Test
@@ -272,7 +277,7 @@ class TestOrchestratorService {
       throws GenericMetisException {
     final String workflowExecutionId = "workflow execution id";
     when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
-    orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId);
+    orchestratorService.getWorkflowExecutionDTOByExecutionId(workflowExecutionId);
     InOrder inOrder = Mockito.inOrder(workflowExecutionDao);
     inOrder.verify(workflowExecutionDao, times(1)).getById(workflowExecutionId);
     inOrder.verifyNoMoreInteractions();
@@ -913,13 +918,13 @@ class TestOrchestratorService {
     assertTrue(result.getPlugins().getFirst().isCanDisplayRawXml());
 
     // Test when the workflow execution does not exist
-    doReturn(null).when(orchestratorService).getWorkflowExecutionByExecutionId(workflowExecutionId);
+    doReturn(null).when(workflowExecutionDao).getById(workflowExecutionId);
     assertThrows(NoWorkflowExecutionFoundException.class,
         () -> orchestratorService.getExecutablePluginsWithDataAvailability(workflowExecutionId));
   }
 
   @Test
-  void testGetRecordEvolutionForVersionExceptions() throws GenericMetisException {
+  void testGetRecordEvolutionForVersionExceptions() {
 
     // Create some objects
     final String workflowExecutionId = "workflow execution ID";
@@ -927,12 +932,12 @@ class TestOrchestratorService {
     final WorkflowExecution workflowExecution = mock(WorkflowExecution.class);
 
     // Test when the workflow execution does not exist
-    when(orchestratorService.getWorkflowExecutionByExecutionId(workflowExecutionId)).thenReturn(null);
+    when(workflowExecutionDao.getById(workflowExecutionId)).thenReturn(null);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> orchestratorService
         .getRecordEvolutionForVersion(workflowExecutionId, pluginType));
 
     // Test when the workflow execution does not have a plugin of the right type
-    doReturn(workflowExecution).when(orchestratorService).getWorkflowExecutionByExecutionId(workflowExecutionId);
+    doReturn(workflowExecution).when(workflowExecutionDao).getById(workflowExecutionId);
     when(workflowExecution.getMetisPluginWithType(pluginType)).thenReturn(Optional.empty());
     assertThrows(NoWorkflowExecutionFoundException.class,
         () -> orchestratorService.getRecordEvolutionForVersion(workflowExecutionId, pluginType));
@@ -982,12 +987,15 @@ class TestOrchestratorService {
 
   private WorkflowExecution createWorkflowExecution(String datasetId,
       AbstractMetisPlugin... plugins) throws GenericMetisException {
-    final WorkflowExecution result = new WorkflowExecution();
-    result.setId(new ObjectId());
-    result.setDatasetId(datasetId);
-    result.setMetisPlugins(Arrays.asList(plugins));
-    when(orchestratorService.getWorkflowExecutionByExecutionId(result.getId().toString())).thenReturn(result);
-    return result;
+    final WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setDatasetId(datasetId);
+    workflowExecution.setMetisPlugins(Arrays.asList(plugins));
+    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
+    dataset.setDatasetId(datasetId);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
+    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
+    return workflowExecution;
   }
 
   private AbstractExecutablePlugin createMetisPlugin(ExecutablePluginType type, Date date) {

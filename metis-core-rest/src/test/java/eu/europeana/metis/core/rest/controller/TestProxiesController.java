@@ -34,6 +34,7 @@ import eu.europeana.metis.core.rest.stats.RecordStatistics;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.service.ProxiesService;
+import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.RestEndpoints;
@@ -67,6 +68,9 @@ class TestProxiesController {
   @MockBean
   private JwtDecoder jwtDecoder;
 
+  @MockBean
+  private UserService userService;
+
   private static MockMvc mockMvc;
   private final TestJwtUtils testJwtUtils;
 
@@ -87,6 +91,7 @@ class TestProxiesController {
   void cleanUp() {
     reset(proxiesService);
     reset(jwtDecoder);
+    reset(userService);
   }
 
   @Test

@@ -18,6 +18,7 @@ import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.DatasetService;
+import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.utils.Country;
 import java.nio.charset.StandardCharsets;
@@ -77,6 +78,9 @@ class TestDatasetController {
   @MockBean
   private JwtDecoder jwtDecoder;
 
+  @MockBean
+  private UserService userService;
+
   private static MockMvc mockMvc;
 
   private final TestJwtUtils testJwtUtils;
@@ -98,6 +102,7 @@ class TestDatasetController {
   void cleanUp() {
     reset(datasetService);
     reset(jwtDecoder);
+    reset(userService);
   }
 
   @Test

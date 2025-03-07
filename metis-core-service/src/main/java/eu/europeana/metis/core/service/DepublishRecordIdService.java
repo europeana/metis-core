@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.service;
 
-import static java.lang.String.format;
-
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -14,7 +12,7 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.Workflow;
-import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
@@ -25,6 +23,8 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import static java.lang.String.format;
 
 /**
  * Service object for all operations concerning depublished records. The functionality in this class is checked for user
@@ -165,7 +165,7 @@ public class DepublishRecordIdService {
    * happen since ids are UUIDs</li>
    * </ul>
    */
-  public WorkflowExecution createAndAddInQueueDepublishWorkflowExecution(String datasetId, boolean datasetDepublish, int priority,
+  public WorkflowExecutionDTO createAndAddInQueueDepublishWorkflowExecution(String datasetId, boolean datasetDepublish, int priority,
       String recordIdsInSeparateLines, DepublicationReason depublicationReason, String userId)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(datasetId);

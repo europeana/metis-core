@@ -1,14 +1,15 @@
 package eu.europeana.metis.core.rest.utils;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
-
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.oauth2.jwt.Jwt;
+
+import static eu.europeana.metis.core.common.AccountRole.ADMIN;
+import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
 
 public class TestJwtUtils {
 
@@ -43,6 +44,11 @@ public class TestJwtUtils {
               .claim("resource_access", resourceAccess)
               .claim("email", "user@example.com")
               .claim("sub", UUID.randomUUID().toString())
+              .claim("preferred_username", "userName")
+              .claim("given_name", "firstName")
+              .claim("family_name", "lastName")
+              .claim("family_name", "lastName")
+              .claim("iat", Instant.now())
               .build();
   }
 

@@ -1,5 +1,36 @@
 package eu.europeana.metis.core.rest.controller;
 
+import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
+import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
+import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
+import eu.europeana.metis.core.rest.DepublishRecordIdView;
+import eu.europeana.metis.core.rest.ResponseListWrapper;
+import eu.europeana.metis.core.rest.config.SecurityConfig;
+import eu.europeana.metis.core.rest.config.UserConfig;
+import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.utils.TestJwtUtils;
+import eu.europeana.metis.core.service.DepublishRecordIdService;
+import eu.europeana.metis.core.service.UserService;
+import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
+import eu.europeana.metis.exception.BadContentException;
+import eu.europeana.metis.exception.ExternalTaskException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
@@ -19,35 +50,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
-import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
-import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
-import eu.europeana.metis.core.rest.DepublishRecordIdView;
-import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
-import eu.europeana.metis.core.service.DepublishRecordIdService;
-import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.exception.BadContentException;
-import eu.europeana.metis.exception.ExternalTaskException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
 @WebMvcTest(DepublishRecordIdController.class)
 @ContextConfiguration(classes = {DepublishRecordIdController.class, SecurityConfig.class,
     RestResponseExceptionHandler.class})
@@ -58,6 +60,9 @@ class TestDepublishRecordIdController {
 
   @MockBean
   private JwtDecoder jwtDecoder;
+
+  @MockBean
+  private UserService userService;
 
   private static MockMvc mockMvc;
 
@@ -80,6 +85,7 @@ class TestDepublishRecordIdController {
   void cleanUp() {
     reset(depublishRecordIdService);
     reset(jwtDecoder);
+    reset(userService);
   }
 
   @Test
@@ -320,9 +326,9 @@ class TestDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    WorkflowExecution execution = new WorkflowExecution();
+    WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
     when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
-        anyString(), any(), any())).thenReturn(execution);
+        anyString(), any(), any())).thenReturn(workflowExecutionDTO);
 
     mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")

@@ -17,6 +17,7 @@ import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
@@ -105,6 +106,23 @@ public class TestObjectFactory {
     workflowExecution.setCreatedDate(new Date());
 
     return workflowExecution;
+  }
+
+  public static WorkflowExecutionDTO createWorkflowExecutionDTOObject() {
+    Dataset dataset = createDataset(DATASETNAME);
+    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
+        .createPlugin(new OaipmhHarvestPluginMetadata());
+    abstractMetisPlugins.add(oaipmhHarvestPlugin);
+    AbstractMetisPlugin validationExternalPlugin = ExecutablePluginFactory
+        .createPlugin(new ValidationExternalPluginMetadata());
+    abstractMetisPlugins.add(validationExternalPlugin);
+
+    WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO(dataset, abstractMetisPlugins, 0);
+    workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecutionDTO.setCreatedDate(new Date());
+
+    return workflowExecutionDTO;
   }
 
   private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {

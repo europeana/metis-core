@@ -30,9 +30,12 @@ import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
+import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.workflow.SystemId;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionConverter;
+import eu.europeana.metis.core.workflow.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
@@ -105,6 +108,7 @@ public class OrchestratorService {
   private final RedissonClient redissonClient;
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
+  private final UserService userService;
   private int solrCommitPeriodInMins; // Use getter and setter for this field!
 
   /**
@@ -125,7 +129,7 @@ public class OrchestratorService {
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       WorkflowValidationUtils workflowValidationUtils, DataEvolutionUtils dataEvolutionUtils,
       DatasetDao datasetDao, WorkflowExecutorManager workflowExecutorManager,
-      RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao) {
+      RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao, UserService userService) {
     this.workflowExecutionFactory = workflowExecutionFactory;
     this.workflowDao = workflowDao;
     this.workflowExecutionDao = workflowExecutionDao;
@@ -135,6 +139,7 @@ public class OrchestratorService {
     this.workflowExecutorManager = workflowExecutorManager;
     this.redissonClient = redissonClient;
     this.depublishRecordIdDao = depublishRecordIdDao;
+    this.userService = userService;
   }
 
   /**
@@ -239,6 +244,17 @@ public class OrchestratorService {
     return workflowDao.getWorkflow(datasetId);
   }
 
+  public WorkflowExecutionDTO getWorkflowExecutionDTOByExecutionId(String executionId) throws GenericMetisException {
+    WorkflowExecution workflowExecution = getWorkflowExecutionByExecutionId(executionId);
+    User startedUser = null;
+    User cancelledUser = null;
+    if (workflowExecution != null) {
+      startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
+      cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
+    }
+    return WorkflowExecutionConverter.toDTO(workflowExecution, startedUser, cancelledUser);
+  }
+
   /**
    * Get a WorkflowExecution using an execution identifier.
    *
@@ -249,7 +265,7 @@ public class OrchestratorService {
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
    * </ul>
    */
-  public WorkflowExecution getWorkflowExecutionByExecutionId(String executionId) throws GenericMetisException {
+  private WorkflowExecution getWorkflowExecutionByExecutionId(String executionId) throws GenericMetisException {
     final WorkflowExecution result = workflowExecutionDao.getById(executionId);
     if (result != null) {
       datasetDao.getDatasetOrThrow(result.getDatasetId());
@@ -324,11 +340,13 @@ public class OrchestratorService {
    * execution identifier already exists, almost impossible to happen since ids are UUIDs</li>
    * </ul>
    */
-  public WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
+  public WorkflowExecutionDTO addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
       @Nullable ExecutablePluginType enforcedPredecessorType, int priority, String userId)
       throws GenericMetisException {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
-    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, priority, userId);
+    WorkflowExecution workflowExecution = addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided,
+        enforcedPredecessorType, priority, userId);
+    return WorkflowExecutionConverter.toDTO(workflowExecution, userService.getUserFromCache(userId), null);
   }
 
   private WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(Dataset dataset,
@@ -353,7 +371,7 @@ public class OrchestratorService {
     final PluginWithExecutionId<ExecutablePlugin> predecessor = workflowValidationUtils
         .validateWorkflowPlugins(workflow, enforcedPredecessorType);
 
-    // Make sure that eCloud knows tmetisUserhis dataset (needs to happen before we create the workflow).
+    // Make sure that eCloud knows the dataset (needs to happen before we create the workflow).
     datasetDao.checkAndCreateDatasetInEcloud(dataset);
 
     // Create the workflow execution (without adding it to the database).
