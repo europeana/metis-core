@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.service;
 
 import eu.europeana.metis.core.user.User;
+import eu.europeana.metis.core.user.User.UserBuilder;
 import jakarta.ws.rs.NotFoundException;
 import java.lang.invoke.MethodHandles;
 import java.time.Instant;
@@ -90,7 +91,7 @@ public class UserService {
       LOGGER.warn("User with ID {} not found. This can be normal e.g. if the user identifier is an old one", userId);
       LOGGER.debug("Exception details:", e);
     }
-    User.UserBuilder userBuilder = new User.UserBuilder();
+    UserBuilder userBuilder = new UserBuilder();
 
     if (userRepresentation == null) {
       userBuilder.userId(userId)

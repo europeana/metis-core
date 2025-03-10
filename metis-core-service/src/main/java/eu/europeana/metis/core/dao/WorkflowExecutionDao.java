@@ -89,8 +89,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   private static final String STARTED_BY = "startedBy";
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
-  private int workflowExecutionsPerRequest =
-      RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
+  private int workflowExecutionsPerRequest = RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
   private int maxServedExecutionListLength = Integer.MAX_VALUE;
 
   /**

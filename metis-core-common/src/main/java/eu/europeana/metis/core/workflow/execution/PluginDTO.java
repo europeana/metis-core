@@ -32,6 +32,12 @@ public class PluginDTO {
   private final boolean canDisplayRawXml;
   private final MetisPluginMetadata pluginMetadata;
 
+  /**
+   * Creates a new PluginDTO instance based on the provided AbstractMetisPlugin and canDisplayRawXml flag.
+   *
+   * @param plugin the AbstractMetisPlugin instance to extract data from
+   * @param canDisplayRawXml a flag indicating whether raw XML can be displayed
+   */
   public PluginDTO(AbstractMetisPlugin plugin, boolean canDisplayRawXml) {
     this.pluginType = plugin.getPluginType();
     this.id = plugin.getId();

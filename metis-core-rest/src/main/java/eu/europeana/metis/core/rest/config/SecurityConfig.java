@@ -60,6 +60,7 @@ public class SecurityConfig {
    * authentication.
    *
    * @param httpSecurity the HttpSecurity to be configured with the security settings
+   * @param userService the UserService instance used to authenticate and authorize users
    * @return the configured SecurityFilterChain
    * @throws Exception if an error occurs during the security configuration
    */

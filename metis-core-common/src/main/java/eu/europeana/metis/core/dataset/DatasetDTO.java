@@ -21,6 +21,7 @@ import org.bson.types.ObjectId;
  * <p>
  * This class encapsulates the metadata and other relevant information about a dataset.
  */
+//TODO: 2025-03-10 - MET-6415 - Abstract this class in smaller components.
 public class DatasetDTO {
 
   private String id;

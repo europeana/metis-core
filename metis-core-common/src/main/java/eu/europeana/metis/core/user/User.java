@@ -14,12 +14,12 @@ public final class User {
   private final String lastName;
   private final Instant issuedAt;
 
-  private User(UserBuilder builder) {
-    this.userId = builder.userId;
-    this.userName = builder.userName;
-    this.firstName = builder.firstName;
-    this.lastName = builder.lastName;
-    this.issuedAt = builder.issuedAt;
+  private User(UserBuilder userBuilder) {
+    this.userId = userBuilder.userId;
+    this.userName = userBuilder.userName;
+    this.firstName = userBuilder.firstName;
+    this.lastName = userBuilder.lastName;
+    this.issuedAt = userBuilder.issuedAt;
   }
 
   public String getUserId() {

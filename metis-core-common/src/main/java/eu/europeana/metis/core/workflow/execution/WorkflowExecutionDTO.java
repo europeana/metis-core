@@ -51,6 +51,7 @@ public class WorkflowExecutionDTO {
    * @param dataset the {@link Dataset} related to the execution
    * @param metisPlugins the list of {@link AbstractMetisPlugin} including harvest plugin for execution
    * @param workflowPriority the positive number of the priority of the execution
+   * @param canDisplayRawXml a predicate that determines whether raw XML can be displayed for each plugin
    */
   public WorkflowExecutionDTO(Dataset dataset, List<? extends AbstractMetisPlugin> metisPlugins,
       int workflowPriority, Predicate<AbstractMetisPlugin<?>> canDisplayRawXml) {

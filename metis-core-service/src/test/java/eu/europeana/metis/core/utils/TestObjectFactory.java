@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.user.User;
+import eu.europeana.metis.core.user.User.UserBuilder;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
@@ -270,7 +271,7 @@ public class TestObjectFactory {
   }
 
   public static User createUser(String userId) {
-    return new User.UserBuilder()
+    return new UserBuilder()
         .userId(userId)
         .userName("userName")
         .firstName("firstName")

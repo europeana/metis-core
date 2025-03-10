@@ -51,7 +51,7 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
       Instant issuedAt = AuthenticationUtils.getIssuedAt(jwtAuthentication.getToken());
 
       if (userId != null) {
-        UserBuilder userBuilder = new User.UserBuilder()
+        UserBuilder userBuilder = new UserBuilder()
             .userId(userId)
             .userName(userName)
             .firstName(firstName)

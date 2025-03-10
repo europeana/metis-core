@@ -124,6 +124,7 @@ public class OrchestratorService {
    * @param workflowExecutorManager the instance that handles the production and consumption of workflowExecutions
    * @param redissonClient the instance of Redisson library that handles distributed locks
    * @param depublishRecordIdDao the Dao instance to access the DepublishRecordId database
+   * @param userService the service instance for managing user-related operations
    */
   @Autowired
   public OrchestratorService(WorkflowExecutionFactory workflowExecutionFactory,
@@ -245,6 +246,13 @@ public class OrchestratorService {
     return workflowDao.getWorkflow(datasetId);
   }
 
+  /**
+   * Retrieves a WorkflowExecutionDTO by its execution ID.
+   *
+   * @param executionId the ID of the workflow execution to retrieve
+   * @return the WorkflowExecutionDTO associated with the given execution ID, or null if no such execution exists
+   * @throws GenericMetisException if an error occurs while retrieving the workflow execution
+   */
   public WorkflowExecutionDTO getWorkflowExecutionDTOByExecutionId(String executionId) throws GenericMetisException {
     WorkflowExecution workflowExecution = getWorkflowExecutionByExecutionId(executionId);
     User startedUser = null;
@@ -896,6 +904,14 @@ public class OrchestratorService {
     return result;
   }
 
+  /**
+   * Checks if a plugin can display raw XML data.
+   * <p>
+   * This method checks if the plugin's data is valid, if it has a blacklisted type, and if its execution progress is valid.
+   *
+   * @param plugin the plugin to check
+   * @return true if the plugin can display raw XML data, false otherwise
+   */
   public static boolean canDisplayRawXml(MetisPlugin plugin) {
     final boolean result;
     if (plugin instanceof ExecutablePlugin executablePlugin) {
@@ -936,10 +952,11 @@ public class OrchestratorService {
 
     // Find the plugin (workflow step) in question.
     final AbstractMetisPlugin<?> targetPlugin = workflowExecutionHelper.getMetisPluginWithType(execution, pluginType)
-                                                                       .orElseThrow(() -> new NoWorkflowExecutionFoundException(String
-                                                             .format(
-                                                                 "No plugin of type %s found for workflowExecution with id: %s",
-                                                                 pluginType.name(), execution)));
+                                                                       .orElseThrow(
+                                                                           () -> new NoWorkflowExecutionFoundException(String
+                                                                               .format(
+                                                                                   "No plugin of type %s found for workflowExecution with id: %s",
+                                                                                   pluginType.name(), execution)));
 
     // Compile the version evolution.
     final Collection<Pair<ExecutablePlugin, WorkflowExecution>> evolutionSteps = dataEvolutionUtils

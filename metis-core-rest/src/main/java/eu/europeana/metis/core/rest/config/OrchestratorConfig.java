@@ -78,6 +78,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param workflowExecutorManager manager for handling workflow execution processes
    * @param depublishRecordIdDao the DAO for managing depublished record IDs
    * @param redissonClient the Redisson client instance for distributed locking and caching
+   * @param userService the service for managing user-related operations
    * @param metisCoreConfigurationProperties the core configuration properties for the system
    * @return a configured instance of {@link OrchestratorService}
    */
