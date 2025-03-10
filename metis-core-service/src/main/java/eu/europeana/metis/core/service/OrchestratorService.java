@@ -28,6 +28,7 @@ import eu.europeana.metis.core.rest.PluginsWithDataAvailability.PluginWithDataAv
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.user.User;
@@ -108,6 +109,7 @@ public class OrchestratorService {
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final UserService userService;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private int solrCommitPeriodInMins; // Use getter and setter for this field!
 
   /**
@@ -933,8 +935,8 @@ public class OrchestratorService {
     }
 
     // Find the plugin (workflow step) in question.
-    final AbstractMetisPlugin<?> targetPlugin = execution.getMetisPluginWithType(pluginType)
-                                                         .orElseThrow(() -> new NoWorkflowExecutionFoundException(String
+    final AbstractMetisPlugin<?> targetPlugin = workflowExecutionHelper.getMetisPluginWithType(execution, pluginType)
+                                                                       .orElseThrow(() -> new NoWorkflowExecutionFoundException(String
                                                              .format(
                                                                  "No plugin of type %s found for workflowExecution with id: %s",
                                                                  pluginType.name(), execution)));

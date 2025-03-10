@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.execution;
 
-import static java.lang.Thread.currentThread;
-
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.exception.DpsException;
@@ -11,6 +9,7 @@ import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
@@ -43,6 +42,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.lang.Thread.currentThread;
+
 /**
  * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that
  * WorkflowExecution given to it and will continue monitoring and updating its progress until it
@@ -74,16 +75,17 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   private final String ecloudBaseUrl;
   private final String ecloudProvider;
   private final String metisCoreBaseUrl;
-  private WorkflowExecution workflowExecution;
   private final ThrottlingValues throttlingValues;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
+  private WorkflowExecution workflowExecution;
 
-  WorkflowExecutor(WorkflowExecution workflowExecution, PersistenceProvider persistenceProvider,
+  WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager workflowExecutorManager,
       WorkflowExecutionSettings workflowExecutionSettings) {
     this.workflowExecution = workflowExecution;
-    this.semaphoresPerPluginManager = persistenceProvider.getSemaphoresPerPluginManager();
-    this.workflowExecutionDao = persistenceProvider.getWorkflowExecutionDao();
-    this.workflowPostProcessor = persistenceProvider.getWorkflowPostProcessor();
-    this.dpsClient = persistenceProvider.getDpsClient();
+    this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
+    this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
+    this.workflowPostProcessor = workflowExecutorManager.getWorkflowPostProcessor();
+    this.dpsClient = workflowExecutorManager.getDpsClient();
     this.monitorCheckIntervalInSecs = workflowExecutionSettings.getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
         .toSeconds(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
@@ -107,7 +109,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
       if (finishDate == null && workflowExecutionDao.isCancelling(workflowExecution.getId())) {
         // If the workflow was cancelled before it had the chance to finish, we cancel all remaining
         // plugins.
-        workflowExecution.setWorkflowAndAllQualifiedPluginsToCancelled();
+        workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
         // Make sure the cancelledBy information is not lost
         String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString())
             .getCancelledBy();
@@ -116,7 +118,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
             workflowExecution.getId());
       } else if (finishDate == null && didPluginsRun) {
         // One plugin failed
-        workflowExecution.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed();
+        workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
       } else if (finishDate == null) {
         // A plugin was not allowed to run because of no slot space
         // Increase priority for this execution
@@ -357,7 +359,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     final WorkflowExecution previousExecution = workflowExecutionDao
         .getByTaskExecution(predecessorPlugin, workflowExecution.getDatasetId());
     return Optional.ofNullable(previousExecution)
-        .flatMap(execution -> execution.getMetisPluginWithType(predecessorPlugin.getPluginType()))
+        .flatMap(execution -> workflowExecutionHelper.getMetisPluginWithType(execution, predecessorPlugin.getPluginType()))
         .map(this::expectExecutablePlugin).map(AbstractExecutablePlugin::getExternalTaskId)
         .orElse(null);
   }

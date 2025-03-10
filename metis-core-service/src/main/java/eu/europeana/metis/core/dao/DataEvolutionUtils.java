@@ -5,6 +5,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao.Pagination;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
@@ -52,6 +53,7 @@ public class DataEvolutionUtils {
       EnumSet.complementOf(EnumSet.of(ExecutablePluginType.LINK_CHECKING)));
 
   private final WorkflowExecutionDao workflowExecutionDao;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
    * Constructor.
@@ -304,7 +306,7 @@ public class DataEvolutionUtils {
     // Obtain the previous execution and plugin.
     final WorkflowExecution previousExecution = workflowExecutionDao.getByTaskExecution(previousPluginId, datasetId);
     final AbstractMetisPlugin<?> previousPlugin = previousExecution == null ? null
-        : previousExecution.getMetisPluginWithType(previousPluginId.getPluginType()).orElse(null);
+        : workflowExecutionHelper.getMetisPluginWithType(previousExecution, previousPluginId.getPluginType()).orElse(null);
     if (previousExecution == null || previousPlugin == null) {
       return null;
     }

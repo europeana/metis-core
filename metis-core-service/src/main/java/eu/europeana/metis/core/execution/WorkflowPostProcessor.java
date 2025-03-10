@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.execution;
 
-import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptionsThrowing;
-
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.common.model.dps.RecordState;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
@@ -20,6 +18,7 @@ import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
@@ -44,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
+import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptionsThrowing;
+
 /**
  * This object can perform post-processing for workflows.
  */
@@ -57,6 +58,7 @@ public class WorkflowPostProcessor {
   private final DatasetDao datasetDao;
   private final WorkflowExecutionDao workflowExecutionDao;
   private final DpsClient dpsClient;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
    * Constructor.
@@ -204,8 +206,8 @@ public class WorkflowPostProcessor {
         .nonNull(latestSuccessfulPlugin.getPlugin())) {
       final WorkflowExecution workflowExecutionToUpdate = workflowExecutionDao
           .getById(latestSuccessfulPlugin.getExecutionId());
-      final Optional<AbstractMetisPlugin> metisPluginWithType = workflowExecutionToUpdate
-          .getMetisPluginWithType(latestSuccessfulPlugin.getPlugin().getPluginType());
+      final Optional<AbstractMetisPlugin> metisPluginWithType = workflowExecutionHelper
+          .getMetisPluginWithType(workflowExecutionToUpdate, latestSuccessfulPlugin.getPlugin().getPluginType());
       if (metisPluginWithType.isPresent()) {
         metisPluginWithType.get().setDataStatus(DataStatus.DELETED);
         workflowExecutionDao.updateWorkflowPlugins(workflowExecutionToUpdate);

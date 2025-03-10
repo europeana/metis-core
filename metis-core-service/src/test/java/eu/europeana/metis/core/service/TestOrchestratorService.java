@@ -25,7 +25,6 @@ import eu.europeana.metis.core.rest.ExecutionHistory;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
-import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.DatasetSummaryView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionSummaryView;
@@ -34,6 +33,7 @@ import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
@@ -64,7 +64,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -939,7 +938,7 @@ class TestOrchestratorService {
 
     // Test when the workflow execution does not have a plugin of the right type
     doReturn(workflowExecution).when(workflowExecutionDao).getById(workflowExecutionId);
-    when(workflowExecution.getMetisPluginWithType(pluginType)).thenReturn(Optional.empty());
+    when(workflowExecution.getMetisPlugins()).thenReturn(Collections.emptyList());
     assertThrows(NoWorkflowExecutionFoundException.class,
         () -> orchestratorService.getRecordEvolutionForVersion(workflowExecutionId, pluginType));
   }

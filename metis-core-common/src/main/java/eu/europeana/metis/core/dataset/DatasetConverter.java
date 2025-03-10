@@ -22,7 +22,7 @@ public final class DatasetConverter {
   public static Dataset fromDTO(DatasetDTO datasetDTO) {
     Dataset dataset = new Dataset();
 
-    dataset.setId(new ObjectId(datasetDTO.getId()));
+    dataset.setId(Optional.ofNullable(datasetDTO.getId()).map(ObjectId::new).orElse(null));
     dataset.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
     dataset.setDatasetId(datasetDTO.getDatasetId());
     dataset.setDatasetName(datasetDTO.getDatasetName());

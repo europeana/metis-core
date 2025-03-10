@@ -10,15 +10,12 @@ import dev.morphia.annotations.IndexOptions;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.PluginStatus;
-import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.utils.CommonStringValues;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import org.bson.types.ObjectId;
 
 /**
@@ -88,59 +85,6 @@ public class WorkflowExecution implements HasMongoObjectId {
     this.ecloudDatasetId = dataset.getEcloudDatasetId();
     this.workflowPriority = workflowPriority;
     this.metisPlugins = new ArrayList<>(metisPlugins);
-  }
-
-  /**
-   * Sets all plugins inside the execution, that have status {@link PluginStatus#INQUEUE} or {@link
-   * PluginStatus#RUNNING} or {@link PluginStatus#CLEANING} or {@link PluginStatus#PENDING}, to
-   * {@link PluginStatus#CANCELLED}
-   */
-  public void setWorkflowAndAllQualifiedPluginsToCancelled() {
-    this.setWorkflowStatus(WorkflowStatus.CANCELLED);
-    setAllQualifiedPluginsToCancelled();
-    this.setCancelling(false);
-  }
-
-  /**
-   * Checks if one of the plugins has {@link PluginStatus#FAILED} and if yes sets all other plugins
-   * that have status {@link PluginStatus#INQUEUE} or {@link PluginStatus#RUNNING} or {@link
-   * PluginStatus#CLEANING} or {@link PluginStatus#PENDING}, to {@link PluginStatus#CANCELLED}
-   */
-  public void checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed() {
-    boolean hasAPluginFailed = false;
-    for (AbstractMetisPlugin metisPlugin : this.getMetisPlugins()) {
-      if (metisPlugin.getPluginStatus() == PluginStatus.FAILED) {
-        hasAPluginFailed = true;
-        break;
-      }
-    }
-    if (hasAPluginFailed) {
-      this.setWorkflowStatus(WorkflowStatus.FAILED);
-      setAllQualifiedPluginsToCancelled();
-    }
-  }
-
-  private void setAllQualifiedPluginsToCancelled() {
-    for (AbstractMetisPlugin metisPlugin : this.getMetisPlugins()) {
-      if (metisPlugin.getPluginStatus() == PluginStatus.INQUEUE
-          || metisPlugin.getPluginStatus() == PluginStatus.RUNNING
-          || metisPlugin.getPluginStatus() == PluginStatus.CLEANING
-          || metisPlugin.getPluginStatus() == PluginStatus.PENDING
-          || metisPlugin.getPluginStatus() == PluginStatus.IDENTIFYING_DELETED_RECORDS) {
-        metisPlugin.setPluginStatusAndResetFailMessage(PluginStatus.CANCELLED);
-      }
-    }
-  }
-
-  /**
-   * Returns an {@link Optional} for the plugin with the given plugin type.
-   *
-   * @param pluginType The type of the plugin we are looking for.
-   * @return The plugin.
-   */
-  public Optional<AbstractMetisPlugin> getMetisPluginWithType(PluginType pluginType) {
-    return getMetisPlugins().stream().filter(plugin -> plugin.getPluginType() == pluginType)
-        .findFirst();
   }
 
   @Override
