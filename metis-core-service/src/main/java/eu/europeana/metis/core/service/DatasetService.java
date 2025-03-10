@@ -42,7 +42,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.types.ObjectId;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -222,7 +221,7 @@ public class DatasetService {
     }
   }
 
-  private void cleanDatasetXslt(ObjectId xsltId) {
+  private void cleanDatasetXslt(String xsltId) {
     if (xsltId != null) {
       //Check if it's referenced
       final WorkflowExecution workflowExecution = workflowExecutionDao

@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -298,10 +297,10 @@ class TestDatasetService {
   void getDatasetXsltByDatasetId() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
-    dataset.setXsltId(new ObjectId());
+    dataset.setXsltId("xsltId");
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
-    when(datasetXsltDao.getById(dataset.getXsltId().toString())).thenReturn(datasetXslt);
+    when(datasetXsltDao.getById(dataset.getXsltId())).thenReturn(datasetXslt);
 
     DatasetXslt datasetXsltByDatasetId = datasetService.getDatasetXsltByDatasetId(dataset.getDatasetId());
     assertEquals(datasetXslt.getXslt(), datasetXsltByDatasetId.getXslt());
@@ -417,14 +416,14 @@ class TestDatasetService {
   void transformRecordsUsingLatestDatasetXslt() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
-    dataset.setXsltId(new ObjectId());
+    dataset.setXsltId("xsltId");
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
-    when(datasetXsltDao.getById(dataset.getXsltId().toString())).thenReturn(datasetXslt);
+    when(datasetXsltDao.getById(dataset.getXsltId())).thenReturn(datasetXslt);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
 
     String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
-        Collections.singletonList(datasetXslt.getId().toString()));
+        Collections.singletonList(datasetXslt.getId()));
     wireMockServer.stubFor(get(urlEqualTo(xsltUrl))
         .willReturn(aResponse()
             .withStatus(200)
