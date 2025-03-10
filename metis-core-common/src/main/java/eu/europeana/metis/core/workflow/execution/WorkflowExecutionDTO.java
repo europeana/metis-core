@@ -220,10 +220,6 @@ public class WorkflowExecutionDTO {
   }
 
   public void setMetisPlugins(List<PluginDTO> metisPlugins) {
-    if (metisPlugins != null) {
-      this.metisPlugins = new ArrayList<>(metisPlugins);
-    } else {
-      this.metisPlugins = null;
-    }
+    this.metisPlugins = metisPlugins == null ? new ArrayList<>() : new ArrayList<>(metisPlugins);
   }
 }

@@ -133,7 +133,6 @@ public class DatasetService {
       datasetDTO.setCreatedByUserId(userId);
       datasetDTO.setId(null);
       datasetDTO.setUpdatedDate(null);
-
       datasetDTO.setCreatedDate(new Date());
       //Add fake ecloudDatasetId to avoid null errors in the database
       datasetDTO.setEcloudDatasetId(String.format("NOT_CREATED_YET-%s", UUID.randomUUID()));
@@ -191,7 +190,7 @@ public class DatasetService {
     datasetDTO.setOrganizationId(storedDataset.getOrganizationId());
     datasetDTO.setOrganizationName(storedDataset.getOrganizationName());
     datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
-    datasetDTO.setId(storedDataset.getId());
+    datasetDTO.setId(storedDataset.getId().toString());
 
     verifyReferencesToOldDatasetIds(datasetDTO);
 
@@ -208,14 +207,14 @@ public class DatasetService {
     datasetDao.update(DatasetConverter.fromDTO(datasetDTO));
   }
 
-  private void verifyReferencesToOldDatasetIds(DatasetDTO dataset) throws BadContentException {
-    if (dataset.getDatasetIdsToRedirectFrom() != null) {
-      for (String datasetId : dataset.getDatasetIdsToRedirectFrom()) {
+  private void verifyReferencesToOldDatasetIds(DatasetDTO datasetDTO) throws BadContentException {
+    if (datasetDTO.getDatasetIdsToRedirectFrom() != null) {
+      for (String datasetId : datasetDTO.getDatasetIdsToRedirectFrom()) {
         if (datasetDao.getDatasetByDatasetId(datasetId) == null) {
           throw new BadContentException(
               String.format("Old datasetId for redirection %s doesn't exist", datasetId));
         }
-        if (dataset.getDatasetId().equals(datasetId)) {
+        if (datasetDTO.getDatasetId().equals(datasetId)) {
           throw new BadContentException(
               String.format("datasetId for redirection %s cannot be the same as the current datasetId", datasetId));
         }

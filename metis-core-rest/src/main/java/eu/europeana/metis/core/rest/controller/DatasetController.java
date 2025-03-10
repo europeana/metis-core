@@ -74,7 +74,7 @@ public class DatasetController {
    * accessTokenHere </p>
    *
    * @param jwtPrincipal the jwt principal
-   * @param dataset the provided dataset to be created
+   * @param datasetDTO the provided dataset to be created
    * @return the dataset created including all other fields that are auto generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -83,10 +83,10 @@ public class DatasetController {
    */
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public DatasetDTO createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody DatasetDTO dataset)
+  public DatasetDTO createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody DatasetDTO datasetDTO)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
-    DatasetDTO createdDataset = datasetService.createDataset(userId, dataset);
+    DatasetDTO createdDataset = datasetService.createDataset(userId, datasetDTO);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
         createdDataset.getDatasetId(), createdDataset.getDatasetName(), createdDataset.getOrganizationId());
     return createdDataset;

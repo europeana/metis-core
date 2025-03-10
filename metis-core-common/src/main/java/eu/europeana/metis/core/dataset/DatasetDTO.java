@@ -23,8 +23,7 @@ import org.bson.types.ObjectId;
  */
 public class DatasetDTO {
 
-  @JsonSerialize(using = ObjectIdSerializer.class)
-  private ObjectId id;
+  private String id;
   private String ecloudDatasetId;
   private String datasetId;
   private String datasetName;
@@ -96,7 +95,7 @@ public class DatasetDTO {
    * @param xsltId the ID of the XSLT associated with the dataset
    */
   public DatasetDTO(
-      ObjectId id,
+      String id,
       String ecloudDatasetId,
       String datasetId,
       String datasetName,
@@ -148,11 +147,11 @@ public class DatasetDTO {
     this.xsltId = xsltId;
   }
 
-  public ObjectId getId() {
+  public String getId() {
     return id;
   }
 
-  public void setId(ObjectId id) {
+  public void setId(String id) {
     this.id = id;
   }
 

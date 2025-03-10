@@ -9,6 +9,7 @@ import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.dataset.DatasetConverter;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
@@ -88,7 +89,7 @@ public class TestObjectFactory {
   }
 
   public static WorkflowExecutionDTO createWorkflowExecutionDTOObject() {
-    Dataset dataset = createDataset(DATASETNAME);
+    Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(DATASETNAME));
     ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
     AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
@@ -142,7 +143,7 @@ public class TestObjectFactory {
   private static List<ExecutionDatasetPair> createExecutionsWithDatasets(int size) {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      Dataset dataset = createDataset(String.format("%s%s", DATASETNAME, i));
+      Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(String.format("%s%s", DATASETNAME, i)));
       dataset.setId(new ObjectId(new Date(i)));
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
@@ -191,36 +192,6 @@ public class TestObjectFactory {
    */
   public static DatasetDTO createDatasetDTO(String datasetName) {
     DatasetDTO ds = new DatasetDTO();
-    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
-    ds.setDatasetId(Integer.toString(DATASETID));
-    ds.setDatasetName(datasetName);
-    final String organizationId = "1234567890";
-    ds.setOrganizationId(organizationId);
-    ds.setOrganizationName("OrganizationName");
-    ds.setProvider(organizationId);
-    ds.setIntermediateProvider(organizationId);
-    ds.setDataProvider(organizationId);
-    ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
-    ds.setReplacedBy("replacedBy");
-    ds.setReplaces("12345");
-    ds.setCountry(Country.GREECE);
-    ds.setLanguage(Language.AR);
-    ds.setDescription("description");
-    ds.setPublicationFitness(PublicationFitness.PARTIALLY_FIT);
-    ds.setNotes("Notes");
-    return ds;
-  }
-
-  /**
-   * Create a dummy dataset
-   *
-   * @param datasetName the dataset name to be used
-   * @return the created dataset
-   */
-  public static Dataset createDataset(String datasetName) {
-    Dataset ds = new Dataset();
     ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);

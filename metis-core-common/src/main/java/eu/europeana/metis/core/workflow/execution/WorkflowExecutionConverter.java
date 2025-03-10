@@ -3,7 +3,9 @@ package eu.europeana.metis.core.workflow.execution;
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import java.util.Optional;
 import java.util.function.Predicate;
+import org.bson.types.ObjectId;
 
 /**
  * This class is responsible for converting WorkflowExecution objects to WorkflowExecutionDTO objects.
@@ -36,7 +38,7 @@ public final class WorkflowExecutionConverter {
     }
 
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
-    workflowExecutionDTO.setId(workflowExecution.getId() == null ? null : workflowExecution.getId().toString());
+    workflowExecutionDTO.setId(Optional.ofNullable(workflowExecution.getId()).map(ObjectId::toString).orElse(null));
     workflowExecutionDTO.setDatasetId(workflowExecution.getDatasetId());
     workflowExecutionDTO.setWorkflowStatus(workflowExecution.getWorkflowStatus());
     workflowExecutionDTO.setEcloudDatasetId(workflowExecution.getEcloudDatasetId());

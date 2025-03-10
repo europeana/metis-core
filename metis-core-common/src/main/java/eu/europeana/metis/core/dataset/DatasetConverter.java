@@ -2,6 +2,7 @@ package eu.europeana.metis.core.dataset;
 
 import eu.europeana.metis.core.user.User;
 import java.util.Optional;
+import org.bson.types.ObjectId;
 
 /**
  * A utility class that provides methods for converting between Dataset and DatasetDTO objects.
@@ -21,7 +22,7 @@ public final class DatasetConverter {
   public static Dataset fromDTO(DatasetDTO datasetDTO) {
     Dataset dataset = new Dataset();
 
-    dataset.setId(datasetDTO.getId());
+    dataset.setId(new ObjectId(datasetDTO.getId()));
     dataset.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
     dataset.setDatasetId(datasetDTO.getDatasetId());
     dataset.setDatasetName(datasetDTO.getDatasetName());
@@ -55,7 +56,7 @@ public final class DatasetConverter {
    */
   public static DatasetDTO toDTO(Dataset dataset, User user) {
     return new DatasetDTO(
-        dataset.getId(),
+        Optional.ofNullable(dataset.getId()).map(ObjectId::toString).orElse(null),
         dataset.getEcloudDatasetId(),
         dataset.getDatasetId(),
         dataset.getDatasetName(),
