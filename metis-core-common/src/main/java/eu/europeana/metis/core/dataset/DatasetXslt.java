@@ -9,6 +9,7 @@ import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import java.util.Date;
+import org.bson.types.ObjectId;
 
 /**
  * A wrapper class with metadata about an xslt and the xslt as a string field.
@@ -30,7 +31,7 @@ public class DatasetXslt {
 
   @Id
   @JsonSerialize(using = ObjectIdSerializer.class)
-  private String id;
+  private ObjectId id;
 
   private String datasetId;
   private String xslt;
@@ -64,11 +65,11 @@ public class DatasetXslt {
     this(DEFAULT_DATASET_ID, xslt);
   }
 
-  public String getId() {
+  public ObjectId getId() {
     return id;
   }
 
-  public void setId(String id) {
+  public void setId(ObjectId id) {
     this.id = id;
   }
 

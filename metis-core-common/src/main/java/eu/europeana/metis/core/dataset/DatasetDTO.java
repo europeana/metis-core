@@ -9,10 +9,12 @@ import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.common.LanguageDeserializer;
 import eu.europeana.metis.core.common.LanguageSerializer;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.utils.Country;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.bson.types.ObjectId;
 
 /**
  * Data Transfer Object (DTO) representing a dataset.
@@ -57,7 +59,8 @@ public class DatasetDTO {
   private String description;
   private PublicationFitness publicationFitness;
   private String notes;
-  private String xsltId;
+  @JsonSerialize(using = ObjectIdSerializer.class)
+  private ObjectId xsltId;
 
   public DatasetDTO() {
     //Required for json serialization
@@ -115,7 +118,7 @@ public class DatasetDTO {
       String description,
       PublicationFitness publicationFitness,
       String notes,
-      String xsltId
+      ObjectId xsltId
   ) {
     this.id = id;
     this.ecloudDatasetId = ecloudDatasetId;
@@ -331,11 +334,11 @@ public class DatasetDTO {
     this.notes = notes;
   }
 
-  public String getXsltId() {
+  public ObjectId getXsltId() {
     return xsltId;
   }
 
-  public void setXsltId(String xsltId) {
+  public void setXsltId(ObjectId xsltId) {
     this.xsltId = xsltId;
   }
 }

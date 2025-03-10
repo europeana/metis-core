@@ -46,7 +46,7 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
 
   @Override
   public DatasetXslt create(DatasetXslt datasetXslt) {
-    final String objectId = Optional.ofNullable(datasetXslt.getId()).orElseGet(ObjectId::new);
+    final ObjectId objectId = Optional.ofNullable(datasetXslt.getId()).orElseGet(ObjectId::new);
     datasetXslt.setId(objectId);
     DatasetXslt datasetSaved = retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().save(datasetXslt));

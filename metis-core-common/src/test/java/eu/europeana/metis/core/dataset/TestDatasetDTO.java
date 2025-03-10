@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +29,14 @@ class TestDatasetDTO {
   private DatasetDTO datasetDTO;
   private Date createdDate;
   private Date updatedDate;
+  private ObjectId xsltId;
 
   @BeforeEach
   void setUp() {
     ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneOffset.UTC);
     createdDate = Date.from(zonedDateTime.toInstant());
     updatedDate = Date.from(zonedDateTime.toInstant());
+    xsltId = new ObjectId("507f191e810c19729de860ea");
 
     datasetDTO = new DatasetDTO(
         "123",
@@ -59,7 +62,7 @@ class TestDatasetDTO {
         "description",
         PublicationFitness.FIT,
         "notes",
-        "xsltId"
+        xsltId
     );
   }
 
@@ -89,7 +92,7 @@ class TestDatasetDTO {
     assertEquals("description", datasetDTO.getDescription());
     assertEquals(PublicationFitness.FIT, datasetDTO.getPublicationFitness());
     assertEquals("notes", datasetDTO.getNotes());
-    assertEquals("xsltId", datasetDTO.getXsltId());
+    assertEquals(xsltId, datasetDTO.getXsltId());
   }
 
   @Test
@@ -237,7 +240,7 @@ class TestDatasetDTO {
     assertEquals("description", deserializedDatasetDTO.getDescription());
     assertEquals(PublicationFitness.FIT, deserializedDatasetDTO.getPublicationFitness());
     assertEquals("notes", deserializedDatasetDTO.getNotes());
-    assertEquals("xsltId", deserializedDatasetDTO.getXsltId());
+    assertEquals(xsltId, deserializedDatasetDTO.getXsltId());
   }
 
   @Test
@@ -277,6 +280,6 @@ class TestDatasetDTO {
     assertEquals("description", jsonNode.get("description").asText());
     assertEquals("FIT", jsonNode.get("publicationFitness").asText());
     assertEquals("notes", jsonNode.get("notes").asText());
-    assertEquals("xsltId", jsonNode.get("xsltId").asText());
+    assertEquals(xsltId.toString(), jsonNode.get("xsltId").asText());
   }
 }

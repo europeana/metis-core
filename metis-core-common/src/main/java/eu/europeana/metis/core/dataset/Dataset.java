@@ -82,7 +82,7 @@ public class Dataset implements HasMongoObjectId {
   private String notes;
 
   @JsonSerialize(using = ObjectIdSerializer.class)
-  private String xsltId;
+  private ObjectId xsltId;
 
   @Override
   public ObjectId getId() {
@@ -248,11 +248,11 @@ public class Dataset implements HasMongoObjectId {
     this.notes = notes;
   }
 
-  public String getXsltId() {
+  public ObjectId getXsltId() {
     return xsltId;
   }
 
-  public void setXsltId(String xsltId) {
+  public void setXsltId(ObjectId xsltId) {
     this.xsltId = xsltId;
   }
 }
