@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 
 /**
@@ -195,11 +196,11 @@ public class DatasetService {
     verifyReferencesToOldDatasetIds(datasetDTO);
 
     if (xsltString == null) {
-      datasetDTO.setXsltId(storedDataset.getXsltId());
+      datasetDTO.setXsltId(ofNullable(storedDataset.getXsltId()).map(ObjectId::toString).orElse(null));
     } else {
       cleanDatasetXslt(storedDataset.getXsltId());
-      datasetDTO.setXsltId(
-          datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), xsltString)).getId());
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), xsltString)).getId();
+      datasetDTO.setXsltId(xsltId.toString());
     }
 
     // Update the dataset

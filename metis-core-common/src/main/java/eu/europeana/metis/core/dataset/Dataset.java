@@ -171,7 +171,7 @@ public class Dataset implements HasMongoObjectId {
   }
 
   public void setCreatedDate(Date createdDate) {
-    this.createdDate = new Date(createdDate.getTime());
+    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
   }
 
   public Date getUpdatedDate() {

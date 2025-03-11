@@ -8,11 +8,49 @@ import eu.europeana.metis.utils.Country;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.Objects;
-import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY_ENUM;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_FIRST_NAME;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_LAST_NAME;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_USER_ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_USER_NAME;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_IDS_TO_REDIRECT_FROM;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_NAME;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATA_PROVIDER;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.DESCRIPTION;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.ECLOUD_DATASET_ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.INTERMEDIATE_PROVIDER;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE_ENUM;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.NOTES;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_NAME;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.PROVIDER;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.PUBLICATION_FITNESS;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_1_VALUE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_2_VALUE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.REPLACED_BY;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.REPLACES;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.assertFieldEquals;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.assertListContains;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.assertNestedFieldEquals;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.createdDate;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.formatAsUTC;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTO;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOUsingSetters;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOUsingSettersWithNullValues;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOWithNullValues;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.id;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.updatedDate;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.xsltId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,7 +60,7 @@ class TestDatasetDTO {
 
   @Test
   void testGetters() {
-    DatasetDTO datasetDTO = TestDatasetObjectFactory.getDatasetDTO();
+    DatasetDTO datasetDTO = getDatasetDTO();
     assertDatasetDTO(datasetDTO);
   }
 
@@ -40,15 +78,15 @@ class TestDatasetDTO {
 
   @Test
   void testNullProvidedValues() {
-    DatasetDTO datasetDTO2 = getDatasetDTOWithNullValues();
-    assertNull(datasetDTO2.getCreatedDate());
-    assertNull(datasetDTO2.getUpdatedDate());
-    assertNotNull(datasetDTO2.getDatasetIdsToRedirectFrom());
-
-    DatasetDTO datasetDTO = getDatasetDTOUsingSettersWithNullValues();
+    DatasetDTO datasetDTO = getDatasetDTOWithNullValues();
     assertNull(datasetDTO.getCreatedDate());
     assertNull(datasetDTO.getUpdatedDate());
-    assertNotNull(datasetDTO.getDatasetIdsToRedirectFrom());
+    assertTrue(datasetDTO.getDatasetIdsToRedirectFrom().isEmpty());
+
+    DatasetDTO datasetDTO1 = getDatasetDTOUsingSettersWithNullValues();
+    assertNull(datasetDTO1.getCreatedDate());
+    assertNull(datasetDTO1.getUpdatedDate());
+    assertTrue(datasetDTO1.getDatasetIdsToRedirectFrom().isEmpty());
   }
 
   @Test
@@ -65,158 +103,70 @@ class TestDatasetDTO {
 
   @Test
   void testSerialization() throws IOException {
-    DatasetDTO datasetDTO = TestDatasetObjectFactory.getDatasetDTO();
+    DatasetDTO datasetDTO = getDatasetDTO();
 
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonOutput = objectMapper.writeValueAsString(datasetDTO);
     JsonNode jsonNode = objectMapper.readTree(jsonOutput);
 
-    assertEquals(TestDatasetObjectFactory.id.toString(), jsonNode.get("id").asText());
-    assertEquals("ecloudDatasetId", jsonNode.get("ecloudDatasetId").asText());
-    assertEquals("datasetId", jsonNode.get("datasetId").asText());
-    assertEquals("datasetName", jsonNode.get("datasetName").asText());
-    assertEquals("organizationId", jsonNode.get("organizationId").asText());
-    assertEquals("organizationName", jsonNode.get("organizationName").asText());
-    assertEquals("provider", jsonNode.get("provider").asText());
-    assertEquals("dataProvider", jsonNode.get("dataProvider").asText());
-    assertEquals("intermediateProvider", jsonNode.get("intermediateProvider").asText());
-    assertEquals("createdByUserId", jsonNode.get("createdByUserId").asText());
-    assertEquals("createdByUserName", jsonNode.get("createdByUserName").asText());
-    assertEquals("createdByFirstName", jsonNode.get("createdByFirstName").asText());
-    assertEquals("createdByLastName", jsonNode.get("createdByLastName").asText());
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    String expectedCreatedDate = simpleDateFormat.format(TestDatasetObjectFactory.createdDate);
-    String expectedUpdatedDate = simpleDateFormat.format(TestDatasetObjectFactory.updatedDate);
-    assertEquals(expectedCreatedDate, jsonNode.get("createdDate").asText());
-    assertEquals(expectedUpdatedDate, jsonNode.get("updatedDate").asText());
-    assertEquals(2, jsonNode.get("datasetIdsToRedirectFrom").size());
-    assertTrue(jsonNode.get("datasetIdsToRedirectFrom").toString().contains("redirectId1"));
-    assertTrue(jsonNode.get("datasetIdsToRedirectFrom").toString().contains("redirectId2"));
-    assertEquals("replacedBy", jsonNode.get("replacedBy").asText());
-    assertEquals("replaces", jsonNode.get("replaces").asText());
-    assertEquals("GREECE", jsonNode.get("country").get("enum").asText());
-    assertEquals("EL", jsonNode.get("language").get("enum").asText());
-    assertEquals("description", jsonNode.get("description").asText());
-    assertEquals("FIT", jsonNode.get("publicationFitness").asText());
-    assertEquals("notes", jsonNode.get("notes").asText());
-    assertEquals(TestDatasetObjectFactory.xsltId.toString(), jsonNode.get("xsltId").asText());
+    assertDataset(jsonNode);
+  }
+
+  private void assertDataset(JsonNode jsonNode) {
+    assertFieldEquals(jsonNode, ID, id.toString());
+    assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
+    assertFieldEquals(jsonNode, DATASET_NAME, DATASET_NAME);
+    assertFieldEquals(jsonNode, ORGANIZATION_ID, ORGANIZATION_ID);
+    assertFieldEquals(jsonNode, ORGANIZATION_NAME, ORGANIZATION_NAME);
+    assertFieldEquals(jsonNode, PROVIDER, PROVIDER);
+    assertFieldEquals(jsonNode, DATA_PROVIDER, DATA_PROVIDER);
+    assertFieldEquals(jsonNode, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
+    assertFieldEquals(jsonNode, CREATED_BY_USER_ID, CREATED_BY_USER_ID);
+    assertFieldEquals(jsonNode, CREATED_BY_USER_NAME, CREATED_BY_USER_NAME);
+    assertFieldEquals(jsonNode, CREATED_BY_FIRST_NAME, CREATED_BY_FIRST_NAME);
+    assertFieldEquals(jsonNode, CREATED_BY_LAST_NAME, CREATED_BY_LAST_NAME);
+    String expectedCreatedDate = formatAsUTC(createdDate);
+    String expectedUpdatedDate = formatAsUTC(updatedDate);
+    assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
+    assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
+    assertListContains(jsonNode.get(DATASET_IDS_TO_REDIRECT_FROM), REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE);
+    assertFieldEquals(jsonNode, REPLACED_BY, REPLACED_BY);
+    assertFieldEquals(jsonNode, REPLACES, REPLACES);
+    assertNestedFieldEquals(jsonNode, COUNTRY, COUNTRY_ENUM, Country.GREECE.name());
+    assertNestedFieldEquals(jsonNode, LANGUAGE, LANGUAGE_ENUM, Language.EL.name());
+    assertFieldEquals(jsonNode, DESCRIPTION, DESCRIPTION);
+    assertFieldEquals(jsonNode, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
+    assertFieldEquals(jsonNode, NOTES, NOTES);
+    assertFieldEquals(jsonNode, XSLT_ID, xsltId.toString());
   }
 
   private void assertDatasetDTO(DatasetDTO datasetDTO) {
-    assertEquals(TestDatasetObjectFactory.id.toString(), datasetDTO.getId());
-    assertEquals("ecloudDatasetId", datasetDTO.getEcloudDatasetId());
-    assertEquals("datasetId", datasetDTO.getDatasetId());
-    assertEquals("datasetName", datasetDTO.getDatasetName());
-    assertEquals("organizationId", datasetDTO.getOrganizationId());
-    assertEquals("organizationName", datasetDTO.getOrganizationName());
-    assertEquals("provider", datasetDTO.getProvider());
-    assertEquals("dataProvider", datasetDTO.getDataProvider());
-    assertEquals("intermediateProvider", datasetDTO.getIntermediateProvider());
-    assertEquals("createdByUserId", datasetDTO.getCreatedByUserId());
-    assertEquals("createdByUserName", datasetDTO.getCreatedByUserName());
-    assertEquals("createdByFirstName", datasetDTO.getCreatedByFirstName());
-    assertEquals("createdByLastName", datasetDTO.getCreatedByLastName());
-    assertEquals(TestDatasetObjectFactory.createdDate, datasetDTO.getCreatedDate());
-    assertEquals(TestDatasetObjectFactory.updatedDate, datasetDTO.getUpdatedDate());
+    assertEquals(id.toString(), datasetDTO.getId());
+    assertEquals(ECLOUD_DATASET_ID, datasetDTO.getEcloudDatasetId());
+    assertEquals(DATASET_ID, datasetDTO.getDatasetId());
+    assertEquals(DATASET_NAME, datasetDTO.getDatasetName());
+    assertEquals(ORGANIZATION_ID, datasetDTO.getOrganizationId());
+    assertEquals(ORGANIZATION_NAME, datasetDTO.getOrganizationName());
+    assertEquals(PROVIDER, datasetDTO.getProvider());
+    assertEquals(DATA_PROVIDER, datasetDTO.getDataProvider());
+    assertEquals(INTERMEDIATE_PROVIDER, datasetDTO.getIntermediateProvider());
+    assertEquals(CREATED_BY_USER_ID, datasetDTO.getCreatedByUserId());
+    assertEquals(CREATED_BY_USER_NAME, datasetDTO.getCreatedByUserName());
+    assertEquals(CREATED_BY_FIRST_NAME, datasetDTO.getCreatedByFirstName());
+    assertEquals(CREATED_BY_LAST_NAME, datasetDTO.getCreatedByLastName());
+    assertEquals(createdDate, datasetDTO.getCreatedDate());
+    assertEquals(updatedDate, datasetDTO.getUpdatedDate());
     assertEquals(2, datasetDTO.getDatasetIdsToRedirectFrom().size());
-    assertTrue(datasetDTO.getDatasetIdsToRedirectFrom().contains("redirectId1"));
-    assertEquals("replacedBy", datasetDTO.getReplacedBy());
-    assertEquals("replaces", datasetDTO.getReplaces());
+    assertTrue(datasetDTO.getDatasetIdsToRedirectFrom().contains(REDIRECT_ID_1_VALUE));
+    assertTrue(datasetDTO.getDatasetIdsToRedirectFrom().contains(REDIRECT_ID_2_VALUE));
+    assertEquals(REPLACED_BY, datasetDTO.getReplacedBy());
+    assertEquals(REPLACES, datasetDTO.getReplaces());
     assertEquals(Country.GREECE, datasetDTO.getCountry());
     assertEquals(Language.EL, datasetDTO.getLanguage());
-    assertEquals("description", datasetDTO.getDescription());
+    assertEquals(DESCRIPTION, datasetDTO.getDescription());
     assertEquals(PublicationFitness.FIT, datasetDTO.getPublicationFitness());
-    assertEquals("notes", datasetDTO.getNotes());
-    assertEquals(TestDatasetObjectFactory.xsltId, datasetDTO.getXsltId());
-  }
-
-  private DatasetDTO getDatasetDTOUsingSetters() {
-    DatasetDTO datasetDTO = TestDatasetObjectFactory.getDatasetDTO();
-    DatasetDTO datasetDTO1 = new DatasetDTO();
-    datasetDTO1.setId(datasetDTO.getId());
-    datasetDTO1.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
-    datasetDTO1.setDatasetId(datasetDTO.getDatasetId());
-    datasetDTO1.setDatasetName(datasetDTO.getDatasetName());
-    datasetDTO1.setOrganizationId(datasetDTO.getOrganizationId());
-    datasetDTO1.setOrganizationName(datasetDTO.getOrganizationName());
-    datasetDTO1.setProvider(datasetDTO.getProvider());
-    datasetDTO1.setDataProvider(datasetDTO.getDataProvider());
-    datasetDTO1.setIntermediateProvider(datasetDTO.getIntermediateProvider());
-    datasetDTO1.setCreatedByUserId(datasetDTO.getCreatedByUserId());
-    datasetDTO1.setCreatedByUserName(datasetDTO.getCreatedByUserName());
-    datasetDTO1.setCreatedByFirstName(datasetDTO.getCreatedByFirstName());
-    datasetDTO1.setCreatedByLastName(datasetDTO.getCreatedByLastName());
-    datasetDTO1.setCreatedDate(datasetDTO.getCreatedDate());
-    datasetDTO1.setUpdatedDate(datasetDTO.getUpdatedDate());
-    datasetDTO1.setDatasetIdsToRedirectFrom(datasetDTO.getDatasetIdsToRedirectFrom());
-    datasetDTO1.setReplacedBy(datasetDTO.getReplacedBy());
-    datasetDTO1.setReplaces(datasetDTO.getReplaces());
-    datasetDTO1.setCountry(datasetDTO.getCountry());
-    datasetDTO1.setLanguage(datasetDTO.getLanguage());
-    datasetDTO1.setDescription(datasetDTO.getDescription());
-    datasetDTO1.setPublicationFitness(datasetDTO.getPublicationFitness());
-    datasetDTO1.setNotes(datasetDTO.getNotes());
-    datasetDTO1.setXsltId(datasetDTO.getXsltId());
-    return datasetDTO1;
-  }
-
-  private DatasetDTO getDatasetDTOUsingSettersWithNullValues() {
-    DatasetDTO datasetDTO = TestDatasetObjectFactory.getDatasetDTO();
-    DatasetDTO datasetDTO1 = new DatasetDTO();
-    datasetDTO1.setId(datasetDTO.getId());
-    datasetDTO1.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
-    datasetDTO1.setDatasetId(datasetDTO.getDatasetId());
-    datasetDTO1.setDatasetName(datasetDTO.getDatasetName());
-    datasetDTO1.setOrganizationId(datasetDTO.getOrganizationId());
-    datasetDTO1.setOrganizationName(datasetDTO.getOrganizationName());
-    datasetDTO1.setProvider(datasetDTO.getProvider());
-    datasetDTO1.setDataProvider(datasetDTO.getDataProvider());
-    datasetDTO1.setIntermediateProvider(datasetDTO.getIntermediateProvider());
-    datasetDTO1.setCreatedByUserId(datasetDTO.getCreatedByUserId());
-    datasetDTO1.setCreatedByUserName(datasetDTO.getCreatedByUserName());
-    datasetDTO1.setCreatedByFirstName(datasetDTO.getCreatedByFirstName());
-    datasetDTO1.setCreatedByLastName(datasetDTO.getCreatedByLastName());
-    datasetDTO1.setCreatedDate(null);
-    datasetDTO1.setUpdatedDate(null);
-    datasetDTO1.setDatasetIdsToRedirectFrom(null);
-    datasetDTO1.setReplacedBy(datasetDTO.getReplacedBy());
-    datasetDTO1.setReplaces(datasetDTO.getReplaces());
-    datasetDTO1.setCountry(datasetDTO.getCountry());
-    datasetDTO1.setLanguage(datasetDTO.getLanguage());
-    datasetDTO1.setDescription(datasetDTO.getDescription());
-    datasetDTO1.setPublicationFitness(datasetDTO.getPublicationFitness());
-    datasetDTO1.setNotes(datasetDTO.getNotes());
-    datasetDTO1.setXsltId(datasetDTO.getXsltId());
-    return datasetDTO1;
-  }
-
-  private DatasetDTO getDatasetDTOWithNullValues() {
-    DatasetDTO datasetDTO = TestDatasetObjectFactory.getDatasetDTO();
-    return new DatasetDTO(
-        datasetDTO.getId(),
-        datasetDTO.getEcloudDatasetId(),
-        datasetDTO.getDatasetId(),
-        datasetDTO.getDatasetName(),
-        datasetDTO.getOrganizationId(),
-        datasetDTO.getOrganizationName(),
-        datasetDTO.getProvider(),
-        datasetDTO.getDataProvider(),
-        datasetDTO.getIntermediateProvider(),
-        datasetDTO.getCreatedByUserId(),
-        datasetDTO.getCreatedByUserName(),
-        datasetDTO.getCreatedByFirstName(),
-        datasetDTO.getCreatedByLastName(),
-        null,
-        null,
-        null,
-        datasetDTO.getReplacedBy(),
-        datasetDTO.getReplaces(),
-        datasetDTO.getCountry(),
-        datasetDTO.getLanguage(),
-        datasetDTO.getDescription(),
-        datasetDTO.getPublicationFitness(),
-        datasetDTO.getNotes(),
-        datasetDTO.getXsltId());
+    assertEquals(NOTES, datasetDTO.getNotes());
+    assertEquals(xsltId.toString(), datasetDTO.getXsltId());
   }
 }

@@ -11,7 +11,7 @@ class TestDatasetConverter {
 
   @Test
   void testFromDTO() {
-    DatasetDTO datasetDTO = TestDatasetObjectFactory.getDatasetDTO();
+    DatasetDTO datasetDTO = TestDatasetUtils.getDatasetDTO();
     Dataset dataset = DatasetConverter.fromDTO(datasetDTO);
 
     assertEquals(datasetDTO.getId(), dataset.getId().toString());
@@ -34,7 +34,7 @@ class TestDatasetConverter {
     assertEquals(datasetDTO.getDescription(), dataset.getDescription());
     assertEquals(datasetDTO.getPublicationFitness(), dataset.getPublicationFitness());
     assertEquals(datasetDTO.getNotes(), dataset.getNotes());
-    assertEquals(datasetDTO.getXsltId(), dataset.getXsltId());
+    assertEquals(datasetDTO.getXsltId(), dataset.getXsltId().toString());
 
     datasetDTO.setId(null);
     Dataset dataset1 = DatasetConverter.fromDTO(datasetDTO);
@@ -43,7 +43,7 @@ class TestDatasetConverter {
 
   @Test
   void testToDTO() {
-    Dataset dataset = TestDatasetObjectFactory.getDataset();
+    Dataset dataset = TestDatasetUtils.getDataset();
 
     User user = new User.UserBuilder()
         .userId("createdByUserId").userName("createdByUserName").firstName("createdByFirstName")
@@ -74,7 +74,7 @@ class TestDatasetConverter {
     assertEquals(dataset.getDescription(), datasetDTO.getDescription());
     assertEquals(dataset.getPublicationFitness(), datasetDTO.getPublicationFitness());
     assertEquals(dataset.getNotes(), datasetDTO.getNotes());
-    assertEquals(dataset.getXsltId(), datasetDTO.getXsltId());
+    assertEquals(dataset.getXsltId().toString(), datasetDTO.getXsltId());
 
     DatasetDTO datasetDTO1 = DatasetConverter.toDTO(dataset, null);
 
