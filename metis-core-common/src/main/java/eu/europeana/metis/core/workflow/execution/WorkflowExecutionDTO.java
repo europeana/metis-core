@@ -2,14 +2,11 @@ package eu.europeana.metis.core.workflow.execution;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
-import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.utils.CommonStringValues;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * This class represents the full information on a workflow execution needed for the execution history.
@@ -39,28 +36,10 @@ public class WorkflowExecutionDTO {
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date finishedDate;
   private boolean isIncremental;
-  private List<PluginDTO> metisPlugins;
+  private List<PluginDTO> metisPlugins = new ArrayList<>();
 
   public WorkflowExecutionDTO() {
     //Required for json serialization
-  }
-
-  /**
-   * Constructor with all required parameters and initializes it's internal structure.
-   *
-   * @param dataset the {@link Dataset} related to the execution
-   * @param metisPlugins the list of {@link AbstractMetisPlugin} including harvest plugin for execution
-   * @param workflowPriority the positive number of the priority of the execution
-   * @param canDisplayRawXml a predicate that determines whether raw XML can be displayed for each plugin
-   */
-  public WorkflowExecutionDTO(Dataset dataset, List<? extends AbstractMetisPlugin> metisPlugins,
-      int workflowPriority, Predicate<AbstractMetisPlugin<?>> canDisplayRawXml) {
-    this.datasetId = dataset.getDatasetId();
-    this.ecloudDatasetId = dataset.getEcloudDatasetId();
-    this.workflowPriority = workflowPriority;
-    this.metisPlugins = metisPlugins.stream()
-                                 .map(plugin -> new PluginDTO(plugin, canDisplayRawXml.test(plugin)))
-                                 .toList();
   }
 
   public String getId() {
@@ -217,7 +196,7 @@ public class WorkflowExecutionDTO {
   }
 
   public List<PluginDTO> getMetisPlugins() {
-    return metisPlugins != null ? new ArrayList<>(metisPlugins) : null;
+    return new ArrayList<>(metisPlugins);
   }
 
   public void setMetisPlugins(List<PluginDTO> metisPlugins) {

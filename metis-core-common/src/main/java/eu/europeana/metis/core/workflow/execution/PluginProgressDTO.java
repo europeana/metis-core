@@ -8,14 +8,17 @@ import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
  */
 public class PluginProgressDTO {
 
-  private final int expectedRecords;
-  private final int processedRecords;
-  private final int ignoredRecords;
-  private final int deletedRecords;
-  private final int progressPercentage;
-  private final int errors;
-  private final TaskState status;
-  private final int totalDatabaseRecords;
+  private int expectedRecords;
+  private int processedRecords;
+  private int ignoredRecords;
+  private int deletedRecords;
+  private int progressPercentage;
+  private int errors;
+  private TaskState status;
+  private int totalDatabaseRecords;
+
+  public PluginProgressDTO() {
+  }
 
   PluginProgressDTO(ExecutionProgress progress) {
     this.expectedRecords = progress.getExpectedRecords();

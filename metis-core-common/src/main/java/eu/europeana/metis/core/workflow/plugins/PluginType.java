@@ -1,13 +1,9 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Contains all Plugin types.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-24
  */
 public enum PluginType {
 
@@ -47,7 +43,7 @@ public enum PluginType {
    * @return the {@link PluginType} that represents the provided value or null if not found
    */
   @JsonCreator
-  public static PluginType getPluginTypeFromEnumName(@JsonProperty("pluginName") String enumName) {
+  public static PluginType getPluginTypeFromEnumName(String enumName) {
     for (PluginType pluginType : PluginType.values()) {
       if (pluginType.name().equalsIgnoreCase(enumName)) {
         return pluginType;

@@ -26,12 +26,6 @@ class TestDataset {
   }
 
   @Test
-  void testEmptyConstructor() {
-    Dataset dataset = new Dataset();
-    assertNotNull(dataset);
-  }
-
-  @Test
   void testNullProvidedValues() {
     Dataset dataset = getDatasetUsingSettersWithNullValues();
     assertNull(dataset.getCreatedDate());

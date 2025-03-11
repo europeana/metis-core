@@ -15,22 +15,25 @@ import java.util.Date;
  */
 public class PluginDTO {
 
-  private final PluginType pluginType;
-  private final String id;
-  private final PluginStatus pluginStatus;
-  private final DataStatus dataStatus;
-  private final String failMessage;
+  private PluginType pluginType;
+  private String id;
+  private PluginStatus pluginStatus;
+  private DataStatus dataStatus;
+  private String failMessage;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private final Date startedDate;
+  private Date startedDate;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private final Date updatedDate;
+  private Date updatedDate;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private final Date finishedDate;
-  private final String externalTaskId;
-  private final PluginProgressDTO executionProgress;
-  private final String topologyName;
-  private final boolean canDisplayRawXml;
-  private final MetisPluginMetadata pluginMetadata;
+  private Date finishedDate;
+  private String externalTaskId;
+  private PluginProgressDTO executionProgress;
+  private String topologyName;
+  private boolean canDisplayRawXml;
+  private MetisPluginMetadata pluginMetadata;
+
+  public PluginDTO() {
+  }
 
   /**
    * Creates a new PluginDTO instance based on the provided AbstractMetisPlugin and canDisplayRawXml flag.

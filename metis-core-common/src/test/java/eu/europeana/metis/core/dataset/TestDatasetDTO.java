@@ -71,12 +71,6 @@ class TestDatasetDTO {
   }
 
   @Test
-  void testEmptyConstructor() {
-    DatasetDTO emptyDatasetDTO = new DatasetDTO();
-    assertNotNull(emptyDatasetDTO);
-  }
-
-  @Test
   void testNullProvidedValues() {
     DatasetDTO datasetDTO = getDatasetDTOWithNullValues();
     assertNull(datasetDTO.getCreatedDate());
@@ -109,10 +103,10 @@ class TestDatasetDTO {
     String jsonOutput = objectMapper.writeValueAsString(datasetDTO);
     JsonNode jsonNode = objectMapper.readTree(jsonOutput);
 
-    assertDataset(jsonNode);
+    assertDatasetDTO(jsonNode);
   }
 
-  private void assertDataset(JsonNode jsonNode) {
+  private void assertDatasetDTO(JsonNode jsonNode) {
     assertFieldEquals(jsonNode, ID, id.toString());
     assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
     assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);

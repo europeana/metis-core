@@ -50,7 +50,7 @@ public class TestDatasetUtils {
   static final String REDIRECT_ID_1_VALUE = "redirectId1";
   static final String REDIRECT_ID_2_VALUE = "redirectId2";
 
-  static DatasetDTO getDatasetDTO() {
+  public static DatasetDTO getDatasetDTO() {
     return new DatasetDTO(
         id.toString(),
         ECLOUD_DATASET_ID,
@@ -146,7 +146,7 @@ public class TestDatasetUtils {
     return datasetDTO;
   }
 
-  static Dataset getDataset() {
+  public static Dataset getDataset() {
     Dataset dataset = new Dataset();
     dataset.setId(id);
     dataset.setEcloudDatasetId(ECLOUD_DATASET_ID);
