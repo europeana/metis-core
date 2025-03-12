@@ -300,7 +300,7 @@ class TestOrchestratorService {
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     datasetXslt.setId(TestObjectFactory.DATASET_XSLT.getId());
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(datasetXslt);
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(rlock).unlock();
@@ -353,7 +353,7 @@ class TestOrchestratorService {
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     datasetXslt.setId(TestObjectFactory.DATASET_XSLT.getId());
     dataset.setXsltId(datasetXslt.getId());
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(datasetXsltDao.getById(dataset.getXsltId().toString())).thenReturn(datasetXslt);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
@@ -376,7 +376,7 @@ class TestOrchestratorService {
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
@@ -405,7 +405,7 @@ class TestOrchestratorService {
     doNothing().when(rlock).lock();
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(rlock).unlock();
@@ -438,7 +438,7 @@ class TestOrchestratorService {
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);
@@ -459,7 +459,7 @@ class TestOrchestratorService {
     doNothing().when(rlock).lock();
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(rlock).unlock();
@@ -478,7 +478,7 @@ class TestOrchestratorService {
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString(), 0);

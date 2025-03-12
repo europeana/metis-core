@@ -8,7 +8,6 @@ import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.IndexOptions;
 import dev.morphia.annotations.Indexes;
-import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
@@ -69,22 +68,6 @@ public class WorkflowExecution implements HasMongoObjectId {
 
   public WorkflowExecution() {
     //Required for json serialization
-  }
-
-  /**
-   * Constructor with all required parameters and initializes it's internal structure.
-   *
-   * @param dataset the {@link Dataset} related to the execution
-   * @param metisPlugins the list of {@link AbstractMetisPlugin} including harvest plugin for
-   * execution
-   * @param workflowPriority the positive number of the priority of the execution
-   */
-  public WorkflowExecution(Dataset dataset, List<? extends AbstractMetisPlugin> metisPlugins,
-      int workflowPriority) {
-    this.datasetId = dataset.getDatasetId();
-    this.ecloudDatasetId = dataset.getEcloudDatasetId();
-    this.workflowPriority = workflowPriority;
-    this.metisPlugins = new ArrayList<>(metisPlugins);
   }
 
   @Override
@@ -186,14 +169,10 @@ public class WorkflowExecution implements HasMongoObjectId {
   }
 
   public List<AbstractMetisPlugin> getMetisPlugins() {
-    return metisPlugins;
+    return new ArrayList<>(metisPlugins);
   }
 
   public void setMetisPlugins(List<AbstractMetisPlugin> metisPlugins) {
-    if(metisPlugins != null) {
-      this.metisPlugins = new ArrayList<>(metisPlugins);
-    } else {
-      this.metisPlugins = null;
-    }
+    this.metisPlugins = metisPlugins == null ? new ArrayList<>() : new ArrayList<>(metisPlugins);
   }
 }

@@ -79,8 +79,12 @@ public class WorkflowExecutionFactory {
       workflowPlugins.getFirst().getPluginMetadata().setPreviousRevisionInformation(predecessor.getPlugin());
     }
 
-    // Done: create workflow with all the information.
-    return new WorkflowExecution(dataset, workflowPlugins, priority);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(priority);
+    workflowExecution.setMetisPlugins(new ArrayList<>(workflowPlugins));
+    return workflowExecution;
   }
 
   private AbstractExecutablePlugin<?> createWorkflowExecutionPlugin(Dataset dataset,

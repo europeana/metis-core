@@ -109,7 +109,11 @@ public class TestObjectFactory {
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, abstractMetisPlugins, 0);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(0);
+    workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
@@ -117,8 +121,12 @@ public class TestObjectFactory {
     return workflowExecution;
   }
 
-  private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+  public static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(0);
+    workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
 
