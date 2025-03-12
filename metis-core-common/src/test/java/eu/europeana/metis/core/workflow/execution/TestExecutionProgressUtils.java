@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.execution;
 
 import eu.europeana.cloud.common.model.dps.TaskState;
+import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 
 public class TestExecutionProgressUtils {
 
@@ -32,6 +33,18 @@ public class TestExecutionProgressUtils {
     executionProgressDTO.setStatus(STATUS_VALUE);
     executionProgressDTO.setTotalDatabaseRecords(TOTAL_DATABASE_RECORDS_VALUE);
     return executionProgressDTO;
+  }
 
+  public static ExecutionProgress getExecutionProgressUsingSetters() {
+    ExecutionProgress executionProgress = new ExecutionProgress();
+    executionProgress.setExpectedRecords(EXPECTED_RECORDS_VALUE);
+    executionProgress.setProcessedRecords(PROCESSED_RECORDS_VALUE);
+    executionProgress.setProgressPercentage(PROGRESS_PERCENTAGE_VALUE);
+    executionProgress.setIgnoredRecords(IGNORED_RECORDS_VALUE);
+    executionProgress.setDeletedRecords(DELETED_RECORDS_VALUE);
+    executionProgress.setErrors(ERRORS_VALUE);
+    executionProgress.setStatus(STATUS_VALUE);
+    executionProgress.setTotalDatabaseRecords(TOTAL_DATABASE_RECORDS_VALUE);
+    return executionProgress;
   }
 }
