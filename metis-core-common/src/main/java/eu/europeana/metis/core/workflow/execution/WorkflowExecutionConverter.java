@@ -14,9 +14,11 @@ import java.util.Set;
 import org.bson.types.ObjectId;
 
 /**
- * This class is responsible for converting WorkflowExecution objects to WorkflowExecutionDTO objects.
- * It provides a method to perform the conversion, taking into account the workflow's possibility to be incremental,
- * the display of raw XML for each plugin, and the users who started and cancelled the workflow.
+ * A utility class that provides methods for converting {@link WorkflowExecution} into {@link WorkflowExecutionDTO}.
+ *
+ * <p>This class is designed to act as a translator between the domain model
+ * and the Data Transfer Object (DTO) for ExecutionProgress, ensuring separation of concerns and easing data transfer between
+ * layers.
  */
 public final class WorkflowExecutionConverter {
 

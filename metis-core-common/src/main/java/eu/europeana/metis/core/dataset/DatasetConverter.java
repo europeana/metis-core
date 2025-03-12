@@ -5,8 +5,11 @@ import java.util.Optional;
 import org.bson.types.ObjectId;
 
 /**
- * A utility class that provides methods for converting between Dataset and DatasetDTO objects.
- * It contains static methods for converting a DatasetDTO to a Dataset and vice versa.
+ * A utility class that provides methods for converting {@link Dataset} into {@link DatasetDTO}.
+ *
+ * <p>This class is designed to act as a translator between the domain model
+ * and the Data Transfer Object (DTO) for ExecutionProgress, ensuring separation of concerns and easing data transfer between
+ * layers.
  */
 public final class DatasetConverter {
 

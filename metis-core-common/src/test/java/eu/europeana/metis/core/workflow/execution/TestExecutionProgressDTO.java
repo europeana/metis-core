@@ -81,5 +81,4 @@ class TestExecutionProgressDTO {
     TestSerializationUtils.assertFieldEquals(jsonNode, STATUS, STATUS_VALUE.name());
     TestSerializationUtils.assertFieldEquals(jsonNode, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
   }
-
 }
