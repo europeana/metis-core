@@ -29,6 +29,7 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
+import eu.europeana.metis.core.workflow.execution.PluginDTO;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.user.User;
@@ -43,9 +44,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.DepublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
-import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -96,8 +95,6 @@ public class OrchestratorService {
       .immutableEnumSet(PluginType.PREVIEW, PluginType.REINDEX_TO_PREVIEW);
   public static final Set<PluginType> PUBLISH_TYPES = Sets
       .immutableEnumSet(PluginType.PUBLISH, PluginType.REINDEX_TO_PUBLISH);
-  public static final Set<ExecutablePluginType> NO_XML_PREVIEW_TYPES = Sets
-      .immutableEnumSet(ExecutablePluginType.LINK_CHECKING, ExecutablePluginType.DEPUBLISH);
 
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowValidationUtils workflowValidationUtils;
@@ -262,7 +259,7 @@ public class OrchestratorService {
       cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
     }
     return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
-        OrchestratorService::canDisplayRawXml, startedUser, cancelledUser);
+        startedUser, cancelledUser);
   }
 
   /**
@@ -357,7 +354,7 @@ public class OrchestratorService {
     WorkflowExecution workflowExecution = addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided,
         enforcedPredecessorType, priority, userId);
     return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
-        OrchestratorService::canDisplayRawXml, userService.getUserFromCache(userId), null);
+        userService.getUserFromCache(userId), null);
   }
 
   private WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(Dataset dataset,
@@ -531,8 +528,7 @@ public class OrchestratorService {
         {
           User startedUser = userService.getUserFromCache(execution.getStartedBy());
           User cancelledUser = userService.getUserFromCache(execution.getCancelledBy());
-          return WorkflowExecutionConverter.toDTO(execution, isIncremental(execution),
-              OrchestratorService::canDisplayRawXml, startedUser, cancelledUser);
+          return WorkflowExecutionConverter.toDTO(execution, isIncremental(execution), startedUser, cancelledUser);
         }).toList();
 
     final ResponseListWrapper<WorkflowExecutionDTO> result = new ResponseListWrapper<>();
@@ -847,10 +843,20 @@ public class OrchestratorService {
         .getAllWorkflowExecutions(Set.of(datasetId), null, DaoFieldNames.STARTED_DATE, false, 0,
             null, false);
 
+    List<WorkflowExecutionDTO> workflowExecutionDTOList =
+        allExecutions.results().stream()
+                     .map(workflowExecution ->{
+                       User startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
+                       User cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
+                       return WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser, cancelledUser);
+                     })
+                     .toList();
+
     // Filter the executions.
-    final List<Execution> executions = allExecutions.results().stream().filter(
-                                                        entry -> entry.getMetisPlugins().stream().anyMatch(OrchestratorService::canDisplayRawXml))
-                                                    .map(OrchestratorService::convert).toList();
+    final List<Execution> executions = workflowExecutionDTOList.stream().filter(
+                                                                   entry -> entry.getMetisPlugins().stream().anyMatch(
+                                                                       PluginDTO::isCanDisplayRawXml))
+                                                               .map(OrchestratorService::convert).toList();
 
     // Done
     final ExecutionHistory result = new ExecutionHistory();
@@ -858,10 +864,10 @@ public class OrchestratorService {
     return result;
   }
 
-  private static Execution convert(WorkflowExecution execution) {
+  private static Execution convert(WorkflowExecutionDTO workflowExecutionDTO) {
     final Execution result = new Execution();
-    result.setWorkflowExecutionId(execution.getId().toString());
-    result.setStartedDate(execution.getStartedDate());
+    result.setWorkflowExecutionId(workflowExecutionDTO.getId());
+    result.setStartedDate(workflowExecutionDTO.getStartedDate());
     return result;
   }
 
@@ -879,17 +885,20 @@ public class OrchestratorService {
   public PluginsWithDataAvailability getExecutablePluginsWithDataAvailability(String executionId) throws GenericMetisException {
 
     // Get the execution and do the authorization check.
-    final WorkflowExecution execution = getWorkflowExecutionByExecutionId(executionId);
-    if (execution == null) {
+    final WorkflowExecution workflowExecution = getWorkflowExecutionByExecutionId(executionId);
+    if (workflowExecution == null) {
       throw new NoWorkflowExecutionFoundException(
           String.format("No workflow execution found for workflowExecutionId: %s", executionId));
     }
 
+    User startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
+    User cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
+    WorkflowExecutionDTO workflowExecutionDTO =
+        WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser, cancelledUser);
+
     // Compile the result.
-    final List<PluginWithDataAvailability> plugins = execution.getMetisPlugins().stream()
-                                                              .filter(OrchestratorService::canDisplayRawXml).map(
-            OrchestratorService::convert)
-                                                              .toList();
+    final List<PluginWithDataAvailability> plugins = workflowExecutionDTO.getMetisPlugins().stream()
+        .filter(PluginDTO::isCanDisplayRawXml).map(OrchestratorService::convert).toList();
     final PluginsWithDataAvailability result = new PluginsWithDataAvailability();
     result.setPlugins(plugins);
 
@@ -897,36 +906,10 @@ public class OrchestratorService {
     return result;
   }
 
-  private static PluginWithDataAvailability convert(MetisPlugin plugin) {
+  private static PluginWithDataAvailability convert(PluginDTO plugin) {
     final PluginWithDataAvailability result = new PluginWithDataAvailability();
-    result.setCanDisplayRawXml(true); // If this method is called, it is known that it can display.
+    result.setCanDisplayRawXml(plugin.isCanDisplayRawXml()); // If this method is called, it is known that it can display.
     result.setPluginType(plugin.getPluginType());
-    return result;
-  }
-
-  /**
-   * Checks if a plugin can display raw XML data.
-   * <p>
-   * This method checks if the plugin's data is valid, if it has a blacklisted type, and if its execution progress is valid.
-   *
-   * @param plugin the plugin to check
-   * @return true if the plugin can display raw XML data, false otherwise
-   */
-  public static boolean canDisplayRawXml(MetisPlugin plugin) {
-    final boolean result;
-    if (plugin instanceof ExecutablePlugin executablePlugin) {
-      final boolean dataIsValid =
-          MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID;
-      final ExecutionProgress progress = executablePlugin.getExecutionProgress();
-      final boolean pluginHasBlacklistedType = Optional.of(executablePlugin)
-                                                       .map(ExecutablePlugin::getPluginMetadata)
-                                                       .map(ExecutablePluginMetadata::getExecutablePluginType)
-                                                       .map(NO_XML_PREVIEW_TYPES::contains).orElse(Boolean.TRUE);
-      result = dataIsValid && !pluginHasBlacklistedType && progress != null
-          && progress.getProcessedRecords() > progress.getErrors();
-    } else {
-      result = false;
-    }
     return result;
   }
 

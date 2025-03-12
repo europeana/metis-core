@@ -831,6 +831,7 @@ class TestOrchestratorService {
 
     // Create plugins
     final AbstractExecutablePlugin plugin1 = mock(AbstractExecutablePlugin.class);
+    when(plugin1.getFinishedDate()).thenReturn(new Date());
     when(plugin1.getPluginType()).thenReturn(PluginType.OAIPMH_HARVEST);
     when(plugin1.getPluginMetadata()).thenReturn(new HTTPHarvestPluginMetadata());
     final ExecutionProgress progress1 = getExecutionProgress(10, 1);
@@ -844,10 +845,17 @@ class TestOrchestratorService {
     when(plugin2.getExecutionProgress()).thenReturn(progress2);
     final AbstractExecutablePlugin plugin3 = mock(AbstractExecutablePlugin.class);
     when(plugin3.getPluginType()).thenReturn(PluginType.MEDIA_PROCESS);
-    when(plugin2.getPluginMetadata()).thenReturn(new MediaProcessPluginMetadata());
-    when(plugin3.getExecutionProgress()).thenReturn(null);
+    MediaProcessPluginMetadata mediaProcessPluginMetadata = new MediaProcessPluginMetadata();
+    mediaProcessPluginMetadata.setRevisionNamePreviousPlugin(plugin1.getPluginType().name());
+    mediaProcessPluginMetadata.setRevisionTimestampPreviousPlugin(plugin1.getFinishedDate());
+    when(plugin3.getPluginMetadata()).thenReturn(mediaProcessPluginMetadata);
+    when(plugin3.getExecutionProgress()).thenReturn(getExecutionProgress(0, 0));
     final ReindexToPreviewPlugin plugin4 = mock(ReindexToPreviewPlugin.class);
     when(plugin4.getPluginType()).thenReturn(PluginType.REINDEX_TO_PUBLISH);
+    ReindexToPreviewPluginMetadata reindexToPreviewPluginMetadata = new ReindexToPreviewPluginMetadata();
+    reindexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(plugin3.getId());
+    reindexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(plugin3.getFinishedDate());
+    when(plugin4.getPluginMetadata()).thenReturn(new ReindexToPreviewPluginMetadata());
     when(plugin4.getFinishedDate()).thenReturn(new Date(4));
 
     // Create other objects
@@ -859,16 +867,18 @@ class TestOrchestratorService {
     final WorkflowExecution execution3 = createWorkflowExecution(datasetId, plugin4);
 
     // Mock the dao and call the method.
+    when(workflowExecutionDao.getByTaskExecution(any(), any())).thenReturn(execution1);
     doReturn(new ResultList<>(List.of(execution1, execution2, execution3), false))
         .when(workflowExecutionDao).getAllWorkflowExecutions(any(), any(), any(), anyBoolean(),
             anyInt(), any(), anyBoolean());
     final ExecutionHistory result = orchestratorService.getDatasetExecutionHistory(datasetId);
 
     // Verify the interactions
-
     verify(workflowExecutionDao, times(1)).getAllWorkflowExecutions(
         eq(Collections.singleton(datasetId)), isNull(), eq(DaoFieldNames.STARTED_DATE), eq(false),
         eq(0), isNull(), eq(false));
+    verify(workflowExecutionDao, times(2)).getById(anyString());
+    verify(workflowExecutionDao, times(1)).getByTaskExecution(any(), any());
     verifyNoMoreInteractions(workflowExecutionDao);
 
     // Verify the result
@@ -896,8 +906,8 @@ class TestOrchestratorService {
     when(plugin2.getExecutionProgress()).thenReturn(progress2);
     final AbstractExecutablePlugin plugin3 = mock(AbstractExecutablePlugin.class);
     when(plugin3.getPluginType()).thenReturn(PluginType.MEDIA_PROCESS);
-    when(plugin2.getPluginMetadata()).thenReturn(new MediaProcessPluginMetadata());
-    when(plugin3.getExecutionProgress()).thenReturn(null);
+    when(plugin3.getPluginMetadata()).thenReturn(new MediaProcessPluginMetadata());
+    when(plugin3.getExecutionProgress()).thenReturn(getExecutionProgress(0, 0));
     final ReindexToPreviewPlugin plugin4 = mock(ReindexToPreviewPlugin.class);
     when(plugin4.getPluginType()).thenReturn(PluginType.REINDEX_TO_PUBLISH);
     when(plugin4.getFinishedDate()).thenReturn(new Date(4));

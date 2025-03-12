@@ -6,12 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.Objects;
-import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
@@ -30,8 +25,11 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS;
+import static eu.europeana.metis.core.common.TestSerializationUtils.assertFieldEquals;
+import static eu.europeana.metis.core.common.TestSerializationUtils.assertNestedFieldInArrayEquals;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.createdDate;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.finishedDate;
+import static eu.europeana.metis.core.common.TestSerializationUtils.formatAsUTC;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionUsingSetters;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionUsingSettersWithNullValues;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.id;
@@ -128,26 +126,4 @@ class TestWorkflowExecution {
     assertTrue(workflowExecution.getMetisPlugins().stream().anyMatch(plugin -> plugin.getPluginType() == PLUGIN_TYPE_1_VALUE));
     assertTrue(workflowExecution.getMetisPlugins().stream().anyMatch(plugin -> plugin.getPluginType() == PLUGIN_TYPE_2_VALUE));
   }
-
-  static void assertFieldEquals(JsonNode jsonNode, String fieldName, String expectedValue) {
-    assertEquals(expectedValue, jsonNode.get(fieldName).asText());
-  }
-
-  static void assertNestedFieldInArrayEquals(JsonNode jsonNode, String parentField, String nestedField, String expectedValue) {
-    JsonNode parentArray = jsonNode.get(parentField);
-    List<String> nestedValues = new ArrayList<>();
-    for (JsonNode arrayElement : parentArray) {
-      if (arrayElement.has(nestedField)) {
-        nestedValues.add(arrayElement.get(nestedField).asText());
-      }
-    }
-    assertTrue(nestedValues.contains(expectedValue));
-  }
-
-  static String formatAsUTC(Date date) {
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return simpleDateFormat.format(date);
-  }
-
 }

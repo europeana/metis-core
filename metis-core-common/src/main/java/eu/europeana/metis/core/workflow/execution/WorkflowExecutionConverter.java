@@ -1,10 +1,16 @@
 package eu.europeana.metis.core.workflow.execution;
 
+import com.google.common.collect.Sets;
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import eu.europeana.metis.core.workflow.plugins.DataStatus;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
+import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.Set;
 import org.bson.types.ObjectId;
 
 /**
@@ -13,6 +19,9 @@ import org.bson.types.ObjectId;
  * the display of raw XML for each plugin, and the users who started and cancelled the workflow.
  */
 public final class WorkflowExecutionConverter {
+
+  public static final Set<ExecutablePluginType> NO_XML_PREVIEW_TYPES = Sets
+      .immutableEnumSet(ExecutablePluginType.LINK_CHECKING, ExecutablePluginType.DEPUBLISH);
 
   private WorkflowExecutionConverter() {
   }
@@ -26,13 +35,12 @@ public final class WorkflowExecutionConverter {
    *
    * @param workflowExecution the WorkflowExecution object to convert
    * @param isIncremental whether the workflow is incremental
-   * @param canDisplayRawXml a predicate to determine if raw XML can be displayed for each plugin
    * @param userStarted the user who started the workflow
    * @param userCancelled the user who cancelled the workflow
    * @return the converted WorkflowExecutionDTO object, or null if the input WorkflowExecution is null
    */
   public static WorkflowExecutionDTO toDTO(WorkflowExecution workflowExecution, boolean isIncremental,
-      Predicate<AbstractMetisPlugin<?>> canDisplayRawXml, User userStarted, User userCancelled) {
+      User userStarted, User userCancelled) {
     if (workflowExecution == null) {
       return null;
     }
@@ -52,7 +60,7 @@ public final class WorkflowExecutionConverter {
     workflowExecutionDTO.setFinishedDate(workflowExecution.getFinishedDate());
     workflowExecutionDTO.setIncremental(isIncremental);
     workflowExecutionDTO.setMetisPlugins(workflowExecution.getMetisPlugins().stream()
-                                                          .map(plugin -> new PluginDTO(plugin, canDisplayRawXml.test(plugin)))
+                                                          .map(plugin -> new PluginDTO(plugin, canDisplayRawXml(plugin)))
                                                           .toList());
 
     if (userStarted != null) {
@@ -69,5 +77,31 @@ public final class WorkflowExecutionConverter {
 
     return workflowExecutionDTO;
 
+  }
+
+  /**
+   * Checks if a plugin can display raw XML data.
+   * <p>
+   * This method checks if the plugin's data is valid, if it has a blacklisted type, and if its execution progress is valid.
+   *
+   * @param plugin the plugin to check
+   * @return true if the plugin can display raw XML data, false otherwise
+   */
+  public static boolean canDisplayRawXml(MetisPlugin plugin) {
+    final boolean result;
+    if (plugin instanceof ExecutablePlugin executablePlugin) {
+      final boolean dataIsValid =
+          MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID;
+      final ExecutionProgress progress = executablePlugin.getExecutionProgress();
+      final boolean pluginHasBlacklistedType = Optional.of(executablePlugin)
+                                                       .map(ExecutablePlugin::getPluginMetadata)
+                                                       .map(ExecutablePluginMetadata::getExecutablePluginType)
+                                                       .map(NO_XML_PREVIEW_TYPES::contains).orElse(Boolean.TRUE);
+      result = dataIsValid && !pluginHasBlacklistedType && progress != null
+          && progress.getProcessedRecords() > progress.getErrors();
+    } else {
+      result = false;
+    }
+    return result;
   }
 }

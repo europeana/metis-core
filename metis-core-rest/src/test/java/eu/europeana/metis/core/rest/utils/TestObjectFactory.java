@@ -13,7 +13,6 @@ import eu.europeana.metis.core.dataset.DatasetConverter;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
-import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
@@ -105,7 +104,7 @@ public class TestObjectFactory {
     workflowExecutionDTO.setWorkflowPriority(0);
     workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
                                                              .map(plugin -> new PluginDTO(plugin,
-                                                                 OrchestratorService.canDisplayRawXml(plugin)))
+                                                                 WorkflowExecutionConverter.canDisplayRawXml(plugin)))
                                                              .toList());
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecutionDTO.setCreatedDate(new Date());
@@ -135,7 +134,7 @@ public class TestObjectFactory {
     return createExecutionsWithDatasets(size).stream().map(ExecutionDatasetPair::getExecution)
                                              .map(execution ->
                                                  WorkflowExecutionConverter.toDTO(execution, false,
-                                                     OrchestratorService::canDisplayRawXml, null, null))
+                                                     null, null))
                                              .toList();
   }
 

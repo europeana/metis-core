@@ -3,6 +3,7 @@ package eu.europeana.metis.core.dataset;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.Language;
+import eu.europeana.metis.core.common.TestSerializationUtils;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
 import java.io.File;
@@ -57,29 +58,29 @@ class TestDataset {
   }
 
   private void assertDataset(JsonNode jsonNode) {
-    assertFieldEquals(jsonNode, ID, id.toString());
-    assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
-    assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
-    assertFieldEquals(jsonNode, DATASET_NAME, DATASET_NAME);
-    assertFieldEquals(jsonNode, ORGANIZATION_ID, ORGANIZATION_ID);
-    assertFieldEquals(jsonNode, ORGANIZATION_NAME, ORGANIZATION_NAME);
-    assertFieldEquals(jsonNode, PROVIDER, PROVIDER);
-    assertFieldEquals(jsonNode, DATA_PROVIDER, DATA_PROVIDER);
-    assertFieldEquals(jsonNode, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
-    assertFieldEquals(jsonNode, CREATED_BY_USER_ID, CREATED_BY_USER_ID);
-    String expectedCreatedDate = formatAsUTC(createdDate);
-    String expectedUpdatedDate = formatAsUTC(updatedDate);
-    assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
-    assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
-    assertListContains(jsonNode.get(DATASET_IDS_TO_REDIRECT_FROM), REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE);
-    assertFieldEquals(jsonNode, REPLACED_BY, REPLACED_BY);
-    assertFieldEquals(jsonNode, REPLACES, REPLACES);
-    assertNestedFieldEquals(jsonNode, COUNTRY, COUNTRY_ENUM, Country.GREECE.name());
-    assertNestedFieldEquals(jsonNode, LANGUAGE, LANGUAGE_ENUM, Language.EL.name());
-    assertFieldEquals(jsonNode, DESCRIPTION, DESCRIPTION);
-    assertFieldEquals(jsonNode, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
-    assertFieldEquals(jsonNode, NOTES, NOTES);
-    assertFieldEquals(jsonNode, XSLT_ID, xsltId.toString());
+    TestSerializationUtils.assertFieldEquals(jsonNode, ID, id.toString());
+    TestSerializationUtils.assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    TestSerializationUtils.assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
+    TestSerializationUtils.assertFieldEquals(jsonNode, DATASET_NAME, DATASET_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonNode, ORGANIZATION_ID, ORGANIZATION_ID);
+    TestSerializationUtils.assertFieldEquals(jsonNode, ORGANIZATION_NAME, ORGANIZATION_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonNode, PROVIDER, PROVIDER);
+    TestSerializationUtils.assertFieldEquals(jsonNode, DATA_PROVIDER, DATA_PROVIDER);
+    TestSerializationUtils.assertFieldEquals(jsonNode, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
+    TestSerializationUtils.assertFieldEquals(jsonNode, CREATED_BY_USER_ID, CREATED_BY_USER_ID);
+    String expectedCreatedDate = TestSerializationUtils.formatAsUTC(createdDate);
+    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(updatedDate);
+    TestSerializationUtils.assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
+    TestSerializationUtils.assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
+    TestSerializationUtils.assertListContains(jsonNode.get(DATASET_IDS_TO_REDIRECT_FROM), REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonNode, REPLACED_BY, REPLACED_BY);
+    TestSerializationUtils.assertFieldEquals(jsonNode, REPLACES, REPLACES);
+    TestSerializationUtils.assertNestedFieldEquals(jsonNode, COUNTRY, COUNTRY_ENUM, Country.GREECE.name());
+    TestSerializationUtils.assertNestedFieldEquals(jsonNode, LANGUAGE, LANGUAGE_ENUM, Language.EL.name());
+    TestSerializationUtils.assertFieldEquals(jsonNode, DESCRIPTION, DESCRIPTION);
+    TestSerializationUtils.assertFieldEquals(jsonNode, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
+    TestSerializationUtils.assertFieldEquals(jsonNode, NOTES, NOTES);
+    TestSerializationUtils.assertFieldEquals(jsonNode, XSLT_ID, xsltId.toString());
   }
 
 

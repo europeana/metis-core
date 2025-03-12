@@ -3,6 +3,7 @@ package eu.europeana.metis.core.workflow.execution;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
+import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -98,7 +99,11 @@ public class TestWorkflowExecutionUtils {
     workflowExecution.setUpdatedDate(updatedDate);
     workflowExecution.setFinishedDate(finishedDate);
     AbstractExecutablePlugin<?> plugin1 = ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
+    plugin1.setDataStatus(DataStatus.VALID);
+    plugin1.getExecutionProgress().setProcessedRecords(1);
     AbstractExecutablePlugin<?> plugin2 = ExecutablePluginFactory.createPlugin(new ValidationExternalPluginMetadata());
+    plugin2.setDataStatus(DataStatus.VALID);
+    plugin2.getExecutionProgress().setProcessedRecords(1);
     workflowExecution.setMetisPlugins(List.of(plugin1, plugin2));
     return workflowExecution;
   }

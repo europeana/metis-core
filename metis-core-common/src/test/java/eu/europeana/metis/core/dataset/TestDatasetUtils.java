@@ -1,18 +1,12 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
-import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.Assertions;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestDatasetUtils {
 
@@ -178,25 +172,5 @@ public class TestDatasetUtils {
     dataset.setUpdatedDate(null);
     dataset.setDatasetIdsToRedirectFrom(null);
     return dataset;
-  }
-
-  static void assertFieldEquals(JsonNode jsonNode, String fieldName, String expectedValue) {
-    assertEquals(expectedValue, jsonNode.get(fieldName).asText());
-  }
-
-  static void assertNestedFieldEquals(JsonNode jsonNode, String parentField, String nestedField, String expectedValue) {
-    assertEquals(expectedValue, jsonNode.get(parentField).get(nestedField).asText());
-  }
-
-  static void assertListContains(JsonNode jsonNode, String... expectedValues) {
-    for (String value : expectedValues) {
-      Assertions.assertTrue(jsonNode.toString().contains(value));
-    }
-  }
-
-  static String formatAsUTC(Date date) {
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return simpleDateFormat.format(date);
   }
 }
