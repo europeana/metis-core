@@ -16,6 +16,10 @@ public class TestSerializationUtils {
     assertEquals(expectedValue, jsonNode.get(fieldName).asText());
   }
 
+  public static void assertFieldEquals(JsonNode jsonNode, String fieldName, int expectedValue) {
+    assertEquals(expectedValue, jsonNode.get(fieldName).asInt());
+  }
+
   public static void assertNestedFieldEquals(JsonNode jsonNode, String parentField, String nestedField, String expectedValue) {
     assertEquals(expectedValue, jsonNode.get(parentField).get(nestedField).asText());
   }

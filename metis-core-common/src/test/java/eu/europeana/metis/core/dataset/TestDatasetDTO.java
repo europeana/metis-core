@@ -84,6 +84,17 @@ class TestDatasetDTO {
   }
 
   @Test
+  void testSerialization() throws IOException {
+    DatasetDTO datasetDTO = getDatasetDTO();
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonOutput = objectMapper.writeValueAsString(datasetDTO);
+    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
+
+    assertDatasetDTO(jsonNode);
+  }
+
+  @Test
   void testDeserialization() throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
     URL resource = getClass().getClassLoader().getResource("datasetDTO.json");
@@ -93,17 +104,6 @@ class TestDatasetDTO {
 
     assertNotNull(deserializedDatasetDTO);
     assertDatasetDTO(deserializedDatasetDTO);
-  }
-
-  @Test
-  void testSerialization() throws IOException {
-    DatasetDTO datasetDTO = getDatasetDTO();
-
-    ObjectMapper objectMapper = new ObjectMapper();
-    String jsonOutput = objectMapper.writeValueAsString(datasetDTO);
-    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
-
-    assertDatasetDTO(jsonNode);
   }
 
   private void assertDatasetDTO(JsonNode jsonNode) {

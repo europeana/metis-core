@@ -5,9 +5,6 @@ import eu.europeana.cloud.common.model.dps.TaskState;
 
 /**
  * Contains execution progress information of a task.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-06-01
  */
 @Entity
 public class ExecutionProgress {

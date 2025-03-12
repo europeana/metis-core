@@ -27,7 +27,7 @@ public class PluginDTO {
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date finishedDate;
   private String externalTaskId;
-  private PluginProgressDTO executionProgress;
+  private ExecutionProgressDTO executionProgress;
   private String topologyName;
   private boolean canDisplayRawXml;
   private MetisPluginMetadata pluginMetadata;
@@ -53,7 +53,7 @@ public class PluginDTO {
     if (plugin instanceof AbstractExecutablePlugin) {
       this.updatedDate = ((AbstractExecutablePlugin<?>) plugin).getUpdatedDate();
       this.externalTaskId = ((AbstractExecutablePlugin<?>) plugin).getExternalTaskId();
-      this.executionProgress = new PluginProgressDTO(((AbstractExecutablePlugin<?>) plugin).getExecutionProgress());
+      this.executionProgress = ExecutionProgressConverter.toDTO(((AbstractExecutablePlugin<?>) plugin).getExecutionProgress());
       this.topologyName = ((AbstractExecutablePlugin<?>) plugin).getTopologyName();
       this.pluginMetadata = ((AbstractExecutablePlugin<?>) plugin).getPluginMetadata();
     } else {
@@ -101,7 +101,7 @@ public class PluginDTO {
     return externalTaskId;
   }
 
-  public PluginProgressDTO getExecutionProgress() {
+  public ExecutionProgressDTO getExecutionProgress() {
     return executionProgress;
   }
 

@@ -66,6 +66,17 @@ class TestWorkflowExecutionDTO {
   }
 
   @Test
+  void testSerialization() throws IOException {
+    WorkflowExecutionDTO workflowExecutionDTO = getWorkflowExecutionDTOUsingSetters();
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonOutput = objectMapper.writeValueAsString(workflowExecutionDTO);
+    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
+
+    assertWorkflowExecutionDTO(jsonNode);
+  }
+
+  @Test
   void testDeserialization() throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
     //TODO: 2025-03-11 - This is configured because some fields that can be serialized cannot be deserialized(see field
@@ -81,17 +92,6 @@ class TestWorkflowExecutionDTO {
 
     assertNotNull(deserializedWorkflowExecutionDTO);
     assertWorkflowExecutionDTO(deserializedWorkflowExecutionDTO);
-  }
-
-  @Test
-  void testSerialization() throws IOException {
-    WorkflowExecutionDTO workflowExecutionDTO = getWorkflowExecutionDTOUsingSetters();
-
-    ObjectMapper objectMapper = new ObjectMapper();
-    String jsonOutput = objectMapper.writeValueAsString(workflowExecutionDTO);
-    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
-
-    assertWorkflowExecutionDTO(jsonNode);
   }
 
   private void assertWorkflowExecutionDTO(JsonNode jsonNode) {
