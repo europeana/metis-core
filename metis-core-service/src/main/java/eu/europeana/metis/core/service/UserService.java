@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class UserService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final ConcurrentHashMap<String, User> userCache = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<String, User> USER_CACHE = new ConcurrentHashMap<>();
   private final Keycloak keycloak;
   private final String realm;
 
@@ -49,10 +49,11 @@ public class UserService {
       return null;
     }
 
-    User user = userCache.get(userId);
+    User user = USER_CACHE.get(userId);
     if (user == null) {
       User keycloakUserInformation = getKeycloakUserInformationOrDefault(userId);
-      user = userCache.put(keycloakUserInformation.getUserId(), keycloakUserInformation);
+      USER_CACHE.put(keycloakUserInformation.getUserId(), keycloakUserInformation);
+      user = USER_CACHE.get(userId);
     }
     return user;
   }
@@ -62,7 +63,7 @@ public class UserService {
    * removing all stored user information.
    */
   public void clearCache() {
-    userCache.clear();
+    USER_CACHE.clear();
   }
 
   /**
@@ -70,8 +71,8 @@ public class UserService {
    *
    * @param user the user to insert into the cache
    */
-  public void insertToInMemoryCache(User user) {
-    userCache.computeIfPresent(user.getUserId(), (key, cachedUser) ->
+  public void insertToInMemoryCacheIfExists(User user) {
+    USER_CACHE.computeIfPresent(user.getUserId(), (key, cachedUser) ->
         (user.getIssuedAt().isAfter(cachedUser.getIssuedAt())) ? user : cachedUser
     );
   }
@@ -83,7 +84,7 @@ public class UserService {
    * @param userId the ID of the user in Keycloak
    * @return an Optional containing the User object if the user information is found, or an empty Optional if not found
    */
-  public User getKeycloakUserInformationOrDefault(String userId) {
+  private User getKeycloakUserInformationOrDefault(String userId) {
     UserRepresentation userRepresentation = null;
     try {
       userRepresentation = keycloak.realm(realm).users().get(userId).toRepresentation();
@@ -106,4 +107,6 @@ public class UserService {
     }
     return userBuilder.build();
   }
+
+
 }

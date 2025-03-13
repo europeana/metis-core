@@ -77,7 +77,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
                     .requestMatchers("/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
                     .anyRequest().denyAll())
-                .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCache), BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCacheIfExists), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
                     .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
                     )
