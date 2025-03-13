@@ -13,6 +13,10 @@ class TestExecutionProgressConverter {
     ExecutionProgress executionProgress = getExecutionProgressUsingSetters();
     ExecutionProgressDTO executionProgressDTO = ExecutionProgressConverter.toDTO(executionProgress);
 
+    assertExecutionProgressEquals(executionProgress, executionProgressDTO);
+  }
+
+  static void assertExecutionProgressEquals(ExecutionProgress executionProgress, ExecutionProgressDTO executionProgressDTO) {
     assertEquals(executionProgress.getExpectedRecords(), executionProgressDTO.getExpectedRecords());
     assertEquals(executionProgress.getProcessedRecords(), executionProgressDTO.getProcessedRecords());
     assertEquals(executionProgress.getProgressPercentage(), executionProgressDTO.getProgressPercentage());

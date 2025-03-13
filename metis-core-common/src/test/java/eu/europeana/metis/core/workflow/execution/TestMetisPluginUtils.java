@@ -1,13 +1,16 @@
 package eu.europeana.metis.core.workflow.execution;
 
+import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
-import eu.europeana.metis.core.workflow.plugins.MetisPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import org.bson.types.ObjectId;
+
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
 
 public class TestMetisPluginUtils {
 
@@ -39,7 +42,7 @@ public class TestMetisPluginUtils {
   public static final String EXTERNAL_TASK_ID_VALUE = "externalTaskId";
   public static final ExecutionProgressDTO EXECUTION_PROGRESS_DTO_VALUE = TestExecutionProgressUtils.getExecutionProgressDTOUsingSetters();
   public static final String TOPOLOGY_NAME_VALUE = "topologyName";
-  public static final MetisPluginMetadata METIS_PLUGIN_METADATA_VALUE = new OaipmhHarvestPluginMetadata();
+  public static final OaipmhHarvestPluginMetadata METIS_PLUGIN_METADATA_VALUE = new OaipmhHarvestPluginMetadata();
 
   static MetisPluginDTO getMetisPluginDTOUsingSetters() {
     MetisPluginDTO metisPluginDTO = new MetisPluginDTO();
@@ -66,5 +69,20 @@ public class TestMetisPluginUtils {
     metisPluginDTO.setUpdatedDate(null);
     metisPluginDTO.setFinishedDate(null);
     return metisPluginDTO;
+  }
+
+  public static AbstractExecutablePlugin<?> getAbstractMetisPluginUsingSetters() {
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = new OaipmhHarvestPlugin();
+    oaipmhHarvestPlugin.setId(OBJECT_ID_VALUE.toString());
+    oaipmhHarvestPlugin.setPluginStatus(PLUGIN_STATUS_VALUE);
+    oaipmhHarvestPlugin.setDataStatus(DATA_TATUS_VALUE);
+    oaipmhHarvestPlugin.setFailMessage(FAIL_MESSAGE_VALUE);
+    oaipmhHarvestPlugin.setStartedDate(STARTED_DATE_VALUE);
+    oaipmhHarvestPlugin.setUpdatedDate(UPDATED_DATE_VALUE);
+    oaipmhHarvestPlugin.setFinishedDate(FINISHED_DATE_VALUE);
+    oaipmhHarvestPlugin.setExternalTaskId(EXTERNAL_TASK_ID_VALUE);
+    oaipmhHarvestPlugin.setExecutionProgress(getExecutionProgressUsingSetters());
+    oaipmhHarvestPlugin.setPluginMetadata(METIS_PLUGIN_METADATA_VALUE);
+    return oaipmhHarvestPlugin;
   }
 }

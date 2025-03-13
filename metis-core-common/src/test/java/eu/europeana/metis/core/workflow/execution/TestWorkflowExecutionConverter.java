@@ -7,7 +7,6 @@ import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPluginMetadata;
@@ -16,13 +15,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TestWorkflowExecutionConverter {
 
@@ -122,16 +120,13 @@ class TestWorkflowExecutionConverter {
   }
 
   private void assertMetisPluginsEqual(WorkflowExecution workflowExecution, WorkflowExecutionDTO workflowExecutionDTO) {
-    List<AbstractMetisPlugin> originalPlugins = workflowExecution.getMetisPlugins();
-    List<MetisPluginDTO> convertedPlugins = workflowExecutionDTO.getMetisPlugins();
+    List<AbstractMetisPlugin> abstractMetisPlugins = workflowExecution.getMetisPlugins();
+    List<MetisPluginDTO> metisPluginDTOS = workflowExecutionDTO.getMetisPlugins();
 
-    assertEquals(originalPlugins.size(), convertedPlugins.size());
+    assertEquals(abstractMetisPlugins.size(), metisPluginDTOS.size());
 
-    for (int i = 0; i < originalPlugins.size(); i++) {
-      MetisPlugin metisPlugin = originalPlugins.get(i);
-      MetisPluginDTO metisPluginDTO = convertedPlugins.get(i);
-      assertEquals(metisPlugin.getPluginType(), metisPluginDTO.getPluginType());
-      assertTrue(metisPluginDTO.isCanDisplayRawXml());
+    for (int i = 0; i < abstractMetisPlugins.size(); i++) {
+      TestMetisPluginConverter.assertMetisPluginEquals(abstractMetisPlugins.get(i), metisPluginDTOS.get(i));
     }
   }
 }
