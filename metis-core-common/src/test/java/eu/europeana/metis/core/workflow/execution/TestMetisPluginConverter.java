@@ -4,6 +4,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import org.junit.jupiter.api.Test;
 
+import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.getAbstractExecutablePluginUsingSetters;
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.getAbstractMetisPluginUsingSetters;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -11,7 +12,14 @@ class TestMetisPluginConverter {
 
   @Test
   void testToDTO() {
-    AbstractExecutablePlugin<?> abstractMetisPlugin = getAbstractMetisPluginUsingSetters();
+    AbstractExecutablePlugin<?> abstractExecutablePlugin = getAbstractExecutablePluginUsingSetters();
+    MetisPluginDTO metisPluginDTO = MetisPluginConverter.toDTO(abstractExecutablePlugin, true);
+    assertMetisPluginEquals(abstractExecutablePlugin, metisPluginDTO);
+  }
+
+  @Test
+  void testToDTO_NonExecutablePlugin() {
+    AbstractMetisPlugin<?> abstractMetisPlugin = getAbstractMetisPluginUsingSetters();
     MetisPluginDTO metisPluginDTO = MetisPluginConverter.toDTO(abstractMetisPlugin, true);
     assertMetisPluginEquals(abstractMetisPlugin, metisPluginDTO);
   }

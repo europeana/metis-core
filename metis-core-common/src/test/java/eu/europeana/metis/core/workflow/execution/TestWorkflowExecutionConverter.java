@@ -63,8 +63,7 @@ class TestWorkflowExecutionConverter {
 
   @Test
   void testToDTO_NullWorkflowExecution() {
-    WorkflowExecutionDTO workflowExecutionDTO = WorkflowExecutionConverter.toDTO(null, false, null, null);
-    assertNull(workflowExecutionDTO);
+    assertNull(WorkflowExecutionConverter.toDTO(null, false, null, null));
   }
 
   @Test

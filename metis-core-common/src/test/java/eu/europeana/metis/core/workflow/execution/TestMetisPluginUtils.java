@@ -1,11 +1,13 @@
 package eu.europeana.metis.core.workflow.execution;
 
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
+import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
+import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPlugin;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import org.bson.types.ObjectId;
@@ -71,7 +73,7 @@ public class TestMetisPluginUtils {
     return metisPluginDTO;
   }
 
-  public static AbstractExecutablePlugin<?> getAbstractMetisPluginUsingSetters() {
+  public static AbstractExecutablePlugin<?> getAbstractExecutablePluginUsingSetters() {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = new OaipmhHarvestPlugin();
     oaipmhHarvestPlugin.setId(OBJECT_ID_VALUE.toString());
     oaipmhHarvestPlugin.setPluginStatus(PLUGIN_STATUS_VALUE);
@@ -84,5 +86,17 @@ public class TestMetisPluginUtils {
     oaipmhHarvestPlugin.setExecutionProgress(getExecutionProgressUsingSetters());
     oaipmhHarvestPlugin.setPluginMetadata(METIS_PLUGIN_METADATA_VALUE);
     return oaipmhHarvestPlugin;
+  }
+
+  public static AbstractMetisPlugin<?> getAbstractMetisPluginUsingSetters() {
+    ReindexToPreviewPlugin reindexToPreviewPlugin = new ReindexToPreviewPlugin();
+    reindexToPreviewPlugin.setId(OBJECT_ID_VALUE.toString());
+    reindexToPreviewPlugin.setPluginStatus(PLUGIN_STATUS_VALUE);
+    reindexToPreviewPlugin.setDataStatus(DATA_TATUS_VALUE);
+    reindexToPreviewPlugin.setFailMessage(FAIL_MESSAGE_VALUE);
+    reindexToPreviewPlugin.setStartedDate(STARTED_DATE_VALUE);
+    reindexToPreviewPlugin.setUpdatedDate(UPDATED_DATE_VALUE);
+    reindexToPreviewPlugin.setFinishedDate(FINISHED_DATE_VALUE);
+    return reindexToPreviewPlugin;
   }
 }

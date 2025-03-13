@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class TestExecutionProgressConverter {
 
@@ -12,8 +13,12 @@ class TestExecutionProgressConverter {
   void testToDTO() {
     ExecutionProgress executionProgress = getExecutionProgressUsingSetters();
     ExecutionProgressDTO executionProgressDTO = ExecutionProgressConverter.toDTO(executionProgress);
-
     assertExecutionProgressEquals(executionProgress, executionProgressDTO);
+  }
+
+  @Test
+  void testToDTO_NullWorkflowExecution() {
+    assertNull(ExecutionProgressConverter.toDTO(null));
   }
 
   static void assertExecutionProgressEquals(ExecutionProgress executionProgress, ExecutionProgressDTO executionProgressDTO) {

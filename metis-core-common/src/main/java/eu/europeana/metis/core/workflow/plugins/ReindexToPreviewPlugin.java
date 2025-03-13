@@ -5,7 +5,7 @@ package eu.europeana.metis.core.workflow.plugins;
  */
 public class ReindexToPreviewPlugin extends AbstractMetisPlugin<ReindexToPreviewPluginMetadata> {
 
-  ReindexToPreviewPlugin() {
+  public ReindexToPreviewPlugin() {
     this(null);
   }
 

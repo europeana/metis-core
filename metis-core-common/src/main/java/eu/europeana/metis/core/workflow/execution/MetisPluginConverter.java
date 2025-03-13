@@ -34,14 +34,14 @@ public final class MetisPluginConverter {
     metisPluginDTO.setDataStatus(abstractMetisPlugin.getDataStatus());
     metisPluginDTO.setFailMessage(abstractMetisPlugin.getFailMessage());
     metisPluginDTO.setStartedDate(abstractMetisPlugin.getStartedDate());
+    metisPluginDTO.setUpdatedDate(abstractMetisPlugin.getUpdatedDate());
     metisPluginDTO.setFinishedDate(abstractMetisPlugin.getFinishedDate());
     metisPluginDTO.setCanDisplayRawXml(canDisplayRawXml);
+    metisPluginDTO.setPluginMetadata(abstractMetisPlugin.getPluginMetadata());
     if (abstractMetisPlugin instanceof AbstractExecutablePlugin<?> abstractExecutablePlugin) {
-      metisPluginDTO.setUpdatedDate(abstractExecutablePlugin.getUpdatedDate());
       metisPluginDTO.setExternalTaskId(abstractExecutablePlugin.getExternalTaskId());
       metisPluginDTO.setExecutionProgress(ExecutionProgressConverter.toDTO(abstractExecutablePlugin.getExecutionProgress()));
       metisPluginDTO.setTopologyName(abstractExecutablePlugin.getTopologyName());
-      metisPluginDTO.setPluginMetadata(abstractExecutablePlugin.getPluginMetadata());
     }
     return metisPluginDTO;
   }
