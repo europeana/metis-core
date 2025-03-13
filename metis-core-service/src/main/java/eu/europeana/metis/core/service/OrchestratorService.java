@@ -29,7 +29,7 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
-import eu.europeana.metis.core.workflow.execution.PluginDTO;
+import eu.europeana.metis.core.workflow.execution.MetisPluginDTO;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.user.User;
@@ -855,7 +855,7 @@ public class OrchestratorService {
     // Filter the executions.
     final List<Execution> executions = workflowExecutionDTOList.stream().filter(
                                                                    entry -> entry.getMetisPlugins().stream().anyMatch(
-                                                                       PluginDTO::isCanDisplayRawXml))
+                                                                       MetisPluginDTO::isCanDisplayRawXml))
                                                                .map(OrchestratorService::convert).toList();
 
     // Done
@@ -898,7 +898,7 @@ public class OrchestratorService {
 
     // Compile the result.
     final List<PluginWithDataAvailability> plugins = workflowExecutionDTO.getMetisPlugins().stream()
-        .filter(PluginDTO::isCanDisplayRawXml).map(OrchestratorService::convert).toList();
+                                                                         .filter(MetisPluginDTO::isCanDisplayRawXml).map(OrchestratorService::convert).toList();
     final PluginsWithDataAvailability result = new PluginsWithDataAvailability();
     result.setPlugins(plugins);
 
@@ -906,7 +906,7 @@ public class OrchestratorService {
     return result;
   }
 
-  private static PluginWithDataAvailability convert(PluginDTO plugin) {
+  private static PluginWithDataAvailability convert(MetisPluginDTO plugin) {
     final PluginWithDataAvailability result = new PluginWithDataAvailability();
     result.setCanDisplayRawXml(plugin.isCanDisplayRawXml()); // If this method is called, it is known that it can display.
     result.setPluginType(plugin.getPluginType());

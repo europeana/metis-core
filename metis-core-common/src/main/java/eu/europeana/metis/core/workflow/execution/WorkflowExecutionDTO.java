@@ -36,7 +36,7 @@ public class WorkflowExecutionDTO {
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date finishedDate;
   private boolean isIncremental;
-  private List<PluginDTO> metisPlugins = new ArrayList<>();
+  private List<MetisPluginDTO> metisPlugins = new ArrayList<>();
 
   public WorkflowExecutionDTO() {
     //Required for json serialization
@@ -195,11 +195,11 @@ public class WorkflowExecutionDTO {
     isIncremental = incremental;
   }
 
-  public List<PluginDTO> getMetisPlugins() {
+  public List<MetisPluginDTO> getMetisPlugins() {
     return new ArrayList<>(metisPlugins);
   }
 
-  public void setMetisPlugins(List<PluginDTO> metisPlugins) {
+  public void setMetisPlugins(List<MetisPluginDTO> metisPlugins) {
     this.metisPlugins = metisPlugins == null ? new ArrayList<>() : new ArrayList<>(metisPlugins);
   }
 }

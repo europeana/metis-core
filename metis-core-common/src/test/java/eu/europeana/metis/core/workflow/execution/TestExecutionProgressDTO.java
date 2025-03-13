@@ -60,7 +60,7 @@ class TestExecutionProgressDTO {
     assertExecutionProgressDTO(deserializedExecutionProgressDTO);
   }
 
-  private void assertExecutionProgressDTO(ExecutionProgressDTO executionProgressDTO) {
+  static void assertExecutionProgressDTO(ExecutionProgressDTO executionProgressDTO) {
     assertEquals(EXPECTED_RECORDS_VALUE, executionProgressDTO.getExpectedRecords());
     assertEquals(PROCESSED_RECORDS_VALUE, executionProgressDTO.getProcessedRecords());
     assertEquals(PROGRESS_PERCENTAGE_VALUE, executionProgressDTO.getProgressPercentage());

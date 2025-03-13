@@ -61,9 +61,10 @@ public final class WorkflowExecutionConverter {
     workflowExecutionDTO.setUpdatedDate(workflowExecution.getUpdatedDate());
     workflowExecutionDTO.setFinishedDate(workflowExecution.getFinishedDate());
     workflowExecutionDTO.setIncremental(isIncremental);
-    workflowExecutionDTO.setMetisPlugins(workflowExecution.getMetisPlugins().stream()
-                                                          .map(plugin -> new PluginDTO(plugin, canDisplayRawXml(plugin)))
-                                                          .toList());
+    workflowExecutionDTO.setMetisPlugins(
+        workflowExecution.getMetisPlugins().stream()
+                         .map(plugin -> MetisPluginConverter.toDTO(plugin, canDisplayRawXml(plugin)))
+                         .toList());
 
     if (userStarted != null) {
       workflowExecutionDTO.setStartedByUserName(userStarted.getUserName());

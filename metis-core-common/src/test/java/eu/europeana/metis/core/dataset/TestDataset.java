@@ -58,7 +58,7 @@ class TestDataset {
   }
 
   private void assertDataset(JsonNode jsonNode) {
-    TestSerializationUtils.assertFieldEquals(jsonNode, ID, id.toString());
+    TestSerializationUtils.assertFieldEquals(jsonNode, ID, OBJECT_ID_VALUE.toString());
     TestSerializationUtils.assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonNode, DATASET_NAME, DATASET_NAME);
@@ -68,8 +68,8 @@ class TestDataset {
     TestSerializationUtils.assertFieldEquals(jsonNode, DATA_PROVIDER, DATA_PROVIDER);
     TestSerializationUtils.assertFieldEquals(jsonNode, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
     TestSerializationUtils.assertFieldEquals(jsonNode, CREATED_BY_USER_ID, CREATED_BY_USER_ID);
-    String expectedCreatedDate = TestSerializationUtils.formatAsUTC(createdDate);
-    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(updatedDate);
+    String expectedCreatedDate = TestSerializationUtils.formatAsUTC(CREATED_DATE_VALUE);
+    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(UPDATED_DATE_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
     TestSerializationUtils.assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
     TestSerializationUtils.assertListContains(jsonNode.get(DATASET_IDS_TO_REDIRECT_FROM), REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE);
@@ -80,12 +80,12 @@ class TestDataset {
     TestSerializationUtils.assertFieldEquals(jsonNode, DESCRIPTION, DESCRIPTION);
     TestSerializationUtils.assertFieldEquals(jsonNode, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
     TestSerializationUtils.assertFieldEquals(jsonNode, NOTES, NOTES);
-    TestSerializationUtils.assertFieldEquals(jsonNode, XSLT_ID, xsltId.toString());
+    TestSerializationUtils.assertFieldEquals(jsonNode, XSLT_ID, XSLT_OBJECT_ID_VALUE.toString());
   }
 
 
   private void assertDataset(Dataset dataset) {
-    assertEquals(id, dataset.getId());
+    assertEquals(OBJECT_ID_VALUE, dataset.getId());
     assertEquals(ECLOUD_DATASET_ID, dataset.getEcloudDatasetId());
     assertEquals(DATASET_ID, dataset.getDatasetId());
     assertEquals(DATASET_NAME, dataset.getDatasetName());
@@ -95,8 +95,8 @@ class TestDataset {
     assertEquals(DATA_PROVIDER, dataset.getDataProvider());
     assertEquals(INTERMEDIATE_PROVIDER, dataset.getIntermediateProvider());
     assertEquals(CREATED_BY_USER_ID, dataset.getCreatedByUserId());
-    assertEquals(createdDate, dataset.getCreatedDate());
-    assertEquals(updatedDate, dataset.getUpdatedDate());
+    assertEquals(CREATED_DATE_VALUE, dataset.getCreatedDate());
+    assertEquals(UPDATED_DATE_VALUE, dataset.getUpdatedDate());
     assertEquals(2, dataset.getDatasetIdsToRedirectFrom().size());
     assertTrue(dataset.getDatasetIdsToRedirectFrom().contains(REDIRECT_ID_1_VALUE));
     assertTrue(dataset.getDatasetIdsToRedirectFrom().contains(REDIRECT_ID_2_VALUE));
@@ -107,6 +107,6 @@ class TestDataset {
     assertEquals(DESCRIPTION, dataset.getDescription());
     assertEquals(PublicationFitness.FIT, dataset.getPublicationFitness());
     assertEquals(NOTES, dataset.getNotes());
-    assertEquals(xsltId, dataset.getXsltId());
+    assertEquals(XSLT_OBJECT_ID_VALUE, dataset.getXsltId());
   }
 }

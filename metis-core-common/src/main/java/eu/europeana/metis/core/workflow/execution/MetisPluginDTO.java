@@ -1,8 +1,6 @@
 package eu.europeana.metis.core.workflow.execution;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.MetisPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
@@ -13,7 +11,7 @@ import java.util.Date;
 /**
  * This class represents the complete information on a plugin execution needed for the execution history.
  */
-public class PluginDTO {
+public class MetisPluginDTO {
 
   private PluginType pluginType;
   private String id;
@@ -32,37 +30,60 @@ public class PluginDTO {
   private boolean canDisplayRawXml;
   private MetisPluginMetadata pluginMetadata;
 
-  public PluginDTO() {
+  public MetisPluginDTO() {
+    //Required for json serialization
   }
 
-  /**
-   * Creates a new PluginDTO instance based on the provided AbstractMetisPlugin and canDisplayRawXml flag.
-   *
-   * @param plugin the AbstractMetisPlugin instance to extract data from
-   * @param canDisplayRawXml a flag indicating whether raw XML can be displayed
-   */
-  public PluginDTO(AbstractMetisPlugin plugin, boolean canDisplayRawXml) {
-    this.pluginType = plugin.getPluginType();
-    this.id = plugin.getId();
-    this.pluginStatus = plugin.getPluginStatus();
-    this.dataStatus = plugin.getDataStatus();
-    this.failMessage = plugin.getFailMessage();
-    this.startedDate = plugin.getStartedDate();
-    this.finishedDate = plugin.getFinishedDate();
+  public void setPluginType(PluginType pluginType) {
+    this.pluginType = pluginType;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public void setPluginStatus(PluginStatus pluginStatus) {
+    this.pluginStatus = pluginStatus;
+  }
+
+  public void setDataStatus(DataStatus dataStatus) {
+    this.dataStatus = dataStatus;
+  }
+
+  public void setFailMessage(String failMessage) {
+    this.failMessage = failMessage;
+  }
+
+  public void setStartedDate(Date startedDate) {
+    this.startedDate = startedDate;
+  }
+
+  public void setUpdatedDate(Date updatedDate) {
+    this.updatedDate = updatedDate;
+  }
+
+  public void setFinishedDate(Date finishedDate) {
+    this.finishedDate = finishedDate;
+  }
+
+  public void setExternalTaskId(String externalTaskId) {
+    this.externalTaskId = externalTaskId;
+  }
+
+  public void setExecutionProgress(ExecutionProgressDTO executionProgress) {
+    this.executionProgress = executionProgress;
+  }
+
+  public void setTopologyName(String topologyName) {
+    this.topologyName = topologyName;
+  }
+
+  public void setCanDisplayRawXml(boolean canDisplayRawXml) {
     this.canDisplayRawXml = canDisplayRawXml;
-    if (plugin instanceof AbstractExecutablePlugin) {
-      this.updatedDate = ((AbstractExecutablePlugin<?>) plugin).getUpdatedDate();
-      this.externalTaskId = ((AbstractExecutablePlugin<?>) plugin).getExternalTaskId();
-      this.executionProgress = ExecutionProgressConverter.toDTO(((AbstractExecutablePlugin<?>) plugin).getExecutionProgress());
-      this.topologyName = ((AbstractExecutablePlugin<?>) plugin).getTopologyName();
-      this.pluginMetadata = ((AbstractExecutablePlugin<?>) plugin).getPluginMetadata();
-    } else {
-      this.updatedDate = null;
-      this.externalTaskId = null;
-      this.executionProgress = null;
-      this.topologyName = null;
-      this.pluginMetadata = null;
-    }
+  }
+
+  public void setPluginMetadata(MetisPluginMetadata pluginMetadata) {
+    this.pluginMetadata = pluginMetadata;
   }
 
   public PluginType getPluginType() {

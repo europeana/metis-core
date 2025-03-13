@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.id;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -41,7 +41,7 @@ class TestWorkflowExecutionConverter {
     WorkflowExecutionDTO workflowExecutionDTO = WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental, userStarted,
         cancelledUser);
 
-    assertEquals(id.toString(), workflowExecutionDTO.getId());
+    assertEquals(OBJECT_ID_VALUE.toString(), workflowExecutionDTO.getId());
     assertEquals(workflowExecution.getDatasetId(), workflowExecutionDTO.getDatasetId());
     assertEquals(workflowExecution.getWorkflowStatus(), workflowExecutionDTO.getWorkflowStatus());
     assertEquals(workflowExecution.getEcloudDatasetId(), workflowExecutionDTO.getEcloudDatasetId());
@@ -123,15 +123,15 @@ class TestWorkflowExecutionConverter {
 
   private void assertMetisPluginsEqual(WorkflowExecution workflowExecution, WorkflowExecutionDTO workflowExecutionDTO) {
     List<AbstractMetisPlugin> originalPlugins = workflowExecution.getMetisPlugins();
-    List<PluginDTO> convertedPlugins = workflowExecutionDTO.getMetisPlugins();
+    List<MetisPluginDTO> convertedPlugins = workflowExecutionDTO.getMetisPlugins();
 
     assertEquals(originalPlugins.size(), convertedPlugins.size());
 
     for (int i = 0; i < originalPlugins.size(); i++) {
       MetisPlugin metisPlugin = originalPlugins.get(i);
-      PluginDTO pluginDTO = convertedPlugins.get(i);
-      assertEquals(metisPlugin.getPluginType(), pluginDTO.getPluginType());
-      assertTrue(pluginDTO.isCanDisplayRawXml());
+      MetisPluginDTO metisPluginDTO = convertedPlugins.get(i);
+      assertEquals(metisPlugin.getPluginType(), metisPluginDTO.getPluginType());
+      assertTrue(metisPluginDTO.isCanDisplayRawXml());
     }
   }
 }

@@ -24,6 +24,10 @@ public final class ExecutionProgressConverter {
    * @return a new {@link ExecutionProgressDTO} containing the mapped data
    */
   public static ExecutionProgressDTO toDTO(ExecutionProgress executionProgress) {
+    if (executionProgress == null) {
+      return null;
+    }
+
     ExecutionProgressDTO executionProgressDTO = new ExecutionProgressDTO();
     executionProgressDTO.setExpectedRecords(executionProgress.getExpectedRecords());
     executionProgressDTO.setProcessedRecords(executionProgress.getProcessedRecords());

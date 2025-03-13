@@ -10,11 +10,8 @@ import org.bson.types.ObjectId;
 
 public class TestDatasetUtils {
 
-  static final ObjectId id = new ObjectId("67cfeedb4cdf5102acad7395");
-  static final ObjectId xsltId = new ObjectId("507f191e810c19729de860ea");
   private static final ZonedDateTime zonedDateTime = ZonedDateTime.parse("2025-03-10T10:10:10.000Z[UTC]");
-  static final Date updatedDate = Date.from(zonedDateTime.toInstant());
-  static final Date createdDate = Date.from(zonedDateTime.toInstant());
+  //FIELDS
   static final String ID = "id";
   static final String ECLOUD_DATASET_ID = "ecloudDatasetId";
   static final String DATASET_ID = "datasetId";
@@ -41,12 +38,17 @@ public class TestDatasetUtils {
   static final String PUBLICATION_FITNESS = "publicationFitness";
   static final String NOTES = "notes";
   static final String XSLT_ID = "xsltId";
+  //VALUES
+  static final ObjectId OBJECT_ID_VALUE = new ObjectId("67cfeedb4cdf5102acad7395");
+  static final ObjectId XSLT_OBJECT_ID_VALUE = new ObjectId("507f191e810c19729de860ea");
+  static final Date CREATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
+  static final Date UPDATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
   static final String REDIRECT_ID_1_VALUE = "redirectId1";
   static final String REDIRECT_ID_2_VALUE = "redirectId2";
 
   public static DatasetDTO getDatasetDTO() {
     return new DatasetDTO(
-        id.toString(),
+        OBJECT_ID_VALUE.toString(),
         ECLOUD_DATASET_ID,
         DATASET_ID,
         DATASET_NAME,
@@ -59,8 +61,8 @@ public class TestDatasetUtils {
         CREATED_BY_USER_NAME,
         CREATED_BY_FIRST_NAME,
         CREATED_BY_LAST_NAME,
-        createdDate,
-        updatedDate,
+        CREATED_DATE_VALUE,
+        UPDATED_DATE_VALUE,
         List.of(REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE),
         REPLACED_BY,
         REPLACES,
@@ -69,7 +71,7 @@ public class TestDatasetUtils {
         DESCRIPTION,
         PublicationFitness.FIT,
         NOTES,
-        xsltId.toString()
+        XSLT_OBJECT_ID_VALUE.toString()
     );
   }
 
@@ -142,7 +144,7 @@ public class TestDatasetUtils {
 
   public static Dataset getDataset() {
     Dataset dataset = new Dataset();
-    dataset.setId(id);
+    dataset.setId(OBJECT_ID_VALUE);
     dataset.setEcloudDatasetId(ECLOUD_DATASET_ID);
     dataset.setDatasetId(DATASET_ID);
     dataset.setDatasetName(DATASET_NAME);
@@ -152,8 +154,8 @@ public class TestDatasetUtils {
     dataset.setDataProvider(DATA_PROVIDER);
     dataset.setIntermediateProvider(INTERMEDIATE_PROVIDER);
     dataset.setCreatedByUserId(CREATED_BY_USER_ID);
-    dataset.setCreatedDate(createdDate);
-    dataset.setUpdatedDate(updatedDate);
+    dataset.setCreatedDate(CREATED_DATE_VALUE);
+    dataset.setUpdatedDate(UPDATED_DATE_VALUE);
     dataset.setDatasetIdsToRedirectFrom(List.of(REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE));
     dataset.setReplacedBy(REPLACED_BY);
     dataset.setReplaces(REPLACES);
@@ -162,7 +164,7 @@ public class TestDatasetUtils {
     dataset.setDescription(DESCRIPTION);
     dataset.setPublicationFitness(PublicationFitness.FIT);
     dataset.setNotes(NOTES);
-    dataset.setXsltId(xsltId);
+    dataset.setXsltId(XSLT_OBJECT_ID_VALUE);
     return dataset;
   }
 

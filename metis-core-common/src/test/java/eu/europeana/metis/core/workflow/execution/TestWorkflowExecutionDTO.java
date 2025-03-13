@@ -34,13 +34,13 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.createdDate;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.finishedDate;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionDTOUsingSetters;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionDTOUsingSettersWithNullValues;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.id;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.startedDate;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.updatedDate;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_DATE_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -95,7 +95,7 @@ class TestWorkflowExecutionDTO {
   }
 
   private void assertWorkflowExecutionDTO(JsonNode jsonNode) {
-    TestSerializationUtils.assertFieldEquals(jsonNode, ID, id.toString());
+    TestSerializationUtils.assertFieldEquals(jsonNode, ID, OBJECT_ID_VALUE.toString());
     TestSerializationUtils.assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonNode, WORKFLOW_STATUS, WorkflowStatus.RUNNING.name());
     TestSerializationUtils.assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
@@ -109,10 +109,10 @@ class TestWorkflowExecutionDTO {
     TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_BY_LAST_NAME, STARTED_BY_LAST_NAME);
     TestSerializationUtils.assertFieldEquals(jsonNode, WORKFLOW_PRIORIOTY, String.valueOf(0));
     TestSerializationUtils.assertFieldEquals(jsonNode, CANCELLING, String.valueOf(false));
-    String expectedCreatedDate = TestSerializationUtils.formatAsUTC(createdDate);
-    String expectedStartedDate = TestSerializationUtils.formatAsUTC(startedDate);
-    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(updatedDate);
-    String expectedFinishedDate = TestSerializationUtils.formatAsUTC(finishedDate);
+    String expectedCreatedDate = TestSerializationUtils.formatAsUTC(CREATED_DATE_VALUE);
+    String expectedStartedDate = TestSerializationUtils.formatAsUTC(STARTED_DATE_VALUE);
+    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(UPDATED_DATE_VALUE);
+    String expectedFinishedDate = TestSerializationUtils.formatAsUTC(FINISHED_DATE_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
     TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_DATE, expectedStartedDate);
     TestSerializationUtils.assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
@@ -123,7 +123,7 @@ class TestWorkflowExecutionDTO {
   }
 
   private void assertWorkflowExecutionDTO(WorkflowExecutionDTO workflowExecutionDTO) {
-    assertEquals(id.toString(), workflowExecutionDTO.getId());
+    assertEquals(OBJECT_ID_VALUE.toString(), workflowExecutionDTO.getId());
     assertEquals(DATASET_ID, workflowExecutionDTO.getDatasetId());
     assertEquals(WorkflowStatus.RUNNING, workflowExecutionDTO.getWorkflowStatus());
     assertEquals(ECLOUD_DATASET_ID, workflowExecutionDTO.getEcloudDatasetId());
@@ -137,10 +137,10 @@ class TestWorkflowExecutionDTO {
     assertEquals(STARTED_BY_LAST_NAME, workflowExecutionDTO.getStartedByLastName());
     assertEquals(0, workflowExecutionDTO.getWorkflowPriority());
     assertFalse(workflowExecutionDTO.isCancelling());
-    assertEquals(createdDate, workflowExecutionDTO.getCreatedDate());
-    assertEquals(startedDate, workflowExecutionDTO.getStartedDate());
-    assertEquals(updatedDate, workflowExecutionDTO.getUpdatedDate());
-    assertEquals(finishedDate, workflowExecutionDTO.getFinishedDate());
+    assertEquals(CREATED_DATE_VALUE, workflowExecutionDTO.getCreatedDate());
+    assertEquals(STARTED_DATE_VALUE, workflowExecutionDTO.getStartedDate());
+    assertEquals(UPDATED_DATE_VALUE, workflowExecutionDTO.getUpdatedDate());
+    assertEquals(FINISHED_DATE_VALUE, workflowExecutionDTO.getFinishedDate());
     assertFalse(workflowExecutionDTO.isIncremental());
     assertEquals(2, workflowExecutionDTO.getMetisPlugins().size());
     assertTrue(workflowExecutionDTO.getMetisPlugins().stream().anyMatch(plugin -> plugin.getPluginType() == PLUGIN_TYPE_1_VALUE));

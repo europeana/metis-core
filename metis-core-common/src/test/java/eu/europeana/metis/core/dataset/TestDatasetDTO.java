@@ -42,15 +42,15 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_ID;
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertFieldEquals;
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertListContains;
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertNestedFieldEquals;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.createdDate;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE_VALUE;
 import static eu.europeana.metis.core.common.TestSerializationUtils.formatAsUTC;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTO;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOUsingSetters;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOUsingSettersWithNullValues;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOWithNullValues;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.id;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.updatedDate;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.xsltId;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.OBJECT_ID_VALUE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE_VALUE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_OBJECT_ID_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -107,7 +107,7 @@ class TestDatasetDTO {
   }
 
   private void assertDatasetDTO(JsonNode jsonNode) {
-    assertFieldEquals(jsonNode, ID, id.toString());
+    assertFieldEquals(jsonNode, ID, OBJECT_ID_VALUE.toString());
     assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
     assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
     assertFieldEquals(jsonNode, DATASET_NAME, DATASET_NAME);
@@ -120,8 +120,8 @@ class TestDatasetDTO {
     assertFieldEquals(jsonNode, CREATED_BY_USER_NAME, CREATED_BY_USER_NAME);
     assertFieldEquals(jsonNode, CREATED_BY_FIRST_NAME, CREATED_BY_FIRST_NAME);
     assertFieldEquals(jsonNode, CREATED_BY_LAST_NAME, CREATED_BY_LAST_NAME);
-    String expectedCreatedDate = formatAsUTC(createdDate);
-    String expectedUpdatedDate = formatAsUTC(updatedDate);
+    String expectedCreatedDate = formatAsUTC(CREATED_DATE_VALUE);
+    String expectedUpdatedDate = formatAsUTC(UPDATED_DATE_VALUE);
     assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
     assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
     assertListContains(jsonNode.get(DATASET_IDS_TO_REDIRECT_FROM), REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE);
@@ -132,11 +132,11 @@ class TestDatasetDTO {
     assertFieldEquals(jsonNode, DESCRIPTION, DESCRIPTION);
     assertFieldEquals(jsonNode, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
     assertFieldEquals(jsonNode, NOTES, NOTES);
-    assertFieldEquals(jsonNode, XSLT_ID, xsltId.toString());
+    assertFieldEquals(jsonNode, XSLT_ID, XSLT_OBJECT_ID_VALUE.toString());
   }
 
   private void assertDatasetDTO(DatasetDTO datasetDTO) {
-    assertEquals(id.toString(), datasetDTO.getId());
+    assertEquals(OBJECT_ID_VALUE.toString(), datasetDTO.getId());
     assertEquals(ECLOUD_DATASET_ID, datasetDTO.getEcloudDatasetId());
     assertEquals(DATASET_ID, datasetDTO.getDatasetId());
     assertEquals(DATASET_NAME, datasetDTO.getDatasetName());
@@ -149,8 +149,8 @@ class TestDatasetDTO {
     assertEquals(CREATED_BY_USER_NAME, datasetDTO.getCreatedByUserName());
     assertEquals(CREATED_BY_FIRST_NAME, datasetDTO.getCreatedByFirstName());
     assertEquals(CREATED_BY_LAST_NAME, datasetDTO.getCreatedByLastName());
-    assertEquals(createdDate, datasetDTO.getCreatedDate());
-    assertEquals(updatedDate, datasetDTO.getUpdatedDate());
+    assertEquals(CREATED_DATE_VALUE, datasetDTO.getCreatedDate());
+    assertEquals(UPDATED_DATE_VALUE, datasetDTO.getUpdatedDate());
     assertEquals(2, datasetDTO.getDatasetIdsToRedirectFrom().size());
     assertTrue(datasetDTO.getDatasetIdsToRedirectFrom().contains(REDIRECT_ID_1_VALUE));
     assertTrue(datasetDTO.getDatasetIdsToRedirectFrom().contains(REDIRECT_ID_2_VALUE));
@@ -161,6 +161,6 @@ class TestDatasetDTO {
     assertEquals(DESCRIPTION, datasetDTO.getDescription());
     assertEquals(PublicationFitness.FIT, datasetDTO.getPublicationFitness());
     assertEquals(NOTES, datasetDTO.getNotes());
-    assertEquals(xsltId.toString(), datasetDTO.getXsltId());
+    assertEquals(XSLT_OBJECT_ID_VALUE.toString(), datasetDTO.getXsltId());
   }
 }

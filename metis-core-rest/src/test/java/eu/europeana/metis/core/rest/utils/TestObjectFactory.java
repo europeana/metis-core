@@ -18,7 +18,7 @@ import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
-import eu.europeana.metis.core.workflow.execution.PluginDTO;
+import eu.europeana.metis.core.workflow.execution.MetisPluginDTO;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
@@ -103,7 +103,7 @@ public class TestObjectFactory {
     workflowExecutionDTO.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecutionDTO.setWorkflowPriority(0);
     workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
-                                                             .map(plugin -> new PluginDTO(plugin,
+                                                             .map(plugin -> new MetisPluginDTO(plugin,
                                                                  WorkflowExecutionConverter.canDisplayRawXml(plugin)))
                                                              .toList());
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
