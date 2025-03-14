@@ -12,6 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestSerializationUtils {
 
+  private static final SimpleDateFormat UTC_DATE_FORMAT;
+
+  static {
+    UTC_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    UTC_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+  }
+
   public static void assertFieldEquals(JsonNode jsonNode, String fieldName, String expectedValue) {
     assertEquals(expectedValue, jsonNode.get(fieldName).asText());
   }
@@ -50,8 +57,6 @@ public class TestSerializationUtils {
   }
 
   public static String formatAsUTC(Date date) {
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return simpleDateFormat.format(date);
+    return UTC_DATE_FORMAT.format(date);
   }
 }
