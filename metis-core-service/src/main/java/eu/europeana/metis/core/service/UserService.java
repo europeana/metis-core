@@ -5,6 +5,7 @@ import eu.europeana.metis.core.user.User.UserBuilder;
 import jakarta.ws.rs.NotFoundException;
 import java.lang.invoke.MethodHandles;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jvnet.hk2.annotations.Service;
 import org.keycloak.admin.client.Keycloak;
@@ -85,27 +86,45 @@ public class UserService {
    * @return an Optional containing the User object if the user information is found, or an empty Optional if not found
    */
   private User getKeycloakUserInformationOrDefault(String userId) {
-    UserRepresentation userRepresentation = null;
-    try {
-      userRepresentation = keycloak.realm(realm).users().get(userId).toRepresentation();
-    } catch (NotFoundException e) {
-      LOGGER.warn("User with ID {} not found. This can be normal e.g. if the user identifier is an old one", userId);
-      LOGGER.debug("Exception details:", e);
-    }
+    Optional<UserRepresentation> userRepresentation = getKeycloakUserRepresentation(userId);
     UserBuilder userBuilder = new UserBuilder();
 
-    if (userRepresentation == null) {
+    if (userRepresentation.isEmpty()) {
       userBuilder.userId(userId)
                  .userName(userId)
                  .issuedAt(Instant.now());
     } else {
-      userBuilder.userId(userRepresentation.getId())
-                 .userName(userRepresentation.getUsername())
-                 .firstName(userRepresentation.getFirstName())
-                 .lastName(userRepresentation.getLastName())
+      userBuilder.userId(userRepresentation.get().getId())
+                 .userName(userRepresentation.get().getUsername())
+                 .firstName(userRepresentation.get().getFirstName())
+                 .lastName(userRepresentation.get().getLastName())
                  .issuedAt(Instant.now());
     }
     return userBuilder.build();
+  }
+
+  /**
+   * Retrieves the Keycloak user representation for a given user ID.
+   * This method attempts to fetch user information from the Keycloak server based
+   * on the user ID provided. If the user is not found or an error occurs during
+   * the retrieval, the method returns an empty Optional.
+   *
+   * @param userId the unique identifier of the user in Keycloak
+   * @return an Optional containing the UserRepresentation if found, or an empty
+   *         Optional if the user is not found or an error occurs
+   */
+  private Optional<UserRepresentation> getKeycloakUserRepresentation(String userId) {
+    Optional<UserRepresentation> userRepresentation = Optional.empty();
+    try {
+      userRepresentation = Optional.ofNullable(keycloak.realm(realm).users().get(userId).toRepresentation());
+    } catch (NotFoundException e) {
+      LOGGER.warn("User with ID {} not found. This can be normal e.g. if the user identifier is an old one", userId);
+      LOGGER.debug("Exception details:", e);
+    } catch (RuntimeException e) {
+      //We don't want to fail in case the service is down
+      LOGGER.error("Unexpected exception while retrieving user information for user with ID {}", userId, e);
+    }
+    return userRepresentation;
   }
 
 
