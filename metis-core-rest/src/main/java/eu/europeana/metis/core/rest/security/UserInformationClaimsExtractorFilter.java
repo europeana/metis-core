@@ -15,6 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 /**
  * A filter that extracts user information claims from a JWT authentication token and inserts them into a cache.
  * <p>
@@ -50,7 +52,7 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
       String lastName = AuthenticationUtils.getLastName(jwtAuthentication.getToken());
       Instant issuedAt = AuthenticationUtils.getIssuedAt(jwtAuthentication.getToken());
 
-      if (userId != null) {
+      if (isNotBlank(userId)) {
         UserBuilder userBuilder = new UserBuilder()
             .userId(userId)
             .userName(userName)
