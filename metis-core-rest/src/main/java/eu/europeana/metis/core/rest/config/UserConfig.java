@@ -70,7 +70,8 @@ public class UserConfig {
    * user information in Keycloak changes.
    */
   @Scheduled(timeUnit = TimeUnit.MINUTES,
-      fixedRateString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getUserCacheClearIntervalInMinutes()}")
+      initialDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getUserCacheClearIntervalInMinutes()}",
+      fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getUserCacheClearIntervalInMinutes()}")
   public void clearCache() {
     userService.clearCache();
   }

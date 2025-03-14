@@ -75,8 +75,8 @@ public class SchedulerConfig {
    * queue.</p>
    */
   @Scheduled(
-      fixedDelayString = "${metis-core.periodicSchedulerCheckInMilliseconds}",
-      initialDelayString = "${metis-core.periodicSchedulerCheckInMilliseconds}")
+      initialDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPeriodicSchedulerCheckInMilliseconds()}",
+      fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPeriodicSchedulerCheckInMilliseconds()}")
   public void runSchedulingExecutor() {
     this.schedulerExecutor.performScheduling();
     LOGGER.info("Scheduler task finished.");

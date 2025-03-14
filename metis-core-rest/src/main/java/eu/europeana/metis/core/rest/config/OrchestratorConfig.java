@@ -303,7 +303,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * Failsafe periodic thread.
    * <p>It will find stale executions and will re-submit them in the distributed queue.</p>
    */
-  @Scheduled(fixedDelayString = "${metis-core.periodicFailsafeCheckInMilliseconds}")
+
+  @Scheduled(fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPeriodicFailsafeCheckInMilliseconds()}")
   public void runFailsafeExecutor() {
     this.workflowExecutionMonitor.performFailsafe();
     LOGGER.info("Failsafe task finished.");

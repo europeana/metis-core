@@ -136,10 +136,9 @@ public class QueueConfig implements WebMvcConfigurer {
     return queueConsumer;
   }
 
-  // TODO: 24/08/2023 Is there a better way to load the configuration here?
   @Scheduled(
-      fixedDelayString = "${metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds}",
-      initialDelayString = "${metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds}")
+      initialDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPollingTimeoutForCleaningCompletionServiceInMilliseconds()}",
+      fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPollingTimeoutForCleaningCompletionServiceInMilliseconds()}")
   public void runQueueConsumerCleanup() throws InterruptedException {
     this.queueConsumer.checkAndCleanCompletionService();
     LOGGER.debug("Queue consumer cleanup finished.");
