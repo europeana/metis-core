@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.workflow.execution;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.TestSerializationUtils;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -16,13 +15,18 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY_LAST_NAME;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY_USER_NAME;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLING;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLING_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.DATASET_ID;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ECLOUD_DATASET_ID;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ID;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.IS_INCREMENTAL;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.IS_INCREMENTAL_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.METIS_PLUGINS;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.PLUGIN_TYPE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.PLUGIN_TYPE_1_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.PLUGIN_TYPE_2_VALUE;
@@ -31,16 +35,15 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY_LAST_NAME;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY_USER_NAME;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_DATE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionDTOUsingSetters;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionDTOUsingSettersWithNullValues;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_DATE_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -71,9 +74,8 @@ class TestWorkflowExecutionDTO {
 
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonOutput = objectMapper.writeValueAsString(workflowExecutionDTO);
-    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
 
-    assertWorkflowExecutionDTO(jsonNode);
+    assertWorkflowExecutionDTO(jsonOutput);
   }
 
   @Test
@@ -94,32 +96,28 @@ class TestWorkflowExecutionDTO {
     assertWorkflowExecutionDTO(deserializedWorkflowExecutionDTO);
   }
 
-  private void assertWorkflowExecutionDTO(JsonNode jsonNode) {
-    TestSerializationUtils.assertFieldEquals(jsonNode, ID, OBJECT_ID_VALUE.toString());
-    TestSerializationUtils.assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
-    TestSerializationUtils.assertFieldEquals(jsonNode, WORKFLOW_STATUS, WorkflowStatus.RUNNING.name());
-    TestSerializationUtils.assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
-    TestSerializationUtils.assertFieldEquals(jsonNode, CANCELLED_BY, CANCELLED_BY);
-    TestSerializationUtils.assertFieldEquals(jsonNode, CANCELLED_BY_USER_NAME, CANCELLED_BY_USER_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonNode, CANCELLED_BY_FIRST_NAME, CANCELLED_BY_FIRST_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonNode, CANCELLED_BY_LAST_NAME, CANCELLED_BY_LAST_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_BY, STARTED_BY);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_BY_USER_NAME, STARTED_BY_USER_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_BY_FIRST_NAME, STARTED_BY_FIRST_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_BY_LAST_NAME, STARTED_BY_LAST_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonNode, WORKFLOW_PRIORIOTY, String.valueOf(0));
-    TestSerializationUtils.assertFieldEquals(jsonNode, CANCELLING, String.valueOf(false));
-    String expectedCreatedDate = TestSerializationUtils.formatAsUTC(CREATED_DATE_VALUE);
-    String expectedStartedDate = TestSerializationUtils.formatAsUTC(STARTED_DATE_VALUE);
-    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(UPDATED_DATE_VALUE);
-    String expectedFinishedDate = TestSerializationUtils.formatAsUTC(FINISHED_DATE_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_DATE, expectedStartedDate);
-    TestSerializationUtils.assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
-    TestSerializationUtils.assertFieldEquals(jsonNode, FINISHED_DATE, expectedFinishedDate);
-    TestSerializationUtils.assertFieldEquals(jsonNode, IS_INCREMENTAL, String.valueOf(false));
-    TestSerializationUtils.assertNestedFieldInArrayEquals(jsonNode, METIS_PLUGINS, PLUGIN_TYPE, PLUGIN_TYPE_1_VALUE.name());
-    TestSerializationUtils.assertNestedFieldInArrayEquals(jsonNode, METIS_PLUGINS, PLUGIN_TYPE, PLUGIN_TYPE_2_VALUE.name());
+  private void assertWorkflowExecutionDTO(String jsonOutput) {
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, WORKFLOW_STATUS, WORKFLOW_STATUS_VALUE.name());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY, CANCELLED_BY);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY_USER_NAME, CANCELLED_BY_USER_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY_FIRST_NAME, CANCELLED_BY_FIRST_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY_LAST_NAME, CANCELLED_BY_LAST_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY, STARTED_BY);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY_USER_NAME, STARTED_BY_USER_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY_FIRST_NAME, STARTED_BY_FIRST_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY_LAST_NAME, STARTED_BY_LAST_NAME);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, WORKFLOW_PRIORIOTY, WORKFLOW_PRIORIOTY_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLING, CANCELLING_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CREATED_DATE, CREATED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_DATE, STARTED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, UPDATED_DATE, UPDATED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, FINISHED_DATE, FINISHED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, IS_INCREMENTAL, IS_INCREMENTAL_VALUE);
+    TestSerializationUtils.assertNestedFieldInArrayEquals(jsonOutput, METIS_PLUGINS, PLUGIN_TYPE, PLUGIN_TYPE_1_VALUE.name());
+    TestSerializationUtils.assertNestedFieldInArrayEquals(jsonOutput, METIS_PLUGINS, PLUGIN_TYPE, PLUGIN_TYPE_2_VALUE.name());
   }
 
   private void assertWorkflowExecutionDTO(WorkflowExecutionDTO workflowExecutionDTO) {

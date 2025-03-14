@@ -1,6 +1,5 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
@@ -8,9 +7,13 @@ import eu.europeana.metis.utils.Country;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 
+import static eu.europeana.metis.core.common.TestSerializationUtils.assertFieldEquals;
+import static eu.europeana.metis.core.common.TestSerializationUtils.assertListContains;
+import static eu.europeana.metis.core.common.TestSerializationUtils.assertNestedFieldEquals;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY_ENUM;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_FIRST_NAME;
@@ -18,6 +21,7 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_LAST_N
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_USER_ID;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_USER_NAME;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE_VALUE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_ID;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_IDS_TO_REDIRECT_FROM;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_NAME;
@@ -29,6 +33,7 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.INTERMEDIATE_PROV
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE_ENUM;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.NOTES;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.OBJECT_ID_VALUE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_ID;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_NAME;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.PROVIDER;
@@ -38,19 +43,13 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_2_VAL
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.REPLACED_BY;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.REPLACES;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE_VALUE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_ID;
-import static eu.europeana.metis.core.common.TestSerializationUtils.assertFieldEquals;
-import static eu.europeana.metis.core.common.TestSerializationUtils.assertListContains;
-import static eu.europeana.metis.core.common.TestSerializationUtils.assertNestedFieldEquals;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE_VALUE;
-import static eu.europeana.metis.core.common.TestSerializationUtils.formatAsUTC;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_OBJECT_ID_VALUE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTO;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOUsingSetters;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOUsingSettersWithNullValues;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetDTOWithNullValues;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_OBJECT_ID_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -89,9 +88,8 @@ class TestDatasetDTO {
 
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonOutput = objectMapper.writeValueAsString(datasetDTO);
-    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
 
-    assertDatasetDTO(jsonNode);
+    assertDatasetDTO(jsonOutput);
   }
 
   @Test
@@ -106,33 +104,31 @@ class TestDatasetDTO {
     assertDatasetDTO(deserializedDatasetDTO);
   }
 
-  private void assertDatasetDTO(JsonNode jsonNode) {
-    assertFieldEquals(jsonNode, ID, OBJECT_ID_VALUE.toString());
-    assertFieldEquals(jsonNode, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
-    assertFieldEquals(jsonNode, DATASET_ID, DATASET_ID);
-    assertFieldEquals(jsonNode, DATASET_NAME, DATASET_NAME);
-    assertFieldEquals(jsonNode, ORGANIZATION_ID, ORGANIZATION_ID);
-    assertFieldEquals(jsonNode, ORGANIZATION_NAME, ORGANIZATION_NAME);
-    assertFieldEquals(jsonNode, PROVIDER, PROVIDER);
-    assertFieldEquals(jsonNode, DATA_PROVIDER, DATA_PROVIDER);
-    assertFieldEquals(jsonNode, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
-    assertFieldEquals(jsonNode, CREATED_BY_USER_ID, CREATED_BY_USER_ID);
-    assertFieldEquals(jsonNode, CREATED_BY_USER_NAME, CREATED_BY_USER_NAME);
-    assertFieldEquals(jsonNode, CREATED_BY_FIRST_NAME, CREATED_BY_FIRST_NAME);
-    assertFieldEquals(jsonNode, CREATED_BY_LAST_NAME, CREATED_BY_LAST_NAME);
-    String expectedCreatedDate = formatAsUTC(CREATED_DATE_VALUE);
-    String expectedUpdatedDate = formatAsUTC(UPDATED_DATE_VALUE);
-    assertFieldEquals(jsonNode, CREATED_DATE, expectedCreatedDate);
-    assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
-    assertListContains(jsonNode.get(DATASET_IDS_TO_REDIRECT_FROM), REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE);
-    assertFieldEquals(jsonNode, REPLACED_BY, REPLACED_BY);
-    assertFieldEquals(jsonNode, REPLACES, REPLACES);
-    assertNestedFieldEquals(jsonNode, COUNTRY, COUNTRY_ENUM, Country.GREECE.name());
-    assertNestedFieldEquals(jsonNode, LANGUAGE, LANGUAGE_ENUM, Language.EL.name());
-    assertFieldEquals(jsonNode, DESCRIPTION, DESCRIPTION);
-    assertFieldEquals(jsonNode, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
-    assertFieldEquals(jsonNode, NOTES, NOTES);
-    assertFieldEquals(jsonNode, XSLT_ID, XSLT_OBJECT_ID_VALUE.toString());
+  private void assertDatasetDTO(String jsonOutput) {
+    assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
+    assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
+    assertFieldEquals(jsonOutput, DATASET_NAME, DATASET_NAME);
+    assertFieldEquals(jsonOutput, ORGANIZATION_ID, ORGANIZATION_ID);
+    assertFieldEquals(jsonOutput, ORGANIZATION_NAME, ORGANIZATION_NAME);
+    assertFieldEquals(jsonOutput, PROVIDER, PROVIDER);
+    assertFieldEquals(jsonOutput, DATA_PROVIDER, DATA_PROVIDER);
+    assertFieldEquals(jsonOutput, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
+    assertFieldEquals(jsonOutput, CREATED_BY_USER_ID, CREATED_BY_USER_ID);
+    assertFieldEquals(jsonOutput, CREATED_BY_USER_NAME, CREATED_BY_USER_NAME);
+    assertFieldEquals(jsonOutput, CREATED_BY_FIRST_NAME, CREATED_BY_FIRST_NAME);
+    assertFieldEquals(jsonOutput, CREATED_BY_LAST_NAME, CREATED_BY_LAST_NAME);
+    assertFieldEquals(jsonOutput, CREATED_DATE, CREATED_DATE_VALUE);
+    assertFieldEquals(jsonOutput, UPDATED_DATE, UPDATED_DATE_VALUE);
+    assertListContains(jsonOutput, DATASET_IDS_TO_REDIRECT_FROM, List.of(REDIRECT_ID_1_VALUE, REDIRECT_ID_2_VALUE));
+    assertFieldEquals(jsonOutput, REPLACED_BY, REPLACED_BY);
+    assertFieldEquals(jsonOutput, REPLACES, REPLACES);
+    assertNestedFieldEquals(jsonOutput, COUNTRY, COUNTRY_ENUM, Country.GREECE.name());
+    assertNestedFieldEquals(jsonOutput, LANGUAGE, LANGUAGE_ENUM, Language.EL.name());
+    assertFieldEquals(jsonOutput, DESCRIPTION, DESCRIPTION);
+    assertFieldEquals(jsonOutput, PUBLICATION_FITNESS, PublicationFitness.FIT.name());
+    assertFieldEquals(jsonOutput, NOTES, NOTES);
+    assertFieldEquals(jsonOutput, XSLT_ID, XSLT_OBJECT_ID_VALUE.toString());
   }
 
   private void assertDatasetDTO(DatasetDTO datasetDTO) {

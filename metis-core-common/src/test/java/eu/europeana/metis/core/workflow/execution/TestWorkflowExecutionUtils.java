@@ -40,10 +40,14 @@ public class TestWorkflowExecutionUtils {
   public static final String PLUGIN_TYPE = "pluginType";
   //VALUES
   public static final ObjectId OBJECT_ID_VALUE = new ObjectId("64bffcdde13e6c25d4efb2ac");
+  public static final WorkflowStatus WORKFLOW_STATUS_VALUE = WorkflowStatus.RUNNING;
+  public static final int WORKFLOW_PRIORIOTY_VALUE = 0;
+  public static final boolean CANCELLING_VALUE = false;
   public static final Date CREATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
   public static final Date UPDATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
   public static final Date STARTED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
   public static final Date FINISHED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
+  public static final boolean IS_INCREMENTAL_VALUE = false;
   public static final PluginType PLUGIN_TYPE_1_VALUE = PluginType.OAIPMH_HARVEST;
   public static final PluginType PLUGIN_TYPE_2_VALUE = PluginType.VALIDATION_EXTERNAL;
 

@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.workflow.execution;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.TestSerializationUtils;
 import java.io.File;
@@ -66,9 +65,8 @@ class TestMetisPluginDTO {
 
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonOutput = objectMapper.writeValueAsString(metisPluginDTO);
-    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
 
-    assertMetisPluginDTO(jsonNode);
+    assertMetisPluginDTO(jsonOutput);
   }
 
   @Test
@@ -105,25 +103,20 @@ class TestMetisPluginDTO {
     assertEquals(METIS_PLUGIN_METADATA_VALUE.getPluginType(), metisPluginDTO.getPluginMetadata().getPluginType());
   }
 
-  private void assertMetisPluginDTO(JsonNode jsonNode) {
-    TestSerializationUtils.assertFieldEquals(jsonNode, ID, OBJECT_ID_VALUE.toString());
-    TestSerializationUtils.assertFieldEquals(jsonNode, PLUGIN_TYPE, PLUGIN_TYPE_VALUE.name());
-    TestSerializationUtils.assertFieldEquals(jsonNode, PLUGIN_STATUS, PLUGIN_STATUS_VALUE.name());
-    TestSerializationUtils.assertFieldEquals(jsonNode, DATA_TATUS, DATA_TATUS_VALUE.name());
-    TestSerializationUtils.assertFieldEquals(jsonNode, FAIL_MESSAGE, FAIL_MESSAGE_VALUE);
-    String expectedStartedDate = TestSerializationUtils.formatAsUTC(TestWorkflowExecutionUtils.STARTED_DATE_VALUE);
-    String expectedUpdatedDate = TestSerializationUtils.formatAsUTC(TestWorkflowExecutionUtils.UPDATED_DATE_VALUE);
-    String expectedFinishedDate = TestSerializationUtils.formatAsUTC(TestWorkflowExecutionUtils.FINISHED_DATE_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STARTED_DATE, expectedStartedDate);
-    TestSerializationUtils.assertFieldEquals(jsonNode, UPDATED_DATE, expectedUpdatedDate);
-    TestSerializationUtils.assertFieldEquals(jsonNode, FINISHED_DATE, expectedFinishedDate);
-
-    TestSerializationUtils.assertFieldEquals(jsonNode, EXTERNAL_TASK_ID, EXTERNAL_TASK_ID_VALUE);
-    TestSerializationUtils.assertNestedFieldEquals(jsonNode, EXECUTION_PROGRESS_DTO, EXPECTED_RECORDS,
-        EXPECTED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, TOPOLOGY_NAME, TOPOLOGY_NAME_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, CAN_DISPLAY_RAW_XML, CAN_DISPLAY_RAW_XML_VALUE);
-    TestSerializationUtils.assertNestedFieldEquals(jsonNode, METIS_PLUGIN_METADATA, PLUGIN_TYPE,
+  private void assertMetisPluginDTO(String jsonOutput) {
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PLUGIN_TYPE, PLUGIN_TYPE_VALUE.name());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PLUGIN_STATUS, PLUGIN_STATUS_VALUE.name());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, DATA_TATUS, DATA_TATUS_VALUE.name());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, FAIL_MESSAGE, FAIL_MESSAGE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_DATE, STARTED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, UPDATED_DATE, UPDATED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, FINISHED_DATE, FINISHED_DATE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, EXTERNAL_TASK_ID, EXTERNAL_TASK_ID_VALUE);
+    TestSerializationUtils.assertNestedFieldEquals(jsonOutput, EXECUTION_PROGRESS_DTO, EXPECTED_RECORDS, EXPECTED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, TOPOLOGY_NAME, TOPOLOGY_NAME_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, CAN_DISPLAY_RAW_XML, CAN_DISPLAY_RAW_XML_VALUE);
+    TestSerializationUtils.assertNestedFieldEquals(jsonOutput, METIS_PLUGIN_METADATA, PLUGIN_TYPE,
         METIS_PLUGIN_METADATA_VALUE.getPluginType().name());
   }
 

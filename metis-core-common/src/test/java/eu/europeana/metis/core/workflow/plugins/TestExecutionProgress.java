@@ -1,6 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.TestSerializationUtils;
 import java.io.File;
@@ -43,9 +42,8 @@ class TestExecutionProgress {
 
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonOutput = objectMapper.writeValueAsString(executionProgress);
-    JsonNode jsonNode = objectMapper.readTree(jsonOutput);
 
-    assertExecutionProgress(jsonNode);
+    assertExecutionProgress(jsonOutput);
   }
 
   @Test
@@ -71,15 +69,15 @@ class TestExecutionProgress {
     assertEquals(TOTAL_DATABASE_RECORDS_VALUE, executionProgress.getTotalDatabaseRecords());
   }
 
-  private void assertExecutionProgress(JsonNode jsonNode) {
-    TestSerializationUtils.assertFieldEquals(jsonNode, EXPECTED_RECORDS, EXPECTED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, PROCESSED_RECORDS, PROCESSED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, PROGRESS_PERCENTAGE, PROGRESS_PERCENTAGE_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, IGNORED_RECORDS, IGNORED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, DELETED_RECORDS, DELETED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, ERRORS, ERRORS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonNode, STATUS, STATUS_VALUE.name());
-    TestSerializationUtils.assertFieldEquals(jsonNode, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
+  private void assertExecutionProgress(String jsonOutput) {
+    TestSerializationUtils.assertFieldEquals(jsonOutput, EXPECTED_RECORDS, EXPECTED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PROCESSED_RECORDS, PROCESSED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PROGRESS_PERCENTAGE, PROGRESS_PERCENTAGE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, IGNORED_RECORDS, IGNORED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, DELETED_RECORDS, DELETED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ERRORS, ERRORS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STATUS, STATUS_VALUE.name());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
   }
 
 }
