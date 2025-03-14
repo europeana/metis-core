@@ -3,6 +3,7 @@ package eu.europeana.metis.core.rest.config;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -24,6 +25,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
    *
    * @param metisCoreConfigurationProperties The properties.
    */
+  @Autowired
   public WebMvcConfig(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     this.metisCoreConfigurationProperties = metisCoreConfigurationProperties;
   }

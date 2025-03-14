@@ -18,7 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
  * This class provides configuration for the user service and data access objects.
  */
 @Configuration
-@EnableConfigurationProperties(KeycloakConfigurationProperties.class)
+@EnableConfigurationProperties({KeycloakConfigurationProperties.class})
 @EnableScheduling
 public class UserConfig {
 
@@ -26,7 +26,7 @@ public class UserConfig {
 
   /**
    * Return an instance of the Keycloak admin client, which is configured from the given configuration properties.
-
+   *
    * @param keycloakConfigurationProperties the configuration properties for Keycloak
    * @return an instance of the Keycloak admin client
    */
@@ -66,10 +66,11 @@ public class UserConfig {
   }
 
   /**
-   * This method is called once a day and clears the cache for the user service.
-   * This is necessary to refresh the cache when the user information in Keycloak changes.
+   * This method is called once a day and clears the cache for the user service. This is necessary to refresh the cache when the
+   * user information in Keycloak changes.
    */
-  @Scheduled(timeUnit = TimeUnit.DAYS, fixedRate = 1)
+  @Scheduled(timeUnit = TimeUnit.MINUTES,
+      fixedRateString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getUserCacheClearIntervalInMinutes()}")
   public void clearCache() {
     userService.clearCache();
   }

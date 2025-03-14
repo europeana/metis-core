@@ -8,171 +8,179 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "metis-core")
 public class MetisCoreConfigurationProperties {
 
-    private int maxConcurrentThreads;
-    private int dpsMonitorCheckIntervalInSeconds;
-    private int dpsConnectTimeoutInMilliseconds;
-    private int dpsReadTimeoutInMilliseconds;
-    private int failsafeMarginOfInactivityInSeconds;
-    private int periodicFailsafeCheckInMilliseconds;
-    private int periodicSchedulerCheckInMilliseconds;
-    private int pollingTimeoutForCleaningCompletionServiceInMilliseconds;
-    private int periodOfNoProcessedRecordsChangeInMinutes;
-    private int threadLimitThrottlingLevelWeak;
-    private int threadLimitThrottlingLevelMedium;
-    private int threadLimitThrottlingLevelStrong;
+  private int maxConcurrentThreads;
+  private int dpsMonitorCheckIntervalInSeconds;
+  private int dpsConnectTimeoutInMilliseconds;
+  private int dpsReadTimeoutInMilliseconds;
+  private int failsafeMarginOfInactivityInSeconds;
+  private int periodicFailsafeCheckInMilliseconds;
+  private int periodicSchedulerCheckInMilliseconds;
+  private int pollingTimeoutForCleaningCompletionServiceInMilliseconds;
+  private int userCacheClearIntervalInMinutes;
+  private int periodOfNoProcessedRecordsChangeInMinutes;
+  private int threadLimitThrottlingLevelWeak;
+  private int threadLimitThrottlingLevelMedium;
+  private int threadLimitThrottlingLevelStrong;
 
-    private String baseUrl;
-    private int maxServedExecutionListLength;
-    private int maxDepublishRecordIdsPerDataset;
+  private String baseUrl;
+  private int maxServedExecutionListLength;
+  private int maxDepublishRecordIdsPerDataset;
 
-    private int linkCheckingDefaultSamplingSize;
-    private int solrCommitPeriodInMinutes;
+  private int linkCheckingDefaultSamplingSize;
+  private int solrCommitPeriodInMinutes;
 
-    private String[] allowedCorsHosts;
+  private String[] allowedCorsHosts;
 
+  public int getMaxConcurrentThreads() {
+    return maxConcurrentThreads;
+  }
 
-    public int getMaxConcurrentThreads() {
-        return maxConcurrentThreads;
-    }
+  public void setMaxConcurrentThreads(int maxConcurrentThreads) {
+    this.maxConcurrentThreads = maxConcurrentThreads;
+  }
 
-    public void setMaxConcurrentThreads(int maxConcurrentThreads) {
-        this.maxConcurrentThreads = maxConcurrentThreads;
-    }
+  public int getUserCacheClearIntervalInMinutes() {
+    return userCacheClearIntervalInMinutes;
+  }
 
-    public int getDpsMonitorCheckIntervalInSeconds() {
-        return dpsMonitorCheckIntervalInSeconds;
-    }
+  public void setUserCacheClearIntervalInMinutes(int userCacheClearIntervalInMinutes) {
+    this.userCacheClearIntervalInMinutes = userCacheClearIntervalInMinutes;
+  }
 
-    public void setDpsMonitorCheckIntervalInSeconds(int dpsMonitorCheckIntervalInSeconds) {
-        this.dpsMonitorCheckIntervalInSeconds = dpsMonitorCheckIntervalInSeconds;
-    }
+  public int getDpsMonitorCheckIntervalInSeconds() {
+    return dpsMonitorCheckIntervalInSeconds;
+  }
 
-    public int getDpsConnectTimeoutInMilliseconds() {
-        return dpsConnectTimeoutInMilliseconds;
-    }
+  public void setDpsMonitorCheckIntervalInSeconds(int dpsMonitorCheckIntervalInSeconds) {
+    this.dpsMonitorCheckIntervalInSeconds = dpsMonitorCheckIntervalInSeconds;
+  }
 
-    public void setDpsConnectTimeoutInMilliseconds(int dpsConnectTimeoutInMilliseconds) {
-        this.dpsConnectTimeoutInMilliseconds = dpsConnectTimeoutInMilliseconds;
-    }
+  public int getDpsConnectTimeoutInMilliseconds() {
+    return dpsConnectTimeoutInMilliseconds;
+  }
 
-    public int getDpsReadTimeoutInMilliseconds() {
-        return dpsReadTimeoutInMilliseconds;
-    }
+  public void setDpsConnectTimeoutInMilliseconds(int dpsConnectTimeoutInMilliseconds) {
+    this.dpsConnectTimeoutInMilliseconds = dpsConnectTimeoutInMilliseconds;
+  }
 
-    public void setDpsReadTimeoutInMilliseconds(int dpsReadTimeoutInMilliseconds) {
-        this.dpsReadTimeoutInMilliseconds = dpsReadTimeoutInMilliseconds;
-    }
+  public int getDpsReadTimeoutInMilliseconds() {
+    return dpsReadTimeoutInMilliseconds;
+  }
 
-    public int getFailsafeMarginOfInactivityInSeconds() {
-        return failsafeMarginOfInactivityInSeconds;
-    }
+  public void setDpsReadTimeoutInMilliseconds(int dpsReadTimeoutInMilliseconds) {
+    this.dpsReadTimeoutInMilliseconds = dpsReadTimeoutInMilliseconds;
+  }
 
-    public void setFailsafeMarginOfInactivityInSeconds(int failsafeMarginOfInactivityInSeconds) {
-        this.failsafeMarginOfInactivityInSeconds = failsafeMarginOfInactivityInSeconds;
-    }
+  public int getFailsafeMarginOfInactivityInSeconds() {
+    return failsafeMarginOfInactivityInSeconds;
+  }
 
-    public int getPeriodicFailsafeCheckInMilliseconds() {
-        return periodicFailsafeCheckInMilliseconds;
-    }
+  public void setFailsafeMarginOfInactivityInSeconds(int failsafeMarginOfInactivityInSeconds) {
+    this.failsafeMarginOfInactivityInSeconds = failsafeMarginOfInactivityInSeconds;
+  }
 
-    public void setPeriodicFailsafeCheckInMilliseconds(int periodicFailsafeCheckInMilliseconds) {
-        this.periodicFailsafeCheckInMilliseconds = periodicFailsafeCheckInMilliseconds;
-    }
+  public int getPeriodicFailsafeCheckInMilliseconds() {
+    return periodicFailsafeCheckInMilliseconds;
+  }
 
-    public int getPeriodicSchedulerCheckInMilliseconds() {
-        return periodicSchedulerCheckInMilliseconds;
-    }
+  public void setPeriodicFailsafeCheckInMilliseconds(int periodicFailsafeCheckInMilliseconds) {
+    this.periodicFailsafeCheckInMilliseconds = periodicFailsafeCheckInMilliseconds;
+  }
 
-    public void setPeriodicSchedulerCheckInMilliseconds(int periodicSchedulerCheckInMilliseconds) {
-        this.periodicSchedulerCheckInMilliseconds = periodicSchedulerCheckInMilliseconds;
-    }
+  public int getPeriodicSchedulerCheckInMilliseconds() {
+    return periodicSchedulerCheckInMilliseconds;
+  }
 
-    public int getPollingTimeoutForCleaningCompletionServiceInMilliseconds() {
-        return pollingTimeoutForCleaningCompletionServiceInMilliseconds;
-    }
+  public void setPeriodicSchedulerCheckInMilliseconds(int periodicSchedulerCheckInMilliseconds) {
+    this.periodicSchedulerCheckInMilliseconds = periodicSchedulerCheckInMilliseconds;
+  }
 
-    public void setPollingTimeoutForCleaningCompletionServiceInMilliseconds(
-        int pollingTimeoutForCleaningCompletionServiceInMilliseconds) {
-        this.pollingTimeoutForCleaningCompletionServiceInMilliseconds = pollingTimeoutForCleaningCompletionServiceInMilliseconds;
-    }
+  public int getPollingTimeoutForCleaningCompletionServiceInMilliseconds() {
+    return pollingTimeoutForCleaningCompletionServiceInMilliseconds;
+  }
 
-    public int getPeriodOfNoProcessedRecordsChangeInMinutes() {
-        return periodOfNoProcessedRecordsChangeInMinutes;
-    }
+  public void setPollingTimeoutForCleaningCompletionServiceInMilliseconds(
+      int pollingTimeoutForCleaningCompletionServiceInMilliseconds) {
+    this.pollingTimeoutForCleaningCompletionServiceInMilliseconds = pollingTimeoutForCleaningCompletionServiceInMilliseconds;
+  }
 
-    public void setPeriodOfNoProcessedRecordsChangeInMinutes(int periodOfNoProcessedRecordsChangeInMinutes) {
-        this.periodOfNoProcessedRecordsChangeInMinutes = periodOfNoProcessedRecordsChangeInMinutes;
-    }
+  public int getPeriodOfNoProcessedRecordsChangeInMinutes() {
+    return periodOfNoProcessedRecordsChangeInMinutes;
+  }
 
-    public int getThreadLimitThrottlingLevelWeak() {
-        return threadLimitThrottlingLevelWeak;
-    }
+  public void setPeriodOfNoProcessedRecordsChangeInMinutes(int periodOfNoProcessedRecordsChangeInMinutes) {
+    this.periodOfNoProcessedRecordsChangeInMinutes = periodOfNoProcessedRecordsChangeInMinutes;
+  }
 
-    public void setThreadLimitThrottlingLevelWeak(int threadLimitThrottlingLevelWeak) {
-        this.threadLimitThrottlingLevelWeak = threadLimitThrottlingLevelWeak;
-    }
+  public int getThreadLimitThrottlingLevelWeak() {
+    return threadLimitThrottlingLevelWeak;
+  }
 
-    public int getThreadLimitThrottlingLevelMedium() {
-        return threadLimitThrottlingLevelMedium;
-    }
+  public void setThreadLimitThrottlingLevelWeak(int threadLimitThrottlingLevelWeak) {
+    this.threadLimitThrottlingLevelWeak = threadLimitThrottlingLevelWeak;
+  }
 
-    public void setThreadLimitThrottlingLevelMedium(int threadLimitThrottlingLevelMedium) {
-        this.threadLimitThrottlingLevelMedium = threadLimitThrottlingLevelMedium;
-    }
+  public int getThreadLimitThrottlingLevelMedium() {
+    return threadLimitThrottlingLevelMedium;
+  }
 
-    public int getThreadLimitThrottlingLevelStrong() {
-        return threadLimitThrottlingLevelStrong;
-    }
+  public void setThreadLimitThrottlingLevelMedium(int threadLimitThrottlingLevelMedium) {
+    this.threadLimitThrottlingLevelMedium = threadLimitThrottlingLevelMedium;
+  }
 
-    public void setThreadLimitThrottlingLevelStrong(int threadLimitThrottlingLevelStrong) {
-        this.threadLimitThrottlingLevelStrong = threadLimitThrottlingLevelStrong;
-    }
+  public int getThreadLimitThrottlingLevelStrong() {
+    return threadLimitThrottlingLevelStrong;
+  }
 
-    public String getBaseUrl() {
-        return baseUrl;
-    }
+  public void setThreadLimitThrottlingLevelStrong(int threadLimitThrottlingLevelStrong) {
+    this.threadLimitThrottlingLevelStrong = threadLimitThrottlingLevelStrong;
+  }
 
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
+  public String getBaseUrl() {
+    return baseUrl;
+  }
 
-    public int getMaxServedExecutionListLength() {
-        return maxServedExecutionListLength;
-    }
+  public void setBaseUrl(String baseUrl) {
+    this.baseUrl = baseUrl;
+  }
 
-    public void setMaxServedExecutionListLength(int maxServedExecutionListLength) {
-        this.maxServedExecutionListLength = maxServedExecutionListLength;
-    }
+  public int getMaxServedExecutionListLength() {
+    return maxServedExecutionListLength;
+  }
 
-    public int getMaxDepublishRecordIdsPerDataset() {
-        return maxDepublishRecordIdsPerDataset;
-    }
+  public void setMaxServedExecutionListLength(int maxServedExecutionListLength) {
+    this.maxServedExecutionListLength = maxServedExecutionListLength;
+  }
 
-    public void setMaxDepublishRecordIdsPerDataset(int maxDepublishRecordIdsPerDataset) {
-        this.maxDepublishRecordIdsPerDataset = maxDepublishRecordIdsPerDataset;
-    }
+  public int getMaxDepublishRecordIdsPerDataset() {
+    return maxDepublishRecordIdsPerDataset;
+  }
 
-    public int getLinkCheckingDefaultSamplingSize() {
-        return linkCheckingDefaultSamplingSize;
-    }
+  public void setMaxDepublishRecordIdsPerDataset(int maxDepublishRecordIdsPerDataset) {
+    this.maxDepublishRecordIdsPerDataset = maxDepublishRecordIdsPerDataset;
+  }
 
-    public void setLinkCheckingDefaultSamplingSize(int linkCheckingDefaultSamplingSize) {
-        this.linkCheckingDefaultSamplingSize = linkCheckingDefaultSamplingSize;
-    }
+  public int getLinkCheckingDefaultSamplingSize() {
+    return linkCheckingDefaultSamplingSize;
+  }
 
-    public int getSolrCommitPeriodInMinutes() {
-        return solrCommitPeriodInMinutes;
-    }
+  public void setLinkCheckingDefaultSamplingSize(int linkCheckingDefaultSamplingSize) {
+    this.linkCheckingDefaultSamplingSize = linkCheckingDefaultSamplingSize;
+  }
 
-    public void setSolrCommitPeriodInMinutes(int solrCommitPeriodInMinutes) {
-        this.solrCommitPeriodInMinutes = solrCommitPeriodInMinutes;
-    }
+  public int getSolrCommitPeriodInMinutes() {
+    return solrCommitPeriodInMinutes;
+  }
 
-    public String[] getAllowedCorsHosts() {
-      return allowedCorsHosts == null ? null : allowedCorsHosts.clone();
-    }
+  public void setSolrCommitPeriodInMinutes(int solrCommitPeriodInMinutes) {
+    this.solrCommitPeriodInMinutes = solrCommitPeriodInMinutes;
+  }
 
-    public void setAllowedCorsHosts(String[] allowedCorsHosts) {
-      this.allowedCorsHosts = allowedCorsHosts == null ? null : allowedCorsHosts.clone();
-    }
+  public String[] getAllowedCorsHosts() {
+    return allowedCorsHosts == null ? null : allowedCorsHosts.clone();
+  }
+
+  public void setAllowedCorsHosts(String[] allowedCorsHosts) {
+    this.allowedCorsHosts = allowedCorsHosts == null ? null : allowedCorsHosts.clone();
+  }
 }

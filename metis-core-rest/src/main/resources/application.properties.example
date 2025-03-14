@@ -28,6 +28,7 @@ metis-core.failsafeMarginOfInactivityInSeconds=5
 metis-core.periodicFailsafeCheckInMilliseconds=60000
 metis-core.periodicSchedulerCheckInMilliseconds=90000
 metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds=10000
+metis-core.userCacheClearIntervalInMinutes=1440
 #If a task passed this cap the task will be cancelled
 metis-core.periodOfNoProcessedRecordsChangeInMinutes=30
 metis-core.threadLimitThrottlingLevelWeak=16
