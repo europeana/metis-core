@@ -63,7 +63,7 @@ class TestWorkflowExecution {
   @Test
   void testDeserialization() throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
-    //TODO: 2025-03-11 - This is configured because some fields that can be serialized cannot be deserialized(see field
+    //TODO: 2025-03-11 - MET-6427 - This is configured because some fields that can be serialized cannot be deserialized(see field
     // "executablePluginType" in the json file example) with the current implementation. This is not a functionality needed at
     // the moment since we do not deserialize a WorkflowExecutionDTO received from the controller.
     // To fix this, some refactoring is required and it needs to be carefully performed so that the morphia/mongo communication
