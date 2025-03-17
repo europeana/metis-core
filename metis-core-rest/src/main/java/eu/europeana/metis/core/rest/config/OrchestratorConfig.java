@@ -28,7 +28,6 @@ import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
-import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import metis.common.config.properties.TruststoreConfigurationProperties;
 import metis.common.config.properties.ecloud.EcloudConfigurationProperties;
@@ -36,15 +35,11 @@ import metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
 import metis.common.config.properties.redis.RedisConfigurationProperties;
 import metis.common.config.properties.validation.ValidationConfigurationProperties;
 import org.redisson.api.RedissonClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -56,11 +51,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
     RedisConfigurationProperties.class, MetisCoreConfigurationProperties.class,
     EcloudConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-@EnableScheduling
 public class OrchestratorConfig implements WebMvcConfigurer {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private WorkflowExecutionMonitor workflowExecutionMonitor;
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -286,10 +277,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         .plusSeconds(metisCoreConfigurationProperties.getDpsMonitorCheckIntervalInSeconds())
         .plusSeconds(metisCoreConfigurationProperties.getFailsafeMarginOfInactivityInSeconds());
 
-    // Create and return the workflow execution monitor.
-    workflowExecutionMonitor = new WorkflowExecutionMonitor(workflowExecutorManager,
+    return new WorkflowExecutionMonitor(workflowExecutorManager,
         workflowExecutionDao, redissonClient, failsafeLeniency);
-    return workflowExecutionMonitor;
   }
 
   @Bean
@@ -297,16 +286,5 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new ThrottlingValues(metisCoreConfigurationProperties.getThreadLimitThrottlingLevelWeak(),
         metisCoreConfigurationProperties.getThreadLimitThrottlingLevelMedium(),
         metisCoreConfigurationProperties.getThreadLimitThrottlingLevelStrong());
-  }
-
-  /**
-   * Failsafe periodic thread.
-   * <p>It will find stale executions and will re-submit them in the distributed queue.</p>
-   */
-
-  @Scheduled(fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPeriodicFailsafeCheckInMilliseconds()}")
-  public void runFailsafeExecutor() {
-    this.workflowExecutionMonitor.performFailsafe();
-    LOGGER.info("Failsafe task finished.");
   }
 }

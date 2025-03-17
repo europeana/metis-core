@@ -35,8 +35,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -45,7 +43,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @EnableConfigurationProperties({RabbitmqConfigurationProperties.class, TruststoreConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-@EnableScheduling
 public class QueueConfig implements WebMvcConfigurer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -134,14 +131,6 @@ public class QueueConfig implements WebMvcConfigurer {
         rabbitmqConfigurationProperties.getQueueName(), workflowExecutionManager, workflowExecutionManager,
         workflowExecutionMonitor);
     return queueConsumer;
-  }
-
-  @Scheduled(
-      initialDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPollingTimeoutForCleaningCompletionServiceInMilliseconds()}",
-      fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPollingTimeoutForCleaningCompletionServiceInMilliseconds()}")
-  public void runQueueConsumerCleanup() throws InterruptedException {
-    this.queueConsumer.checkAndCleanCompletionService();
-    LOGGER.debug("Queue consumer cleanup finished.");
   }
 
   /**

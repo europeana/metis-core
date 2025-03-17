@@ -7,24 +7,15 @@ import eu.europeana.metis.core.execution.SchedulerExecutor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.service.ScheduleWorkflowService;
-import java.lang.invoke.MethodHandles;
 import org.redisson.api.RedissonClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 
 /**
  * Scheduler configuration class.
  */
 @Configuration
-@EnableScheduling
 public class SchedulerConfig {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private SchedulerExecutor schedulerExecutor;
 
   /**
    * Creates and returns a bean of ScheduledWorkflowDao.
@@ -65,20 +56,6 @@ public class SchedulerConfig {
   @Bean
   public SchedulerExecutor getSchedulingExecutor(OrchestratorService orchestratorService,
       ScheduleWorkflowService scheduleWorkflowService, RedissonClient redissonClient) {
-    schedulerExecutor = new SchedulerExecutor(orchestratorService, scheduleWorkflowService, redissonClient);
-    return schedulerExecutor;
-  }
-
-  /**
-   * Scheduling periodic thread.
-   * <p>Checks if scheduled workflows are valid for starting and sends them to the distributed
-   * queue.</p>
-   */
-  @Scheduled(
-      initialDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPeriodicSchedulerCheckInMilliseconds()}",
-      fixedDelayString = "#{@'metis-core-eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties'.getPeriodicSchedulerCheckInMilliseconds()}")
-  public void runSchedulingExecutor() {
-    this.schedulerExecutor.performScheduling();
-    LOGGER.info("Scheduler task finished.");
+    return new SchedulerExecutor(orchestratorService, scheduleWorkflowService, redissonClient);
   }
 }

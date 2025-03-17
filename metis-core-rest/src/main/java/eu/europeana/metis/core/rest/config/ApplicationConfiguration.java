@@ -112,6 +112,8 @@ public class ApplicationConfiguration {
     return new MongoClientProvider<>(mongoProperties).createMongoClient();
   }
 
+
+
   @Bean(name = DispatcherServlet.MULTIPART_RESOLVER_BEAN_NAME)
   public StandardServletMultipartResolver getMultipartResolver() {
     return new StandardServletMultipartResolver();
