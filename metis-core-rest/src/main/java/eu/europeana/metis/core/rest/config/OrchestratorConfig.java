@@ -84,7 +84,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
         workflowExecutorManager, redissonClient, depublishRecordIdDao, userService);
-    orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.getSolrCommitPeriodInMinutes());
+    orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.solrCommitPeriodInMinutes());
     return orchestratorService;
   }
 
@@ -148,7 +148,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     workflowExecutionFactory
         .setValidationInternalProperties(validationInternalProperties);
     workflowExecutionFactory.setDefaultSamplingSizeForLinkChecking(
-        metisCoreConfigurationProperties.getLinkCheckingDefaultSamplingSize());
+        metisCoreConfigurationProperties.linkCheckingDefaultSamplingSize());
     return workflowExecutionFactory;
   }
 
@@ -208,7 +208,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   @Bean
   public SemaphoresPerPluginManager semaphoresPerPluginManager(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return new SemaphoresPerPluginManager(metisCoreConfigurationProperties.getMaxConcurrentThreads());
+    return new SemaphoresPerPluginManager(metisCoreConfigurationProperties.maxConcurrentThreads());
   }
 
   @Bean
@@ -226,12 +226,12 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, dpsClient);
     workflowExecutorManager.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
     workflowExecutorManager
-        .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.getDpsMonitorCheckIntervalInSeconds());
+        .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
     workflowExecutorManager.setPeriodOfNoProcessedRecordsChangeInMinutes(
-        metisCoreConfigurationProperties.getPeriodOfNoProcessedRecordsChangeInMinutes());
+        metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
     workflowExecutorManager.setEcloudBaseUrl(ecloudConfigurationProperties.getBaseUrl());
     workflowExecutorManager.setEcloudProvider(ecloudConfigurationProperties.getProvider());
-    workflowExecutorManager.setMetisCoreBaseUrl(metisCoreConfigurationProperties.getBaseUrl());
+    workflowExecutorManager.setMetisCoreBaseUrl(metisCoreConfigurationProperties.baseUrl());
     workflowExecutorManager.setThrottlingValues(getThrottlingValues(metisCoreConfigurationProperties));
     return workflowExecutorManager;
   }
@@ -244,7 +244,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     workflowExecutionDao
         .setWorkflowExecutionsPerRequest(RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit());
     workflowExecutionDao
-        .setMaxServedExecutionListLength(metisCoreConfigurationProperties.getMaxServedExecutionListLength());
+        .setMaxServedExecutionListLength(metisCoreConfigurationProperties.maxServedExecutionListLength());
     return workflowExecutionDao;
   }
 
@@ -272,10 +272,10 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     // Computes the leniency for the failsafe action: how long ago (worst case) can the last update
     // time have been set before we assume the execution hangs.
     final Duration failsafeLeniency = Duration.ZERO
-        .plusMillis(metisCoreConfigurationProperties.getDpsConnectTimeoutInMilliseconds())
-        .plusMillis(metisCoreConfigurationProperties.getDpsReadTimeoutInMilliseconds())
-        .plusSeconds(metisCoreConfigurationProperties.getDpsMonitorCheckIntervalInSeconds())
-        .plusSeconds(metisCoreConfigurationProperties.getFailsafeMarginOfInactivityInSeconds());
+        .plusMillis(metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds())
+        .plusMillis(metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds())
+        .plusSeconds(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds())
+        .plusSeconds(metisCoreConfigurationProperties.failsafeMarginOfInactivityInSeconds());
 
     return new WorkflowExecutionMonitor(workflowExecutorManager,
         workflowExecutionDao, redissonClient, failsafeLeniency);
@@ -283,8 +283,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
 
   @Bean
   public ThrottlingValues getThrottlingValues(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return new ThrottlingValues(metisCoreConfigurationProperties.getThreadLimitThrottlingLevelWeak(),
-        metisCoreConfigurationProperties.getThreadLimitThrottlingLevelMedium(),
-        metisCoreConfigurationProperties.getThreadLimitThrottlingLevelStrong());
+    return new ThrottlingValues(metisCoreConfigurationProperties.threadLimitThrottlingLevelWeak(),
+        metisCoreConfigurationProperties.threadLimitThrottlingLevelMedium(),
+        metisCoreConfigurationProperties.threadLimitThrottlingLevelStrong());
   }
 }

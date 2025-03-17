@@ -97,7 +97,7 @@ class TestOrchestratorController {
 
   @Autowired
   public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(

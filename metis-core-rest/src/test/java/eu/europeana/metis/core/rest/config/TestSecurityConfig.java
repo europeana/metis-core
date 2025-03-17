@@ -55,7 +55,7 @@ class TestSecurityConfig {
 
   @Autowired
   public TestSecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   @BeforeAll

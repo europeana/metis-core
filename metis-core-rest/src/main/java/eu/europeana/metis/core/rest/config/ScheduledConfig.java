@@ -31,7 +31,7 @@ public class ScheduledConfig {
    */
   @Bean
   public long getPeriodicFailsafeCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.getPeriodicFailsafeCheckInMilliseconds();
+    return metisCoreConfigurationProperties.periodicFailsafeCheckInMilliseconds();
   }
 
   /**
@@ -42,7 +42,7 @@ public class ScheduledConfig {
    */
   @Bean
   public long getPeriodicSchedulerCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.getPeriodicSchedulerCheckInMilliseconds();
+    return metisCoreConfigurationProperties.periodicSchedulerCheckInMilliseconds();
   }
 
   /**
@@ -55,7 +55,7 @@ public class ScheduledConfig {
   @Bean
   public long getPollingTimeoutForCleaningCompletionServiceInMilliseconds(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.getPollingTimeoutForCleaningCompletionServiceInMilliseconds();
+    return metisCoreConfigurationProperties.pollingTimeoutForCleaningCompletionServiceInMilliseconds();
   }
 
   /**
@@ -66,7 +66,7 @@ public class ScheduledConfig {
    */
   @Bean
   public long getUserCacheClearIntervalInMinutes(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.getUserCacheClearIntervalInMinutes();
+    return metisCoreConfigurationProperties.userCacheClearIntervalInMinutes();
   }
 
   /**

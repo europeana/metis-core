@@ -38,8 +38,8 @@ public class ECloudConfig implements WebMvcConfigurer {
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getUsername(),
         ecloudConfigurationProperties.getPassword(),
-        metisCoreConfigurationProperties.getDpsConnectTimeoutInMilliseconds(),
-        metisCoreConfigurationProperties.getDpsReadTimeoutInMilliseconds());
+        metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds(),
+        metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
     return dataSetServiceClient;
   }
 
@@ -51,8 +51,8 @@ public class ECloudConfig implements WebMvcConfigurer {
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getUsername(),
         ecloudConfigurationProperties.getPassword(),
-        metisCoreConfigurationProperties.getDpsConnectTimeoutInMilliseconds(),
-        metisCoreConfigurationProperties.getDpsReadTimeoutInMilliseconds());
+        metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds(),
+        metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
     return recordServiceClient;
   }
 
@@ -64,8 +64,8 @@ public class ECloudConfig implements WebMvcConfigurer {
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getUsername(),
         ecloudConfigurationProperties.getPassword(),
-        metisCoreConfigurationProperties.getDpsConnectTimeoutInMilliseconds(),
-        metisCoreConfigurationProperties.getDpsReadTimeoutInMilliseconds());
+        metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds(),
+        metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
     return fileServiceClient;
   }
 
@@ -77,8 +77,8 @@ public class ECloudConfig implements WebMvcConfigurer {
         ecloudConfigurationProperties.getDpsBaseUrl(),
         ecloudConfigurationProperties.getUsername(),
         ecloudConfigurationProperties.getPassword(),
-        metisCoreConfigurationProperties.getDpsConnectTimeoutInMilliseconds(),
-        metisCoreConfigurationProperties.getDpsReadTimeoutInMilliseconds());
+        metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds(),
+        metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
     return dpsClient;
   }
 
@@ -90,8 +90,8 @@ public class ECloudConfig implements WebMvcConfigurer {
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getUsername(),
         ecloudConfigurationProperties.getPassword(),
-        metisCoreConfigurationProperties.getDpsConnectTimeoutInMilliseconds(),
-        metisCoreConfigurationProperties.getDpsReadTimeoutInMilliseconds());
+        metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds(),
+        metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
     return uisClient;
   }
 

@@ -167,7 +167,7 @@ public class ApplicationConfiguration {
       MorphiaDatastoreProvider morphiaDatastoreProvider,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     return new DepublishRecordIdDao(morphiaDatastoreProvider,
-        metisCoreConfigurationProperties.getMaxDepublishRecordIdsPerDataset());
+        metisCoreConfigurationProperties.maxDepublishRecordIdsPerDataset());
   }
 
   /**
@@ -192,7 +192,7 @@ public class ApplicationConfiguration {
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     DatasetService datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao,
         workflowExecutionDao, scheduledWorkflowDao, redissonClient, userService);
-    datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.getBaseUrl());
+    datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.baseUrl());
     return datasetService;
   }
 

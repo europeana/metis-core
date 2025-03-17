@@ -69,7 +69,7 @@ class TestDepublishRecordIdController {
 
   @Autowired
   public TestDepublishRecordIdController(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   @BeforeAll

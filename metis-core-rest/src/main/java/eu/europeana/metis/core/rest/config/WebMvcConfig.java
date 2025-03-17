@@ -33,7 +33,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
   @Override
   public void addCorsMappings(CorsRegistry registry) {
     registry.addMapping("/**").allowedMethods("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedOrigins(metisCoreConfigurationProperties.getAllowedCorsHosts());
+            .allowedOrigins(metisCoreConfigurationProperties.allowedCorsHosts().toArray(String[]::new));
   }
 
   @Override

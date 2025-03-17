@@ -32,6 +32,7 @@ import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
 import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Spring security configuration class.
@@ -51,7 +52,8 @@ public class SecurityConfig {
    */
   @Autowired
   public SecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
-    this.resourceNames = securityConfigurationProperties.getResourceNames();
+    this.resourceNames = securityConfigurationProperties.resourceNames();
+    requireNonNull(this.resourceNames, "The resourceNames property must be set in the security configuration.");
   }
 
   /**
