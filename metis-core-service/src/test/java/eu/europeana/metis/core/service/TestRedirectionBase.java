@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.service;
 
 import eu.europeana.cloud.common.model.dps.TaskState;
-import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
@@ -30,6 +29,7 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingLevel;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.utils.Country;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -186,11 +186,9 @@ public class TestRedirectionBase {
     dataset.setCountry(Country.GERMANY);
     dataset.setDatasetName("dataset test name");
     dataset.setDescription("");
-    dataset.setOrganizationId("1482250000001617026");
     dataset.setCreatedByUserId("1482250000016772002");
     dataset.setLanguage(Language.MUL);
     dataset.setDatasetIdsToRedirectFrom(List.of());
-    dataset.setOrganizationName("Europeana Foundation");
     dataset.setCreatedByUserId("userId");
     dataset.setCreatedDate(Date.from(Instant.now().minus(120, ChronoUnit.MINUTES)));
     dataset.setUpdatedDate(Date.from(Instant.now()));

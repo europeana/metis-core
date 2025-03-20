@@ -28,16 +28,16 @@ import eu.europeana.metis.core.rest.PluginsWithDataAvailability.PluginWithDataAv
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
-import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
-import eu.europeana.metis.core.workflow.execution.MetisPluginDTO;
-import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.user.User;
-import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.MetisPluginDTO;
+import eu.europeana.metis.core.workflow.execution.SystemId;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
@@ -493,8 +493,7 @@ public class OrchestratorService {
    * @param orderField the field to be used to sort the results
    * @param ascending a boolean value to request the ordering to ascending or descending
    * @param nextPage the nextPage token
-   * @return A list of all the WorkflowExecutions found. If the user is not admin, the list is filtered to only show those
-   * executions that are in the user's organization.
+   * @return A list of all the WorkflowExecutions found.
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
@@ -512,7 +511,7 @@ public class OrchestratorService {
     // Determine the dataset IDs to filter on.
     final Set<String> datasetIds;
     if (datasetId == null) {
-      datasetIds = getDatasetIdsToFilterOn();
+      datasetIds = getAllDatasetIds();
     } else {
       datasetIds = Collections.singleton(datasetId);
     }
@@ -587,7 +586,7 @@ public class OrchestratorService {
    */
   public ResponseListWrapper<ExecutionAndDatasetView> getWorkflowExecutionsOverview(Set<PluginStatus> pluginStatuses,
       Set<PluginType> pluginTypes, Date fromDate, Date toDate, int nextPage, int pageCount) {
-    final Set<String> datasetIds = getDatasetIdsToFilterOn();
+    final Set<String> datasetIds = getAllDatasetIds();
     final ResultList<ExecutionDatasetPair> resultList;
     if (datasetIds == null || !datasetIds.isEmpty()) {
       //Match results filtering using specified dataset ids or without dataset id filter if it's null
@@ -609,15 +608,12 @@ public class OrchestratorService {
   }
 
   /**
-   * Retrieves a set of dataset IDs to filter on based on the datasets associated with a specific organization.
+   * Retrieves a set of dataset IDs to filter on.
    *
-   * @return a set of dataset IDs belonging to the specified organization
+   * @return a set of dataset IDs
    */
-  private Set<String> getDatasetIdsToFilterOn() {
-    final Set<String> datasetIds;
-    datasetIds = datasetDao.getAllDatasetsByOrganizationId(DatasetDao.ORGANIZATION_ID).stream()
-                           .map(Dataset::getDatasetId).collect(Collectors.toSet());
-    return datasetIds;
+  private Set<String> getAllDatasetIds() {
+    return datasetDao.getAllDatasets().stream().map(Dataset::getDatasetId).collect(Collectors.toSet());
   }
 
   /**

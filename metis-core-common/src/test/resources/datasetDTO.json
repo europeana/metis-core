@@ -3,8 +3,6 @@
   "ecloudDatasetId": "ecloudDatasetId",
   "datasetId": "datasetId",
   "datasetName": "datasetName",
-  "organizationId": "organizationId",
-  "organizationName": "organizationName",
   "provider": "provider",
   "dataProvider": "dataProvider",
   "intermediateProvider": "intermediateProvider",

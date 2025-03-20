@@ -1,5 +1,9 @@
 package eu.europeana.metis.core.service;
 
+import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
+import static java.util.function.Predicate.not;
+
 import eu.europeana.metis.core.common.TransformationParameters;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -49,9 +53,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import static java.util.Optional.ofNullable;
-import static java.util.function.Predicate.not;
 
 /**
  * Contains business logic of how to manipulate datasets in the system using several components. The functionality in this class
@@ -106,29 +107,22 @@ public class DatasetService {
    * @return the created {@link DatasetDTO} including the extra fields generated from the system
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link DatasetAlreadyExistsException} if the dataset for the same organizationId and datasetName already exists in the system.</li>
+   * <li>{@link DatasetAlreadyExistsException} if the dataset for the datasetName already exists in the system.</li>
    * <li>{@link BadContentException} if some contents were invalid</li>
    * </ul>
    */
   public DatasetDTO createDataset(String userId, DatasetDTO datasetDTO) throws GenericMetisException {
-
-    datasetDTO.setOrganizationId(DatasetDao.ORGANIZATION_ID);
-    datasetDTO.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
-
     //Lock required for find in the next empty datasetId
     RLock lock = redissonClient.getFairLock(DATASET_CREATION_LOCK);
     lock.lock();
 
     Dataset createdDataset;
     try {
-      Dataset storedDataset = datasetDao
-          .getDatasetByOrganizationIdAndDatasetName(datasetDTO.getOrganizationId(),
-              datasetDTO.getDatasetName());
+      Dataset storedDataset = datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName());
       if (storedDataset != null) {
         lock.unlock();
-        throw new DatasetAlreadyExistsException(String
-            .format("Dataset with organizationId: %s and datasetName: %s already exists..",
-                datasetDTO.getOrganizationId(), datasetDTO.getDatasetName()));
+        throw new DatasetAlreadyExistsException(
+            format("Dataset with datasetName: %s already exists..", datasetDTO.getDatasetName()));
       }
 
       datasetDTO.setCreatedByUserId(userId);
@@ -136,7 +130,7 @@ public class DatasetService {
       datasetDTO.setUpdatedDate(null);
       datasetDTO.setCreatedDate(new Date());
       //Add fake ecloudDatasetId to avoid null errors in the database
-      datasetDTO.setEcloudDatasetId(String.format("NOT_CREATED_YET-%s", UUID.randomUUID()));
+      datasetDTO.setEcloudDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
       int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
       datasetDTO.setDatasetId(Integer.toString(nextInSequenceDatasetId));
@@ -157,7 +151,7 @@ public class DatasetService {
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
    * <li>{@link BadContentException} if the dataset has an execution running, contents are invalid.</li>
-   * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists for organizationId.</li>
+   * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists.</li>
    * </ul>
    */
   public void updateDataset(DatasetDTO datasetDTO, String xsltString)
@@ -169,27 +163,21 @@ public class DatasetService {
     // Check that the new dataset name does not already exist.
     final String newDatasetName = datasetDTO.getDatasetName();
     if (!storedDataset.getDatasetName().equals(newDatasetName)
-        && datasetDao.getDatasetByOrganizationIdAndDatasetName(DatasetDao.ORGANIZATION_ID,
-        newDatasetName) != null) {
-      throw new DatasetAlreadyExistsException(String.format(
-          "Trying to change dataset with datasetName: %s but dataset with organizationId: %s and datasetName: %s already exists",
-          storedDataset.getDatasetName(), DatasetDao.ORGANIZATION_ID, newDatasetName));
+        && datasetDao.getDatasetByDatasetName(newDatasetName) != null) {
+      throw new DatasetAlreadyExistsException(format(
+          "Trying to change dataset with datasetName: %s but dataset with datasetName: %s already exists",
+          storedDataset.getDatasetName(), newDatasetName));
     }
 
     // Check that there is no workflow execution pending for the given dataset.
     if (workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId()) != null) {
-      throw new BadContentException(
-          String.format("Workflow execution is active for datasetId %s", datasetDTO.getDatasetId()));
+      throw new BadContentException(format("Workflow execution is active for datasetId %s", datasetDTO.getDatasetId()));
     }
 
     // Set/overwrite dataset properties that the user may not determine.
-    datasetDTO.setOrganizationId(DatasetDao.ORGANIZATION_ID);
-    datasetDTO.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
     datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
     datasetDTO.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
     datasetDTO.setCreatedDate(storedDataset.getCreatedDate());
-    datasetDTO.setOrganizationId(storedDataset.getOrganizationId());
-    datasetDTO.setOrganizationName(storedDataset.getOrganizationName());
     datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
     datasetDTO.setId(storedDataset.getId().toString());
 
@@ -213,11 +201,11 @@ public class DatasetService {
       for (String datasetId : datasetDTO.getDatasetIdsToRedirectFrom()) {
         if (datasetDao.getDatasetByDatasetId(datasetId) == null) {
           throw new BadContentException(
-              String.format("Old datasetId for redirection %s doesn't exist", datasetId));
+              format("Old datasetId for redirection %s doesn't exist", datasetId));
         }
         if (datasetDTO.getDatasetId().equals(datasetId)) {
           throw new BadContentException(
-              String.format("datasetId for redirection %s cannot be the same as the current datasetId", datasetId));
+              format("datasetId for redirection %s cannot be the same as the current datasetId", datasetId));
         }
       }
     }
@@ -255,7 +243,7 @@ public class DatasetService {
     // Check that there is no workflow execution pending for the given dataset.
     if (workflowExecutionDao.existsAndNotCompleted(datasetId) != null) {
       throw new BadContentException(
-          String.format("Workflow execution is active for datasteId %s", datasetId));
+          format("Workflow execution is active for datasteId %s", datasetId));
     }
 
     //Are there datasets that have a reference to the datasetId that is to be removed
@@ -292,7 +280,7 @@ public class DatasetService {
     final Dataset dataset = datasetDao.getDatasetByDatasetName(datasetName);
     if (dataset == null) {
       throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetName: '%s' in METIS", datasetName));
+          format("No dataset found with datasetName: '%s' in METIS", datasetName));
     }
     return DatasetConverter.toDTO(dataset, userService.getUserFromCache(dataset.getCreatedByUserId()));
   }
@@ -328,7 +316,7 @@ public class DatasetService {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     DatasetXslt datasetXslt = datasetXsltDao.getById(dataset.getXsltId() == null ? null : dataset.getXsltId().toString());
     if (datasetXslt == null) {
-      throw new NoXsltFoundException(String.format(
+      throw new NoXsltFoundException(format(
           "No datasetXslt found for dataset with datasetId: '%s' and xsltId: '%s' in METIS",
           datasetId, dataset.getXsltId()));
     }
@@ -351,7 +339,7 @@ public class DatasetService {
   public DatasetXslt getDatasetXsltByXsltId(String xsltId) throws GenericMetisException {
     DatasetXslt datasetXslt = datasetXsltDao.getById(xsltId);
     if (datasetXslt == null) {
-      throw new NoXsltFoundException(String.format("No datasetXslt found with xsltId: '%s' in METIS", xsltId));
+      throw new NoXsltFoundException(format("No datasetXslt found with xsltId: '%s' in METIS", xsltId));
     }
     return datasetXslt;
   }
@@ -458,7 +446,7 @@ public class DatasetService {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     if (dataset.getXsltId() == null) {
       throw new NoXsltFoundException(
-          String.format("Could not find xslt for datasetId %s", datasetId));
+          format("Could not find xslt for datasetId %s", datasetId));
     }
     DatasetXslt datasetXslt = datasetXsltDao.getById(dataset.getXsltId().toString());
 
@@ -548,36 +536,6 @@ public class DatasetService {
                                             .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
                                                 userService.getUserFromCache(storedDataset.getCreatedByUserId())))
                                             .toList();
-  }
-
-  /**
-   * Get all datasets using the organizationId field.
-   *
-   * @param organizationId the organizationId string used to find the datasets
-   * @param nextPage the nextPage number or -1
-   * @return {@link List} of {@link Dataset}
-   */
-  public List<DatasetDTO> getAllDatasetsByOrganizationId(String organizationId, int nextPage) {
-    List<Dataset> allDatasetsByOrganizationId = datasetDao.getAllDatasetsByOrganizationId(organizationId, nextPage);
-    return allDatasetsByOrganizationId.stream()
-                                    .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
-                                        userService.getUserFromCache(storedDataset.getCreatedByUserId())))
-                                    .toList();
-  }
-
-  /**
-   * Get all datasets using the organizationName field.
-   *
-   * @param organizationName the organizationName string used to find the datasets
-   * @param nextPage the nextPage number or -1
-   * @return {@link List} of {@link Dataset}
-   */
-  public List<DatasetDTO> getAllDatasetsByOrganizationName(String organizationName, int nextPage) {
-    List<Dataset> allDatasetsByOrganizationName = datasetDao.getAllDatasetsByOrganizationName(organizationName, nextPage);
-    return allDatasetsByOrganizationName.stream()
-                                      .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
-                                          userService.getUserFromCache(storedDataset.getCreatedByUserId())))
-                                      .toList();
   }
 
   /**

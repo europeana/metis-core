@@ -1,17 +1,5 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.europeana.metis.core.common.Language;
-import eu.europeana.metis.core.common.TestSerializationUtils;
-import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
-import eu.europeana.metis.utils.Country;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.Objects;
-import org.junit.jupiter.api.Test;
-
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY_ENUM;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_USER_ID;
@@ -29,8 +17,6 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE_ENUM;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.NOTES;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_NAME;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.PROVIDER;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.PUBLICATION_FITNESS;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_1_VALUE;
@@ -47,6 +33,18 @@ import static io.smallrye.common.constraint.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.europeana.metis.core.common.Language;
+import eu.europeana.metis.core.common.TestSerializationUtils;
+import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.utils.Country;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
 class TestDataset {
 
@@ -91,8 +89,6 @@ class TestDataset {
     TestSerializationUtils.assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonOutput, DATASET_NAME, DATASET_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, ORGANIZATION_ID, ORGANIZATION_ID);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, ORGANIZATION_NAME, ORGANIZATION_NAME);
     TestSerializationUtils.assertFieldEquals(jsonOutput, PROVIDER, PROVIDER);
     TestSerializationUtils.assertFieldEquals(jsonOutput, DATA_PROVIDER, DATA_PROVIDER);
     TestSerializationUtils.assertFieldEquals(jsonOutput, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
@@ -116,8 +112,6 @@ class TestDataset {
     assertEquals(ECLOUD_DATASET_ID, dataset.getEcloudDatasetId());
     assertEquals(DATASET_ID, dataset.getDatasetId());
     assertEquals(DATASET_NAME, dataset.getDatasetName());
-    assertEquals(ORGANIZATION_ID, dataset.getOrganizationId());
-    assertEquals(ORGANIZATION_NAME, dataset.getOrganizationName());
     assertEquals(PROVIDER, dataset.getProvider());
     assertEquals(DATA_PROVIDER, dataset.getDataProvider());
     assertEquals(INTERMEDIATE_PROVIDER, dataset.getIntermediateProvider());

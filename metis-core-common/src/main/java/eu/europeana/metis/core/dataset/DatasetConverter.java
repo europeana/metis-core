@@ -29,8 +29,6 @@ public final class DatasetConverter {
     dataset.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
     dataset.setDatasetId(datasetDTO.getDatasetId());
     dataset.setDatasetName(datasetDTO.getDatasetName());
-    dataset.setOrganizationId(datasetDTO.getOrganizationId());
-    dataset.setOrganizationName(datasetDTO.getOrganizationName());
     dataset.setProvider(datasetDTO.getProvider());
     dataset.setDataProvider(datasetDTO.getDataProvider());
     dataset.setIntermediateProvider(datasetDTO.getIntermediateProvider());
@@ -63,8 +61,6 @@ public final class DatasetConverter {
         dataset.getEcloudDatasetId(),
         dataset.getDatasetId(),
         dataset.getDatasetName(),
-        dataset.getOrganizationId(),
-        dataset.getOrganizationName(),
         dataset.getProvider(),
         dataset.getDataProvider(),
         dataset.getIntermediateProvider(),

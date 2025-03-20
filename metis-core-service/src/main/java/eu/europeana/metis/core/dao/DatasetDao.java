@@ -1,5 +1,13 @@
 package eu.europeana.metis.core.dao;
 
+import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_NAME;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATA_PROVIDER;
+import static eu.europeana.metis.core.common.DaoFieldNames.ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.PROVIDER;
+import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
+import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
+
 import dev.morphia.UpdateOptions;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
@@ -22,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -32,14 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_NAME;
-import static eu.europeana.metis.core.common.DaoFieldNames.DATA_PROVIDER;
-import static eu.europeana.metis.core.common.DaoFieldNames.ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.PROVIDER;
-import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
-import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
-
 /**
  * Dataset Access Object for datasets using Mongo. It also contains the {@link DataSetServiceClient} which is used to access
  * functionality of the ECloud datasets.
@@ -48,8 +47,6 @@ import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRe
 public class DatasetDao implements MetisDao<Dataset, String> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  public static final String ORGANIZATION_ID = "1482250000001617026";
-  public static final String ORGANIZATION_NAME = "Europeana Foundation";
   private int datasetsPerRequest = RequestLimits.DATASETS_PER_REQUEST.getLimit();
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
@@ -86,9 +83,7 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     if (LOGGER.isDebugEnabled()) {
       final String datasetId = StringEscapeUtils.escapeJava(dataset.getDatasetId());
       final String datasetName = StringEscapeUtils.escapeJava(dataset.getDatasetName());
-      final String datasetOrganizationId = StringEscapeUtils.escapeJava(dataset.getOrganizationId());
-      LOGGER.debug("Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' created in Mongo",
-          datasetId, datasetName, datasetOrganizationId);
+      LOGGER.debug("Dataset with datasetId: '{}', datasetName: '{}' created in Mongo", datasetId, datasetName);
     }
     return datasetSaved;
   }
@@ -106,9 +101,7 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     if (LOGGER.isDebugEnabled()) {
       final String datasetId = StringEscapeUtils.escapeJava(dataset.getDatasetId());
       final String datasetName = StringEscapeUtils.escapeJava(dataset.getDatasetName());
-      final String datasetOrganizationId = StringEscapeUtils.escapeJava(dataset.getOrganizationId());
-      LOGGER.debug("Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' updated in Mongo",
-          datasetId, datasetName, datasetOrganizationId);
+      LOGGER.debug("Dataset with datasetId: '{}', datasetName: '{}' updated in Mongo", datasetId, datasetName);
     }
     return datasetSaved == null ? null : datasetSaved.getId().toString();
   }
@@ -138,8 +131,8 @@ public class DatasetDao implements MetisDao<Dataset, String> {
         () -> morphiaDatastoreProvider.getDatastore().find(Dataset.class)
                                       .filter(Filters.eq(DATASET_ID.getFieldName(), dataset.getDatasetId())).delete());
     LOGGER.debug(
-        "Dataset with datasetId: '{}', datasetName: '{}' and OrganizationId: '{}' deleted in Mongo",
-        dataset.getDatasetId(), dataset.getDatasetName(), dataset.getOrganizationId());
+        "Dataset with datasetId: '{}', datasetName: '{}' deleted in Mongo",
+        dataset.getDatasetId(), dataset.getDatasetName());
     return true;
   }
 
@@ -153,6 +146,17 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     Dataset dataset = new Dataset();
     dataset.setDatasetId(datasetId);
     return delete(dataset);
+  }
+
+  /**
+   * Get all datasets.
+   *
+   * @return {@link List} of {@link Dataset}
+   */
+  public List<Dataset> getAllDatasets() {
+    Query<Dataset> query = morphiaDatastoreProvider.getDatastore().find(Dataset.class);
+    final FindOptions findOptions = new FindOptions();
+    return getListOfQueryRetryable(query, findOptions);
   }
 
   /**
@@ -177,21 +181,6 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     return retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().find(Dataset.class)
                                       .filter(Filters.eq(DATASET_ID.getFieldName(), datasetId)).first());
-  }
-
-  /**
-   * Get a dataset using an organizationId and datasetName
-   *
-   * @param organizationId the organizationId
-   * @param datasetName the datasetName
-   * @return {@link Dataset} or null
-   */
-  public Dataset getDatasetByOrganizationIdAndDatasetName(String organizationId,
-      String datasetName) {
-    return retryableExternalRequestForNetworkExceptions(
-        () -> morphiaDatastoreProvider.getDatastore().find(Dataset.class)
-                                      .filter(Filters.eq("organizationId", organizationId))
-                                      .filter(Filters.eq(DATASET_NAME.getFieldName(), datasetName))).first();
   }
 
   /**
@@ -238,50 +227,6 @@ public class DatasetDao implements MetisDao<Dataset, String> {
     final FindOptions findOptions = new FindOptions().skip(nextPage * getDatasetsPerRequest())
                                                      .limit(getDatasetsPerRequest());
     return getListOfQueryRetryable(query, findOptions);
-  }
-
-  /**
-   * Get all datasets using the organizationName field.
-   *
-   * @param organizationName the organizationName string used to find the datasets
-   * @param nextPage the nextPage positive number
-   * @return {@link List} of {@link Dataset}
-   */
-  public List<Dataset> getAllDatasetsByOrganizationName(String organizationName, int nextPage) {
-    Query<Dataset> query = morphiaDatastoreProvider.getDatastore().find(Dataset.class);
-    query.filter(Filters.eq("organizationName", organizationName));
-    final FindOptions findOptions = new FindOptions().skip(nextPage * getDatasetsPerRequest())
-                                                     .limit(getDatasetsPerRequest());
-    return getListOfQueryRetryable(query, findOptions);
-  }
-
-  /**
-   * Get all datasets using the organizationId field, using pagination.
-   *
-   * @param organizationId the organizationId string used to find the datasets
-   * @param nextPage the nextPage positive number
-   * @return {@link List} of {@link Dataset}
-   */
-  public List<Dataset> getAllDatasetsByOrganizationId(String organizationId, int nextPage) {
-    return getAllDatasetsByOrganizationId(organizationId,
-        options -> options.skip(nextPage * getDatasetsPerRequest()).limit(getDatasetsPerRequest()));
-  }
-
-  /**
-   * Get all datasets using the organizationId field.
-   *
-   * @param organizationId the organizationId string used to find the datasets
-   * @return {@link List} of {@link Dataset}
-   */
-  public List<Dataset> getAllDatasetsByOrganizationId(String organizationId) {
-    return getAllDatasetsByOrganizationId(organizationId, UnaryOperator.identity());
-  }
-
-  private List<Dataset> getAllDatasetsByOrganizationId(String organizationId,
-      UnaryOperator<FindOptions> options) {
-    Query<Dataset> query = morphiaDatastoreProvider.getDatastore().find(Dataset.class);
-    query.filter(Filters.eq("organizationId", organizationId));
-    return getListOfQueryRetryable(query, options.apply(new FindOptions()));
   }
 
   /**

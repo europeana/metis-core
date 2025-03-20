@@ -1,5 +1,28 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.metis.core.common.Language;
@@ -44,29 +67,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DatasetController.class)
 @ContextConfiguration(classes = {DatasetController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
@@ -826,115 +826,6 @@ class TestDatasetController {
   }
 
   @Test
-  void getAllDatasetsByOrganizationId() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    List<DatasetDTO> datasetList = getDatasets();
-    when(datasetService.getAllDatasetsByOrganizationId("myOrganizationId", 3)).thenReturn(datasetList);
-    when(datasetService.getDatasetsPerRequestLimit()).thenReturn(5);
-
-    mockMvc.perform(get("/datasets/organization_id/myOrganizationId")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "3")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isOk())
-           .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-           .andExpect(jsonPath("$.results", hasSize(2)))
-           .andExpect(jsonPath("$.results[0].datasetId",
-               is(Integer.toString(TestObjectFactory.DATASETID + 1))))
-           .andExpect(jsonPath("$.results[1].datasetId",
-               is(Integer.toString(TestObjectFactory.DATASETID + 2))));
-
-    ArgumentCaptor<String> provider = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<Integer> page = ArgumentCaptor.forClass(Integer.class);
-    verify(datasetService, times(1))
-        .getAllDatasetsByOrganizationId(provider.capture(), page.capture());
-
-    assertEquals("myOrganizationId", provider.getValue());
-    assertEquals(3, page.getValue().intValue());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationIdUnauthenticated() throws Exception {
-    mockMvc.perform(get("/datasets/organization_id/myOrganizationId")
-               .param("nextPage", "3")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isUnauthorized());
-
-    verify(datasetService, times(0))
-        .getAllDatasetsByOrganizationId(anyString(), anyInt());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationIdInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(get("/datasets/organization_id/myOrganizationId")
-               .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
-               .param("nextPage", "3")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isForbidden());
-
-    verify(datasetService, times(0))
-        .getAllDatasetsByOrganizationId(anyString(), anyInt());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationName() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    List<DatasetDTO> datasetList = getDatasets();
-    when(datasetService.getAllDatasetsByOrganizationName("myOrganizationName", 3))
-        .thenReturn(datasetList);
-    when(datasetService.getDatasetsPerRequestLimit()).thenReturn(5);
-
-    mockMvc.perform(get("/datasets/organization_name/myOrganizationName")
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("nextPage", "3")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isOk())
-           .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-           .andExpect(jsonPath("$.results", hasSize(2)))
-           .andExpect(jsonPath("$.results[0].datasetId",
-               is(Integer.toString(TestObjectFactory.DATASETID + 1))))
-           .andExpect(jsonPath("$.results[1].datasetId",
-               is(Integer.toString(TestObjectFactory.DATASETID + 2))));
-
-    ArgumentCaptor<String> provider = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<Integer> page = ArgumentCaptor.forClass(Integer.class);
-    verify(datasetService, times(1))
-        .getAllDatasetsByOrganizationName(provider.capture(), page.capture());
-
-    assertEquals("myOrganizationName", provider.getValue());
-    assertEquals(3, page.getValue().intValue());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationNameUnauthenticated() throws Exception {
-    mockMvc.perform(get("/datasets/organization_name/myOrganizationName")
-               .param("nextPage", "3")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isUnauthorized());
-
-    verify(datasetService, times(0)).getAllDatasetsByOrganizationName(anyString(), anyInt());
-  }
-
-  @Test
-  void getAllDatasetsByOrganizationNameInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
-    mockMvc.perform(get("/datasets/organization_name/myOrganizationName")
-               .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
-               .param("nextPage", "3")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(TestUtils.convertObjectToJsonBytes(null)))
-           .andExpect(status().isForbidden());
-
-    verify(datasetService, times(0)).getAllDatasetsByOrganizationName(anyString(), anyInt());
-  }
-
-  @Test
   void getDatasetsCountries() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     MvcResult mvcResult = mockMvc.perform(get("/datasets/countries")
@@ -1044,9 +935,7 @@ class TestDatasetController {
   @ValueSource(strings = {
       "/datasets/provider/myProvider",
       "/datasets/intermediate_provider/myIntermediateProvider",
-      "/datasets/data_provider/myDataProvider",
-      "/datasets/organization_id/myOrganizationId",
-      "/datasets/organization_name/myOrganizationName"
+      "/datasets/data_provider/myDataProvider"
   })
   void getWithNegativeNextPage(String endpoint) throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());

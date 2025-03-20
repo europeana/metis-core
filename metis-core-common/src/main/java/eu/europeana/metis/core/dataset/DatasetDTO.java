@@ -26,8 +26,6 @@ public class DatasetDTO {
   private String ecloudDatasetId;
   private String datasetId;
   private String datasetName;
-  private String organizationId;
-  private String organizationName;
   private String provider;
   private String dataProvider;
   private String intermediateProvider;
@@ -70,8 +68,6 @@ public class DatasetDTO {
    * @param ecloudDatasetId the ECloud dataset ID
    * @param datasetId the dataset ID
    * @param datasetName the name of the dataset
-   * @param organizationId the ID of the organization
-   * @param organizationName the name of the organization
    * @param provider the provider of the dataset
    * @param dataProvider the data provider of the dataset
    * @param intermediateProvider the intermediate provider of the dataset
@@ -96,8 +92,6 @@ public class DatasetDTO {
       String ecloudDatasetId,
       String datasetId,
       String datasetName,
-      String organizationId,
-      String organizationName,
       String provider,
       String dataProvider,
       String intermediateProvider,
@@ -121,8 +115,6 @@ public class DatasetDTO {
     this.ecloudDatasetId = ecloudDatasetId;
     this.datasetId = datasetId;
     this.datasetName = datasetName;
-    this.organizationId = organizationId;
-    this.organizationName = organizationName;
     this.provider = provider;
     this.dataProvider = dataProvider;
     this.intermediateProvider = intermediateProvider;
@@ -175,22 +167,6 @@ public class DatasetDTO {
 
   public void setDatasetName(String datasetName) {
     this.datasetName = datasetName;
-  }
-
-  public String getOrganizationId() {
-    return organizationId;
-  }
-
-  public void setOrganizationId(String organizationId) {
-    this.organizationId = organizationId;
-  }
-
-  public String getOrganizationName() {
-    return organizationName;
-  }
-
-  public void setOrganizationName(String organizationName) {
-    this.organizationName = organizationName;
   }
 
   public String getProvider() {
