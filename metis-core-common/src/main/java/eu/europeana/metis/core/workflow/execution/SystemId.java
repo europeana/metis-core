@@ -1,4 +1,4 @@
-package eu.europeana.metis.core.workflow;
+package eu.europeana.metis.core.workflow.execution;
 
 /**
  * Enum that contains values used as identifiers for system specific cancellation operations.

@@ -1,19 +1,5 @@
 package eu.europeana.metis.core.dao;
 
-import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
-import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.FINISHED_DATE;
-import static eu.europeana.metis.core.common.DaoFieldNames.ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.METIS_PLUGINS;
-import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_METADATA;
-import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_STATUS;
-import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_TYPE;
-import static eu.europeana.metis.core.common.DaoFieldNames.STARTED_DATE;
-import static eu.europeana.metis.core.common.DaoFieldNames.WORKFLOW_STATUS;
-import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_ID;
-import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import dev.morphia.DeleteOptions;
@@ -26,12 +12,14 @@ import dev.morphia.aggregation.expressions.Expressions;
 import dev.morphia.aggregation.expressions.MathExpressions;
 import dev.morphia.aggregation.expressions.impls.Expression;
 import dev.morphia.aggregation.expressions.impls.MathExpression;
+import dev.morphia.aggregation.stages.Group;
 import dev.morphia.aggregation.stages.Lookup;
 import dev.morphia.aggregation.stages.Projection;
 import dev.morphia.aggregation.stages.Sort;
 import dev.morphia.aggregation.stages.Unwind;
 import dev.morphia.annotations.Entity;
 import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaCursor;
 import dev.morphia.query.Query;
 import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
@@ -41,7 +29,7 @@ import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
-import eu.europeana.metis.core.workflow.SystemId;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
@@ -56,17 +44,34 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
+
+import static dev.morphia.aggregation.expressions.AccumulatorExpressions.addToSet;
+import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.FINISHED_DATE;
+import static eu.europeana.metis.core.common.DaoFieldNames.ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.METIS_PLUGINS;
+import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_METADATA;
+import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_STATUS;
+import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_TYPE;
+import static eu.europeana.metis.core.common.DaoFieldNames.STARTED_DATE;
+import static eu.europeana.metis.core.common.DaoFieldNames.WORKFLOW_STATUS;
+import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_ID;
+import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Data Access Object for workflow executions using mongo.
@@ -81,10 +86,10 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   private static final int DEFAULT_POSITION_IN_OVERVIEW = 3;
   private static final String CANCELLING = "cancelling";
   private static final String CANCELLED_BY = "cancelledBy";
+  private static final String STARTED_BY = "startedBy";
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
-  private int workflowExecutionsPerRequest =
-      RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
+  private int workflowExecutionsPerRequest = RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
   private int maxServedExecutionListLength = Integer.MAX_VALUE;
 
   /**
@@ -847,6 +852,32 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
      */
     public ResultList {
       results = List.copyOf(results); // Ensures immutability
+    }
+  }
+
+  /**
+   * Returns a set of all distinct user identifiers found in the startedBy and cancelledBy fields of all WorkflowExecutions.
+   *
+   * @return A set of distinct user identifiers, or an empty set if none were found.
+   */
+  public Set<String> getDistinctUserIdentifiers() {
+    Aggregation<WorkflowExecution> aggregation =
+        morphiaDatastoreProvider.getDatastore()
+                                .aggregate(WorkflowExecution.class)
+                                .project(Projection.project().suppressId().include(STARTED_BY).include(CANCELLED_BY))
+                                .group(Group.group()
+                                            .field("distinctStartedBy", addToSet(Expressions.field(STARTED_BY)))
+                                            .field("distinctCancelledBy", addToSet(Expressions.field(CANCELLED_BY)))
+                                );
+
+    try (MorphiaCursor<Document> cursor = aggregation.execute(Document.class)) {
+      Document document = cursor.tryNext();
+      Set<String> result = new HashSet<>();
+      if (cursor.hasNext()) {
+        result.addAll(document.getList("distinctStartedBy", String.class));
+        result.addAll(document.getList("distinctCancelledBy", String.class));
+      }
+      return result.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
   }
 }

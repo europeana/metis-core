@@ -13,7 +13,11 @@ spring.autoconfigure.exclude=\
 truststore.path=
 truststore.password=
 
-#keycloak
+#OAuth
+keycloak.authServerUrl=https://localhost:7080/auth
+keycloak.clientId=metis-core-local
+keycloak.clientSecret=clientSecret
+keycloak.realm=europeana
 spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:7080/realms/europeana/protocol/openid-connect/certs
 spring.security.oauth2.client.provider.external.issuer-uri=http://localhost:7080/realms/europeana
 #Custom property for resource names
@@ -28,6 +32,7 @@ metis-core.failsafeMarginOfInactivityInSeconds=5
 metis-core.periodicFailsafeCheckInMilliseconds=60000
 metis-core.periodicSchedulerCheckInMilliseconds=90000
 metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds=10000
+metis-core.userCacheClearIntervalInMinutes=1440
 #If a task passed this cap the task will be cancelled
 metis-core.periodOfNoProcessedRecordsChangeInMinutes=30
 metis-core.threadLimitThrottlingLevelWeak=16

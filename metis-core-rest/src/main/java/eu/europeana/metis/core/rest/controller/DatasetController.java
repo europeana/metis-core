@@ -1,10 +1,9 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.dataset.DatasetXsltStringWrapper;
@@ -45,6 +44,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
+
 /**
  * Contains all the calls that are related to Datasets.
  * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
@@ -73,7 +74,7 @@ public class DatasetController {
    * accessTokenHere </p>
    *
    * @param jwtPrincipal the jwt principal
-   * @param dataset the provided dataset to be created
+   * @param datasetDTO the provided dataset to be created
    * @return the dataset created including all other fields that are auto generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -82,13 +83,12 @@ public class DatasetController {
    */
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public Dataset createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody Dataset dataset)
+  public DatasetDTO createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody DatasetDTO datasetDTO)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
-    Dataset createdDataset = datasetService.createDataset(userId, dataset);
+    DatasetDTO createdDataset = datasetService.createDataset(userId, datasetDTO);
     LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
-        createdDataset.getDatasetId(), createdDataset.getDatasetName(),
-        createdDataset.getOrganizationId());
+        createdDataset.getDatasetId(), createdDataset.getDatasetName(), createdDataset.getOrganizationId());
     return createdDataset;
   }
 
@@ -160,11 +160,11 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_DATASETID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public Dataset getByDatasetId(@PathVariable("datasetId") String datasetId)
+  public DatasetDTO getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
     datasetId = StringEscapeUtils.escapeJava(datasetId);
 
-    Dataset storedDataset = datasetService.getDatasetByDatasetId(datasetId);
+    DatasetDTO storedDataset = datasetService.getDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Dataset with datasetId '{}' found", datasetId);
     }
@@ -340,8 +340,8 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_DATASETNAME, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public Dataset getByDatasetName(@PathVariable("datasetName") String datasetName) throws GenericMetisException {
-    Dataset dataset = datasetService.getDatasetByDatasetName(datasetName);
+  public DatasetDTO getByDatasetName(@PathVariable("datasetName") String datasetName) throws GenericMetisException {
+    DatasetDTO dataset = datasetService.getDatasetByDatasetName(datasetName);
     LOGGER.info("Dataset with datasetName '{}' found", dataset.getDatasetName());
     return dataset;
   }
@@ -364,14 +364,14 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_PROVIDER, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<Dataset> getAllDatasetsByProvider(
+  public ResponseListWrapper<DatasetDTO> getAllDatasetsByProvider(
       @PathVariable("provider") String provider,
       @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
       throws GenericMetisException {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
+    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByProvider(provider, nextPage),
@@ -398,14 +398,14 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_INTERMEDIATE_PROVIDER, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<Dataset> getAllDatasetsByIntermediateProvider(
+  public ResponseListWrapper<DatasetDTO> getAllDatasetsByIntermediateProvider(
       @PathVariable("intermediateProvider") String intermediateProvider,
       @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
       throws GenericMetisException {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
+    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
             datasetService
@@ -434,14 +434,14 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_DATAPROVIDER, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<Dataset> getAllDatasetsByDataProvider(
+  public ResponseListWrapper<DatasetDTO> getAllDatasetsByDataProvider(
       @PathVariable("dataProvider") String dataProvider,
       @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
       throws GenericMetisException {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
+    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByDataProvider(dataProvider, nextPage),
@@ -469,14 +469,14 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_ORGANIZATION_ID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<Dataset> getAllDatasetsByOrganizationId(
+  public ResponseListWrapper<DatasetDTO> getAllDatasetsByOrganizationId(
       @PathVariable("organizationId") String organizationId,
       @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
       throws GenericMetisException {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
+    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByOrganizationId(organizationId, nextPage),
@@ -504,14 +504,14 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_ORGANIZATION_NAME, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<Dataset> getAllDatasetsByOrganizationName(
+  public ResponseListWrapper<DatasetDTO> getAllDatasetsByOrganizationName(
       @PathVariable("organizationName") String organizationName,
       @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
       throws GenericMetisException {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    ResponseListWrapper<Dataset> responseListWrapper = new ResponseListWrapper<>();
+    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
     responseListWrapper
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByOrganizationName(organizationName, nextPage),

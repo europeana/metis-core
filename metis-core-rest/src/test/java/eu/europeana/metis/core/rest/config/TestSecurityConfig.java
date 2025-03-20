@@ -1,24 +1,10 @@
 package eu.europeana.metis.core.rest.config;
 
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_DATASETID;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
-import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
-import static java.lang.String.format;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import eu.europeana.metis.core.rest.config.TestSecurityConfig.TestController;
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
+import eu.europeana.metis.core.service.UserService;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,6 +25,21 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_DATASETID;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
+import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
+import static java.lang.String.format;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @WebMvcTest(TestController.class)
 @ContextConfiguration(classes = {TestController.class, SecurityConfig.class})
 class TestSecurityConfig {
@@ -46,12 +47,15 @@ class TestSecurityConfig {
   @MockBean
   private JwtDecoder jwtDecoder;
 
+  @MockBean
+  private UserService userService;
+
   private static MockMvc mockMvc;
   private final TestJwtUtils testJwtUtils;
 
   @Autowired
   public TestSecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   @BeforeAll
@@ -65,6 +69,7 @@ class TestSecurityConfig {
   @AfterEach
   void cleanUp() {
     reset(jwtDecoder);
+    reset(userService);
   }
 
   @Test

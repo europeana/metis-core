@@ -1,22 +1,5 @@
 package eu.europeana.metis.core.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.client.uis.rest.UISClient;
 import eu.europeana.cloud.common.model.File;
@@ -75,6 +58,23 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 class TestProxiesService {
 
@@ -218,20 +218,22 @@ class TestProxiesService {
     final Set<PluginType> usedPluginTypes =
         execution.getMetisPlugins().stream()
                  .map(AbstractMetisPlugin::getPluginType).collect(Collectors.toSet());
-    final PluginType usedPluginType =
-        usedPluginTypes.stream().findAny()
-                       .orElseThrow(IllegalStateException::new);
     final Map<PluginType, ExecutablePluginType> executablePluginTypes = Stream
         .of(ExecutablePluginType.values())
         .collect(Collectors.toMap(ExecutablePluginType::toPluginType, Function.identity()));
+
+    AbstractExecutablePlugin<?> abstractExecutablePlugin = execution.getMetisPlugins().stream()
+                                                                    .filter(
+                                                                        plugin -> plugin instanceof AbstractExecutablePlugin<?>)
+                                                                    .map(plugin -> (AbstractExecutablePlugin<?>) plugin)
+                                                                    .findAny()
+                                                                    .orElseThrow(IllegalStateException::new);
+
     final ExecutablePluginType unusedPluginType = Stream.of(PluginType.values())
                                                         .filter(type -> !usedPluginTypes.contains(type))
                                                         .map(executablePluginTypes::get).filter(
             Objects::nonNull).findAny().orElseThrow(IllegalStateException::new);
-    return new ImmutablePair<>(
-        (AbstractExecutablePlugin<?>) execution.getMetisPluginWithType(usedPluginType)
-                                               .filter(AbstractExecutablePlugin.class::isInstance)
-                                               .orElseThrow(IllegalStateException::new), unusedPluginType);
+    return new ImmutablePair<>(abstractExecutablePlugin, unusedPluginType);
   }
 
   @Test

@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.rest.ExecutionHistory;
@@ -9,11 +7,10 @@ import eu.europeana.metis.core.rest.IncrementalHarvestingAllowedView;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.workflow.Workflow;
-import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
@@ -45,6 +42,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
 
 /**
  * Contains all the calls that are related to Orchestration.
@@ -201,7 +200,7 @@ public class OrchestratorController {
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(
+  public WorkflowExecutionDTO addWorkflowInQueueOfWorkflowExecutions(
       @AuthenticationPrincipal Jwt jwtPrincipal,
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
@@ -209,13 +208,13 @@ public class OrchestratorController {
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     datasetId = StringEscapeUtils.escapeJava(datasetId);
-    WorkflowExecution workflowExecution = orchestratorService
+    WorkflowExecutionDTO workflowExecutionDTO = orchestratorService
         .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType,
             priority, userId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("WorkflowExecution for datasetId '{}' added to queue", datasetId);
     }
-    return workflowExecution;
+    return workflowExecutionDTO;
   }
 
   /**
@@ -258,15 +257,14 @@ public class OrchestratorController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public WorkflowExecution getWorkflowExecutionByExecutionId(
+  public WorkflowExecutionDTO getWorkflowExecutionByExecutionId(
       @PathVariable("executionId") String executionId) throws GenericMetisException {
     executionId = StringEscapeUtils.escapeJava(executionId);
-    WorkflowExecution workflowExecution = orchestratorService
-        .getWorkflowExecutionByExecutionId(executionId);
+    WorkflowExecutionDTO workflowExecutionDTO = orchestratorService.getWorkflowExecutionDTOByExecutionId(executionId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution with executionId '{}' {}found.", executionId, workflowExecution == null ? "not " : "");
+      LOGGER.info("WorkflowExecution with executionId '{}' {}found.", executionId, workflowExecutionDTO == null ? "not " : "");
     }
-    return workflowExecution;
+    return workflowExecutionDTO;
   }
 
   /**
@@ -369,7 +367,7 @@ public class OrchestratorController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutionsByDatasetId(
+  public ResponseListWrapper<WorkflowExecutionDTO> getAllWorkflowExecutionsByDatasetId(
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "workflowStatus", required = false) Set<WorkflowStatus> workflowStatuses,
       @RequestParam(value = "orderField", required = false, defaultValue = "ID") DaoFieldNames orderField,
@@ -379,7 +377,7 @@ public class OrchestratorController {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    final ResponseListWrapper<WorkflowExecutionView> result =
+    final ResponseListWrapper<WorkflowExecutionDTO> result =
         orchestratorService.getAllWorkflowExecutions(datasetId, workflowStatuses,
             orderField, ascending, nextPage);
     logPaging(result, nextPage);
@@ -404,7 +402,7 @@ public class OrchestratorController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutions(
+  public ResponseListWrapper<WorkflowExecutionDTO> getAllWorkflowExecutions(
       @RequestParam(value = "workflowStatus", required = false) Set<WorkflowStatus> workflowStatuses,
       @RequestParam(value = "orderField", required = false, defaultValue = "ID") DaoFieldNames orderField,
       @RequestParam(value = "ascending", required = false, defaultValue = "true") boolean ascending,
@@ -413,7 +411,7 @@ public class OrchestratorController {
     if (nextPage < 0) {
       throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
     }
-    final ResponseListWrapper<WorkflowExecutionView> result =
+    final ResponseListWrapper<WorkflowExecutionDTO> result =
         orchestratorService.getAllWorkflowExecutions(null, workflowStatuses, orderField,
             ascending, nextPage);
     logPaging(result, nextPage);

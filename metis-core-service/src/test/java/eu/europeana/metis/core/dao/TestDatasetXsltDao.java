@@ -1,9 +1,5 @@
 package eu.europeana.metis.core.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import dev.morphia.Datastore;
@@ -14,10 +10,15 @@ import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
 import java.util.Date;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
@@ -59,8 +60,8 @@ class TestDatasetXsltDao {
 
   @Test
   void testCreateRetrieveXslt() {
-    String xsltId = datasetXsltDao.create(datasetXslt).getId().toString();
-    DatasetXslt storedDatasetXslt = datasetXsltDao.getById(xsltId);
+    ObjectId xsltId = datasetXsltDao.create(datasetXslt).getId();
+    DatasetXslt storedDatasetXslt = datasetXsltDao.getById(xsltId.toString());
     assertEquals(datasetXslt.getDatasetId(), storedDatasetXslt.getDatasetId());
     assertEquals(datasetXslt.getXslt(), storedDatasetXslt.getXslt());
   }

@@ -26,6 +26,7 @@ import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
 import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
@@ -61,6 +62,7 @@ public class ProxiesService {
   private final DataEvolutionUtils dataEvolutionUtils;
   private final EcloudClients ecloudClients;
   private final String ecloudProvider;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
    * Constructor with required parameters.
@@ -469,8 +471,7 @@ public class ProxiesService {
     datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());
 
     // Get the plugin for which to get the records and return.
-    final MetisPlugin plugin = workflowExecution
-        .getMetisPluginWithType(pluginType.toPluginType()).orElse(null);
+    final MetisPlugin plugin = workflowExecutionHelper.getMetisPluginWithType(workflowExecution, pluginType.toPluginType()).orElse(null);
     if (plugin instanceof ExecutablePlugin executablePlugin) {
       return new ImmutablePair<>(workflowExecution, executablePlugin);
     }

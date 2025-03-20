@@ -1,14 +1,15 @@
 package eu.europeana.metis.core.rest.utils;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
-
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.oauth2.jwt.Jwt;
+
+import static eu.europeana.metis.core.common.AccountRole.ADMIN;
+import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
 
 public class TestJwtUtils {
 
@@ -33,17 +34,41 @@ public class TestJwtUtils {
     return getJwt(MOCK_INVALID_TOKEN, List.of("INVALID"));
   }
 
-  private @NotNull Jwt getJwt(String token, List<String> resourceAccessRoles) {
-    Map<String, Object> resourceAccess =
-        resourceNames.stream().collect(Collectors.toMap(name -> name,
-                         name -> Map.of("roles", resourceAccessRoles)));
-
-    return Jwt.withTokenValue(token)
-              .header("alg", "none")
-              .claim("resource_access", resourceAccess)
-              .claim("email", "user@example.com")
-              .claim("sub", UUID.randomUUID().toString())
-              .build();
+  public Jwt getJwtNoUserId() {
+    return getJwtNoUserId(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.toString()));
   }
 
+  public Jwt getJwtWithEmptyStringUserId() {
+    return getJwtNoUserId(MOCK_VALID_TOKEN, List.of(DATA_OFFICER.toString()));
+  }
+
+  private @NotNull Jwt getJwt(String token, List<String> roles) {
+    return getJwt(token, UUID.randomUUID().toString(), roles);
+  }
+
+  private @NotNull Jwt getJwtNoUserId(String token, List<String> roles) {
+    return getJwt(token, null, roles);
+  }
+
+  private @NotNull Jwt getJwtEmptyUserId(String token, List<String> roles) {
+    return getJwt(token, "", roles);
+  }
+
+  private @NotNull Jwt getJwt(String token, String withUserId, List<String> roles) {
+    Map<String, Object> resourceAccess = resourceNames.stream()
+                                                      .collect(Collectors.toMap(name -> name, name -> Map.of("roles", roles)));
+    return createJwtBuilder(token, withUserId, resourceAccess).build();
+  }
+
+  private static @NotNull Jwt.Builder createJwtBuilder(String token, String withUserId, Map<String, Object> resourceAccess) {
+    return Jwt.withTokenValue(token)
+              .header("alg", "none")
+              .claim("sub", withUserId)
+              .claim("resource_access", resourceAccess)
+              .claim("email", "user@example.com")
+              .claim("preferred_username", "userName")
+              .claim("given_name", "firstName")
+              .claim("family_name", "lastName")
+              .claim("iat", Instant.now());
+  }
 }

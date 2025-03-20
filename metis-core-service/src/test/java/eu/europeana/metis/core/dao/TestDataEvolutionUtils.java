@@ -1,23 +1,5 @@
 package eu.europeana.metis.core.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.Pagination;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
@@ -61,7 +43,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -71,6 +52,24 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 class TestDataEvolutionUtils {
 
@@ -354,10 +353,9 @@ class TestDataEvolutionUtils {
         .thenReturn(previousExecution);
 
     // Test the absence of the plugin despite the presence of the pointers.
-    when(previousExecution.getMetisPluginWithType(previousPluginType)).thenReturn(
-        Optional.empty());
+    when(previousExecution.getMetisPlugins()).thenReturn(Collections.emptyList());
     assertNull(dataEvolutionUtils.getPreviousExecutionAndPlugin(plugin, datasetId));
-    when(previousExecution.getMetisPluginWithType(previousPluginType)).thenReturn(Optional.of(previousPlugin));
+    when(previousExecution.getMetisPlugins()).thenReturn(List.of(previousPlugin));
 
     // Test the happy flow
     final Pair<MetisPlugin, WorkflowExecution> result = dataEvolutionUtils

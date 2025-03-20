@@ -1,21 +1,11 @@
 package eu.europeana.metis.core.service;
 
-import static eu.europeana.metis.core.service.TestRedirectionBase.getExecutablePluginTypes;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getTestDataset;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -29,6 +19,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static eu.europeana.metis.core.service.TestRedirectionBase.getExecutablePluginTypes;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getTestDataset;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 @ExtendWith(MockitoExtension.class)
 class TestRedirectionInferrer {
 
@@ -41,16 +42,18 @@ class TestRedirectionInferrer {
   @InjectMocks
   RedirectionInferrer redirectionInferrer;
 
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
+
   @Test
   void shouldRedirectsBePerformed_whenRootAncestorDifferent_expectRedirect() {
     final Dataset dataset = getTestDataset();
     final WorkflowExecution workflowExecution = getWorkflowPostReindex(dataset);
     final PluginWithExecutionId<ExecutablePlugin> indexToPublishPluginWithExecutionId =
         new PluginWithExecutionId<>("executionId",
-            (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PUBLISH).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PUBLISH).get());
     final PluginWithExecutionId<ExecutablePlugin> indexToPreviewPluginWithExecutionId2 =
         new PluginWithExecutionId<>("executionId2",
-            (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(anyString(), any(), eq(Boolean.FALSE)))
         .thenReturn(indexToPublishPluginWithExecutionId);
 
@@ -59,7 +62,7 @@ class TestRedirectionInferrer {
         .thenReturn(indexToPreviewPluginWithExecutionId2);
 
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",
-        (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
 
     boolean redirectsToBePerformed = redirectionInferrer.shouldRedirectsBePerformed(dataset, predecessor,
         ExecutablePluginType.PREVIEW, new ArrayList<>());
@@ -74,7 +77,7 @@ class TestRedirectionInferrer {
 
     final PluginWithExecutionId<ExecutablePlugin> indexToPublishPluginWithExecutionId =
         new PluginWithExecutionId<>("executionId",
-            (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PUBLISH).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PUBLISH).get());
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(anyString(), any(), eq(Boolean.FALSE)))
         .thenReturn(indexToPublishPluginWithExecutionId);
 
@@ -83,7 +86,7 @@ class TestRedirectionInferrer {
         .thenReturn(indexToPublishPluginWithExecutionId);
 
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",
-        (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
 
     boolean redirectsToBePerformed = redirectionInferrer.shouldRedirectsBePerformed(dataset, predecessor,
         ExecutablePluginType.PREVIEW, new ArrayList<>());
@@ -100,11 +103,11 @@ class TestRedirectionInferrer {
 
     final PluginWithExecutionId<ExecutablePlugin> indexToPreviewPluginWithExecutionId =
         new PluginWithExecutionId<>("executionId",
-            (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(anyString(), any(), eq(Boolean.FALSE)))
         .thenReturn(indexToPreviewPluginWithExecutionId);
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",
-        (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
 
     boolean redirectsToBePerformed = redirectionInferrer.shouldRedirectsBePerformed(dataset, predecessor,
         ExecutablePluginType.PREVIEW, new ArrayList<>());
@@ -119,14 +122,14 @@ class TestRedirectionInferrer {
 
     final PluginWithExecutionId<ExecutablePlugin> indexToPreviewPluginWithExecutionId =
         new PluginWithExecutionId<>("executionId",
-            (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(anyString(), any(), eq(Boolean.FALSE)))
         .thenReturn(indexToPreviewPluginWithExecutionId);
     when(dataEvolutionUtils.getRootAncestor(any()))
         .thenReturn(indexToPreviewPluginWithExecutionId)
         .thenReturn(indexToPreviewPluginWithExecutionId);
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",
-        (ExecutablePlugin) workflowExecution.getMetisPluginWithType(PluginType.PREVIEW).get());
+        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecution, PluginType.PREVIEW).get());
 
     boolean redirectsToBePerformed = redirectionInferrer.shouldRedirectsBePerformed(dataset, predecessor,
         ExecutablePluginType.PREVIEW, new ArrayList<>());

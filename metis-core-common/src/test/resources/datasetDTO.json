@@ -1,0 +1,36 @@
+{
+  "id": "67cfeedb4cdf5102acad7395",
+  "ecloudDatasetId": "ecloudDatasetId",
+  "datasetId": "datasetId",
+  "datasetName": "datasetName",
+  "organizationId": "organizationId",
+  "organizationName": "organizationName",
+  "provider": "provider",
+  "dataProvider": "dataProvider",
+  "intermediateProvider": "intermediateProvider",
+  "createdByUserId": "createdByUserId",
+  "createdByUserName": "createdByUserName",
+  "createdByFirstName": "createdByFirstName",
+  "createdByLastName": "createdByLastName",
+  "createdDate": "2025-03-10T10:10:10.000Z",
+  "updatedDate": "2025-03-10T10:10:10.000Z",
+  "datasetIdsToRedirectFrom": [
+    "redirectId1",
+    "redirectId2"
+  ],
+  "replacedBy": "replacedBy",
+  "replaces": "replaces",
+  "country": {
+    "enum": "GREECE",
+    "name": "Greece",
+    "code": "EL"
+  },
+  "language": {
+    "enum": "EL",
+    "code": "Greek"
+  },
+  "description": "description",
+  "publicationFitness": "FIT",
+  "notes": "notes",
+  "xsltId": "507f191e810c19729de860ea"
+}

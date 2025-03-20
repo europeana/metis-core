@@ -9,14 +9,18 @@ import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.dataset.DatasetConverter;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.rest.Record;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.MetisPluginConverter;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
@@ -84,13 +88,8 @@ public class TestObjectFactory {
     return workflow;
   }
 
-  /**
-   * Create dummy workflow execution
-   *
-   * @return the created workflow execution
-   */
-  public static WorkflowExecution createWorkflowExecutionObject() {
-    Dataset dataset = createDataset(DATASETNAME);
+  public static WorkflowExecutionDTO createWorkflowExecutionDTOObject() {
+    Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(DATASETNAME));
     ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
     AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
@@ -99,15 +98,26 @@ public class TestObjectFactory {
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, abstractMetisPlugins, 0);
-    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
+    WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
+    workflowExecutionDTO.setDatasetId(dataset.getDatasetId());
+    workflowExecutionDTO.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecutionDTO.setWorkflowPriority(0);
+    workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
+                                                             .map(plugin -> MetisPluginConverter.toDTO(plugin,
+                                                                 WorkflowExecutionConverter.canDisplayRawXml(plugin)))
+                                                             .toList());
+    workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecutionDTO.setCreatedDate(new Date());
 
-    return workflowExecution;
+    return workflowExecutionDTO;
   }
 
   private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(0);
+    workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
 
@@ -115,35 +125,35 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a list of dummy workflow executions. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy workflow executions. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy workflow executions to create
    * @return the created list
    */
-  public static List<WorkflowExecutionView> createListOfWorkflowExecutions(int size) {
+  public static List<WorkflowExecutionDTO> createListOfWorkflowExecutions(int size) {
     return createExecutionsWithDatasets(size).stream().map(ExecutionDatasetPair::getExecution)
-            .map(execution -> new WorkflowExecutionView(execution, false, plugin -> true))
+                                             .map(execution ->
+                                                 WorkflowExecutionConverter.toDTO(execution, false,
+                                                     null, null))
                                              .toList();
   }
 
   /**
-   * Create a list of dummy execution overviews. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy execution overviews. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy execution overviews to create
    * @return the created list
    */
   public static List<ExecutionAndDatasetView> createListOfExecutionOverviews(int size) {
     return createExecutionsWithDatasets(size).stream()
-        .map(pair -> new ExecutionAndDatasetView(pair.getExecution(), pair.getDataset()))
+                                             .map(pair -> new ExecutionAndDatasetView(pair.getExecution(), pair.getDataset()))
                                              .toList();
   }
 
   private static List<ExecutionDatasetPair> createExecutionsWithDatasets(int size) {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      Dataset dataset = createDataset(String.format("%s%s", DATASETNAME, i));
+      Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(String.format("%s%s", DATASETNAME, i)));
       dataset.setId(new ObjectId(new Date(i)));
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
@@ -168,8 +178,7 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy scheduled workflows to create
    * @return the created list
@@ -186,13 +195,13 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a dummy dataset
+   * Create a dummy datasetDTO
    *
    * @param datasetName the dataset name to be used
    * @return the created dataset
    */
-  public static Dataset createDataset(String datasetName) {
-    Dataset ds = new Dataset();
+  public static DatasetDTO createDatasetDTO(String datasetName) {
+    DatasetDTO ds = new DatasetDTO();
     ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
@@ -233,8 +242,8 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These
-   * will also contain a list of {@link ErrorDetails} that in turn contain dummy identifiers.
+   * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These will also contain a list of
+   * {@link ErrorDetails} that in turn contain dummy identifiers.
    *
    * @param numberOfErrorTypes the number of dummy error types
    * @return the created task errors info

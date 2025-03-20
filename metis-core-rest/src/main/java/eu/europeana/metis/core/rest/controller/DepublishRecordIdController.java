@@ -1,14 +1,12 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.rest.DepublicationInfoView;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
-import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.DepublicationReason;
@@ -36,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
 
 /**
  * Controller for calls related to depublish record ids.
@@ -192,7 +192,7 @@ public class DepublishRecordIdController {
   @PostMapping(value = RestEndpoints.DEPUBLISH_EXECUTE_DATASETID, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
-  public WorkflowExecution addDepublishWorkflowInQueueOfWorkflowExecutions(
+  public WorkflowExecutionDTO addDepublishWorkflowInQueueOfWorkflowExecutions(
       @AuthenticationPrincipal Jwt jwtPrincipal,
       @PathVariable("datasetId") String datasetId,
       @RequestParam(value = "datasetDepublish", defaultValue = "" + true) boolean datasetDepublish,

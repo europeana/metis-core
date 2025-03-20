@@ -11,8 +11,11 @@ import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.user.User;
+import eu.europeana.metis.core.user.User.UserBuilder;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
@@ -29,6 +32,7 @@ import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -105,7 +109,11 @@ public class TestObjectFactory {
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, abstractMetisPlugins, 0);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(0);
+    workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
@@ -113,8 +121,12 @@ public class TestObjectFactory {
     return workflowExecution;
   }
 
-  private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+  public static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(0);
+    workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
 
@@ -186,8 +198,8 @@ public class TestObjectFactory {
    * Create a list of dummy scheduled workflows with pointer date and frequency. The dataset name will have a suffix number for
    * each dataset.
    *
-   * @param size              the number of dummy scheduled workflows to create
-   * @param date              the pointer date
+   * @param size the number of dummy scheduled workflows to create
+   * @param date the pointer date
    * @param scheduleFrequence the schedule frequence
    * @return the created list
    */
@@ -211,8 +223,8 @@ public class TestObjectFactory {
    * @param datasetName the dataset name to be used
    * @return the created dataset
    */
-  public static Dataset createDataset(String datasetName) {
-    Dataset ds = new Dataset();
+  public static DatasetDTO createDatasetDTO(String datasetName) {
+    DatasetDTO ds = new DatasetDTO();
     ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
@@ -233,6 +245,48 @@ public class TestObjectFactory {
     ds.setPublicationFitness(PublicationFitness.PARTIALLY_FIT);
     ds.setNotes("Notes");
     return ds;
+  }
+
+  /**
+   * Create a dummy dataset
+   *
+   * @param datasetName the dataset name to be used
+   * @return the created dataset
+   */
+  public static Dataset createDataset(String datasetName) {
+    Dataset ds = new Dataset();
+    ds.setId(new ObjectId());
+    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setDatasetId(Integer.toString(DATASETID));
+    ds.setDatasetName(datasetName);
+    final String organizationId = "1234567890";
+    ds.setOrganizationId(organizationId);
+    ds.setOrganizationName("OrganizationName");
+    ds.setProvider(organizationId);
+    ds.setIntermediateProvider(organizationId);
+    ds.setDataProvider(organizationId);
+    ds.setCreatedByUserId("userId");
+    ds.setCreatedDate(new Date());
+    ds.setUpdatedDate(new Date());
+    ds.setReplacedBy("replacedBy");
+    ds.setReplaces("12345");
+    ds.setCountry(Country.GREECE);
+    ds.setLanguage(Language.AR);
+    ds.setDescription("description");
+    ds.setPublicationFitness(PublicationFitness.PARTIALLY_FIT);
+    ds.setNotes("Notes");
+    return ds;
+  }
+
+  public static User createUser(String userId) {
+    return new UserBuilder()
+        .userId(userId)
+        .userName("userName")
+        .firstName("firstName")
+        .lastName("lastName")
+        .issuedAt(Instant.now())
+        .build();
+
   }
 
   /**
@@ -293,7 +347,7 @@ public class TestObjectFactory {
    * {@link ErrorDetails} that in turn contain dummy identifiers.
    *
    * @param errorType the error type to be used for the internal {@link TaskErrorInfo}
-   * @param message   the message type to be used for the internal {@link TaskErrorInfo}
+   * @param message the message type to be used for the internal {@link TaskErrorInfo}
    * @return the created task errors info
    */
   public static TaskErrorsInfo createTaskErrorsInfoWithIdentifiers(String errorType,

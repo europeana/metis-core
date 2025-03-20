@@ -1,32 +1,5 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
-import static eu.europeana.metis.utils.RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -44,14 +17,14 @@ import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.OrchestratorService;
+import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.workflow.Workflow;
-import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
@@ -79,6 +52,33 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.utils.RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.Is.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @WebMvcTest(OrchestratorController.class)
 @ContextConfiguration(classes = {OrchestratorController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
 class TestOrchestratorController {
@@ -89,12 +89,15 @@ class TestOrchestratorController {
   @MockBean
   private JwtDecoder jwtDecoder;
 
+  @MockBean
+  private UserService userService;
+
   private static MockMvc mockMvc;
   private final TestJwtUtils testJwtUtils;
 
   @Autowired
   public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.getResourceNames());
+    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
@@ -116,6 +119,7 @@ class TestOrchestratorController {
   void cleanUp() {
     reset(orchestratorService);
     reset(jwtDecoder);
+    reset(userService);
   }
 
   @Test
@@ -276,10 +280,10 @@ class TestOrchestratorController {
   @Test
   void addWorkflowInQueueOfWorkflowExecutions() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecutionDTO workflowExecutionDTO = TestObjectFactory.createWorkflowExecutionDTOObject();
     when(
         orchestratorService.addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyInt(), anyString()))
-        .thenReturn(workflowExecution);
+        .thenReturn(workflowExecutionDTO);
     mockMvc.perform(
                post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
                    Integer.toString(TestObjectFactory.DATASETID))
@@ -409,10 +413,9 @@ class TestOrchestratorController {
   @Test
   void getWorkflowExecutionByExecutionId() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
-    WorkflowExecution workflowExecution = TestObjectFactory
-        .createWorkflowExecutionObject();
-    workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
-    when(orchestratorService.getWorkflowExecutionByExecutionId(anyString())).thenReturn(workflowExecution);
+    WorkflowExecutionDTO workflowExecutionDTO = TestObjectFactory.createWorkflowExecutionDTOObject();
+    workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.RUNNING);
+    when(orchestratorService.getWorkflowExecutionDTOByExecutionId(anyString())).thenReturn(workflowExecutionDTO);
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
                TestObjectFactory.EXECUTIONID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -497,7 +500,7 @@ class TestOrchestratorController {
   void getAllWorkflowExecutionsByDatasetId() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     int listSize = 2;
-    ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
+    ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
         orchestratorService.getWorkflowExecutionsPerRequest(), 0);
@@ -539,7 +542,7 @@ class TestOrchestratorController {
   void getAllWorkflowExecutions() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     int listSize = 2;
-    ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
+    ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
         orchestratorService.getWorkflowExecutionsPerRequest(), 0);

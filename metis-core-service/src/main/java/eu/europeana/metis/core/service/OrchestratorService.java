@@ -28,11 +28,15 @@ import eu.europeana.metis.core.rest.PluginsWithDataAvailability.PluginWithDataAv
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
+import eu.europeana.metis.core.workflow.execution.MetisPluginDTO;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
-import eu.europeana.metis.core.workflow.SystemId;
+import eu.europeana.metis.core.user.User;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
@@ -40,9 +44,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.DepublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
-import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -93,8 +95,6 @@ public class OrchestratorService {
       .immutableEnumSet(PluginType.PREVIEW, PluginType.REINDEX_TO_PREVIEW);
   public static final Set<PluginType> PUBLISH_TYPES = Sets
       .immutableEnumSet(PluginType.PUBLISH, PluginType.REINDEX_TO_PUBLISH);
-  public static final Set<ExecutablePluginType> NO_XML_PREVIEW_TYPES = Sets
-      .immutableEnumSet(ExecutablePluginType.LINK_CHECKING, ExecutablePluginType.DEPUBLISH);
 
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowValidationUtils workflowValidationUtils;
@@ -105,6 +105,8 @@ public class OrchestratorService {
   private final RedissonClient redissonClient;
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
+  private final UserService userService;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private int solrCommitPeriodInMins; // Use getter and setter for this field!
 
   /**
@@ -119,13 +121,14 @@ public class OrchestratorService {
    * @param workflowExecutorManager the instance that handles the production and consumption of workflowExecutions
    * @param redissonClient the instance of Redisson library that handles distributed locks
    * @param depublishRecordIdDao the Dao instance to access the DepublishRecordId database
+   * @param userService the service instance for managing user-related operations
    */
   @Autowired
   public OrchestratorService(WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       WorkflowValidationUtils workflowValidationUtils, DataEvolutionUtils dataEvolutionUtils,
       DatasetDao datasetDao, WorkflowExecutorManager workflowExecutorManager,
-      RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao) {
+      RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao, UserService userService) {
     this.workflowExecutionFactory = workflowExecutionFactory;
     this.workflowDao = workflowDao;
     this.workflowExecutionDao = workflowExecutionDao;
@@ -135,6 +138,7 @@ public class OrchestratorService {
     this.workflowExecutorManager = workflowExecutorManager;
     this.redissonClient = redissonClient;
     this.depublishRecordIdDao = depublishRecordIdDao;
+    this.userService = userService;
   }
 
   /**
@@ -240,6 +244,25 @@ public class OrchestratorService {
   }
 
   /**
+   * Retrieves a WorkflowExecutionDTO by its execution ID.
+   *
+   * @param executionId the ID of the workflow execution to retrieve
+   * @return the WorkflowExecutionDTO associated with the given execution ID, or null if no such execution exists
+   * @throws GenericMetisException if an error occurs while retrieving the workflow execution
+   */
+  public WorkflowExecutionDTO getWorkflowExecutionDTOByExecutionId(String executionId) throws GenericMetisException {
+    WorkflowExecution workflowExecution = getWorkflowExecutionByExecutionId(executionId);
+    User startedUser = null;
+    User cancelledUser = null;
+    if (workflowExecution != null) {
+      startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
+      cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
+    }
+    return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
+        startedUser, cancelledUser);
+  }
+
+  /**
    * Get a WorkflowExecution using an execution identifier.
    *
    * @param executionId the execution identifier
@@ -249,7 +272,7 @@ public class OrchestratorService {
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
    * </ul>
    */
-  public WorkflowExecution getWorkflowExecutionByExecutionId(String executionId) throws GenericMetisException {
+  private WorkflowExecution getWorkflowExecutionByExecutionId(String executionId) throws GenericMetisException {
     final WorkflowExecution result = workflowExecutionDao.getById(executionId);
     if (result != null) {
       datasetDao.getDatasetOrThrow(result.getDatasetId());
@@ -324,11 +347,14 @@ public class OrchestratorService {
    * execution identifier already exists, almost impossible to happen since ids are UUIDs</li>
    * </ul>
    */
-  public WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
+  public WorkflowExecutionDTO addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
       @Nullable ExecutablePluginType enforcedPredecessorType, int priority, String userId)
       throws GenericMetisException {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
-    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, priority, userId);
+    WorkflowExecution workflowExecution = addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided,
+        enforcedPredecessorType, priority, userId);
+    return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
+        userService.getUserFromCache(userId), null);
   }
 
   private WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(Dataset dataset,
@@ -353,7 +379,7 @@ public class OrchestratorService {
     final PluginWithExecutionId<ExecutablePlugin> predecessor = workflowValidationUtils
         .validateWorkflowPlugins(workflow, enforcedPredecessorType);
 
-    // Make sure that eCloud knows tmetisUserhis dataset (needs to happen before we create the workflow).
+    // Make sure that eCloud knows the dataset (needs to happen before we create the workflow).
     datasetDao.checkAndCreateDatasetInEcloud(dataset);
 
     // Create the workflow execution (without adding it to the database).
@@ -474,7 +500,7 @@ public class OrchestratorService {
    * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
    * </ul>
    */
-  public ResponseListWrapper<WorkflowExecutionView> getAllWorkflowExecutions(
+  public ResponseListWrapper<WorkflowExecutionDTO> getAllWorkflowExecutions(
       String datasetId, Set<WorkflowStatus> workflowStatuses, DaoFieldNames orderField,
       boolean ascending, int nextPage) throws GenericMetisException {
 
@@ -497,10 +523,15 @@ public class OrchestratorService {
             false);
 
     // Compile and return the result.
-    final List<WorkflowExecutionView> convertedData = data.results().stream().map(
-        execution -> new WorkflowExecutionView(execution, isIncremental(execution),
-            OrchestratorService::canDisplayRawXml)).toList();
-    final ResponseListWrapper<WorkflowExecutionView> result = new ResponseListWrapper<>();
+    final List<WorkflowExecutionDTO> convertedData = data.results().stream().map(
+        execution ->
+        {
+          User startedUser = userService.getUserFromCache(execution.getStartedBy());
+          User cancelledUser = userService.getUserFromCache(execution.getCancelledBy());
+          return WorkflowExecutionConverter.toDTO(execution, isIncremental(execution), startedUser, cancelledUser);
+        }).toList();
+
+    final ResponseListWrapper<WorkflowExecutionDTO> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(convertedData, getWorkflowExecutionsPerRequest(), nextPage,
         data.maxResultCountReached());
     return result;
@@ -812,10 +843,20 @@ public class OrchestratorService {
         .getAllWorkflowExecutions(Set.of(datasetId), null, DaoFieldNames.STARTED_DATE, false, 0,
             null, false);
 
+    List<WorkflowExecutionDTO> workflowExecutionDTOList =
+        allExecutions.results().stream()
+                     .map(workflowExecution ->{
+                       User startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
+                       User cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
+                       return WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser, cancelledUser);
+                     })
+                     .toList();
+
     // Filter the executions.
-    final List<Execution> executions = allExecutions.results().stream().filter(
-                                                        entry -> entry.getMetisPlugins().stream().anyMatch(OrchestratorService::canDisplayRawXml))
-                                                    .map(OrchestratorService::convert).toList();
+    final List<Execution> executions = workflowExecutionDTOList.stream().filter(
+                                                                   entry -> entry.getMetisPlugins().stream().anyMatch(
+                                                                       MetisPluginDTO::isCanDisplayRawXml))
+                                                               .map(OrchestratorService::convert).toList();
 
     // Done
     final ExecutionHistory result = new ExecutionHistory();
@@ -823,10 +864,10 @@ public class OrchestratorService {
     return result;
   }
 
-  private static Execution convert(WorkflowExecution execution) {
+  private static Execution convert(WorkflowExecutionDTO workflowExecutionDTO) {
     final Execution result = new Execution();
-    result.setWorkflowExecutionId(execution.getId().toString());
-    result.setStartedDate(execution.getStartedDate());
+    result.setWorkflowExecutionId(workflowExecutionDTO.getId());
+    result.setStartedDate(workflowExecutionDTO.getStartedDate());
     return result;
   }
 
@@ -844,17 +885,20 @@ public class OrchestratorService {
   public PluginsWithDataAvailability getExecutablePluginsWithDataAvailability(String executionId) throws GenericMetisException {
 
     // Get the execution and do the authorization check.
-    final WorkflowExecution execution = getWorkflowExecutionByExecutionId(executionId);
-    if (execution == null) {
+    final WorkflowExecution workflowExecution = getWorkflowExecutionByExecutionId(executionId);
+    if (workflowExecution == null) {
       throw new NoWorkflowExecutionFoundException(
           String.format("No workflow execution found for workflowExecutionId: %s", executionId));
     }
 
+    User startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
+    User cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
+    WorkflowExecutionDTO workflowExecutionDTO =
+        WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser, cancelledUser);
+
     // Compile the result.
-    final List<PluginWithDataAvailability> plugins = execution.getMetisPlugins().stream()
-                                                              .filter(OrchestratorService::canDisplayRawXml).map(
-            OrchestratorService::convert)
-                                                              .toList();
+    final List<PluginWithDataAvailability> plugins = workflowExecutionDTO.getMetisPlugins().stream()
+                                                                         .filter(MetisPluginDTO::isCanDisplayRawXml).map(OrchestratorService::convert).toList();
     final PluginsWithDataAvailability result = new PluginsWithDataAvailability();
     result.setPlugins(plugins);
 
@@ -862,28 +906,10 @@ public class OrchestratorService {
     return result;
   }
 
-  private static PluginWithDataAvailability convert(MetisPlugin plugin) {
+  private static PluginWithDataAvailability convert(MetisPluginDTO plugin) {
     final PluginWithDataAvailability result = new PluginWithDataAvailability();
-    result.setCanDisplayRawXml(true); // If this method is called, it is known that it can display.
+    result.setCanDisplayRawXml(plugin.isCanDisplayRawXml()); // If this method is called, it is known that it can display.
     result.setPluginType(plugin.getPluginType());
-    return result;
-  }
-
-  private static boolean canDisplayRawXml(MetisPlugin plugin) {
-    final boolean result;
-    if (plugin instanceof ExecutablePlugin executablePlugin) {
-      final boolean dataIsValid =
-          MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID;
-      final ExecutionProgress progress = executablePlugin.getExecutionProgress();
-      final boolean pluginHasBlacklistedType = Optional.of(executablePlugin)
-                                                       .map(ExecutablePlugin::getPluginMetadata)
-                                                       .map(ExecutablePluginMetadata::getExecutablePluginType)
-                                                       .map(NO_XML_PREVIEW_TYPES::contains).orElse(Boolean.TRUE);
-      result = dataIsValid && !pluginHasBlacklistedType && progress != null
-          && progress.getProcessedRecords() > progress.getErrors();
-    } else {
-      result = false;
-    }
     return result;
   }
 
@@ -908,11 +934,12 @@ public class OrchestratorService {
     }
 
     // Find the plugin (workflow step) in question.
-    final AbstractMetisPlugin<?> targetPlugin = execution.getMetisPluginWithType(pluginType)
-                                                         .orElseThrow(() -> new NoWorkflowExecutionFoundException(String
-                                                             .format(
-                                                                 "No plugin of type %s found for workflowExecution with id: %s",
-                                                                 pluginType.name(), execution)));
+    final AbstractMetisPlugin<?> targetPlugin = workflowExecutionHelper.getMetisPluginWithType(execution, pluginType)
+                                                                       .orElseThrow(
+                                                                           () -> new NoWorkflowExecutionFoundException(String
+                                                                               .format(
+                                                                                   "No plugin of type %s found for workflowExecution with id: %s",
+                                                                                   pluginType.name(), execution)));
 
     // Compile the version evolution.
     final Collection<Pair<ExecutablePlugin, WorkflowExecution>> evolutionSteps = dataEvolutionUtils

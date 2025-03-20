@@ -12,23 +12,13 @@ import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
-import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
-import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.*;
 import eu.europeana.metis.exception.BadContentException;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Class that contains various functionality for "helping" the {@link OrchestratorService}.
@@ -64,7 +54,7 @@ public class WorkflowExecutionFactory {
       throws BadContentException {
 
     // Create the plugins
-    final List<AbstractExecutablePlugin<?>> workflowPlugins = new ArrayList<>();
+    final List<AbstractMetisPlugin<?>> workflowPlugins = new ArrayList<>();
     final List<ExecutablePluginType> typesInWorkflow = new ArrayList<>();
     for (AbstractExecutablePluginMetadata pluginMetadata : workflow.getMetisPluginsMetadata()) {
       if (pluginMetadata.isEnabled()) {
@@ -79,8 +69,12 @@ public class WorkflowExecutionFactory {
       workflowPlugins.getFirst().getPluginMetadata().setPreviousRevisionInformation(predecessor.getPlugin());
     }
 
-    // Done: create workflow with all the information.
-    return new WorkflowExecution(dataset, workflowPlugins, priority);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setWorkflowPriority(priority);
+    workflowExecution.setMetisPlugins(workflowPlugins.stream().map(AbstractMetisPlugin.class::cast).toList());
+    return workflowExecution;
   }
 
   private AbstractExecutablePlugin<?> createWorkflowExecutionPlugin(Dataset dataset,

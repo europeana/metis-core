@@ -6,6 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,7 @@ public class QueueConsumer extends DefaultConsumer {
 
   private final ExecutorService threadPool;
   private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private int threadsCounter;
 
   /**
@@ -126,7 +128,7 @@ public class QueueConsumer extends DefaultConsumer {
     try {
       if (workflowExecution.isCancelling()) {
         // Has been cancelled, do not execute
-        workflowExecution.setWorkflowAndAllQualifiedPluginsToCancelled();
+        workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
         workflowExecutorManager.getWorkflowExecutionDao().update(workflowExecution);
         LOGGER.info("workflowExecutionId: {} - Cancelled", workflowExecution.getId());
       } else {

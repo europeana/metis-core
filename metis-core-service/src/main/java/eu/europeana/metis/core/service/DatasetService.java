@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.service;
 
-import static java.util.function.Predicate.not;
-
 import eu.europeana.metis.core.common.TransformationParameters;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -10,6 +8,8 @@ import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
+import eu.europeana.metis.core.dataset.DatasetConverter;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
@@ -50,6 +50,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static java.util.Optional.ofNullable;
+import static java.util.function.Predicate.not;
+
 /**
  * Contains business logic of how to manipulate datasets in the system using several components. The functionality in this class
  * is checked for user authentication.
@@ -67,6 +70,7 @@ public class DatasetService {
   private final WorkflowExecutionDao workflowExecutionDao;
   private final ScheduledWorkflowDao scheduledWorkflowDao;
   private final RedissonClient redissonClient;
+  private final UserService userService;
   private String metisCoreUrl; //Initialize with setter
 
 
@@ -79,74 +83,75 @@ public class DatasetService {
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
    * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient the redisson client used for distributed locks
+   * @param userService the user service
    */
   @Autowired
   public DatasetService(DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
-      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient) {
+      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient, UserService userService) {
     this.datasetDao = datasetDao;
     this.datasetXsltDao = datasetXsltDao;
     this.workflowDao = workflowDao;
     this.workflowExecutionDao = workflowExecutionDao;
     this.scheduledWorkflowDao = scheduledWorkflowDao;
     this.redissonClient = redissonClient;
+    this.userService = userService;
   }
 
   /**
    * Creates a dataset.
    *
    * @param userId the userId of the user
-   * @param dataset the dataset to be created
-   * @return the created {@link Dataset} including the extra fields generated from the system
+   * @param datasetDTO the dataset to be created
+   * @return the created {@link DatasetDTO} including the extra fields generated from the system
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link DatasetAlreadyExistsException} if the dataset for the same organizationId and datasetName already exists in the system.</li>
    * <li>{@link BadContentException} if some contents were invalid</li>
    * </ul>
    */
-  public Dataset createDataset(String userId, Dataset dataset) throws GenericMetisException {
+  public DatasetDTO createDataset(String userId, DatasetDTO datasetDTO) throws GenericMetisException {
 
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
-    dataset.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
+    datasetDTO.setOrganizationId(DatasetDao.ORGANIZATION_ID);
+    datasetDTO.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
 
     //Lock required for find in the next empty datasetId
     RLock lock = redissonClient.getFairLock(DATASET_CREATION_LOCK);
     lock.lock();
 
-    Dataset datasetObjectId;
+    Dataset createdDataset;
     try {
       Dataset storedDataset = datasetDao
-          .getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(),
-              dataset.getDatasetName());
+          .getDatasetByOrganizationIdAndDatasetName(datasetDTO.getOrganizationId(),
+              datasetDTO.getDatasetName());
       if (storedDataset != null) {
         lock.unlock();
         throw new DatasetAlreadyExistsException(String
             .format("Dataset with organizationId: %s and datasetName: %s already exists..",
-                dataset.getOrganizationId(), dataset.getDatasetName()));
+                datasetDTO.getOrganizationId(), datasetDTO.getDatasetName()));
       }
 
-      dataset.setCreatedByUserId(userId);
-      dataset.setId(null);
-      dataset.setUpdatedDate(null);
-
-      dataset.setCreatedDate(new Date());
+      datasetDTO.setCreatedByUserId(userId);
+      datasetDTO.setId(null);
+      datasetDTO.setUpdatedDate(null);
+      datasetDTO.setCreatedDate(new Date());
       //Add fake ecloudDatasetId to avoid null errors in the database
-      dataset.setEcloudDatasetId(String.format("NOT_CREATED_YET-%s", UUID.randomUUID()));
+      datasetDTO.setEcloudDatasetId(String.format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
       int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
-      dataset.setDatasetId(Integer.toString(nextInSequenceDatasetId));
-      verifyReferencesToOldDatasetIds(dataset);
-      datasetObjectId = datasetDao.create(dataset);
+      datasetDTO.setDatasetId(Integer.toString(nextInSequenceDatasetId));
+      verifyReferencesToOldDatasetIds(datasetDTO);
+      createdDataset = datasetDao.create(DatasetConverter.fromDTO(datasetDTO));
     } finally {
       lock.unlock();
     }
-    return datasetObjectId;
+    return DatasetConverter.toDTO(createdDataset, userService.getUserFromCache(userId));
   }
 
   /**
    * Update an already existent dataset.
    *
-   * @param dataset the provided dataset with the changes and the datasetId included in the {@link Dataset}
+   * @param datasetDTO the provided dataset with the changes and the datasetId included in the {@link Dataset}
    * @param xsltString the text of the String representation
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -155,14 +160,14 @@ public class DatasetService {
    * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists for organizationId.</li>
    * </ul>
    */
-  public void updateDataset(Dataset dataset, String xsltString)
+  public void updateDataset(DatasetDTO datasetDTO, String xsltString)
       throws GenericMetisException {
 
     // Find existing dataset and check authentication.
-    final Dataset storedDataset = datasetDao.getDatasetOrThrow(dataset.getDatasetId());
+    final Dataset storedDataset = datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId());
 
     // Check that the new dataset name does not already exist.
-    final String newDatasetName = dataset.getDatasetName();
+    final String newDatasetName = datasetDTO.getDatasetName();
     if (!storedDataset.getDatasetName().equals(newDatasetName)
         && datasetDao.getDatasetByOrganizationIdAndDatasetName(DatasetDao.ORGANIZATION_ID,
         newDatasetName) != null) {
@@ -172,45 +177,45 @@ public class DatasetService {
     }
 
     // Check that there is no workflow execution pending for the given dataset.
-    if (workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId()) != null) {
+    if (workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId()) != null) {
       throw new BadContentException(
-          String.format("Workflow execution is active for datasetId %s", dataset.getDatasetId()));
+          String.format("Workflow execution is active for datasetId %s", datasetDTO.getDatasetId()));
     }
 
     // Set/overwrite dataset properties that the user may not determine.
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
-    dataset.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
-    dataset.setCreatedByUserId(storedDataset.getCreatedByUserId());
-    dataset.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
-    dataset.setCreatedDate(storedDataset.getCreatedDate());
-    dataset.setOrganizationId(storedDataset.getOrganizationId());
-    dataset.setOrganizationName(storedDataset.getOrganizationName());
-    dataset.setCreatedByUserId(storedDataset.getCreatedByUserId());
-    dataset.setId(storedDataset.getId());
+    datasetDTO.setOrganizationId(DatasetDao.ORGANIZATION_ID);
+    datasetDTO.setOrganizationName(DatasetDao.ORGANIZATION_NAME);
+    datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
+    datasetDTO.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
+    datasetDTO.setCreatedDate(storedDataset.getCreatedDate());
+    datasetDTO.setOrganizationId(storedDataset.getOrganizationId());
+    datasetDTO.setOrganizationName(storedDataset.getOrganizationName());
+    datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
+    datasetDTO.setId(storedDataset.getId().toString());
 
-    verifyReferencesToOldDatasetIds(dataset);
+    verifyReferencesToOldDatasetIds(datasetDTO);
 
     if (xsltString == null) {
-      dataset.setXsltId(storedDataset.getXsltId());
+      datasetDTO.setXsltId(ofNullable(storedDataset.getXsltId()).map(ObjectId::toString).orElse(null));
     } else {
       cleanDatasetXslt(storedDataset.getXsltId());
-      dataset.setXsltId(
-          datasetXsltDao.create(new DatasetXslt(dataset.getDatasetId(), xsltString)).getId());
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), xsltString)).getId();
+      datasetDTO.setXsltId(xsltId.toString());
     }
 
     // Update the dataset
-    dataset.setUpdatedDate(new Date());
-    datasetDao.update(dataset);
+    datasetDTO.setUpdatedDate(new Date());
+    datasetDao.update(DatasetConverter.fromDTO(datasetDTO));
   }
 
-  private void verifyReferencesToOldDatasetIds(Dataset dataset) throws BadContentException {
-    if (dataset.getDatasetIdsToRedirectFrom() != null) {
-      for (String datasetId : dataset.getDatasetIdsToRedirectFrom()) {
+  private void verifyReferencesToOldDatasetIds(DatasetDTO datasetDTO) throws BadContentException {
+    if (datasetDTO.getDatasetIdsToRedirectFrom() != null) {
+      for (String datasetId : datasetDTO.getDatasetIdsToRedirectFrom()) {
         if (datasetDao.getDatasetByDatasetId(datasetId) == null) {
           throw new BadContentException(
               String.format("Old datasetId for redirection %s doesn't exist", datasetId));
         }
-        if (dataset.getDatasetId().equals(datasetId)) {
+        if (datasetDTO.getDatasetId().equals(datasetId)) {
           throw new BadContentException(
               String.format("datasetId for redirection %s cannot be the same as the current datasetId", datasetId));
         }
@@ -282,14 +287,14 @@ public class DatasetService {
    * <li>{@link NoDatasetFoundException} if the dataset is not found in the system.</li>
    * </ul>
    */
-  public Dataset getDatasetByDatasetName(String datasetName)
+  public DatasetDTO getDatasetByDatasetName(String datasetName)
       throws GenericMetisException {
     final Dataset dataset = datasetDao.getDatasetByDatasetName(datasetName);
     if (dataset == null) {
       throw new NoDatasetFoundException(
           String.format("No dataset found with datasetName: '%s' in METIS", datasetName));
     }
-    return dataset;
+    return DatasetConverter.toDTO(dataset, userService.getUserFromCache(dataset.getCreatedByUserId()));
   }
 
   /**
@@ -302,9 +307,10 @@ public class DatasetService {
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * </ul>
    */
-  public Dataset getDatasetByDatasetId(String datasetId)
+  public DatasetDTO getDatasetByDatasetId(String datasetId)
       throws GenericMetisException {
-    return datasetDao.getDatasetOrThrow(datasetId);
+    Dataset storedDataset = datasetDao.getDatasetOrThrow(datasetId);
+    return DatasetConverter.toDTO(storedDataset, userService.getUserFromCache(storedDataset.getCreatedByUserId()));
   }
 
   /**
@@ -506,8 +512,12 @@ public class DatasetService {
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
    */
-  public List<Dataset> getAllDatasetsByProvider(String provider, int nextPage) {
-    return datasetDao.getAllDatasetsByProvider(provider, nextPage);
+  public List<DatasetDTO> getAllDatasetsByProvider(String provider, int nextPage) {
+    List<Dataset> allDatasetsByProvider = datasetDao.getAllDatasetsByProvider(provider, nextPage);
+    return allDatasetsByProvider.stream()
+                         .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                             userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                         .toList();
   }
 
   /**
@@ -517,8 +527,12 @@ public class DatasetService {
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
    */
-  public List<Dataset> getAllDatasetsByIntermediateProvider(String intermediateProvider, int nextPage) {
-    return datasetDao.getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage);
+  public List<DatasetDTO> getAllDatasetsByIntermediateProvider(String intermediateProvider, int nextPage) {
+    List<Dataset> allDatasetsByIntermediateProvider = datasetDao.getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage);
+    return allDatasetsByIntermediateProvider.stream()
+                                .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                                    userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                                .toList();
   }
 
   /**
@@ -528,8 +542,12 @@ public class DatasetService {
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
    */
-  public List<Dataset> getAllDatasetsByDataProvider(String dataProvider, int nextPage) {
-    return datasetDao.getAllDatasetsByDataProvider(dataProvider, nextPage);
+  public List<DatasetDTO> getAllDatasetsByDataProvider(String dataProvider, int nextPage) {
+    List<Dataset> allDatasetsByDataProvider = datasetDao.getAllDatasetsByDataProvider(dataProvider, nextPage);
+    return allDatasetsByDataProvider.stream()
+                                            .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                                                userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                                            .toList();
   }
 
   /**
@@ -539,8 +557,12 @@ public class DatasetService {
    * @param nextPage the nextPage number or -1
    * @return {@link List} of {@link Dataset}
    */
-  public List<Dataset> getAllDatasetsByOrganizationId(String organizationId, int nextPage) {
-    return datasetDao.getAllDatasetsByOrganizationId(organizationId, nextPage);
+  public List<DatasetDTO> getAllDatasetsByOrganizationId(String organizationId, int nextPage) {
+    List<Dataset> allDatasetsByOrganizationId = datasetDao.getAllDatasetsByOrganizationId(organizationId, nextPage);
+    return allDatasetsByOrganizationId.stream()
+                                    .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                                        userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                                    .toList();
   }
 
   /**
@@ -550,8 +572,12 @@ public class DatasetService {
    * @param nextPage the nextPage number or -1
    * @return {@link List} of {@link Dataset}
    */
-  public List<Dataset> getAllDatasetsByOrganizationName(String organizationName, int nextPage) {
-    return datasetDao.getAllDatasetsByOrganizationName(organizationName, nextPage);
+  public List<DatasetDTO> getAllDatasetsByOrganizationName(String organizationName, int nextPage) {
+    List<Dataset> allDatasetsByOrganizationName = datasetDao.getAllDatasetsByOrganizationName(organizationName, nextPage);
+    return allDatasetsByOrganizationName.stream()
+                                      .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                                          userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                                      .toList();
   }
 
   /**
