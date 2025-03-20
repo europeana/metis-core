@@ -6,14 +6,15 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.function.Consumer;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -47,10 +48,10 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
       String userId = AuthenticationUtils.getUserId(jwtAuthentication.getToken());
-      String userName = AuthenticationUtils.getUserName(jwtAuthentication.getToken());
-      String firstName = AuthenticationUtils.getFirstName(jwtAuthentication.getToken());
-      String lastName = AuthenticationUtils.getLastName(jwtAuthentication.getToken());
-      Instant issuedAt = AuthenticationUtils.getIssuedAt(jwtAuthentication.getToken());
+      final String userName = AuthenticationUtils.getUserName(jwtAuthentication.getToken());
+      final String firstName = AuthenticationUtils.getFirstName(jwtAuthentication.getToken());
+      final String lastName = AuthenticationUtils.getLastName(jwtAuthentication.getToken());
+      final Instant issuedAt = AuthenticationUtils.getIssuedAt(jwtAuthentication.getToken());
 
       if (isNotBlank(userId)) {
         UserBuilder userBuilder = new UserBuilder()
