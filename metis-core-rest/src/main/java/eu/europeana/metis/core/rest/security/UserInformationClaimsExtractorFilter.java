@@ -47,7 +47,7 @@ public class UserInformationClaimsExtractorFilter extends OncePerRequestFilter {
 
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
-      String userId = AuthenticationUtils.getUserId(jwtAuthentication.getToken());
+      final String userId = AuthenticationUtils.getUserId(jwtAuthentication.getToken());
       final String userName = AuthenticationUtils.getUserName(jwtAuthentication.getToken());
       final String firstName = AuthenticationUtils.getFirstName(jwtAuthentication.getToken());
       final String lastName = AuthenticationUtils.getLastName(jwtAuthentication.getToken());
