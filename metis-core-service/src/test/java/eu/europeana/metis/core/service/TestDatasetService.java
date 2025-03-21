@@ -222,7 +222,6 @@ class TestDatasetService {
 
   @Test
   void testDeleteDatasetByDatasetId() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     when(workflowExecutionDao.existsAndNotCompleted(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(null);
     datasetService.deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(datasetDao, times(1)).deleteByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
@@ -240,7 +239,6 @@ class TestDatasetService {
 
   @Test
   void testDeleteDatasetDatasetExecutionIsActive() {
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     when(workflowExecutionDao.existsAndNotCompleted(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn("ObjectId");
     assertThrows(BadContentException.class, () -> datasetService

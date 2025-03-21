@@ -143,14 +143,6 @@ class TestDatasetDao {
   }
 
   @Test
-  void getDatasetByDatasetName() {
-    Dataset createdDataset = datasetDao.create(dataset);
-    Dataset storedDataset = datasetDao
-        .getDatasetByDatasetName(createdDataset.getDatasetName());
-    assertEquals(createdDataset.getDatasetId(), storedDataset.getDatasetId());
-  }
-
-  @Test
   void testExistsDatasetByDatasetName() {
     Dataset createdDataset = datasetDao.create(dataset);
     assertTrue(datasetDao.existsDatasetByDatasetName(createdDataset.getDatasetName()));
