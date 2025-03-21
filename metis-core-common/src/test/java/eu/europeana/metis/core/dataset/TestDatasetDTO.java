@@ -1,16 +1,5 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.europeana.metis.core.common.Language;
-import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
-import eu.europeana.metis.utils.Country;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.Objects;
-import org.junit.jupiter.api.Test;
-
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertFieldEquals;
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertListContains;
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertNestedFieldEquals;
@@ -34,8 +23,6 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE_ENUM;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.NOTES;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ORGANIZATION_NAME;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.PROVIDER;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.PUBLICATION_FITNESS;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_1_VALUE;
@@ -54,6 +41,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.europeana.metis.core.common.Language;
+import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.utils.Country;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
 class TestDatasetDTO {
 
@@ -109,8 +107,6 @@ class TestDatasetDTO {
     assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
     assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
     assertFieldEquals(jsonOutput, DATASET_NAME, DATASET_NAME);
-    assertFieldEquals(jsonOutput, ORGANIZATION_ID, ORGANIZATION_ID);
-    assertFieldEquals(jsonOutput, ORGANIZATION_NAME, ORGANIZATION_NAME);
     assertFieldEquals(jsonOutput, PROVIDER, PROVIDER);
     assertFieldEquals(jsonOutput, DATA_PROVIDER, DATA_PROVIDER);
     assertFieldEquals(jsonOutput, INTERMEDIATE_PROVIDER, INTERMEDIATE_PROVIDER);
@@ -136,8 +132,6 @@ class TestDatasetDTO {
     assertEquals(ECLOUD_DATASET_ID, datasetDTO.getEcloudDatasetId());
     assertEquals(DATASET_ID, datasetDTO.getDatasetId());
     assertEquals(DATASET_NAME, datasetDTO.getDatasetName());
-    assertEquals(ORGANIZATION_ID, datasetDTO.getOrganizationId());
-    assertEquals(ORGANIZATION_NAME, datasetDTO.getOrganizationName());
     assertEquals(PROVIDER, datasetDTO.getProvider());
     assertEquals(DATA_PROVIDER, datasetDTO.getDataProvider());
     assertEquals(INTERMEDIATE_PROVIDER, datasetDTO.getIntermediateProvider());

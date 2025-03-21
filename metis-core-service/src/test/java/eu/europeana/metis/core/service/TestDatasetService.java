@@ -1,5 +1,23 @@
 package eu.europeana.metis.core.service;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.github.tomakehurst.wiremock.WireMockServer;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -38,24 +56,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class TestDatasetService {
 
@@ -131,8 +131,7 @@ class TestDatasetService {
     User user = TestObjectFactory.createUser(dataset.getCreatedByUserId());
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(DATASET_CREATION_LOCK)).thenReturn(rlock);
-    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(datasetDTO.getOrganizationId(), datasetDTO.getDatasetName())).thenReturn(
-        null);
+    when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(null);
     when(datasetDao.findNextInSequenceDatasetId()).thenReturn(1);
     when(datasetDao.create(any(Dataset.class))).thenReturn(dataset);
     when(userService.getUserFromCache(any(String.class))).thenReturn(user);
@@ -142,8 +141,6 @@ class TestDatasetService {
     verify(datasetDao, times(1)).create(any(Dataset.class));
     assertEquals(datasetDTO.getDatasetName(), datasetArgumentCaptor.getValue().getDatasetName());
     assertEquals(TestObjectFactory.USER_ID, datasetArgumentCaptor.getValue().getCreatedByUserId());
-    assertEquals(DatasetDao.ORGANIZATION_ID, datasetArgumentCaptor.getValue().getOrganizationId());
-    assertEquals(DatasetDao.ORGANIZATION_NAME, datasetArgumentCaptor.getValue().getOrganizationName());
   }
 
   @Test
@@ -153,7 +150,7 @@ class TestDatasetService {
 
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(DATASET_CREATION_LOCK)).thenReturn(rlock);
-    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(DatasetDao.ORGANIZATION_ID, datasetDTO.getDatasetName())).thenReturn(dataset);
+    when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(dataset);
     expectException(DatasetAlreadyExistsException.class, () -> datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO));
     verify(datasetDao, times(0)).create(any(Dataset.class));
     verify(datasetDao, times(0)).getById(null);
@@ -165,7 +162,6 @@ class TestDatasetService {
     datasetDTO.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     storedDataset.setUpdatedDate(new Date(-1000));
-    storedDataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
@@ -186,7 +182,6 @@ class TestDatasetService {
     datasetDTO.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     storedDataset.setUpdatedDate(new Date(-1000));
-    storedDataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
@@ -203,21 +198,16 @@ class TestDatasetService {
   @Test
   void testUpdateDatasetDatasetAlreadyExistsException() throws NoDatasetFoundException {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-    datasetDTO.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     Dataset storedDataset = TestObjectFactory.createDataset(String.format("%s%s", TestObjectFactory.DATASETNAME, 10));
-    storedDataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
-    when(datasetDao.getDatasetByOrganizationIdAndDatasetName(datasetDTO.getOrganizationId(), datasetDTO.getDatasetName())).thenReturn(
-        new Dataset());
+    when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(new Dataset());
     assertThrows(DatasetAlreadyExistsException.class, () -> datasetService.updateDataset(datasetDTO, null));
   }
 
   @Test
   void testUpdateDatasetDatasetExecutionIsActive() throws NoDatasetFoundException {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-    datasetDTO.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(dataset);
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn("ObjectId");
     assertThrows(BadContentException.class, () -> datasetService.updateDataset(datasetDTO, null));
@@ -232,8 +222,6 @@ class TestDatasetService {
 
   @Test
   void testDeleteDatasetByDatasetId() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(null);
     datasetService.deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(datasetDao, times(1)).deleteByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
@@ -251,8 +239,6 @@ class TestDatasetService {
 
   @Test
   void testDeleteDatasetDatasetExecutionIsActive() {
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(workflowExecutionDao.existsAndNotCompleted(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn("ObjectId");
     assertThrows(BadContentException.class, () -> datasetService
@@ -262,7 +248,6 @@ class TestDatasetService {
   @Test
   void testGetDatasetByDatasetName() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     User user = TestObjectFactory.createUser(dataset.getCreatedByUserId());
     when(datasetDao.getDatasetByDatasetName(dataset.getDatasetName())).thenReturn(dataset);
     when(userService.getUserFromCache(any(String.class))).thenReturn(user);
@@ -279,7 +264,6 @@ class TestDatasetService {
   @Test
   void testGetDatasetByDatasetId() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     User user = TestObjectFactory.createUser(dataset.getCreatedByUserId());
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(userService.getUserFromCache(any(String.class))).thenReturn(user);
@@ -297,7 +281,6 @@ class TestDatasetService {
   @Test
   void getDatasetXsltByDatasetId() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     dataset.setXsltId(new ObjectId());
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
@@ -311,7 +294,6 @@ class TestDatasetService {
   @Test
   void getDatasetXsltByDatasetIdNoXsltFoundException() throws NoDatasetFoundException {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getById(anyString())).thenReturn(null);
     assertThrows(NoXsltFoundException.class, () -> datasetService.getDatasetXsltByDatasetId(dataset.getDatasetId()));
@@ -374,7 +356,6 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDefaultXslt() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(datasetXslt);
@@ -405,7 +386,6 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDefaultXslt_NoXsltFoundException() {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetByDatasetId(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(null);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(1);
@@ -416,7 +396,6 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDatasetXslt() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     dataset.setXsltId(new ObjectId());
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
@@ -446,7 +425,6 @@ class TestDatasetService {
   @Test
   void transformRecordsUsingLatestDatasetXslt_NoXsltFoundException() throws NoDatasetFoundException {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setOrganizationId(DatasetDao.ORGANIZATION_ID);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(1);
     assertThrows(NoXsltFoundException.class,
@@ -480,27 +458,6 @@ class TestDatasetService {
     int nextPage = 1;
     when(datasetDao.getAllDatasetsByDataProvider(provider, nextPage)).thenReturn(list);
     List<DatasetDTO> retList = datasetService.getAllDatasetsByDataProvider(provider, nextPage);
-    assertEquals(list.size(), retList.size());
-  }
-
-  @Test
-  void testGetAllDatasetsByOrganizationId() {
-    List<Dataset> list = new ArrayList<>();
-    String organizationId = "organizationId";
-    int nextPage = 1;
-    when(datasetDao.getAllDatasetsByOrganizationId(organizationId, nextPage)).thenReturn(list);
-    List<DatasetDTO> retList = datasetService.getAllDatasetsByOrganizationId(organizationId, nextPage);
-    assertEquals(list.size(), retList.size());
-  }
-
-  @Test
-  void testGetAllDatasetsByOrganizationName() {
-    List<Dataset> list = new ArrayList<>();
-    String organizationName = "organizationName";
-    int nextPage = 1;
-    when(datasetDao.getAllDatasetsByOrganizationName(organizationName, nextPage))
-        .thenReturn(list);
-    List<DatasetDTO> retList = datasetService.getAllDatasetsByOrganizationName(organizationName, nextPage);
     assertEquals(list.size(), retList.size());
   }
 

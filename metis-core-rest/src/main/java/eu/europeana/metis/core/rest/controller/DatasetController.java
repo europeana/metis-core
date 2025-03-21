@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
+
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -44,8 +46,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
-
 /**
  * Contains all the calls that are related to Datasets.
  * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
@@ -78,7 +78,7 @@ public class DatasetController {
    * @return the dataset created including all other fields that are auto generated
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link DatasetAlreadyExistsException} if the dataset already exists for the organizationId and datasetName.</li>
+   * <li>{@link DatasetAlreadyExistsException} if the dataset already exists for datasetName.</li>
    * </ul>
    */
   @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
@@ -87,8 +87,8 @@ public class DatasetController {
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     DatasetDTO createdDataset = datasetService.createDataset(userId, datasetDTO);
-    LOGGER.info("Dataset with datasetId: {}, datasetName: {} and organizationId {} created",
-        createdDataset.getDatasetId(), createdDataset.getDatasetName(), createdDataset.getOrganizationId());
+    LOGGER.info("Dataset with datasetId: {}, datasetName: {} created", createdDataset.getDatasetId(),
+        createdDataset.getDatasetName());
     return createdDataset;
   }
 
@@ -107,7 +107,7 @@ public class DatasetController {
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found for the datasetId.</li>
-   * <li>{@link DatasetAlreadyExistsException} if a datasetName change is requested and the datasetName for that organizationId already exists.</li>
+   * <li>{@link DatasetAlreadyExistsException} if a datasetName change is requested and the datasetName already exists.</li>
    * </ul>
    */
   @PutMapping(value = RestEndpoints.DATASETS, consumes = {
@@ -445,76 +445,6 @@ public class DatasetController {
     responseListWrapper
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByDataProvider(dataProvider, nextPage),
-            datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
-    return responseListWrapper;
-  }
-
-  /**
-   * Get a list of all the datasets using the organizationId field for lookup.
-   * <p>The results are paged and wrapped around {@link ResponseListWrapper}</p>
-   *
-   * <p> The expected input should follow the rule Bearer
-   * accessTokenHere </p>
-   *
-   * @param organizationId the organizationId used to search
-   * @param nextPage the nextPage number or -1
-   * @return {@link ResponseListWrapper}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link BadContentException} if the parameters provided are invalid.</li>
-   * </ul>
-   */
-  @GetMapping(value = RestEndpoints.DATASETS_ORGANIZATION_ID, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-  @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<DatasetDTO> getAllDatasetsByOrganizationId(
-      @PathVariable("organizationId") String organizationId,
-      @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
-      throws GenericMetisException {
-    if (nextPage < 0) {
-      throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
-    }
-    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
-    responseListWrapper
-        .setResultsAndLastPage(
-            datasetService.getAllDatasetsByOrganizationId(organizationId, nextPage),
-            datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
-    return responseListWrapper;
-  }
-
-  /**
-   * Get a list of all the datasets using the organizationName field for lookup.
-   * <p>The results are paged and wrapped around {@link ResponseListWrapper}</p>
-   *
-   * <p> The expected input should follow the rule Bearer
-   * accessTokenHere </p>
-   *
-   * @param organizationName the organizationName used to search
-   * @param nextPage the nextPage number or -1
-   * @return {@link ResponseListWrapper}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link BadContentException} if the parameters provided are invalid.</li>
-   * </ul>
-   */
-  @GetMapping(value = RestEndpoints.DATASETS_ORGANIZATION_NAME, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-  @ResponseStatus(HttpStatus.OK)
-  public ResponseListWrapper<DatasetDTO> getAllDatasetsByOrganizationName(
-      @PathVariable("organizationName") String organizationName,
-      @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage)
-      throws GenericMetisException {
-    if (nextPage < 0) {
-      throw new BadContentException(CommonStringValues.NEXT_PAGE_CANNOT_BE_NEGATIVE);
-    }
-    ResponseListWrapper<DatasetDTO> responseListWrapper = new ResponseListWrapper<>();
-    responseListWrapper
-        .setResultsAndLastPage(
-            datasetService.getAllDatasetsByOrganizationName(organizationName, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
     LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
         responseListWrapper.getListSize(), nextPage);

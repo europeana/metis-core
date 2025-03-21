@@ -1,11 +1,11 @@
 package eu.europeana.metis.core.dataset;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import eu.europeana.metis.core.user.User;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class TestDatasetConverter {
 
@@ -18,8 +18,6 @@ class TestDatasetConverter {
     assertEquals(datasetDTO.getEcloudDatasetId(), dataset.getEcloudDatasetId());
     assertEquals(datasetDTO.getDatasetId(), dataset.getDatasetId());
     assertEquals(datasetDTO.getDatasetName(), dataset.getDatasetName());
-    assertEquals(datasetDTO.getOrganizationId(), dataset.getOrganizationId());
-    assertEquals(datasetDTO.getOrganizationName(), dataset.getOrganizationName());
     assertEquals(datasetDTO.getProvider(), dataset.getProvider());
     assertEquals(datasetDTO.getDataProvider(), dataset.getDataProvider());
     assertEquals(datasetDTO.getIntermediateProvider(), dataset.getIntermediateProvider());
@@ -55,8 +53,6 @@ class TestDatasetConverter {
     assertEquals(dataset.getEcloudDatasetId(), datasetDTO.getEcloudDatasetId());
     assertEquals(dataset.getDatasetId(), datasetDTO.getDatasetId());
     assertEquals(dataset.getDatasetName(), datasetDTO.getDatasetName());
-    assertEquals(dataset.getOrganizationId(), datasetDTO.getOrganizationId());
-    assertEquals(dataset.getOrganizationName(), datasetDTO.getOrganizationName());
     assertEquals(dataset.getProvider(), datasetDTO.getProvider());
     assertEquals(dataset.getDataProvider(), datasetDTO.getDataProvider());
     assertEquals(dataset.getIntermediateProvider(), datasetDTO.getIntermediateProvider());

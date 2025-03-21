@@ -9,14 +9,14 @@ import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.IndexOptions;
 import dev.morphia.annotations.Indexes;
-import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.core.common.CountryDeserializer;
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.common.LanguageDeserializer;
 import eu.europeana.metis.core.common.LanguageSerializer;
-import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
+import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
+import eu.europeana.metis.utils.Country;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,13 +27,9 @@ import org.bson.types.ObjectId;
  */
 @Entity
 @Indexes({
-    @Index(fields = {@Field("organizationId"),
-        @Field("datasetName")}, options = @IndexOptions(unique = true)),
+    @Index(fields = {@Field("datasetName")}, options = @IndexOptions(unique = true)),
     @Index(fields = {@Field("ecloudDatasetId")}, options = @IndexOptions(unique = true)),
     @Index(fields = {@Field("datasetId")}),
-    @Index(fields = {@Field("datasetName")}),
-    @Index(fields = {@Field("organizationId")}),
-    @Index(fields = {@Field("organizationName")}),
     @Index(fields = {@Field("provider")}),
     @Index(fields = {@Field("intermediateProvider")}),
     @Index(fields = {@Field("dataProvider")}),
@@ -54,8 +50,6 @@ public class Dataset implements HasMongoObjectId {
   private String ecloudDatasetId;
   private String datasetId;
   private String datasetName;
-  private String organizationId;
-  private String organizationName;
   private String provider;
   private String intermediateProvider;
   private String dataProvider;
@@ -116,22 +110,6 @@ public class Dataset implements HasMongoObjectId {
 
   public void setDatasetName(String datasetName) {
     this.datasetName = datasetName;
-  }
-
-  public String getOrganizationId() {
-    return organizationId;
-  }
-
-  public void setOrganizationId(String organizationId) {
-    this.organizationId = organizationId;
-  }
-
-  public String getOrganizationName() {
-    return organizationName;
-  }
-
-  public void setOrganizationName(String organizationName) {
-    this.organizationName = organizationName;
   }
 
   public String getProvider() {

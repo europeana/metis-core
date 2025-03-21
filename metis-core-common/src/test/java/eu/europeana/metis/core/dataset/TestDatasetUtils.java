@@ -16,8 +16,6 @@ public class TestDatasetUtils {
   static final String ECLOUD_DATASET_ID = "ecloudDatasetId";
   static final String DATASET_ID = "datasetId";
   static final String DATASET_NAME = "datasetName";
-  static final String ORGANIZATION_ID = "organizationId";
-  static final String ORGANIZATION_NAME = "organizationName";
   static final String PROVIDER = "provider";
   static final String DATA_PROVIDER = "dataProvider";
   static final String INTERMEDIATE_PROVIDER = "intermediateProvider";
@@ -52,8 +50,6 @@ public class TestDatasetUtils {
         ECLOUD_DATASET_ID,
         DATASET_ID,
         DATASET_NAME,
-        ORGANIZATION_ID,
-        ORGANIZATION_NAME,
         PROVIDER,
         DATA_PROVIDER,
         INTERMEDIATE_PROVIDER,
@@ -82,8 +78,6 @@ public class TestDatasetUtils {
     datasetDTO1.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
     datasetDTO1.setDatasetId(datasetDTO.getDatasetId());
     datasetDTO1.setDatasetName(datasetDTO.getDatasetName());
-    datasetDTO1.setOrganizationId(datasetDTO.getOrganizationId());
-    datasetDTO1.setOrganizationName(datasetDTO.getOrganizationName());
     datasetDTO1.setProvider(datasetDTO.getProvider());
     datasetDTO1.setDataProvider(datasetDTO.getDataProvider());
     datasetDTO1.setIntermediateProvider(datasetDTO.getIntermediateProvider());
@@ -112,8 +106,6 @@ public class TestDatasetUtils {
         datasetDTO.getEcloudDatasetId(),
         datasetDTO.getDatasetId(),
         datasetDTO.getDatasetName(),
-        datasetDTO.getOrganizationId(),
-        datasetDTO.getOrganizationName(),
         datasetDTO.getProvider(),
         datasetDTO.getDataProvider(),
         datasetDTO.getIntermediateProvider(),
@@ -148,8 +140,6 @@ public class TestDatasetUtils {
     dataset.setEcloudDatasetId(ECLOUD_DATASET_ID);
     dataset.setDatasetId(DATASET_ID);
     dataset.setDatasetName(DATASET_NAME);
-    dataset.setOrganizationId(ORGANIZATION_ID);
-    dataset.setOrganizationName(ORGANIZATION_NAME);
     dataset.setProvider(PROVIDER);
     dataset.setDataProvider(DATA_PROVIDER);
     dataset.setIntermediateProvider(INTERMEDIATE_PROVIDER);
