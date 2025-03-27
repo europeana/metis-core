@@ -125,10 +125,8 @@ class TestQueueConsumer {
   @Test
   void handleDelivery() throws IOException {
     String objectId = new ObjectId().toString();
-    int priority = 0;
     Envelope envelope = new Envelope(1, false, "", "");
-    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder()
-                                                                             .priority(priority).build();
+    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
 
     when(workflowExecutionMonitor.claimExecution(objectId))
@@ -145,10 +143,8 @@ class TestQueueConsumer {
   void handleDeliveryExecutionThatMayNotBeClaimed() throws IOException {
 
     String objectId = new ObjectId().toString();
-    int priority = 0;
     Envelope envelope = new Envelope(1, false, "", "");
-    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder()
-                                                                             .priority(priority).build();
+    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
 
     when(workflowExecutionMonitor.claimExecution(objectId))
@@ -167,10 +163,8 @@ class TestQueueConsumer {
   @Test
   void handleDeliveryStateCancelling() throws Exception {
     String objectId = new ObjectId().toString();
-    int priority = 0;
     Envelope envelope = new Envelope(1, false, "", "");
-    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder()
-                                                                             .priority(priority).build();
+    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setCancelling(true);
 
@@ -212,9 +206,7 @@ class TestQueueConsumer {
     ArrayList<AbstractMetisPlugin> abstractMetisPlugins3 = new ArrayList<>();
     abstractMetisPlugins3.add(oaipmhHarvestPlugin3);
 
-    int priority = 0;
-    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder()
-                                                                             .priority(priority).build();
+    BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
     Envelope envelope = new Envelope(1, false, "", "");
     ObjectId objectId1 = new ObjectId(Date.from(Instant.now().minusSeconds(1)));
     ObjectId objectId2 = new ObjectId(Date.from(Instant.now()));

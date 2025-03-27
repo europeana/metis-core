@@ -118,12 +118,12 @@ class TestWorkflowExecutionMonitor {
 
     // Perform method and verify the requeued executions
     monitor.performFailsafe();
-    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution2.getId().toString(),
-        workflowExecution2.getWorkflowPriority());
-    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution3.getId().toString(),
-        workflowExecution3.getWorkflowPriority());
-    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution4.getId().toString(),
-        workflowExecution4.getWorkflowPriority());
+    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution2.getId().toString()
+    );
+    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution3.getId().toString()
+    );
+    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution4.getId().toString()
+    );
     verifyNoMoreInteractions(workflowExecutorManager);
 
     // Verify calls that need to be locked.

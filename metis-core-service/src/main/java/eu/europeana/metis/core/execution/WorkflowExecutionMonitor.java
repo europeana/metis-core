@@ -125,8 +125,8 @@ public class WorkflowExecutionMonitor {
 
       // Requeue executions.
       for (WorkflowExecution workflowExecution : toBeRequeued) {
-        workflowExecutorManager.addWorkflowExecutionToQueue(workflowExecution.getId().toString(),
-            workflowExecution.getWorkflowPriority());
+        workflowExecutorManager.addWorkflowExecutionToQueue(workflowExecution.getId().toString()
+        );
       }
     } catch (RuntimeException e) {
       LOGGER.warn(

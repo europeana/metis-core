@@ -101,7 +101,6 @@ public class TestObjectFactory {
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
     workflowExecutionDTO.setDatasetId(dataset.getDatasetId());
     workflowExecutionDTO.setEcloudDatasetId(dataset.getEcloudDatasetId());
-    workflowExecutionDTO.setWorkflowPriority(0);
     workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
                                                              .map(plugin -> MetisPluginConverter.toDTO(plugin,
                                                                  WorkflowExecutionConverter.canDisplayRawXml(plugin)))
@@ -116,7 +115,6 @@ public class TestObjectFactory {
     WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
@@ -173,7 +171,6 @@ public class TestObjectFactory {
     scheduledWorkflow.setDatasetId(Integer.toString(DATASETID));
     scheduledWorkflow.setPointerDate(new Date());
     scheduledWorkflow.setScheduleFrequence(ScheduleFrequence.ONCE);
-    scheduledWorkflow.setWorkflowPriority(0);
     return scheduledWorkflow;
   }
 

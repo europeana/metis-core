@@ -292,7 +292,6 @@ public class OrchestratorService {
    * @param datasetId the dataset identifier for which the execution will take place
    * @param workflowProvided optional, the workflow to use instead of retrieving the saved one from the db
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
-   * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -310,14 +309,14 @@ public class OrchestratorService {
    */
   public WorkflowExecution addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(
       String datasetId, @Nullable Workflow workflowProvided,
-      @Nullable ExecutablePluginType enforcedPredecessorType, int priority)
+      @Nullable ExecutablePluginType enforcedPredecessorType)
       throws GenericMetisException {
     final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
     if (dataset == null) {
       throw new NoDatasetFoundException(
           String.format("No dataset found with datasetId: %s, in METIS", datasetId));
     }
-    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, priority, null);
+    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, null);
   }
 
   /**
@@ -330,7 +329,6 @@ public class OrchestratorService {
    * @param datasetId the dataset identifier for which the execution will take place
    * @param workflowProvided optional, the workflow to use instead of retrieving the saved one from the db
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
-   * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
    * @param userId the userId of the user
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
@@ -348,11 +346,11 @@ public class OrchestratorService {
    * </ul>
    */
   public WorkflowExecutionDTO addWorkflowInQueueOfWorkflowExecutions(String datasetId, @Nullable Workflow workflowProvided,
-      @Nullable ExecutablePluginType enforcedPredecessorType, int priority, String userId)
+      @Nullable ExecutablePluginType enforcedPredecessorType, String userId)
       throws GenericMetisException {
     final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     WorkflowExecution workflowExecution = addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided,
-        enforcedPredecessorType, priority, userId);
+        enforcedPredecessorType, userId);
     return WorkflowExecutionConverter.toDTO(workflowExecution, workflowExecution != null && isIncremental(workflowExecution),
         userService.getUserFromCache(userId), null);
   }
@@ -360,7 +358,7 @@ public class OrchestratorService {
   private WorkflowExecution addWorkflowInQueueOfWorkflowExecutions(Dataset dataset,
       @Nullable Workflow workflowProvided,
       @Nullable ExecutablePluginType enforcedPredecessorType,
-      int priority, String userId)
+      String userId)
       throws GenericMetisException {
 
     // Get the workflow or use the one provided.
@@ -384,7 +382,7 @@ public class OrchestratorService {
 
     // Create the workflow execution (without adding it to the database).
     final WorkflowExecution workflowExecution = workflowExecutionFactory
-        .createWorkflowExecution(workflow, dataset, predecessor, priority);
+        .createWorkflowExecution(workflow, dataset, predecessor);
 
     // Obtain the lock.
     RLock executionDatasetIdLock = redissonClient
@@ -414,7 +412,7 @@ public class OrchestratorService {
     }
 
     // Add the workflow execution to the queue.
-    workflowExecutorManager.addWorkflowExecutionToQueue(objectId, priority);
+    workflowExecutorManager.addWorkflowExecutionToQueue(objectId);
     LOGGER.info("WorkflowExecution with id: {}, added to execution queue", objectId);
 
     // Done. Get a fresh copy of the workflow execution to return.

@@ -25,7 +25,6 @@ public class WorkflowExecutionDTO {
   private String startedByUserName;
   private String startedByFirstName;
   private String startedByLastName;
-  private int workflowPriority;
   private boolean cancelling;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date createdDate;
@@ -144,14 +143,6 @@ public class WorkflowExecutionDTO {
 
   public void setEcloudDatasetId(String ecloudDatasetId) {
     this.ecloudDatasetId = ecloudDatasetId;
-  }
-
-  public int getWorkflowPriority() {
-    return workflowPriority;
-  }
-
-  public void setWorkflowPriority(int workflowPriority) {
-    this.workflowPriority = workflowPriority;
   }
 
   public Date getCreatedDate() {

@@ -113,15 +113,16 @@ class TestDepublishRecordIdService {
         mockRecordIdsSeparateLines);
 
     //Do the actual call
-    depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(datasetId, true, 1, mockRecordIdsSeparateLines, DepublicationReason.GENERIC, TestObjectFactory.USER_ID);
+    depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(datasetId, true, mockRecordIdsSeparateLines,
+        DepublicationReason.GENERIC, TestObjectFactory.USER_ID);
 
     verify(orchestratorService, times(1))
-        .addWorkflowInQueueOfWorkflowExecutions(anyString(), any(), any(), anyInt(), anyString());
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), any(), any(), anyString());
 
     //Verify values
     ArgumentCaptor<Workflow> workflowArgumentCaptor = ArgumentCaptor.forClass(Workflow.class);
     verify(orchestratorService, times(1))
-        .addWorkflowInQueueOfWorkflowExecutions(anyString(), workflowArgumentCaptor.capture(), any(), anyInt(), anyString());
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), workflowArgumentCaptor.capture(), any(), anyString());
     Workflow sentWorkflow = workflowArgumentCaptor.getValue();
     assertEquals(datasetId, sentWorkflow.getDatasetId());
   }

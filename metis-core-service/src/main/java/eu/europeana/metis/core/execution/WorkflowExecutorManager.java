@@ -58,13 +58,11 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
    * Adds a WorkflowExecution identifier in the distributed queue.
    *
    * @param userWorkflowExecutionObjectId the WorkflowExecution identifier
-   * @param priority the priority of the WorkflowExecution in the queue
    */
-  public void addWorkflowExecutionToQueue(String userWorkflowExecutionObjectId, int priority) {
+  public void addWorkflowExecutionToQueue(String userWorkflowExecutionObjectId) {
+    //Based on Rabbitmq the basicPublish between threads should be controlled(synchronized)
     synchronized (getRabbitmqPublisherChannel()) {
-      //Based on Rabbitmq the basicPublish between threads should be controlled(synchronized)
-      BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder()
-          .priority(priority).build();
+      BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
       try {
         //First parameter is the ExchangeName which is not used
         getRabbitmqPublisherChannel().basicPublish("", rabbitmqQueueName, basicProperties,

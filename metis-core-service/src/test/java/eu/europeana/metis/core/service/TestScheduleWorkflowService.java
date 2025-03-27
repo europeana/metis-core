@@ -70,7 +70,7 @@ class TestScheduleWorkflowService {
     when(datasetDao.getDatasetByDatasetId(datasetId)).thenReturn(dataset);
     when(workflowDao.getWorkflow(datasetId)).thenReturn(workflow);
     when(scheduledWorkflowDao.existsForDatasetId(datasetId)).thenReturn(null);
-    when(scheduledWorkflowDao.create(scheduledWorkflow)).thenReturn(new ScheduledWorkflow(null, datasetId, null, 0));
+    when(scheduledWorkflowDao.create(scheduledWorkflow)).thenReturn(new ScheduledWorkflow(null, datasetId, null));
     scheduleWorkflowService.scheduleWorkflow(scheduledWorkflow);
     verify(scheduledWorkflowDao, times(1)).create(scheduledWorkflow);
   }

@@ -1,35 +1,5 @@
 package eu.europeana.metis.core.rest.controller;
 
-import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
-import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
-import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
-import eu.europeana.metis.core.rest.DepublishRecordIdView;
-import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
-import eu.europeana.metis.core.service.DepublishRecordIdService;
-import eu.europeana.metis.core.service.UserService;
-import eu.europeana.metis.exception.BadContentException;
-import eu.europeana.metis.exception.ExternalTaskException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
 import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
@@ -48,6 +18,36 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
+import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
+import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
+import eu.europeana.metis.core.rest.DepublishRecordIdView;
+import eu.europeana.metis.core.rest.ResponseListWrapper;
+import eu.europeana.metis.core.rest.config.SecurityConfig;
+import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.utils.TestJwtUtils;
+import eu.europeana.metis.core.service.DepublishRecordIdService;
+import eu.europeana.metis.core.service.UserService;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
+import eu.europeana.metis.exception.BadContentException;
+import eu.europeana.metis.exception.ExternalTaskException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(DepublishRecordIdController.class)
 @ContextConfiguration(classes = {DepublishRecordIdController.class, SecurityConfig.class,
@@ -326,13 +326,12 @@ class TestDepublishRecordIdController {
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
-    when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
+    when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(),
         anyString(), any(), any())).thenReturn(workflowExecutionDTO);
 
     mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
-               .param("priority", "0")
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .content(recordIds))
            .andExpect(status().isCreated());
@@ -340,13 +339,12 @@ class TestDepublishRecordIdController {
     mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "true")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
-               .param("priority", "0")
                .header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(status().isCreated());
     verify(depublishRecordIdService, times(1))
-        .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(), anyString(), any(), any());
+        .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyString(), any(), any());
     verify(depublishRecordIdService, times(1))
-        .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(), isNull(), any(), any());
+        .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), isNull(), any(), any());
   }
 
   @Test
@@ -354,7 +352,7 @@ class TestDepublishRecordIdController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
-    when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(),
+    when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(),
         anyString(), any(), any())).thenThrow(new NoDatasetFoundException("Dataset not found"))
                                    .thenThrow(new PluginExecutionNotAllowed("Plugin not allowed"))
                                    .thenThrow(new NoWorkflowFoundException("No workflow found"))
@@ -365,7 +363,6 @@ class TestDepublishRecordIdController {
     final MockHttpServletRequestBuilder operation = post("/depublish/execute/{datasetId}", datasetId)
         .param("datasetDepublish", "false")
         .param("depublicationReason", "BROKEN_MEDIA_LINKS")
-        .param("priority", "0")
         .header("Authorization", BEARER + MOCK_VALID_TOKEN)
         .content(recordIds);
     mockMvc.perform(operation)
@@ -384,7 +381,7 @@ class TestDepublishRecordIdController {
            .andExpect(status().isNotAcceptable())
            .andExpect(jsonPath("$.errorMessage").value("Bad content"));
     verify(depublishRecordIdService, times(5))
-        .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyInt(), anyString(), any(), any());
+        .createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(), anyString(), any(), any());
   }
 
   @Test
@@ -395,7 +392,6 @@ class TestDepublishRecordIdController {
     mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
-               .param("priority", "0")
                .content(recordIds))
            .andExpect(status().isUnauthorized());
   }
@@ -409,7 +405,6 @@ class TestDepublishRecordIdController {
     mockMvc.perform(post("/depublish/execute/{datasetId}", datasetId)
                .param("datasetDepublish", "false")
                .param("depublicationReason", "BROKEN_MEDIA_LINKS")
-               .param("priority", "0")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .content(recordIds))
            .andExpect(status().isForbidden());

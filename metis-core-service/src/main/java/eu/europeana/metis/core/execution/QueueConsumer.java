@@ -62,8 +62,7 @@ public class QueueConsumer extends DefaultConsumer {
     completionService = new ExecutorCompletionService<>(threadPool);
     this.workflowExecutionMonitor = workflowExecutionMonitor;
 
-    // For correct priority. Keep in mind this pre-fetches a message before going into
-    // handleDelivery
+    // Keep in mind this pre-fetches a message before going into handleDelivery
     rabbitmqConsumerChannel.basicQos(1);
     // Auto acknowledge false(second parameter) because of Qos.
     rabbitmqConsumerChannel.basicConsume(rabbitmqQueueName, false, this);
@@ -183,9 +182,7 @@ public class QueueConsumer extends DefaultConsumer {
    * Checks if the workflow execution was run as expected.
    * <p>
    * If one of the plugins was not allowed to run therefore the workflow execution did not complete
-   * as a whole then we are resending the execution identifier back to the queue. If this execution
-   * needs to be prioritized then the priority should be updated inside the {@link
-   * java.util.concurrent.Callable}
+   * as a whole then we are resending the execution identifier back to the queue.
    * </p>
    *
    * @param workflowExecutionRanFlagPair the workflow execution future
@@ -201,8 +198,8 @@ public class QueueConsumer extends DefaultConsumer {
       } else {
         LOGGER.info("workflowExecutionId: {} - Sent to queue because execution could "
             + "not be claimed or plugin could not run in this instance", workflowExecution.getId());
-        workflowExecutorManager.addWorkflowExecutionToQueue(workflowExecution.getId().toString(),
-            workflowExecution.getWorkflowPriority());
+        workflowExecutorManager.addWorkflowExecutionToQueue(workflowExecution.getId().toString()
+        );
       }
     }
   }

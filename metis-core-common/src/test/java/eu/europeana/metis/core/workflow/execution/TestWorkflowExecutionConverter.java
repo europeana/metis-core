@@ -1,5 +1,13 @@
 package eu.europeana.metis.core.workflow.execution;
 
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -13,14 +21,6 @@ import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPluginMetadata;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_BY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class TestWorkflowExecutionConverter {
 
@@ -51,7 +51,6 @@ class TestWorkflowExecutionConverter {
     assertEquals(userStarted.getUserName(), workflowExecutionDTO.getStartedByUserName());
     assertEquals(userStarted.getFirstName(), workflowExecutionDTO.getStartedByFirstName());
     assertEquals(userStarted.getLastName(), workflowExecutionDTO.getStartedByLastName());
-    assertEquals(workflowExecution.getWorkflowPriority(), workflowExecutionDTO.getWorkflowPriority());
     assertEquals(workflowExecution.isCancelling(), workflowExecutionDTO.isCancelling());
     assertEquals(workflowExecution.getCreatedDate(), workflowExecutionDTO.getCreatedDate());
     assertEquals(workflowExecution.getStartedDate(), workflowExecutionDTO.getStartedDate());

@@ -68,8 +68,7 @@ class TestWorkflowExecutorManager {
   @Test
   void addUserWorkflowExecutionToQueue() throws Exception {
     String objectId = new ObjectId().toString();
-    int priority = 0;
-    workflowExecutorManager.addWorkflowExecutionToQueue(objectId, priority);
+    workflowExecutorManager.addWorkflowExecutionToQueue(objectId);
     ArgumentCaptor<byte[]> byteArrayArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
     verify(rabbitmqPublisherChannel, times(1))
         .basicPublish(anyString(), anyString(), any(AMQP.BasicProperties.class),
@@ -81,10 +80,9 @@ class TestWorkflowExecutorManager {
   @Test
   void addUserWorkflowExecutionToQueueThrowsIOException() throws Exception {
     String objectId = new ObjectId().toString();
-    int priority = 0;
     doThrow(new IOException("Some Error")).when(rabbitmqPublisherChannel)
                                           .basicPublish(anyString(), anyString(), any(AMQP.BasicProperties.class),
                                               any(byte[].class));
-    assertDoesNotThrow(() -> workflowExecutorManager.addWorkflowExecutionToQueue(objectId, priority));
+    assertDoesNotThrow(() -> workflowExecutorManager.addWorkflowExecutionToQueue(objectId));
   }
 }
