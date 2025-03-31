@@ -65,11 +65,13 @@ class TestRedirection {
 
     final PluginWithExecutionId<ExecutablePlugin> httpHarvestPluginWithExecutionId =
         new PluginWithExecutionId<>("executionIdH1",
-            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.HTTP_HARVEST).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.HTTP_HARVEST)
+                                                      .get());
 
     final PluginWithExecutionId<ExecutablePlugin> httpHarvestPluginWithExecutionId2 =
         new PluginWithExecutionId<>("executionIdH2",
-            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.HTTP_HARVEST).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.HTTP_HARVEST)
+                                                      .get());
 
     final PluginWithExecutionId<ExecutablePlugin> indexToPublishPluginWithExecutionId =
         new PluginWithExecutionId<>("executionIdV1",
@@ -77,7 +79,8 @@ class TestRedirection {
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(anyString(), any(), anyBoolean()))
         .thenReturn(indexToPublishPluginWithExecutionId);
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionIdV2",
-        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.VALIDATION_INTERNAL).get());
+        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.VALIDATION_INTERNAL)
+                                                  .get());
 
     when(dataEvolutionUtils.getRootAncestor(indexToPublishPluginWithExecutionId))
         .thenReturn(httpHarvestPluginWithExecutionId);
@@ -88,8 +91,8 @@ class TestRedirection {
 
     workflowExecutionFactory.setValidationInternalProperties(getValidationInternalProperties());
     workflowExecutionFactory.setValidationExternalProperties(getValidationExternalProperties());
-    final WorkflowExecution workflowExecution = workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor
-    );
+    final WorkflowExecution workflowExecution =
+        workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor);
 
     final AbstractMetisPlugin<IndexToPublishPluginMetadata> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
         workflowExecution, PluginType.PUBLISH).get();
@@ -110,17 +113,19 @@ class TestRedirection {
 
     final ObjectId objectId = new ObjectId();
     final Workflow workflow = getWorkflow(objectId, getIndexToPublishPluginMetadata(Date.from(Instant.now()),
-        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW).get()).getPluginMetadata()
-                                                                                                     .getRevisionNamePreviousPlugin(),
-        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW).get()).getPluginMetadata()
-                                                                                                     .getRevisionTimestampPreviousPlugin()));
+        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
+                                                   .get()).getPluginMetadata()
+                                                          .getRevisionNamePreviousPlugin(),
+        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
+                                                   .get()).getPluginMetadata()
+                                                          .getRevisionTimestampPreviousPlugin()));
 
     dataset.setDatasetIdsToRedirectFrom(List.of("253"));
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",
         ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW).get()));
 
-    final WorkflowExecution workflowExecution = workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor
-    );
+    final WorkflowExecution workflowExecution =
+        workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor);
 
     final AbstractMetisPlugin<IndexToPublishPluginMetadata> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
         workflowExecution, PluginType.PUBLISH).get();

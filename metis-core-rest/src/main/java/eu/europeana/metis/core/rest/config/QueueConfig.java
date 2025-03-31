@@ -46,6 +46,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class QueueConfig implements WebMvcConfigurer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  public static final String X_QUEUE_TYPE = "quorum";
   private QueueConsumer queueConsumer;
 
   private Connection connection;
@@ -115,7 +116,7 @@ public class QueueConfig implements WebMvcConfigurer {
   private void setupChannelProperties(Channel channel, RabbitmqConfigurationProperties rabbitmqConfigurationProperties)
       throws IOException {
     Map<String, Object> args = new ConcurrentHashMap<>();
-    args.put("x-queue-type", "quorum");
+    args.put("x-queue-type", X_QUEUE_TYPE);
     channel.queueDeclare(rabbitmqConfigurationProperties.getQueueName(), true, false, false, args);
   }
 
