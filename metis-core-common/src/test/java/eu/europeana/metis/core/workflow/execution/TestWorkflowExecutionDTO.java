@@ -1,15 +1,5 @@
 package eu.europeana.metis.core.workflow.execution;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.europeana.metis.core.common.TestSerializationUtils;
-import eu.europeana.metis.core.workflow.WorkflowStatus;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Objects;
-import org.junit.jupiter.api.Test;
-
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY_FIRST_NAME;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY_LAST_NAME;
@@ -38,8 +28,6 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionDTOUsingSetters;
@@ -49,6 +37,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.europeana.metis.core.common.TestSerializationUtils;
+import eu.europeana.metis.core.workflow.WorkflowStatus;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
 class TestWorkflowExecutionDTO {
 
@@ -109,7 +107,6 @@ class TestWorkflowExecutionDTO {
     TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY_USER_NAME, STARTED_BY_USER_NAME);
     TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY_FIRST_NAME, STARTED_BY_FIRST_NAME);
     TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_BY_LAST_NAME, STARTED_BY_LAST_NAME);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, WORKFLOW_PRIORIOTY, WORKFLOW_PRIORIOTY_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLING, CANCELLING_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, CREATED_DATE, CREATED_DATE_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_DATE, STARTED_DATE_VALUE);
@@ -133,7 +130,6 @@ class TestWorkflowExecutionDTO {
     assertEquals(STARTED_BY_USER_NAME, workflowExecutionDTO.getStartedByUserName());
     assertEquals(STARTED_BY_FIRST_NAME, workflowExecutionDTO.getStartedByFirstName());
     assertEquals(STARTED_BY_LAST_NAME, workflowExecutionDTO.getStartedByLastName());
-    assertEquals(0, workflowExecutionDTO.getWorkflowPriority());
     assertFalse(workflowExecutionDTO.isCancelling());
     assertEquals(CREATED_DATE_VALUE, workflowExecutionDTO.getCreatedDate());
     assertEquals(STARTED_DATE_VALUE, workflowExecutionDTO.getStartedDate());

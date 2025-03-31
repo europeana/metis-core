@@ -1,5 +1,20 @@
 package eu.europeana.metis.core.service;
 
+import static eu.europeana.metis.core.service.TestRedirectionBase.getIndexToPublishPluginMetadata;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getTestDataset;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getValidationExternalProperties;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getValidationInternalProperties;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflow;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowFromNormalization;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -23,21 +38,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static eu.europeana.metis.core.service.TestRedirectionBase.getIndexToPublishPluginMetadata;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getTestDataset;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getValidationExternalProperties;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getValidationInternalProperties;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflow;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowFromNormalization;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class TestRedirection {
 
@@ -59,18 +59,19 @@ class TestRedirection {
 
   @Test
   void redirectionReviewWithPerformRedirectsWhenAncestorRootIsDifferent() throws BadContentException {
-    final int priority = 0;
     final Dataset dataset = getTestDataset();
     final WorkflowExecution workflowExecutionPre = getWorkflowPreReindex(dataset);
     final WorkflowExecution workflowExecutionPost = getWorkflowPostReindex(dataset);
 
     final PluginWithExecutionId<ExecutablePlugin> httpHarvestPluginWithExecutionId =
         new PluginWithExecutionId<>("executionIdH1",
-            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.HTTP_HARVEST).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.HTTP_HARVEST)
+                                                      .get());
 
     final PluginWithExecutionId<ExecutablePlugin> httpHarvestPluginWithExecutionId2 =
         new PluginWithExecutionId<>("executionIdH2",
-            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.HTTP_HARVEST).get());
+            (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.HTTP_HARVEST)
+                                                      .get());
 
     final PluginWithExecutionId<ExecutablePlugin> indexToPublishPluginWithExecutionId =
         new PluginWithExecutionId<>("executionIdV1",
@@ -78,7 +79,8 @@ class TestRedirection {
     when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(anyString(), any(), anyBoolean()))
         .thenReturn(indexToPublishPluginWithExecutionId);
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionIdV2",
-        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.VALIDATION_INTERNAL).get());
+        (ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPost, PluginType.VALIDATION_INTERNAL)
+                                                  .get());
 
     when(dataEvolutionUtils.getRootAncestor(indexToPublishPluginWithExecutionId))
         .thenReturn(httpHarvestPluginWithExecutionId);
@@ -89,8 +91,8 @@ class TestRedirection {
 
     workflowExecutionFactory.setValidationInternalProperties(getValidationInternalProperties());
     workflowExecutionFactory.setValidationExternalProperties(getValidationExternalProperties());
-    final WorkflowExecution workflowExecution = workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor,
-        priority);
+    final WorkflowExecution workflowExecution =
+        workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor);
 
     final AbstractMetisPlugin<IndexToPublishPluginMetadata> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
         workflowExecution, PluginType.PUBLISH).get();
@@ -99,7 +101,6 @@ class TestRedirection {
 
   @Test
   void redirectionReviewWithPerformRedirectsWhenRedirectIdsPresent() throws BadContentException {
-    final int priority = 0;
     final Dataset dataset = getTestDataset();
     final WorkflowExecution workflowExecutionPre = getWorkflowPreReindex(dataset);
 
@@ -112,17 +113,19 @@ class TestRedirection {
 
     final ObjectId objectId = new ObjectId();
     final Workflow workflow = getWorkflow(objectId, getIndexToPublishPluginMetadata(Date.from(Instant.now()),
-        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW).get()).getPluginMetadata()
-                                                                                                     .getRevisionNamePreviousPlugin(),
-        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW).get()).getPluginMetadata()
-                                                                                                     .getRevisionTimestampPreviousPlugin()));
+        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
+                                                   .get()).getPluginMetadata()
+                                                          .getRevisionNamePreviousPlugin(),
+        ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
+                                                   .get()).getPluginMetadata()
+                                                          .getRevisionTimestampPreviousPlugin()));
 
     dataset.setDatasetIdsToRedirectFrom(List.of("253"));
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",
         ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW).get()));
 
-    final WorkflowExecution workflowExecution = workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor,
-        priority);
+    final WorkflowExecution workflowExecution =
+        workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor);
 
     final AbstractMetisPlugin<IndexToPublishPluginMetadata> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
         workflowExecution, PluginType.PUBLISH).get();

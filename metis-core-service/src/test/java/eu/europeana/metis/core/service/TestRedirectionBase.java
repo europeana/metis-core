@@ -263,7 +263,6 @@ public class TestRedirectionBase {
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     Date templateDate = Date.from(Instant.now());
 
@@ -368,7 +367,6 @@ public class TestRedirectionBase {
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     Date templateDate = Date.from(Instant.now());
 
@@ -409,7 +407,6 @@ public class TestRedirectionBase {
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     Date templateDate = Date.from(Instant.now());
 

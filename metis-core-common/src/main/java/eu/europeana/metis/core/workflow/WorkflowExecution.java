@@ -52,7 +52,6 @@ public class WorkflowExecution implements HasMongoObjectId {
   private String ecloudDatasetId;
   private String cancelledBy;
   private String startedBy;
-  private int workflowPriority;
   private boolean cancelling;
 
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
@@ -126,14 +125,6 @@ public class WorkflowExecution implements HasMongoObjectId {
 
   public void setEcloudDatasetId(String ecloudDatasetId) {
     this.ecloudDatasetId = ecloudDatasetId;
-  }
-
-  public int getWorkflowPriority() {
-    return workflowPriority;
-  }
-
-  public void setWorkflowPriority(int workflowPriority) {
-    this.workflowPriority = workflowPriority;
   }
 
   public Date getCreatedDate() {

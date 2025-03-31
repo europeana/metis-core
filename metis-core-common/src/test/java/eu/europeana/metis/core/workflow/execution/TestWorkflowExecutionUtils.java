@@ -29,7 +29,6 @@ public class TestWorkflowExecutionUtils {
   public static final String STARTED_BY_USER_NAME = "startedByUserName";
   public static final String STARTED_BY_FIRST_NAME = "startedByFirstName";
   public static final String STARTED_BY_LAST_NAME = "startedByLastName";
-  public static final String WORKFLOW_PRIORIOTY = "workflowPriority";
   public static final String CANCELLING = "cancelling";
   public static final String CREATED_DATE = "createdDate";
   public static final String STARTED_DATE = "startedDate";
@@ -41,7 +40,6 @@ public class TestWorkflowExecutionUtils {
   //VALUES
   public static final ObjectId OBJECT_ID_VALUE = new ObjectId("64bffcdde13e6c25d4efb2ac");
   public static final WorkflowStatus WORKFLOW_STATUS_VALUE = WorkflowStatus.RUNNING;
-  public static final int WORKFLOW_PRIORIOTY_VALUE = 0;
   public static final boolean CANCELLING_VALUE = false;
   public static final Date CREATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
   public static final Date UPDATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
@@ -65,7 +63,6 @@ public class TestWorkflowExecutionUtils {
     workflowExecutionDTO.setStartedByUserName(STARTED_BY_USER_NAME);
     workflowExecutionDTO.setStartedByFirstName(STARTED_BY_FIRST_NAME);
     workflowExecutionDTO.setStartedByLastName(STARTED_BY_LAST_NAME);
-    workflowExecutionDTO.setWorkflowPriority(0);
     workflowExecutionDTO.setCancelling(false);
     workflowExecutionDTO.setCreatedDate(CREATED_DATE_VALUE);
     workflowExecutionDTO.setStartedDate(STARTED_DATE_VALUE);
@@ -97,7 +94,6 @@ public class TestWorkflowExecutionUtils {
     workflowExecution.setEcloudDatasetId(ECLOUD_DATASET_ID);
     workflowExecution.setCancelledBy(CANCELLED_BY);
     workflowExecution.setStartedBy(STARTED_BY);
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     workflowExecution.setCreatedDate(CREATED_DATE_VALUE);
     workflowExecution.setStartedDate(STARTED_DATE_VALUE);

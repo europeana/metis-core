@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
+
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.rest.ExecutionHistory;
@@ -7,11 +9,11 @@ import eu.europeana.metis.core.rest.IncrementalHarvestingAllowedView;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
-import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
@@ -42,8 +44,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
 
 /**
  * Contains all the calls that are related to Orchestration.
@@ -179,7 +179,6 @@ public class OrchestratorController {
    * @param jwtPrincipal the jwt principal
    * @param datasetId the dataset identifier for which the execution will take place
    * @param enforcedPredecessorType optional, the plugin type to be used as source data
-   * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
    * @return the WorkflowExecution object that was generated
    * @throws GenericMetisException which can be one of:
    * <ul>
@@ -203,14 +202,12 @@ public class OrchestratorController {
   public WorkflowExecutionDTO addWorkflowInQueueOfWorkflowExecutions(
       @AuthenticationPrincipal Jwt jwtPrincipal,
       @PathVariable("datasetId") String datasetId,
-      @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType,
-      @RequestParam(value = "priority", defaultValue = "0") int priority)
+      @RequestParam(value = "enforcedPluginType", required = false, defaultValue = "") ExecutablePluginType enforcedPredecessorType)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     datasetId = StringEscapeUtils.escapeJava(datasetId);
     WorkflowExecutionDTO workflowExecutionDTO = orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType,
-            priority, userId);
+        .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType, userId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("WorkflowExecution for datasetId '{}' added to queue", datasetId);
     }

@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.service;
 
+import static java.lang.String.format;
+
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -9,10 +11,10 @@ import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.rest.DepublishRecordIdView;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.workflow.Workflow;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
@@ -23,8 +25,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import static java.lang.String.format;
 
 /**
  * Service object for all operations concerning depublished records. The functionality in this class is checked for user
@@ -144,7 +144,6 @@ public class DepublishRecordIdService {
    *
    * @param datasetId The ID of the dataset for which to retrieve the records. Cannot be null.
    * @param datasetDepublish true for dataset depublication, false for record depublication
-   * @param priority the priority of the execution in case the system gets overloaded, 0 lowest, 10 highest
    * @param recordIdsInSeparateLines the specific pending record ids to depublish. Only record ids that are marked as
    * {@link eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus#PENDING_DEPUBLICATION} in the database will be
    * attempted for depublication.
@@ -165,7 +164,7 @@ public class DepublishRecordIdService {
    * happen since ids are UUIDs</li>
    * </ul>
    */
-  public WorkflowExecutionDTO createAndAddInQueueDepublishWorkflowExecution(String datasetId, boolean datasetDepublish, int priority,
+  public WorkflowExecutionDTO createAndAddInQueueDepublishWorkflowExecution(String datasetId, boolean datasetDepublish,
       String recordIdsInSeparateLines, DepublicationReason depublicationReason, String userId)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(datasetId);
@@ -190,7 +189,7 @@ public class DepublishRecordIdService {
     workflow.setMetisPluginsMetadata(Collections.singletonList(depublishPluginMetadata));
 
     return orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(datasetId, workflow, null, priority, userId);
+        .addWorkflowInQueueOfWorkflowExecutions(datasetId, workflow, null, userId);
   }
 
   /**

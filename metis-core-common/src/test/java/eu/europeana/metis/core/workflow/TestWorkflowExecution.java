@@ -1,13 +1,5 @@
 package eu.europeana.metis.core.workflow;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Objects;
-import org.junit.jupiter.api.Test;
-
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertFieldEquals;
 import static eu.europeana.metis.core.common.TestSerializationUtils.assertNestedFieldInArrayEquals;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CANCELLED_BY;
@@ -30,8 +22,6 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.STARTED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.UPDATED_DATE_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_PRIORIOTY_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.WORKFLOW_STATUS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.getWorkflowExecutionUsingSetters;
@@ -41,6 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
 class TestWorkflowExecution {
 
@@ -95,7 +93,6 @@ class TestWorkflowExecution {
     assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
     assertFieldEquals(jsonOutput, CANCELLED_BY, CANCELLED_BY);
     assertFieldEquals(jsonOutput, STARTED_BY, STARTED_BY);
-    assertFieldEquals(jsonOutput, WORKFLOW_PRIORIOTY, WORKFLOW_PRIORIOTY_VALUE);
     assertFieldEquals(jsonOutput, CANCELLING, CANCELLING_VALUE);
     assertFieldEquals(jsonOutput, CREATED_DATE, CREATED_DATE_VALUE);
     assertFieldEquals(jsonOutput, STARTED_DATE, STARTED_DATE_VALUE);
@@ -112,7 +109,6 @@ class TestWorkflowExecution {
     assertEquals(ECLOUD_DATASET_ID, workflowExecution.getEcloudDatasetId());
     assertEquals(CANCELLED_BY, workflowExecution.getCancelledBy());
     assertEquals(STARTED_BY, workflowExecution.getStartedBy());
-    assertEquals(0, workflowExecution.getWorkflowPriority());
     assertFalse(workflowExecution.isCancelling());
     assertEquals(CREATED_DATE_VALUE, workflowExecution.getCreatedDate());
     assertEquals(STARTED_DATE_VALUE, workflowExecution.getStartedDate());

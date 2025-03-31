@@ -112,18 +112,18 @@ class TestWorkflowExecutionMonitor {
     doReturn(Arrays.asList(workflowExecution1, workflowExecution2, workflowExecution3))
         .when(monitor).updateCurrentRunningExecutions();
     when(workflowExecutionDao.getAllWorkflowExecutions(isNull(), eq(EnumSet.of(WorkflowStatus.INQUEUE)), any(),
-            anyBoolean(), eq(0), eq(1), eq(true)))
+        anyBoolean(), eq(0), eq(1), eq(true)))
         .thenReturn(new ResultList<>(Collections.singletonList(workflowExecution4), false));
     when(workflowExecutionDao.getWorkflowExecutionsPerRequest()).thenReturn(4);
 
     // Perform method and verify the requeued executions
     monitor.performFailsafe();
-    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution2.getId().toString(),
-        workflowExecution2.getWorkflowPriority());
-    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution3.getId().toString(),
-        workflowExecution3.getWorkflowPriority());
-    verify(workflowExecutorManager, times(1)).addWorkflowExecutionToQueue(workflowExecution4.getId().toString(),
-        workflowExecution4.getWorkflowPriority());
+    verify(workflowExecutorManager, times(1))
+        .addWorkflowExecutionToQueue(workflowExecution2.getId().toString());
+    verify(workflowExecutorManager, times(1))
+        .addWorkflowExecutionToQueue(workflowExecution3.getId().toString());
+    verify(workflowExecutorManager, times(1))
+        .addWorkflowExecutionToQueue(workflowExecution4.getId().toString());
     verifyNoMoreInteractions(workflowExecutorManager);
 
     // Verify calls that need to be locked.

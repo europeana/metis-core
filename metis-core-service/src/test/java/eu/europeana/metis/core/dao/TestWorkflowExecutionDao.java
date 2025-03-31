@@ -26,9 +26,9 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.utils.TestObjectFactory;
-import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
@@ -42,7 +42,6 @@ import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -188,8 +187,6 @@ class TestWorkflowExecutionDao {
         retrievedWorkflowExecution.getCreatedDate());
     assertEquals(workflowExecution.getDatasetId(),
         retrievedWorkflowExecution.getDatasetId());
-    assertEquals(workflowExecution.getWorkflowPriority(),
-        retrievedWorkflowExecution.getWorkflowPriority());
     assertFalse(retrievedWorkflowExecution.isCancelling());
     assertEquals(workflowExecution.getMetisPlugins().getFirst().getPluginType(),
         retrievedWorkflowExecution.getMetisPlugins().getFirst().getPluginType());

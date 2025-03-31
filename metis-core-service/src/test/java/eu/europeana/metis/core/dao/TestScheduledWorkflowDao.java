@@ -93,8 +93,6 @@ class TestScheduledWorkflowDao {
         retrievedScheduledWorkflow.getDatasetId());
     assertEquals(scheduledWorkflow.getScheduleFrequence(),
         retrievedScheduledWorkflow.getScheduleFrequence());
-    assertEquals(scheduledWorkflow.getWorkflowPriority(),
-        retrievedScheduledWorkflow.getWorkflowPriority());
     assertEquals(0, scheduledWorkflow.getPointerDate()
         .compareTo(retrievedScheduledWorkflow.getPointerDate()));
   }

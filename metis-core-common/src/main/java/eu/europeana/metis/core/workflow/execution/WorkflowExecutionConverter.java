@@ -54,7 +54,6 @@ public final class WorkflowExecutionConverter {
     workflowExecutionDTO.setEcloudDatasetId(workflowExecution.getEcloudDatasetId());
     workflowExecutionDTO.setCancelledBy(workflowExecution.getCancelledBy());
     workflowExecutionDTO.setStartedBy(workflowExecution.getStartedBy());
-    workflowExecutionDTO.setWorkflowPriority(workflowExecution.getWorkflowPriority());
     workflowExecutionDTO.setCancelling(workflowExecution.isCancelling());
     workflowExecutionDTO.setCreatedDate(workflowExecution.getCreatedDate());
     workflowExecutionDTO.setStartedDate(workflowExecution.getStartedDate());

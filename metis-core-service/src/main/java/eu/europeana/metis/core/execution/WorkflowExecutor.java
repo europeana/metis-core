@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.execution;
 
+import static java.lang.Thread.currentThread;
+
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.exception.DpsException;
@@ -41,8 +43,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.lang.Thread.currentThread;
 
 /**
  * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that
@@ -98,8 +98,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   @Override
   public Pair<WorkflowExecution, Boolean> call() {
     // Perform the work - run the workflow.
-    LOGGER.info("workflowExecutionId: {}, priority {} - Starting workflow execution",
-        workflowExecution.getId(), workflowExecution.getWorkflowPriority());
+    LOGGER.info("workflowExecutionId: {}- Starting workflow execution", workflowExecution.getId());
     final Pair<Date, Boolean> didPluginRunDatePair = runInqueueOrRunningStateWorkflowExecution();
     final Date finishDate = didPluginRunDatePair.getLeft();
     final Boolean didPluginsRun = didPluginRunDatePair.getRight();
@@ -120,11 +119,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         // One plugin failed
         workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
       } else if (finishDate == null) {
-        // A plugin was not allowed to run because of no slot space
-        // Increase priority for this execution
-        workflowExecution.setWorkflowPriority(workflowExecution.getWorkflowPriority() + 1);
-        LOGGER.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to "
-            + "run(priority increased)", workflowExecution.getId());
+        LOGGER.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to run", workflowExecution.getId());
       } else {
         // If the workflow finished successfully, we record this.
         workflowExecution.setFinishedDate(finishDate);
