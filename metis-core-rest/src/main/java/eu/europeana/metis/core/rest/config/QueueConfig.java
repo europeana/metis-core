@@ -46,7 +46,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class QueueConfig implements WebMvcConfigurer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  public static final String X_QUEUE_TYPE = "quorum";
+  private static final String X_QUEUE_TYPE = "quorum";
   private QueueConsumer queueConsumer;
 
   private Connection connection;
