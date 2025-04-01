@@ -14,12 +14,10 @@
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-common-utils</artifactId>
-      <version>${version.metis-framework}</version>
     </dependency>
     <dependency>
       <groupId>eu.europeana.metis</groupId>
       <artifactId>metis-common-mongo</artifactId>
-      <version>${version.metis-framework}</version>
       <exclusions>
         <exclusion>
           <groupId>eu.europeana.corelib</groupId>
