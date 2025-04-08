@@ -12,8 +12,8 @@
     <version.ecloud>13</version.ecloud>
     <version.metis-common>15</version.metis-common>
     <version.metis-framework>15-SNAPSHOT</version.metis-framework>
-    <version.metis-schema>10</version.metis-schema>
-    <version.corelib>2.16.10-SNAPSHOT</version.corelib>
+    <version.metis-schema>11-SNAPSHOT</version.metis-schema>
+    <version.corelib>2.17.3-SNAPSHOT</version.corelib>
 
     <!--External versions-->
     <version.javax.annotation>2.1.1</version.javax.annotation>
