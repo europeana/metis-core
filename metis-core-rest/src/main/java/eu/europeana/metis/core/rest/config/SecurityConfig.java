@@ -1,38 +1,28 @@
 package eu.europeana.metis.core.rest.config;
 
-import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.security.UserInformationClaimsExtractorFilter;
-import eu.europeana.metis.core.service.UserService;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
-import org.springframework.security.web.SecurityFilterChain;
-
 import static eu.europeana.metis.security.AccountRole.ADMIN;
 import static eu.europeana.metis.security.AccountRole.DATA_OFFICER;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
 import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
 import static java.util.Objects.requireNonNull;
+
+import eu.europeana.metis.core.rest.security.UserInformationClaimsExtractorFilter;
+import eu.europeana.metis.core.service.UserService;
+import eu.europeana.metis.security.KeycloakJwtGrantedAuthoritiesConverter;
+import java.util.List;
+import metis.common.config.properties.security.SecurityConfigurationProperties;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Spring security configuration class.
@@ -81,47 +71,12 @@ public class SecurityConfig {
                     .anyRequest().denyAll())
                 .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCacheIfExists), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
-                    .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter())
+                    .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter(resourceNames))
                     )
                 ).securityMatcher("/**");
 
     return httpSecurity.build();
   }
 
-  private class KeycloakJwtGrantedAuthoritiesConverter implements Converter<Jwt, AbstractAuthenticationToken> {
-
-    public static final String REALM_ACCESS = "realm_access";
-    public static final String RESOURCE_ACCESS = "resource_access";
-    public static final String ROLES = "roles";
-    public static final String ROLE_PREFIX = "ROLE_";
-    private final JwtGrantedAuthoritiesConverter defaultGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-
-    @Override
-    public AbstractAuthenticationToken convert(@NotNull Jwt jwt) {
-      Collection<GrantedAuthority> grantedAuthorities = Optional.of(defaultGrantedAuthoritiesConverter.convert(jwt))
-                                                                .orElseGet(List::of);
-
-      final Map<String, List<String>> realmAccess = jwt.getClaim(REALM_ACCESS);
-      final List<String> realmRoles = (realmAccess == null) ? List.of() : realmAccess.getOrDefault(ROLES, List.of());
-
-      final Map<String, Map<String, List<String>>> resourceAccess = jwt.getClaim(RESOURCE_ACCESS);
-
-      for (String resourceName : resourceNames) {
-        final List<String> resourceRoles = (resourceAccess == null) ? List.of()
-            : resourceAccess.getOrDefault(resourceName, Map.of()).getOrDefault(ROLES, List.of());
-        grantedAuthorities.addAll(getAuthorities(resourceRoles));
-
-      }
-      grantedAuthorities.addAll(getAuthorities(realmRoles));
-      return new JwtAuthenticationToken(jwt, grantedAuthorities);
-    }
-
-    private static List<SimpleGrantedAuthority> getAuthorities(List<String> resourceRoles) {
-      return resourceRoles.stream()
-                          .map(role -> ROLE_PREFIX + role)
-                          .map(SimpleGrantedAuthority::new)
-                          .toList();
-    }
-  }
 }
 

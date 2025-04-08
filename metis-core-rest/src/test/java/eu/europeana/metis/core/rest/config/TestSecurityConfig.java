@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import eu.europeana.metis.core.rest.config.TestSecurityConfig.TestController;
-import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.security.test.JwtUtils;
