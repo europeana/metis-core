@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.BEARER;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,7 +37,7 @@ import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.DatasetService;
@@ -83,11 +83,11 @@ class TestDatasetController {
 
   private static MockMvc mockMvc;
 
-  private final TestJwtUtils testJwtUtils;
+  private final JwtUtils jwtUtils;
 
   @Autowired
   public TestDatasetController(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
+    jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   @BeforeAll
@@ -107,7 +107,7 @@ class TestDatasetController {
 
   @Test
   void createDataset() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     when(datasetService.createDataset(any(String.class), any(DatasetDTO.class))).thenReturn(datasetDTO);
 
@@ -136,7 +136,7 @@ class TestDatasetController {
 
   @Test
   void createDatasetInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
 
     mockMvc.perform(post("/datasets")
@@ -150,7 +150,7 @@ class TestDatasetController {
 
   @Test
   void createDataset_DatasetAlreadyExistsException_Returns409() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     doThrow(new DatasetAlreadyExistsException("Conflict"))
         .when(datasetService).createDataset(any(String.class), any(DatasetDTO.class));
@@ -168,7 +168,7 @@ class TestDatasetController {
 
   @Test
   void updateDataset_withValidData_Returns204() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXsltStringWrapper datasetXsltStringWrapper = new DatasetXsltStringWrapper(datasetDTO,
         "<xslt attribute:\"value\"></xslt>");
@@ -195,7 +195,7 @@ class TestDatasetController {
 
   @Test
   void updateDataset_InvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     mockMvc.perform(put("/datasets")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
@@ -208,7 +208,7 @@ class TestDatasetController {
 
   @Test
   void updateDataset_noDatasetFound_Returns404() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXsltStringWrapper datasetXsltStringWrapper = new DatasetXsltStringWrapper(datasetDTO,
         "<xslt attribute:\"value\"></xslt>");
@@ -227,7 +227,7 @@ class TestDatasetController {
 
   @Test
   void updateDataset_BadContentException_Returns406() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXsltStringWrapper datasetXsltStringWrapper = new DatasetXsltStringWrapper(datasetDTO,
         "<xslt attribute:\"value\"></xslt>");
@@ -247,7 +247,7 @@ class TestDatasetController {
 
   @Test
   void deleteDataset() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(delete("/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .accept(MediaType.APPLICATION_JSON)
@@ -273,7 +273,7 @@ class TestDatasetController {
 
   @Test
   void deleteDatasetInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(delete("/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .accept(MediaType.APPLICATION_JSON)
@@ -285,7 +285,7 @@ class TestDatasetController {
 
   @Test
   void deleteDataset_BadContentException_Returns406() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     doThrow(new BadContentException("Bad Content")).when(datasetService)
                                                    .deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     mockMvc.perform(delete("/datasets/{datasetId}", TestObjectFactory.DATASETID)
@@ -300,7 +300,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetId() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     when(datasetService.getDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(datasetDTO);
     mockMvc.perform(get("/datasets/{datasetId}", TestObjectFactory.DATASETID)
@@ -329,7 +329,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetIdInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/{datasetId}", TestObjectFactory.DATASETID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -340,7 +340,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetId_noDatasetFound_Returns404() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(datasetService.getDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenThrow(new NoDatasetFoundException("Does not exist"));
     mockMvc.perform(get("/datasets/{datasetId}", TestObjectFactory.DATASETID)
@@ -354,7 +354,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetXsltByDatasetId() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
         "<xslt attribute:\"value\"></xslt>");
@@ -375,7 +375,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetXsltByDatasetId_noDatasetFound_Returns404() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(datasetService
         .getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenThrow(new NoDatasetFoundException("Does not exist"));
@@ -392,7 +392,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetXsltByDatasetId_noXsltFound_Returns404() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
         .thenThrow(new NoXsltFoundException("Does not exist"));
     mockMvc.perform(get("/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
@@ -421,7 +421,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetXsltByDatasetIdInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
         "<xslt attribute:\"value\"></xslt>");
@@ -474,7 +474,7 @@ class TestDatasetController {
 
   @Test
   void createDefaultXslt() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getAdminJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getAdminJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
         "<xslt attribute:\"value\"></xslt>");
@@ -506,7 +506,7 @@ class TestDatasetController {
 
   @Test
   void createDefaultXslt_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
         "<xslt attribute:\"value\"></xslt>");
@@ -550,7 +550,7 @@ class TestDatasetController {
 
   @Test
   void transformRecordsUsingLatestDatasetXslt() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
     when(datasetService.transformRecordsUsingLatestDatasetXslt(anyString(), anyList())).thenReturn(listOfRecords);
     mockMvc
@@ -573,7 +573,7 @@ class TestDatasetController {
 
   @Test
   void transformRecordsUsingLatestDatasetXslt_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(post("/datasets/{datasetId}/xslt/transform", Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON_VALUE)
@@ -583,7 +583,7 @@ class TestDatasetController {
 
   @Test
   void transformRecordsUsingLatestDefaultXslt() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     List<eu.europeana.metis.core.rest.Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
     when(datasetService.transformRecordsUsingLatestDefaultXslt(anyString(), anyList())).thenReturn(listOfRecords);
     mockMvc.perform(post("/datasets/{datasetId}/xslt/transform/default", Integer.toString(TestObjectFactory.DATASETID))
@@ -605,7 +605,7 @@ class TestDatasetController {
 
   @Test
   void transformRecordsUsingLatestDefaultXslt_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(post("/datasets/{datasetId}/xslt/transform/default", Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON_VALUE)
@@ -615,7 +615,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetName() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
 
     when(datasetService.getDatasetByDatasetName(TestObjectFactory.DATASETNAME)).thenReturn(datasetDTO);
@@ -645,7 +645,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetNameInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/dataset_name/{datasetName}", TestObjectFactory.DATASETNAME)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -657,7 +657,7 @@ class TestDatasetController {
 
   @Test
   void getByDatasetName_noDatasetFound_Returns404() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(datasetService.getDatasetByDatasetName(TestObjectFactory.DATASETNAME)).thenThrow(
         new NoDatasetFoundException("Does not exist"));
     mockMvc.perform(get("/datasets/dataset_name/{datasetName}", TestObjectFactory.DATASETNAME)
@@ -671,7 +671,7 @@ class TestDatasetController {
 
   @Test
   void getAllDatasetsByProvider() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     List<DatasetDTO> datasetList = getDatasets();
     when(datasetService.getAllDatasetsByProvider("myProvider", 3)).thenReturn(datasetList);
     when(datasetService.getDatasetsPerRequestLimit()).thenReturn(5);
@@ -710,7 +710,7 @@ class TestDatasetController {
 
   @Test
   void getAllDatasetsByProviderInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/provider/myProvider")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .param("nextPage", "3")
@@ -723,7 +723,7 @@ class TestDatasetController {
 
   @Test
   void getAllDatasetsByIntermediateProvider() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     List<DatasetDTO> datasetList = getDatasets();
     when(datasetService.getAllDatasetsByIntermediateProvider("myIntermediateProvider", 3)).thenReturn(datasetList);
     when(datasetService.getDatasetsPerRequestLimit()).thenReturn(5);
@@ -762,7 +762,7 @@ class TestDatasetController {
 
   @Test
   void getAllDatasetsByIntermediateProviderInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/intermediate_provider/myIntermediateProvider")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .param("nextPage", "3")
@@ -776,7 +776,7 @@ class TestDatasetController {
 
   @Test
   void getAllDatasetsByDataProvider() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     List<DatasetDTO> datasetList = getDatasets();
     when(datasetService.getAllDatasetsByDataProvider("myDataProvider", 3)).thenReturn(datasetList);
     when(datasetService.getDatasetsPerRequestLimit()).thenReturn(5);
@@ -815,7 +815,7 @@ class TestDatasetController {
 
   @Test
   void getAllDatasetsByDataProviderInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/data_provider/myDataProvider")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .param("nextPage", "3")
@@ -827,7 +827,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetsCountries() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     MvcResult mvcResult = mockMvc.perform(get("/datasets/countries")
                                      .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                                      .contentType(MediaType.APPLICATION_JSON)
@@ -856,7 +856,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetsCountriesInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/countries")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -866,7 +866,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetsLanguages() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     MvcResult mvcResult = mockMvc.perform(get("/datasets/languages")
                                      .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                                      .contentType(MediaType.APPLICATION_JSON)
@@ -894,7 +894,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetsLanguagesInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get("/datasets/languages")
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
@@ -904,7 +904,7 @@ class TestDatasetController {
 
   @Test
   void getDatasetSearch() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(datasetService.searchDatasetsBasedOnSearchString("test", 3)).thenReturn(getDatasetSearchViews());
     when(datasetService.getDatasetsPerRequestLimit()).thenReturn(5);
 
@@ -938,7 +938,7 @@ class TestDatasetController {
       "/datasets/data_provider/myDataProvider"
   })
   void getWithNegativeNextPage(String endpoint) throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(get(endpoint)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("nextPage", "-1")

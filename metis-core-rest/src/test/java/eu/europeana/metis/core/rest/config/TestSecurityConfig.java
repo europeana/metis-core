@@ -1,10 +1,25 @@
 package eu.europeana.metis.core.rest.config;
 
+import static eu.europeana.metis.security.test.JwtUtils.BEARER;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_DATASETID;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
+import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
+import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
+import static java.lang.String.format;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import eu.europeana.metis.core.rest.config.TestSecurityConfig.TestController;
 import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.service.UserService;
+import eu.europeana.metis.security.test.JwtUtils;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,21 +40,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_DATASETID;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
-import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
-import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
-import static java.lang.String.format;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @WebMvcTest(TestController.class)
 @ContextConfiguration(classes = {TestController.class, SecurityConfig.class})
 class TestSecurityConfig {
@@ -51,11 +51,11 @@ class TestSecurityConfig {
   private UserService userService;
 
   private static MockMvc mockMvc;
-  private final TestJwtUtils testJwtUtils;
+  private final JwtUtils jwtUtils;
 
   @Autowired
   public TestSecurityConfig(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
+    jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   @BeforeAll
@@ -112,15 +112,15 @@ class TestSecurityConfig {
       ResultMatcher expectedStatusAdmin, ResultMatcher expectedStatusDataOfficer, ResultMatcher expectedStatusOther,
       ResultMatcher expectedStatusUnauthenticated)
       throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getAdminJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getAdminJwt());
     mockMvc.perform(requestSupplier.get().header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(expectedStatusAdmin);
 
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(requestSupplier.get().header("Authorization", BEARER + MOCK_VALID_TOKEN))
            .andExpect(expectedStatusDataOfficer);
 
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(requestSupplier.get().header("Authorization", BEARER + MOCK_INVALID_TOKEN))
            .andExpect(expectedStatusOther);
 

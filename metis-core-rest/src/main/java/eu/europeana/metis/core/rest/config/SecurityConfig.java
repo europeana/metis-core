@@ -27,8 +27,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static eu.europeana.metis.core.common.AccountRole.ADMIN;
-import static eu.europeana.metis.core.common.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.security.AccountRole.ADMIN;
+import static eu.europeana.metis.security.AccountRole.DATA_OFFICER;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
 import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
