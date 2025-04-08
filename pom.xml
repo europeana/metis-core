@@ -10,7 +10,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!--Internal versions-->
     <version.ecloud>13</version.ecloud>
-    <version.metis-common>15</version.metis-common>
+    <version.metis-common>16-SNAPSHOT</version.metis-common>
     <version.metis-framework>15-SNAPSHOT</version.metis-framework>
     <version.metis-schema>10</version.metis-schema>
     <version.corelib>2.16.10-SNAPSHOT</version.corelib>
@@ -74,6 +74,11 @@
       <dependency>
         <groupId>eu.europeana.metis</groupId>
         <artifactId>metis-common-network</artifactId>
+        <version>${version.metis-common}</version>
+      </dependency>
+      <dependency>
+        <groupId>eu.europeana.metis</groupId>
+        <artifactId>metis-common-security</artifactId>
         <version>${version.metis-common}</version>
       </dependency>
       <dependency>

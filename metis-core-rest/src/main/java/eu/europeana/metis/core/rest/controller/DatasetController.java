@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.security.AuthenticationUtils.getUserId;
+import static eu.europeana.metis.security.AuthenticationUtils.getUserId;
 
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
