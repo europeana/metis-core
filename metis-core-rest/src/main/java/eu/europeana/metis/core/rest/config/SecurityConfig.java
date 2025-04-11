@@ -2,6 +2,7 @@ package eu.europeana.metis.core.rest.config;
 
 import static eu.europeana.metis.security.AccountRole.ADMIN;
 import static eu.europeana.metis.security.AccountRole.DATA_OFFICER;
+import static eu.europeana.metis.security.KeycloakJwtGrantedAuthoritiesConverter.buildResourceRoles;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_DEFAULT;
 import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
 import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
@@ -59,24 +60,27 @@ public class SecurityConfig {
   @SuppressWarnings("squid:S4502")
   @Bean
   public SecurityFilterChain configure(HttpSecurity httpSecurity, UserService userService) throws Exception {
+    KeycloakJwtGrantedAuthoritiesConverter keycloakJwtGrantedAuthoritiesConverter =
+        new KeycloakJwtGrantedAuthoritiesConverter(resourceNames, false);
     httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(registry -> registry
                     .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_DEFAULT).permitAll()
-                    .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT).hasRole(ADMIN.toString())
+                    .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT)
+                    .hasAnyRole(buildResourceRoles(resourceNames, List.of(ADMIN.toString())))
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_XSLTID).permitAll()
                     .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
-                    .requestMatchers("/**").hasAnyRole(ADMIN.toString(), DATA_OFFICER.toString())
+                    .requestMatchers("/**")
+                    .hasAnyRole(buildResourceRoles(resourceNames, List.of(ADMIN.toString(), DATA_OFFICER.toString())))
                     .anyRequest().denyAll())
                 .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCacheIfExists), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
-                    .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(new KeycloakJwtGrantedAuthoritiesConverter(resourceNames))
+                    .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(keycloakJwtGrantedAuthoritiesConverter)
                     )
                 ).securityMatcher("/**");
 
     return httpSecurity.build();
   }
-
 }
 
