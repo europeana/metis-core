@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.BEARER;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
 import static eu.europeana.metis.utils.RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
@@ -42,10 +42,10 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.OrchestratorService;
@@ -93,11 +93,11 @@ class TestOrchestratorController {
   private UserService userService;
 
   private static MockMvc mockMvc;
-  private final TestJwtUtils testJwtUtils;
+  private final JwtUtils jwtUtils;
 
   @Autowired
   public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
+    jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
@@ -124,7 +124,7 @@ class TestOrchestratorController {
 
   @Test
   void createWorkflow() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     mockMvc.perform(post(ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -149,7 +149,7 @@ class TestOrchestratorController {
 
   @Test
   void createWorkflow_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     mockMvc.perform(post(ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
@@ -162,7 +162,7 @@ class TestOrchestratorController {
 
   @Test
   void createWorkflow_WorkflowAlreadyExistsException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     doThrow(new WorkflowAlreadyExistsException("Some error")).when(orchestratorService)
                                                              .createWorkflow(anyString(), any(Workflow.class), any());
@@ -178,7 +178,7 @@ class TestOrchestratorController {
 
   @Test
   void updateWorkflow() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     mockMvc.perform(
                put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
@@ -202,7 +202,7 @@ class TestOrchestratorController {
 
   @Test
   void updateWorkflow_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
                Integer.toString(TestObjectFactory.DATASETID))
@@ -214,7 +214,7 @@ class TestOrchestratorController {
 
   @Test
   void updateWorkflow_NoWorkflowFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     doThrow(new NoWorkflowFoundException("Some error")).when(orchestratorService)
                                                        .updateWorkflow(anyString(), any(Workflow.class), isNull());
@@ -231,7 +231,7 @@ class TestOrchestratorController {
 
   @Test
   void deleteWorkflow() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(
                delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                    .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -252,7 +252,7 @@ class TestOrchestratorController {
 
   @Test
   void deleteWorkflow_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(
                delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
                    .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
@@ -263,7 +263,7 @@ class TestOrchestratorController {
 
   @Test
   void getWorkflow() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     when(orchestratorService.getWorkflow(anyString())).thenReturn(workflow);
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
@@ -279,7 +279,7 @@ class TestOrchestratorController {
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     WorkflowExecutionDTO workflowExecutionDTO = TestObjectFactory.createWorkflowExecutionDTOObject();
     when(
         orchestratorService.addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString()))
@@ -304,7 +304,7 @@ class TestOrchestratorController {
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(
                post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
                    Integer.toString(TestObjectFactory.DATASETID))
@@ -316,7 +316,7 @@ class TestOrchestratorController {
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_WorkflowExecutionAlreadyExistsException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     doThrow(new WorkflowExecutionAlreadyExistsException("Some error"))
         .when(orchestratorService)
         .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString());
@@ -333,7 +333,7 @@ class TestOrchestratorController {
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoDatasetFoundException()
       throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     doThrow(new NoDatasetFoundException("Some error"))
         .when(orchestratorService)
         .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString());
@@ -350,7 +350,7 @@ class TestOrchestratorController {
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoWorkflowFoundException()
       throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     doThrow(new NoWorkflowFoundException("Some error"))
         .when(orchestratorService)
         .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString());
@@ -366,7 +366,7 @@ class TestOrchestratorController {
 
   @Test
   void cancelWorkflowExecution() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     doNothing().when(orchestratorService).cancelWorkflowExecution(anyString(), anyString());
     mockMvc.perform(
                delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, TestObjectFactory.EXECUTIONID)
@@ -387,7 +387,7 @@ class TestOrchestratorController {
 
   @Test
   void cancelWorkflowExecution_Unauthorized() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
                TestObjectFactory.EXECUTIONID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
@@ -398,7 +398,7 @@ class TestOrchestratorController {
 
   @Test
   void cancelWorkflowExecution_NoWorkflowExecutionFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     doThrow(new NoWorkflowExecutionFoundException("Some error"))
         .when(orchestratorService).cancelWorkflowExecution(anyString(), anyString());
     mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
@@ -412,7 +412,7 @@ class TestOrchestratorController {
 
   @Test
   void getWorkflowExecutionByExecutionId() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     WorkflowExecutionDTO workflowExecutionDTO = TestObjectFactory.createWorkflowExecutionDTOObject();
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.RUNNING);
     when(orchestratorService.getWorkflowExecutionDTOByExecutionId(anyString())).thenReturn(workflowExecutionDTO);
@@ -427,7 +427,7 @@ class TestOrchestratorController {
 
   @Test
   void getLatestFinishedPluginWorkflowExecutionByDatasetIdIfPluginTypeAllowedForExecution() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     AbstractExecutablePlugin plugin = ExecutablePluginFactory.createPlugin(new ValidationExternalPluginMetadata());
     plugin.setId("validation_external_id");
     when(orchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
@@ -450,7 +450,7 @@ class TestOrchestratorController {
   @Test
   void getLatestFinishedPluginWorkflowExecutionByDatasetIdIfPluginTypeAllowedForExecution_HarvestingPlugin()
       throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(orchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
         Integer.toString(TestObjectFactory.DATASETID), ExecutablePluginType.OAIPMH_HARVEST, null))
         .thenReturn(null);
@@ -467,7 +467,7 @@ class TestOrchestratorController {
 
   @Test
   void getDatasetExecutionInformation() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetExecutionInformation datasetExecutionInformation = new DatasetExecutionInformation();
     datasetExecutionInformation.setLastHarvestedDate(new Date(1000));
     datasetExecutionInformation.setLastHarvestedRecords(100);
@@ -498,7 +498,7 @@ class TestOrchestratorController {
 
   @Test
   void getAllWorkflowExecutionsByDatasetId() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     int listSize = 2;
     ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
@@ -527,7 +527,7 @@ class TestOrchestratorController {
 
   @Test
   void getAllWorkflowExecutionsByDatasetIdNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID,
                Integer.toString(TestObjectFactory.DATASETID))
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
@@ -540,7 +540,7 @@ class TestOrchestratorController {
 
   @Test
   void getAllWorkflowExecutions() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     int listSize = 2;
     ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
@@ -568,7 +568,7 @@ class TestOrchestratorController {
 
   @Test
   void getAllWorkflowExecutionsNegativeNextPage() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("workflowStatus", WorkflowStatus.INQUEUE.name())
@@ -580,7 +580,7 @@ class TestOrchestratorController {
 
   @Test
   void getWorkflowExecutionsOverview() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     final int pageSize = 2;
     final int nextPage = 5;
     final int pageCount = 3;
@@ -612,7 +612,7 @@ class TestOrchestratorController {
 
   @Test
   void getWorkflowExecutionsOverviewBadPaginationArguments() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("nextPage", "-1")
@@ -623,7 +623,7 @@ class TestOrchestratorController {
 
   @Test
   void testGetDatasetExecutionHistory() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
     // Create nonempty history
     final Execution execution1 = new Execution();
@@ -666,7 +666,7 @@ class TestOrchestratorController {
            .andExpect(status().isNotFound());
 
     // Test for unauthorized user
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(
                get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
                    .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
@@ -675,7 +675,7 @@ class TestOrchestratorController {
 
   @Test
   void testGetExecutablePluginsWithDataAvailability() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
     // Create nonempty history
     final PluginWithDataAvailability plugin1 = new PluginWithDataAvailability();
@@ -723,7 +723,7 @@ class TestOrchestratorController {
            .andExpect(status().isNotFound());
 
     // Test for unauthorized user
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
                TestObjectFactory.EXECUTIONID)
                .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
@@ -732,7 +732,7 @@ class TestOrchestratorController {
 
     @Test
     void testGetRecordEvolutionForVersion() throws Exception {
-      when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+      when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
       // Create nonempty evolution step
       final VersionEvolutionStep step1 = new VersionEvolutionStep();
@@ -777,7 +777,7 @@ class TestOrchestratorController {
           .andExpect(status().isNotFound());
 
       // Test for unauthorized user
-      when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+      when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
       mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
               .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
           .andExpect(status().isForbidden());

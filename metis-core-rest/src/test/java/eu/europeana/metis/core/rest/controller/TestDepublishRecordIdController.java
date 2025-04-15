@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.BEARER;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_INVALID_TOKEN;
-import static eu.europeana.metis.core.rest.utils.TestJwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.BEARER;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -25,9 +25,9 @@ import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.rest.DepublishRecordIdView;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.core.rest.config.properties.SecurityConfigurationProperties;
+import metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.service.DepublishRecordIdService;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
@@ -65,11 +65,11 @@ class TestDepublishRecordIdController {
 
   private static MockMvc mockMvc;
 
-  private final TestJwtUtils testJwtUtils;
+  private final JwtUtils jwtUtils;
 
   @Autowired
   public TestDepublishRecordIdController(SecurityConfigurationProperties securityConfigurationProperties) {
-    testJwtUtils = new TestJwtUtils(securityConfigurationProperties.resourceNames());
+    jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
   }
 
   @BeforeAll
@@ -89,7 +89,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void createRecordIdsToBeDepublishedString() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, recordIds)).thenReturn(3);
@@ -115,7 +115,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void createRecordIdsToBeDepublishedStringInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
@@ -128,7 +128,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void createRecordIdsToBeDepublishedFile() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
     when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
@@ -151,7 +151,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void createRecordIdsToBeDepublishedFileInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     String datasetId = "dataset123";
     MockMultipartFile file = new MockMultipartFile("depublicationFile", "recordIds.txt", "text/plain", "1\n2\n3".getBytes());
     when(depublishRecordIdService.addRecordIdsToBeDepublished(datasetId, "1\n2\n3")).thenReturn(3);
@@ -165,7 +165,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void deletePendingRecordIds() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenReturn(3L);
@@ -191,7 +191,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void deletePendingRecordIdsInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 
@@ -204,7 +204,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void deletePendingRecordIds_NoDatasetFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
@@ -221,7 +221,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void deletePendingRecordIds_BadContentException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.deletePendingRecordIds(datasetId, recordIds)).thenThrow(
@@ -238,7 +238,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void getDepublishRecordIds() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
@@ -260,7 +260,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void getDepublishRecordIds_NoDatasetFoundException() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
@@ -306,7 +306,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void getDepublishRecordIdsInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     String datasetId = "dataset123";
     final ResponseListWrapper<DepublishRecordIdView> result = new ResponseListWrapper<>();
     result.setResultsAndLastPage(null, 1, 1);
@@ -322,7 +322,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void addDepublishWorkflowInQueue() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
@@ -349,7 +349,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void addDepublishWorkflowInQueue_Exception() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(testJwtUtils.getDataOfficerJwt());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
     when(depublishRecordIdService.createAndAddInQueueDepublishWorkflowExecution(anyString(), anyBoolean(),
@@ -398,7 +398,7 @@ class TestDepublishRecordIdController {
 
   @Test
   void addDepublishWorkflowInQueueInvalidUser() throws Exception {
-    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(testJwtUtils.getInvalidRoleJwt());
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     String datasetId = "dataset123";
     String recordIds = "1\n2\n3";
 

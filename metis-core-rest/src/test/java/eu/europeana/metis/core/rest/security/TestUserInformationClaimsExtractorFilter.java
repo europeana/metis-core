@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.security;
 
-import eu.europeana.metis.core.rest.utils.TestJwtUtils;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.user.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -36,7 +36,7 @@ class TestUserInformationClaimsExtractorFilter {
   @Mock
   private FilterChain filterChain;
   private UserInformationClaimsExtractorFilter filter = new UserInformationClaimsExtractorFilter(cacheInsertConsumerMock);
-  private final TestJwtUtils testJwtUtils = new TestJwtUtils(List.of("resource1"));
+  private final JwtUtils jwtUtils = new JwtUtils(List.of("resource1"));
 
   @BeforeEach
   void setup() {
@@ -45,7 +45,7 @@ class TestUserInformationClaimsExtractorFilter {
 
   @Test
   void testDoFilterInternal_withValidJwtToken_callsCacheInsertConsumer() throws ServletException, IOException {
-    final JwtAuthenticationToken jwtAuthentication = new JwtAuthenticationToken(testJwtUtils.getDataOfficerJwt());
+    final JwtAuthenticationToken jwtAuthentication = new JwtAuthenticationToken(jwtUtils.getDataOfficerJwt());
     SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
     filter.doFilterInternal(request, response, filterChain);
     verify(cacheInsertConsumerMock).accept(notNull());
@@ -54,7 +54,7 @@ class TestUserInformationClaimsExtractorFilter {
 
   @Test
   void testDoFilterInternal_withNullUserId() throws ServletException, IOException {
-    final JwtAuthenticationToken jwtAuthentication = new JwtAuthenticationToken(testJwtUtils.getJwtNoUserId());
+    final JwtAuthenticationToken jwtAuthentication = new JwtAuthenticationToken(jwtUtils.getJwtNoUserId());
     SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
     filter.doFilterInternal(request, response, filterChain);
     verify(cacheInsertConsumerMock, never()).accept(any());
@@ -63,7 +63,7 @@ class TestUserInformationClaimsExtractorFilter {
 
   @Test
   void testDoFilterInternal_withEmptyUserId() throws ServletException, IOException {
-    final JwtAuthenticationToken jwtAuthentication = new JwtAuthenticationToken(testJwtUtils.getJwtWithEmptyStringUserId());
+    final JwtAuthenticationToken jwtAuthentication = new JwtAuthenticationToken(jwtUtils.getJwtWithEmptyStringUserId());
     SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
     filter.doFilterInternal(request, response, filterChain);
     verify(cacheInsertConsumerMock, never()).accept(any());

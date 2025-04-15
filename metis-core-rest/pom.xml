@@ -21,6 +21,10 @@
       <artifactId>metis-common-spring-properties</artifactId>
     </dependency>
     <dependency>
+      <groupId>eu.europeana.metis</groupId>
+      <artifactId>metis-common-security</artifactId>
+    </dependency>
+    <dependency>
       <groupId>eu.europeana.cloud</groupId>
       <artifactId>ecloud-service-mcs-rest-client-java</artifactId>
       <version>${version.ecloud}</version>

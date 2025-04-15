@@ -2,6 +2,7 @@ package eu.europeana.metis.core.rest.security;
 
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.user.User.UserBuilder;
+import eu.europeana.metis.security.AuthenticationUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
