@@ -42,7 +42,7 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import metis.common.config.properties.security.SecurityConfigurationProperties;
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.security.test.JwtUtils;

@@ -12,7 +12,7 @@ import eu.europeana.metis.core.rest.security.UserInformationClaimsExtractorFilte
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.security.KeycloakJwtGrantedAuthoritiesConverter;
 import java.util.List;
-import metis.common.config.properties.security.SecurityConfigurationProperties;
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

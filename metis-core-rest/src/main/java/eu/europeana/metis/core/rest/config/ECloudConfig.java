@@ -7,7 +7,7 @@ import eu.europeana.cloud.mcs.driver.FileServiceClient;
 import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import jakarta.annotation.PreDestroy;
-import metis.common.config.properties.ecloud.EcloudConfigurationProperties;
+import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

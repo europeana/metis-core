@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.rest.config;
 
-import metis.common.config.properties.security.KeycloakConfigurationProperties;
+import eu.europeana.metis.common.config.properties.security.KeycloakConfigurationProperties;
 import eu.europeana.metis.core.service.UserService;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;

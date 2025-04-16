@@ -8,7 +8,7 @@ import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import metis.common.config.properties.security.SecurityConfigurationProperties;
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.stats.AttributeStatistics;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
