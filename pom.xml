@@ -1,21 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>eu.europeana.metis</groupId>
   <artifactId>metis-core</artifactId>
   <packaging>pom</packaging>
   <version>15-SNAPSHOT</version>
 
+  <modules>
+    <module>metis-core-common</module>
+    <module>metis-core-service</module>
+    <module>metis-core-rest</module>
+  </modules>
+
+  <scm>
+    <url>https://github.com/europeana/metis-core</url>
+    <connection>scm:git:https://github.com/europeana/metis-core</connection>
+    <developerConnection>scm:git:https://github.com/europeana/metis-core</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!--Internal versions-->
+    <maven.compiler.release>21</maven.compiler.release>
+
+    <!--Plugins-->
+    <version.maven.compiler.plugin>3.14.0</version.maven.compiler.plugin>
+    <version.surefire.plugin>3.5.3</version.surefire.plugin>
+    <version.failsafe.plugin>3.5.3</version.failsafe.plugin>
+    <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
+
+    <!--Internal-->
     <version.ecloud>13</version.ecloud>
     <version.metis-common>16-SNAPSHOT</version.metis-common>
     <version.metis-framework>15-SNAPSHOT</version.metis-framework>
     <version.metis-schema>11-SNAPSHOT</version.metis-schema>
     <version.corelib>2.17.3-SNAPSHOT</version.corelib>
 
-    <!--External versions-->
+    <!--External-->
     <version.javax.annotation>2.1.1</version.javax.annotation>
     <version.morphia.core>2.4.5</version.morphia.core>
     <version.embedded.mongo>4.17.0</version.embedded.mongo>
@@ -37,19 +59,10 @@
     <version.junit>5.10.2</version.junit>
     <version.awaitability>4.2.0</version.awaitability>
     <version.json.path>2.9.0</version.json.path>
-    <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
-    <version.surefire.plugin>2.22.1</version.surefire.plugin>
-    <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
     <version.jetbrains>24.0.1</version.jetbrains>
     <version.log4j>2.23.0</version.log4j>
     <version.slf4j>2.0.12</version.slf4j>
   </properties>
-
-  <modules>
-    <module>metis-core-common</module>
-    <module>metis-core-service</module>
-    <module>metis-core-rest</module>
-  </modules>
 
   <dependencyManagement>
     <dependencies>
@@ -506,7 +519,6 @@
       <artifactId>slf4j-api</artifactId>
       <version>${version.slf4j}</version>
     </dependency>
-
   </dependencies>
 
   <repositories>
@@ -522,6 +534,7 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <!--Snapshot repositories-->
     <repository>
       <id>libs-snapshot</id>
       <name>libs-snapshot</name>
@@ -553,21 +566,35 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>${version.maven.release.plugin}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${version.maven.compiler.plugin}</version>
-          <configuration>
-            <release>21</release>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.surefire.plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${version.failsafe.plugin}</version>
+          <configuration>
+            <failIfNoTests>false</failIfNoTests>
+            <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>${version.maven.release.plugin}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -579,12 +606,14 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${version.surefire.plugin}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>${version.maven.release.plugin}</version>
       </plugin>
     </plugins>
   </build>
