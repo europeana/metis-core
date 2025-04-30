@@ -11,6 +11,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
@@ -50,7 +51,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * This object can perform post-processing for workflows.
  */
-public class WorkflowPostProcessor<T extends ProcessingEngineTask> {
+public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -59,7 +60,7 @@ public class WorkflowPostProcessor<T extends ProcessingEngineTask> {
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetDao datasetDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final ProcessingEngineTaskClient<T> processingEngineTaskClient;
+  private final ProcessingEngineTaskClient<S, T> processingEngineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
@@ -71,7 +72,8 @@ public class WorkflowPostProcessor<T extends ProcessingEngineTask> {
    * @param processingEngineTaskClient the dps client
    */
   public WorkflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
-      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, ProcessingEngineTaskClient<T> processingEngineTaskClient) {
+      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
+      ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.datasetDao = datasetDao;
     this.workflowExecutionDao = workflowExecutionDao;

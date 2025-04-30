@@ -17,6 +17,7 @@ import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
@@ -176,9 +177,10 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   public ProxiesService getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      ProcessingEngineTaskClient<? extends ProcessingEngineTask> processingEngineTaskClient, UISClient uisClient, DatasetDao datasetDao,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
-    ExternalEngineClients<? extends ProcessingEngineTask> externalEngineClients = new ExternalEngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
+      ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient,
+      UISClient uisClient, DatasetDao datasetDao, EcloudConfigurationProperties ecloudConfigurationProperties) {
+    ExternalEngineClients<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> externalEngineClients =
+        new ExternalEngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
         fileServiceClient, processingEngineTaskClient, uisClient);
 
     return new ProxiesService(externalEngineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
@@ -195,7 +197,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    */
   @Bean
   public WorkflowPostProcessor workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
-      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, ProcessingEngineTaskClient<? extends ProcessingEngineTask> processingEngineTaskClient) {
+      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
+      ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient) {
     return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, processingEngineTaskClient);
   }
 
@@ -217,7 +220,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, ProcessingEngineTaskClient<? extends ProcessingEngineTask> processingEngineTaskClient,
+      RedissonClient redissonClient,
+      ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties) {

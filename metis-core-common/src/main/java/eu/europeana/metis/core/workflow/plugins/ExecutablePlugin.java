@@ -39,12 +39,15 @@ public interface ExecutablePlugin extends MetisPlugin {
    */
   String getTopologyName();
 
-  <T extends ProcessingEngineTask> void execute(String datasetId, ProcessingEngineTaskClient<T> processingEngineTaskClient, ProcessingEngineTaskSettings<T> processingEngineTaskSettings)
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  void execute(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient)
       throws ExternalTaskException;
 
-  <T extends ProcessingEngineTask> MonitorResult monitor(ProcessingEngineTaskClient<T> processingEngineTaskClient) throws ExternalTaskException, UnrecoverableExternalTaskException;
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  MonitorResult monitor(ProcessingEngineTaskClient<S, T> processingEngineTaskClient) throws ExternalTaskException, UnrecoverableExternalTaskException;
 
-  <T extends ProcessingEngineTask> void cancel(ProcessingEngineTaskClient<T> processingEngineTaskClient, String cancelledById) throws ExternalTaskException;
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById) throws ExternalTaskException;
 
   /**
    * This object represents the result of a monitor call. It contains the information that monitoring processes need.

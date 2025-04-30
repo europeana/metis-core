@@ -83,7 +83,7 @@ class TestProxiesService {
   private static ProxiesService proxiesService;
   private static DatasetDao datasetDao;
   private static WorkflowExecutionDao workflowExecutionDao;
-  private static ProcessingEngineTaskClient<?> processingEngineTaskClient;
+  private static ProcessingEngineTaskClient<?, ?> processingEngineTaskClient;
   private static UISClient uisClient;
   private static DataSetServiceClient ecloudDataSetServiceClient;
   private static RecordServiceClient recordServiceClient;
@@ -100,10 +100,12 @@ class TestProxiesService {
     processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
     uisClient = mock(UISClient.class);
     proxiesHelper = mock(ProxiesHelper.class);
-    ExternalEngineClients<?> externalEngineClients = new ExternalEngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
-        fileServiceClient, processingEngineTaskClient, uisClient);
+    ExternalEngineClients<?, ?> externalEngineClients =
+        new ExternalEngineClients<>(ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
+            processingEngineTaskClient, uisClient);
 
-    proxiesService = spy(new ProxiesService<>(externalEngineClients, "ecloudProvider", workflowExecutionDao, datasetDao, proxiesHelper));
+    proxiesService = spy(
+        new ProxiesService<>(externalEngineClients, "ecloudProvider", workflowExecutionDao, datasetDao, proxiesHelper));
   }
 
   @AfterEach
@@ -184,7 +186,8 @@ class TestProxiesService {
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
 
-    ProcessingEngineTaskErrors processingEngineTaskErrors = proxiesService.getExternalTaskReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+    ProcessingEngineTaskErrors processingEngineTaskErrors = proxiesService.getExternalTaskReport(
+        Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID, 10);
 
     assertEquals(1, processingEngineTaskErrors.errors().size());
@@ -201,7 +204,8 @@ class TestProxiesService {
 
   @Test
   void getExternalTaskReport_ExternalTaskException() throws Exception {
-    when(processingEngineTaskClient.getTaskErrorReport(Topology.OAIPMH_HARVEST.getTopologyName(), TestObjectFactory.EXTERNAL_TASK_ID, null,
+    when(processingEngineTaskClient.getTaskErrorReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+        TestObjectFactory.EXTERNAL_TASK_ID, null,
         10)).thenThrow(new ExternalTaskException(""));
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);

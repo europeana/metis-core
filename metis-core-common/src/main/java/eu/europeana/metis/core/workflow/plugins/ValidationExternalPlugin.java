@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.Map;
 
@@ -10,8 +11,7 @@ import java.util.Map;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-05-24
  */
-public class ValidationExternalPlugin extends
-    AbstractExecutablePlugin<ValidationExternalPluginMetadata> {
+public class ValidationExternalPlugin extends AbstractExecutablePlugin<ValidationExternalPluginMetadata> {
 
   private final String topologyName = Topology.VALIDATION.getTopologyName();
 
@@ -46,12 +46,13 @@ public class ValidationExternalPlugin extends
   }
 
   @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     String urlOfSchemasZip = getPluginMetadata().getUrlOfSchemasZip();
     String schemaRootPath = getPluginMetadata().getSchemaRootPath();
     String schematronRootPath = getPluginMetadata().getSchematronRootPath();
     Map<String, String> extraParameters = createParametersForValidationExternal(urlOfSchemasZip,
         schemaRootPath, schematronRootPath);
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  extraParameters);
   }
 }

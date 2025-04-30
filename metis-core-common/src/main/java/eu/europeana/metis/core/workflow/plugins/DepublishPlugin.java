@@ -3,6 +3,7 @@ package eu.europeana.metis.core.workflow.plugins;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +49,8 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
   }
 
   @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
     //Do set the records ids parameter only if record ids depublication enabled and there are record ids
@@ -64,7 +66,7 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
     }
     extraParameters.put("DEPUBLICATION_REASON", getPluginMetadata().getDepublicationReason().name());
 
-    T externalTask = processingEngineTaskSettings.getTaskCreator().get();
+    T externalTask = processingEngineTaskClient.getTaskCreator().get();
     externalTask.setParameters(extraParameters);
     return externalTask;
   }

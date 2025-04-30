@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 
 /**
@@ -38,7 +39,8 @@ public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginM
   }
 
   @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  null);
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  null);
   }
 }

@@ -1,25 +1,17 @@
 package eu.europeana.metis.core.engine.base;
 
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
-import java.util.function.Supplier;
 
 /**
  * Basic task settings needed for executing tasks in external systems.
  */
-public interface ProcessingEngineTaskSettings<T extends ProcessingEngineTask> {
+public interface ProcessingEngineTaskSettings {
 
-  String getBaseUrl();
+  String baseUrl();
 
-  String getProvider();
+  String provider();
 
-  String getDatasetId();
+  String metisCoreBaseUrl();
 
-  String getPreviousTaskId();
-
-  String getMetisCoreBaseUrl();
-
-  ThrottlingValues getThrottlingValues();
-
-  Supplier<T> getTaskCreator();
-
+  ThrottlingValues throttlingValues();
 }

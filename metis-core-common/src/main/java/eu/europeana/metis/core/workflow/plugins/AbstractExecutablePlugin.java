@@ -96,24 +96,29 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
   }
 
   // NEW
-  private <T extends ProcessingEngineTask> T createExternalTaskForPluginWithExistingDataset(Map<String, String> parameters,
-      ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
-    T externalTask = processingEngineTaskSettings.getTaskCreator().get();
+  private <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T createExternalTaskForPluginWithExistingDataset(String datasetId,
+      Map<String, String> parameters,
+      ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+    S processingEngineTaskSettings = processingEngineTaskClient.getProcessingEngineTaskSettings();
+    T externalTask = processingEngineTaskClient.getTaskCreator().get();
     final String inputDataLocation =
-        String.format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.getBaseUrl(),
-            processingEngineTaskSettings.getProvider(), processingEngineTaskSettings.getDatasetId());
+        String.format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.baseUrl(),
+            processingEngineTaskSettings.provider(), datasetId);
 
     externalTask.setInputDataLocation(INTERNAL_DATASET, inputDataLocation);
     externalTask.setParameters(parameters);
-    externalTask.setOutputRevision(createDataRevisionOutput(processingEngineTaskSettings.getProvider()));
+    externalTask.setOutputRevision(createDataRevisionOutput(processingEngineTaskSettings.provider()));
     return externalTask;
   }
 
   //NEW
-  <T extends ProcessingEngineTask> T createExternalTaskForHarvestPlugin(
-      ProcessingEngineTaskSettings<T> processingEngineTaskSettings,
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> T createExternalTaskForHarvestPlugin(
+      String datasetId,
+      ProcessingEngineTaskClient<S, T> processingEngineTaskClient,
       Map<String, String> extraParameters, String targetUrl, boolean incrementalProcessing) {
-    T externalTask = processingEngineTaskSettings.getTaskCreator().get();
+    S processingEngineTaskSettings = processingEngineTaskClient.getProcessingEngineTaskSettings();
+    T externalTask = processingEngineTaskClient.getTaskCreator().get();
     externalTask.setInputDataLocation(EXTERNAL_REPOSITORY, targetUrl);
 
     Map<String, String> parameters = new HashMap<>();
@@ -125,41 +130,44 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     parameters.put("INCREMENTAL_HARVEST", String.valueOf(incrementalProcessing));
     parameters.put("HARVEST_DATE", dateFormat.format(getStartedDate()));
-    parameters.put("PROVIDER_ID", processingEngineTaskSettings.getProvider());
+    parameters.put("PROVIDER_ID", processingEngineTaskSettings.provider());
     parameters.put("OUTPUT_DATA_SETS", String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.getBaseUrl(),
-            processingEngineTaskSettings.getProvider(), processingEngineTaskSettings.getDatasetId()));
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.baseUrl(),
+            processingEngineTaskSettings.provider(), datasetId));
     parameters.put(PluginParameterKeys.NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
 
     externalTask.setParameters(parameters);
-    externalTask.setOutputRevision(createDataRevisionOutput(processingEngineTaskSettings.getProvider()));
+    externalTask.setOutputRevision(createDataRevisionOutput(processingEngineTaskSettings.provider()));
     return externalTask;
   }
 
   //NEW
-  <T extends ProcessingEngineTask> T createExternalTaskForProcessPlugin(
-      ProcessingEngineTaskSettings<T> processingEngineTaskSettings,
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T createExternalTaskForProcessPlugin(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient,
       Map<String, String> extraParameters) {
+    S processingEngineTaskSettings = processingEngineTaskClient.getProcessingEngineTaskSettings();
     Map<String, String> parameters = new HashMap<>();
     if (extraParameters != null) {
       parameters.putAll(extraParameters);
     }
     parameters.put("REPRESENTATION_NAME", MetisPlugin.getRepresentationName());
     parameters.put("REVISION_NAME", getPluginMetadata().getRevisionNamePreviousPlugin());
-    parameters.put("REVISION_PROVIDER", processingEngineTaskSettings.getProvider());
+    parameters.put("REVISION_PROVIDER", processingEngineTaskSettings.provider());
     DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     parameters.put("REVISION_TIMESTAMP", dateFormat.format(getPluginMetadata().getRevisionTimestampPreviousPlugin()));
-    parameters.put("PREVIOUS_TASK_ID", processingEngineTaskSettings.getPreviousTaskId());
+    parameters.put("PREVIOUS_TASK_ID", previousTaskId);
     parameters.put("NEW_REPRESENTATION_NAME", MetisPlugin.getRepresentationName());
     parameters.put("OUTPUT_DATA_SETS", String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.getBaseUrl(),
-            processingEngineTaskSettings.getProvider(), processingEngineTaskSettings.getDatasetId()));
-    return createExternalTaskForPluginWithExistingDataset(parameters, processingEngineTaskSettings);
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.baseUrl(),
+            processingEngineTaskSettings.provider(), datasetId));
+    return createExternalTaskForPluginWithExistingDataset(datasetId, parameters, processingEngineTaskClient);
   }
 
-  <T extends ProcessingEngineTask> T createExternalTaskForIndexPlugin(
-      ProcessingEngineTaskSettings<T> processingEngineTaskSettings, String datasetId,
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> T createExternalTaskForIndexPlugin(
+      String datasetId,
+      String previousTaskId,
+      ProcessingEngineTaskClient<S, T> processingEngineTaskClient,
       AbstractIndexPluginMetadata abstractIndexPluginMetadata, String targetDatabase) {
     final DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -175,7 +183,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     extraParameters.put(PluginParameterKeys.DATASET_IDS_TO_REDIRECT_FROM,
         String.join(",", abstractIndexPluginMetadata.getDatasetIdsToRedirectFrom()));
     extraParameters.put(PluginParameterKeys.PERFORM_REDIRECTS, String.valueOf(abstractIndexPluginMetadata.isPerformRedirects()));
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings, extraParameters);
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient, extraParameters);
   }
 
   Map<String, String> createParametersForValidationExternal(String urlOfSchemasZip, String schemaRootPath,
@@ -203,16 +211,16 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     return extraParameters;
   }
 
-  abstract <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings);
+  abstract <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient);
 
   @Override
-  public <T extends ProcessingEngineTask> void execute(String datasetId, ProcessingEngineTaskClient<T> processingEngineTaskClient,
-      ProcessingEngineTaskSettings<T> processingEngineTaskSettings)
-  //  public void execute(String datasetId, DpsClient dpsClient, DpsTaskSettings dpsTaskSettings)
+  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  void execute(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient)
       throws ExternalTaskException {
     String pluginTypeName = getPluginType().name();
-    LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", pluginTypeName, processingEngineTaskSettings.getDatasetId());
-    T externalTask = prepareExternalTask(datasetId, processingEngineTaskSettings);
+    LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", pluginTypeName, datasetId);
+    T externalTask = prepareExternalTask(datasetId, previousTaskId, processingEngineTaskClient);
 
     try {
       setExternalTaskId(Long.toString(processingEngineTaskClient.submitTask(externalTask, getTopologyName())));
@@ -224,7 +232,8 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
   }
 
   @Override
-  public <T extends ProcessingEngineTask> MonitorResult monitor(ProcessingEngineTaskClient<T> processingEngineTaskClient)
+  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  MonitorResult monitor(ProcessingEngineTaskClient<S, T> processingEngineTaskClient)
       throws ExternalTaskException, UnrecoverableExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", getExternalTaskId());
     ProcessingEngineTaskProgress processingEngineTaskProgress = processingEngineTaskClient.getTaskProgress(getTopologyName(),
@@ -313,7 +322,8 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
 
 
   @Override
-  public <T extends ProcessingEngineTask> void cancel(ProcessingEngineTaskClient<T> processingEngineTaskClient, String cancelledById)
+  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById)
       throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", getExternalTaskId());
     processingEngineTaskClient.cancel(getTopologyName(), Long.parseLong(getExternalTaskId()),

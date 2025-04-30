@@ -46,7 +46,7 @@ class TestWorkflowExecutorManager {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    ProcessingEngineTaskClient<?> processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
+    ProcessingEngineTaskClient<?, ?> processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
     workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
         rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);

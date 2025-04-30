@@ -2,6 +2,7 @@ package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,12 +42,13 @@ public class LinkCheckingPlugin extends AbstractExecutablePlugin<LinkCheckingPlu
   }
 
   @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     final Map<String, String> extraParameters = new HashMap<>();
     if (Boolean.TRUE.equals(getPluginMetadata().getPerformSampling())
         && getPluginMetadata().getSampleSize() != null) {
       extraParameters.put(PluginParameterKeys.SAMPLE_SIZE, getPluginMetadata().getSampleSize().toString());
     }
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  null);
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  null);
   }
 }

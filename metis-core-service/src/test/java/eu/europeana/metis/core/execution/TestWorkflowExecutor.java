@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.utils.TestObjectFactory;
@@ -36,10 +37,11 @@ import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -55,7 +57,7 @@ class TestWorkflowExecutor {
 
   private static WorkflowExecutionDao workflowExecutionDao;
   private static WorkflowPostProcessor workflowPostProcessor;
-  private static ProcessingEngineTaskClient<?> processingEngineTaskClient;
+  private static ProcessingEngineTaskClient<ProcessingEngineTaskSettings, ProcessingEngineTask> processingEngineTaskClient;
   private static WorkflowExecutionMonitor workflowExecutionMonitor;
   private static WorkflowExecutorManager workflowExecutorManager;
   private static WorkflowExecutionSettings workflowExecutionSettings;
@@ -72,12 +74,18 @@ class TestWorkflowExecutor {
     when(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes()).thenReturn(10);
   }
 
-  @AfterEach
+  @BeforeEach
   void cleanUp() {
     Mockito.reset(workflowExecutionDao);
     Mockito.reset(workflowPostProcessor);
     Mockito.reset(workflowExecutionMonitor);
     Mockito.reset(processingEngineTaskClient);
+
+    ProcessingEngineTask processingEngineTask = mock(ProcessingEngineTask.class);
+    Supplier<ProcessingEngineTask> taskCreator = () -> processingEngineTask;
+    when(processingEngineTaskClient.getTaskCreator()).thenReturn(taskCreator);
+    ProcessingEngineTaskSettings processingEngineTaskSettings = mock(ProcessingEngineTaskSettings.class);
+    when(processingEngineTaskClient.getProcessingEngineTaskSettings()).thenReturn(processingEngineTaskSettings);
   }
 
   @Test
@@ -144,9 +152,9 @@ class TestWorkflowExecutor {
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
 
-    doThrow(new ExternalTaskException("Some error")).when(oaipmhHarvestPlugin)
-                                                    .execute(any(String.class), any(ProcessingEngineTaskClient.class), any(
-                                                        ProcessingEngineTaskSettings.class));
+    doThrow(new ExternalTaskException("Some error"))
+        .when(oaipmhHarvestPlugin)
+        .execute(any(String.class), any(String.class), any(ProcessingEngineTaskClient.class));
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 

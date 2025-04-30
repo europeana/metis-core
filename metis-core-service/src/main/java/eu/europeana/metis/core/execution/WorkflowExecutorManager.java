@@ -6,6 +6,7 @@ import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -47,10 +48,10 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
    * @param redissonClient the redisson client for distributed locks
    * @param processingEngineTaskClient the Data Processing Service client from ECloud
    */
-  public <T extends ProcessingEngineTask> WorkflowExecutorManager(SemaphoresPerPluginManager semaphoresPerPluginManager,
+  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> WorkflowExecutorManager(SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, ProcessingEngineTaskClient<T> processingEngineTaskClient) {
+      RedissonClient redissonClient, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     super(rabbitmqPublisherChannel, rabbitmqConsumerChannel, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, redissonClient, processingEngineTaskClient);
   }

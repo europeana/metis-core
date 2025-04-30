@@ -12,13 +12,13 @@ import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.model.dps.TaskInfo;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.report.item.DataItemState;
+import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentAttributeStatistics;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeReport;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeStatistics;
-import eu.europeana.metis.core.engine.base.report.item.DataItemState;
-import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorDetails;
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorInfo;
@@ -32,14 +32,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient<DpsProcessingEngineTask> {
+public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient<DpsProcessingEngineTaskSettings, DpsProcessingEngineTask> {
 
   private final DpsClient dpsClient;
+  private final DpsProcessingEngineTaskSettings dpsProcessingEngineTaskProcessing;
 
-  public DpsProcessingEngineTaskClient(DpsClient dpsClient) {
+  public DpsProcessingEngineTaskClient(DpsClient dpsClient,
+      DpsProcessingEngineTaskSettings dpsProcessingEngineTaskProcessing) {
     this.dpsClient = dpsClient;
+    this.dpsProcessingEngineTaskProcessing = dpsProcessingEngineTaskProcessing;
+  }
+
+  @Override
+  public DpsProcessingEngineTaskSettings getProcessingEngineTaskSettings() {
+    return dpsProcessingEngineTaskProcessing;
+  }
+
+  @Override
+  public Supplier<DpsProcessingEngineTask> getTaskCreator() {
+    return DpsProcessingEngineTask::new;
   }
 
   @Override

@@ -25,7 +25,9 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -39,11 +41,12 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.awaitility.Awaitility;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -57,6 +60,7 @@ class TestQueueConsumer {
 
   private static SemaphoresPerPluginManager semaphoresPerPluginManager;
   private static WorkflowExecutionDao workflowExecutionDao;
+  private static ProcessingEngineTaskClient<ProcessingEngineTaskSettings, ProcessingEngineTask> processingEngineTaskClient;
   private static WorkflowPostProcessor workflowPostProcessor;
   private static RedissonClient redissonClient;
   private static Channel rabbitmqConsumerChannel;
@@ -73,7 +77,7 @@ class TestQueueConsumer {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    ProcessingEngineTaskClient<?> processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
+    processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
     workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
         rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
@@ -83,7 +87,7 @@ class TestQueueConsumer {
     workflowExecutorManager.setEcloudProvider("providerExample");
   }
 
-  @AfterEach
+  @BeforeEach
   void cleanUp() {
     Mockito.reset(workflowExecutionDao);
     Mockito.reset(workflowPostProcessor);
@@ -91,6 +95,13 @@ class TestQueueConsumer {
     Mockito.reset(redissonClient);
     Mockito.reset(rabbitmqPublisherChannel);
     Mockito.reset(rabbitmqConsumerChannel);
+    Mockito.reset(processingEngineTaskClient);
+
+    ProcessingEngineTask processingEngineTask = mock(ProcessingEngineTask.class);
+    Supplier<ProcessingEngineTask> taskCreator = () -> processingEngineTask;
+    when(processingEngineTaskClient.getTaskCreator()).thenReturn(taskCreator);
+    ProcessingEngineTaskSettings processingEngineTaskSettings = mock(ProcessingEngineTaskSettings.class);
+    when(processingEngineTaskClient.getProcessingEngineTaskSettings()).thenReturn(processingEngineTaskSettings);
   }
 
   @Test

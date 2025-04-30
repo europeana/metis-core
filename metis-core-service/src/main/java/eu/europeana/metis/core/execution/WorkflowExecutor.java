@@ -8,11 +8,10 @@ import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.ExecutedMetisPluginId;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.ecloud.DpsProcessingEngineTaskSettings;
+import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -21,13 +20,11 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.DpsTaskSettings;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin.MonitorResult;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
-import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
@@ -58,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-05-29
  */
-public class WorkflowExecutor<T extends ProcessingEngineTask> implements Callable<Pair<WorkflowExecution, Boolean>> {
+public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> implements Callable<Pair<WorkflowExecution, Boolean>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
@@ -74,11 +71,7 @@ public class WorkflowExecutor<T extends ProcessingEngineTask> implements Callabl
   private final WorkflowPostProcessor workflowPostProcessor;
   private final int monitorCheckIntervalInSecs;
   private final long periodOfNoProcessedRecordsChangeInSeconds;
-  private final ProcessingEngineTaskClient<T> processingEngineTaskClient;
-  private final String ecloudBaseUrl;
-  private final String ecloudProvider;
-  private final String metisCoreBaseUrl;
-  private final ThrottlingValues throttlingValues;
+  private final ProcessingEngineTaskClient<S, T> processingEngineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
 
@@ -92,10 +85,6 @@ public class WorkflowExecutor<T extends ProcessingEngineTask> implements Callabl
     this.monitorCheckIntervalInSecs = workflowExecutionSettings.getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
         .toSeconds(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
-    this.ecloudBaseUrl = workflowExecutionSettings.getEcloudBaseUrl();
-    this.ecloudProvider = workflowExecutionSettings.getEcloudProvider();
-    this.metisCoreBaseUrl = workflowExecutionSettings.getMetisCoreBaseUrl();
-    this.throttlingValues = workflowExecutionSettings.getThrottlingValues();
   }
 
   @Override
@@ -298,12 +287,7 @@ public class WorkflowExecutor<T extends ProcessingEngineTask> implements Callabl
         if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
           plugin.setStartedDate(startDateToUse);
         }
-        final DpsTaskSettings dpsTaskSettings = new DpsTaskSettings(
-            ecloudBaseUrl, ecloudProvider, workflowExecution.getEcloudDatasetId(),
-            getExternalTaskIdOfPreviousPlugin(metadata), metisCoreBaseUrl, throttlingValues);
-        ProcessingEngineTaskSettings processingEngineTaskSettings = new DpsProcessingEngineTaskSettings(dpsTaskSettings);
-
-        plugin.execute(workflowExecution.getDatasetId(), processingEngineTaskClient, processingEngineTaskSettings);
+        plugin.execute(workflowExecution.getDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata), processingEngineTaskClient);
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "

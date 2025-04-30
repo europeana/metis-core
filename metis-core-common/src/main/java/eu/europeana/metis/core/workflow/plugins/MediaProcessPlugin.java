@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.Map;
 
@@ -39,12 +40,14 @@ public class MediaProcessPlugin extends AbstractExecutablePlugin<MediaProcessPlu
   }
 
   @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+    ThrottlingValues throttlingValues = processingEngineTaskClient.getProcessingEngineTaskSettings().throttlingValues();
     ThrottlingLevel throttlingLevel = getPluginMetadata().getThrottlingLevel() == null ?
         ThrottlingLevel.WEAK : getPluginMetadata().getThrottlingLevel();
     Map<String, String> extraParameters = Map.of("MAXIMUM_PARALLELIZATION",
-        String.valueOf(processingEngineTaskSettings.getThrottlingValues().getThreadNumberFromThrottlingLevel(throttlingLevel)));
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
+        String.valueOf(throttlingValues.getThreadNumberFromThrottlingLevel(throttlingLevel)));
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  extraParameters);
   }
 
 }

@@ -6,6 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import eu.europeana.metis.core.engine.ecloud.DpsProcessingEngineTask;
+import eu.europeana.metis.core.engine.ecloud.DpsProcessingEngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import java.io.IOException;
@@ -142,7 +143,7 @@ public class QueueConsumer extends DefaultConsumer {
   }
 
   private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor<DpsProcessingEngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+    WorkflowExecutor<DpsProcessingEngineTaskSettings, DpsProcessingEngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
         workflowExecutorManager, workflowExecutionSettings);
     completionService.submit(workflowExecutor);
     threadsCounter++;

@@ -12,6 +12,7 @@ import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeReport;
@@ -51,7 +52,7 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
  */
-public class ProxiesService<T extends ProcessingEngineTask> {
+public class ProxiesService<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
@@ -60,7 +61,7 @@ public class ProxiesService<T extends ProcessingEngineTask> {
   private final DatasetDao datasetDao;
   private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
-  private final ExternalEngineClients<T> externalEngineClients;
+  private final ExternalEngineClients<S, T> externalEngineClients;
   private final String ecloudProvider;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
@@ -72,13 +73,13 @@ public class ProxiesService<T extends ProcessingEngineTask> {
    * @param ecloudProvider the ecloud provider
    * @param datasetDao the Dao instance to access the Dataset database
    */
-  public ProxiesService(ExternalEngineClients<T> externalEngineClients, String ecloudProvider,
+  public ProxiesService(ExternalEngineClients<S, T> externalEngineClients, String ecloudProvider,
       WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao) {
     this(externalEngineClients, ecloudProvider, workflowExecutionDao, datasetDao, new ProxiesHelper());
   }
 
-  ProxiesService(ExternalEngineClients<T> externalEngineClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
+  ProxiesService(ExternalEngineClients<S, T> externalEngineClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
     this.externalEngineClients = externalEngineClients;
     this.ecloudProvider = ecloudProvider;

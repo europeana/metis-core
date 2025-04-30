@@ -2,6 +2,7 @@ package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.util.Collections;
@@ -48,10 +49,12 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
   }
 
    @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
-    Map<String, String> extraParameters = new HashMap<>();
+   <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+   T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+     S processingEngineTaskSettings = processingEngineTaskClient.getProcessingEngineTaskSettings();
+     Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.XSLT_URL,
-        processingEngineTaskSettings.getMetisCoreBaseUrl() + RestEndpoints
+        processingEngineTaskSettings.metisCoreBaseUrl() + RestEndpoints
             .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
                 Collections.singletonList(getPluginMetadata().getXsltId())));
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
@@ -61,6 +64,6 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
         .put(PluginParameterKeys.METIS_DATASET_COUNTRY, getPluginMetadata().getCountry());
     extraParameters
         .put(PluginParameterKeys.METIS_DATASET_LANGUAGE, getPluginMetadata().getLanguage());
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  extraParameters);
   }
 }

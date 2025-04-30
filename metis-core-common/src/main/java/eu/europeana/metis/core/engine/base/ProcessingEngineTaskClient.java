@@ -9,11 +9,16 @@ import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Client for submitting, monitoring and cancelling external tasks.
  */
-public interface ProcessingEngineTaskClient<T extends ProcessingEngineTask> {
+public interface ProcessingEngineTaskClient<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> {
+
+  S getProcessingEngineTaskSettings();
+
+  Supplier<T> getTaskCreator();
 
   long submitTask(T externalTask, String topologyName) throws ExternalTaskException;
 

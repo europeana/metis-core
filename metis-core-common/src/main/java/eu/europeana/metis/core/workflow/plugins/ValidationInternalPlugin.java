@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.Map;
 
@@ -44,12 +45,13 @@ public class ValidationInternalPlugin extends AbstractExecutablePlugin<Validatio
   }
 
   @Override
-  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     String urlOfSchemasZip = getPluginMetadata().getUrlOfSchemasZip();
     String schemaRootPath = getPluginMetadata().getSchemaRootPath();
     String schematronRootPath = getPluginMetadata().getSchematronRootPath();
     Map<String, String> extraParameters = createParametersForValidationInternal(urlOfSchemasZip,
         schemaRootPath, schematronRootPath);
-    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
+    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  extraParameters);
   }
 }
