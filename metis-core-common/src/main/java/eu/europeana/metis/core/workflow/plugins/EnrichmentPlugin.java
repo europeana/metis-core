@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 
 /**
  * Enrichment Plugin.
@@ -37,7 +38,7 @@ public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginM
   }
 
   @Override
-  DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, null);
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  null);
   }
 }

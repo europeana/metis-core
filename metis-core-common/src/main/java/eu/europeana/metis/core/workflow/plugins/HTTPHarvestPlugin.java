@@ -1,7 +1,8 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,11 +40,10 @@ public class HTTPHarvestPlugin extends AbstractExecutablePlugin<HTTPHarvestPlugi
   }
 
   @Override
-  DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
     String targetUrl = getPluginMetadata().getUrl();
     Map<String, String> parameters = new HashMap<>();
     parameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
-    return createDpsTaskForHarvestPlugin(dpsTaskSettings, parameters, targetUrl,
-            getPluginMetadata().isIncrementalHarvest());
+    return createExternalTaskForHarvestPlugin(processingEngineTaskSettings,  parameters, targetUrl, getPluginMetadata().isIncrementalHarvest());
   }
 }

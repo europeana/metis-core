@@ -2,7 +2,6 @@ package eu.europeana.metis.core.execution;
 
 import static java.lang.Thread.currentThread;
 
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
@@ -10,6 +9,10 @@ import eu.europeana.metis.core.dao.ExecutedMetisPluginId;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.ecloud.DpsProcessingEngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -55,7 +58,7 @@ import org.slf4j.LoggerFactory;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-05-29
  */
-public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolean>> {
+public class WorkflowExecutor<T extends ProcessingEngineTask> implements Callable<Pair<WorkflowExecution, Boolean>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
@@ -71,7 +74,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   private final WorkflowPostProcessor workflowPostProcessor;
   private final int monitorCheckIntervalInSecs;
   private final long periodOfNoProcessedRecordsChangeInSeconds;
-  private final DpsClient dpsClient;
+  private final ProcessingEngineTaskClient<T> processingEngineTaskClient;
   private final String ecloudBaseUrl;
   private final String ecloudProvider;
   private final String metisCoreBaseUrl;
@@ -85,7 +88,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
     this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
     this.workflowPostProcessor = workflowExecutorManager.getWorkflowPostProcessor();
-    this.dpsClient = workflowExecutorManager.getDpsClient();
+    this.processingEngineTaskClient = workflowExecutorManager.getExternalTaskClient();
     this.monitorCheckIntervalInSecs = workflowExecutionSettings.getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
         .toSeconds(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
@@ -298,8 +301,9 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         final DpsTaskSettings dpsTaskSettings = new DpsTaskSettings(
             ecloudBaseUrl, ecloudProvider, workflowExecution.getEcloudDatasetId(),
             getExternalTaskIdOfPreviousPlugin(metadata), metisCoreBaseUrl, throttlingValues);
-        plugin
-            .execute(workflowExecution.getDatasetId(), dpsClient, dpsTaskSettings);
+        ProcessingEngineTaskSettings processingEngineTaskSettings = new DpsProcessingEngineTaskSettings(dpsTaskSettings);
+
+        plugin.execute(workflowExecution.getDatasetId(), processingEngineTaskClient, processingEngineTaskSettings);
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
@@ -386,7 +390,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         // Check if the task is cancelling and send the external cancelling call if needed
         sendExternalCancelCallIfNeeded(externalCancelCallSent, plugin, previousProcessedRecords,
             checkPointDateOfProcessedRecordsPeriodInMillis);
-        monitorResult = plugin.monitor(dpsClient);
+        monitorResult = plugin.monitor(processingEngineTaskClient);
         consecutiveCancelOrMonitorFailures = 0;
 
         if (monitorResult.taskState() == TaskState.REMOVING_FROM_SOLR_AND_MONGO ||
@@ -467,7 +471,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         checkPointDateOfProcessedRecordsPeriodInMillis)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
-      plugin.cancel(dpsClient, workflowExecution.getCancelledBy());
+      plugin.cancel(processingEngineTaskClient, workflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }
@@ -478,7 +482,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     if (monitorResult.taskState() == TaskState.PROCESSED) {
       try {
         this.workflowPostProcessor.performPluginPostProcessing(plugin, datasetId);
-      } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException e) {
+      } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException | ExternalTaskException e) {
         processingAppliedOrNotRequired = false;
         LOGGER.warn("Problem occurred during Metis post-processing.", e);
         plugin.setFinishedDate(null);

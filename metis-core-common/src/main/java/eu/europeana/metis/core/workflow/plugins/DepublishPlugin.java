@@ -1,8 +1,9 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
 import eu.europeana.metis.core.common.RecordIdUtils;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.util.CollectionUtils;
@@ -47,8 +48,7 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
   }
 
   @Override
-  public DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
     Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
     //Do set the records ids parameter only if record ids depublication enabled and there are record ids
@@ -58,14 +58,14 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
             "Requested record depublication but there are no records ids for depublication in the db");
       } else {
         final String recordIdList = String.join(",", RecordIdUtils
-                .composeFullRecordIds(datasetId, getPluginMetadata().getRecordIdsToDepublish()));
-        extraParameters.put(PluginParameterKeys.RECORD_IDS_TO_DEPUBLISH, recordIdList);
+            .composeFullRecordIds(datasetId, getPluginMetadata().getRecordIdsToDepublish()));
+        extraParameters.put("RECORD_IDS_TO_DEPUBLISH", recordIdList);
       }
     }
+    extraParameters.put("DEPUBLICATION_REASON", getPluginMetadata().getDepublicationReason().name());
 
-    extraParameters.put(PluginParameterKeys.DEPUBLICATION_REASON, getPluginMetadata().getDepublicationReason().name());
-    DpsTask dpsTask = new DpsTask();
-    dpsTask.setParameters(extraParameters);
-    return dpsTask;
+    T externalTask = processingEngineTaskSettings.getTaskCreator().get();
+    externalTask.setParameters(extraParameters);
+    return externalTask;
   }
 }

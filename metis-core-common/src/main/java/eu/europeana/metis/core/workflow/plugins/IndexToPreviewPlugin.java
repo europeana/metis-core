@@ -1,7 +1,8 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
-import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.IndexDatabase;
 
 /**
  * Index to Preview Plugin.
@@ -31,11 +32,6 @@ public class IndexToPreviewPlugin extends AbstractExecutablePlugin<IndexToPrevie
   }
 
   @Override
-  public DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-    return createDpsTaskForIndexPlugin(dpsTaskSettings, datasetId, getPluginMetadata(), getTargetIndexingDatabase().name());
-  }
-
-  @Override
   public String getTopologyName() {
     return topologyName;
   }
@@ -45,7 +41,12 @@ public class IndexToPreviewPlugin extends AbstractExecutablePlugin<IndexToPrevie
    *
    * @return the target indexing database
    */
-  public TargetIndexingDatabase getTargetIndexingDatabase() {
-    return TargetIndexingDatabase.PREVIEW;
+  public IndexDatabase getTargetIndexingDatabase() {
+    return IndexDatabase.PREVIEW;
+  }
+
+  @Override
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+    return createExternalTaskForIndexPlugin(processingEngineTaskSettings,  datasetId, getPluginMetadata(), getTargetIndexingDatabase().name());
   }
 }

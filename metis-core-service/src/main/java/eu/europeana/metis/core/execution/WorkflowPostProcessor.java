@@ -1,10 +1,8 @@
 package eu.europeana.metis.core.execution;
 
-import eu.europeana.cloud.client.dps.rest.DpsClient;
-import eu.europeana.cloud.common.model.dps.RecordState;
-import eu.europeana.cloud.common.model.dps.SubTaskInfo;
+import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptionsThrowing;
+
 import eu.europeana.cloud.service.dps.exception.DpsException;
-import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -14,6 +12,9 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
@@ -28,11 +29,14 @@ import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
+import eu.europeana.metis.exception.ExternalTaskException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -43,12 +47,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
-import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptionsThrowing;
-
 /**
  * This object can perform post-processing for workflows.
  */
-public class WorkflowPostProcessor {
+public class WorkflowPostProcessor<T extends ProcessingEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -57,7 +59,7 @@ public class WorkflowPostProcessor {
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetDao datasetDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final DpsClient dpsClient;
+  private final ProcessingEngineTaskClient<T> processingEngineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
@@ -66,14 +68,14 @@ public class WorkflowPostProcessor {
    * @param depublishRecordIdDao The DAO for de-published records
    * @param datasetDao The DAO for datasets
    * @param workflowExecutionDao The DAO for workflow executions
-   * @param dpsClient the dps client
+   * @param processingEngineTaskClient the dps client
    */
   public WorkflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
-      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, DpsClient dpsClient) {
+      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, ProcessingEngineTaskClient<T> processingEngineTaskClient) {
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.datasetDao = datasetDao;
     this.workflowExecutionDao = workflowExecutionDao;
-    this.dpsClient = dpsClient;
+    this.processingEngineTaskClient = processingEngineTaskClient;
   }
 
   /**
@@ -87,23 +89,23 @@ public class WorkflowPostProcessor {
    * can have.
    */
   private void indexPostProcess(AbstractExecutablePlugin<?> indexPlugin, String datasetId)
-      throws DpsException, InvalidIndexPluginException, BadContentException {
-    TargetIndexingDatabase targetIndexingDatabase;
+      throws InvalidIndexPluginException, BadContentException, ExternalTaskException {
+    IndexDatabase indexDatabase;
     switch (indexPlugin) {
-      case IndexToPreviewPlugin indexToPreviewPlugin -> targetIndexingDatabase = indexToPreviewPlugin.getTargetIndexingDatabase();
+      case IndexToPreviewPlugin indexToPreviewPlugin -> indexDatabase = indexToPreviewPlugin.getTargetIndexingDatabase();
       case IndexToPublishPlugin indexToPublishPlugin -> {
-        targetIndexingDatabase = indexToPublishPlugin.getTargetIndexingDatabase();
+        indexDatabase = indexToPublishPlugin.getTargetIndexingDatabase();
         reinstateDepublishRecordIdsStatus((IndexToPublishPlugin) indexPlugin, datasetId);
       }
       default -> throw new InvalidIndexPluginException("Plugin is not of the types supported");
     }
     final Integer databaseTotalRecords = retryableExternalRequestForNetworkExceptionsThrowing(() ->
-        (int) dpsClient.getTotalMetisDatabaseRecords(datasetId, targetIndexingDatabase));
+        (int) processingEngineTaskClient.getTotalIndexedRecords(datasetId, indexDatabase));
     indexPlugin.getExecutionProgress().setTotalDatabaseRecords(databaseTotalRecords);
   }
 
   private void reinstateDepublishRecordIdsStatus(IndexToPublishPlugin indexPlugin, String datasetId)
-      throws BadContentException, DpsException {
+      throws BadContentException, ExternalTaskException {
     final boolean isIncremental = indexPlugin.getPluginMetadata().isIncrementalIndexing();
     if (isIncremental) {
       // get all currently de-published records IDs from the database and create their full versions
@@ -118,7 +120,7 @@ public class WorkflowPostProcessor {
 
       // Check which have been published by the index action - use full record IDs for eCloud.
       if (!CollectionUtils.isEmpty(depublishedRecordIdsByFullId)) {
-        final List<String> publishedRecordIds = dpsClient.searchPublishedDatasetRecords(datasetId,
+        final List<String> publishedRecordIds = processingEngineTaskClient.getPublishedRecords(datasetId,
             new ArrayList<>(depublishedRecordIdsByFullId.keySet()));
 
         // Remove the 'depublished' status. Note: we need to check for an empty result (otherwise
@@ -144,7 +146,7 @@ public class WorkflowPostProcessor {
    * @throws DpsException If communication with e-cloud dps failed
    */
   private void depublishPostProcess(DepublishPlugin depublishPlugin, String datasetId)
-      throws DpsException {
+      throws ExternalTaskException {
     if (depublishPlugin.getPluginMetadata().isDatasetDepublish()) {
       depublishDatasetPostProcess(datasetId);
     } else {
@@ -158,27 +160,28 @@ public class WorkflowPostProcessor {
    * @throws DpsException If communication with e-cloud dps failed
    */
   private void depublishRecordPostProcess(DepublishPlugin depublishPlugin, String datasetId)
-      throws DpsException {
+      throws ExternalTaskException {
 
     // Retrieve the successfully depublished records.
     final long externalTaskId = Long.parseLong(depublishPlugin.getExternalTaskId());
-    final List<SubTaskInfo> subTasks = new ArrayList<>();
-    List<SubTaskInfo> subTasksBatch;
+    final Map<String, Boolean> recordStatusMap = new HashMap<>();
+    Map<String, Boolean> recordStatusBatchMap;
     do {
-      subTasksBatch = retryableExternalRequestForNetworkExceptionsThrowing(
-          () -> dpsClient.getDetailedTaskReportBetweenChunks(
-              depublishPlugin.getTopologyName(), externalTaskId, subTasks.size(),
-              subTasks.size() + ECLOUD_REQUEST_BATCH_SIZE));
-      subTasks.addAll(subTasksBatch);
-    } while (subTasksBatch.size() == ECLOUD_REQUEST_BATCH_SIZE);
+      recordStatusBatchMap = retryableExternalRequestForNetworkExceptionsThrowing(
+          () -> processingEngineTaskClient.getRecordStatus(
+              depublishPlugin.getTopologyName(), externalTaskId, recordStatusMap.size(),
+              recordStatusMap.size() + ECLOUD_REQUEST_BATCH_SIZE));
+      recordStatusMap.putAll(recordStatusBatchMap);
+    } while (recordStatusBatchMap.size() == ECLOUD_REQUEST_BATCH_SIZE);
 
     // Mark the records as DEPUBLISHED.
-    final Map<String, Set<String>> successfulRecords = subTasks.stream()
-                                                               .filter(subTask -> subTask.getRecordState() == RecordState.SUCCESS)
-                                                               .map(SubTaskInfo::getResource)
-                                                               .map(RecordIdUtils::decomposeFullRecordId)
-                                                               .collect(Collectors.groupingBy(Pair::getLeft,
-                                                                   Collectors.mapping(Pair::getRight, Collectors.toSet())));
+    final Map<String, Set<String>> successfulRecords = recordStatusMap.entrySet().stream()
+                                                                      .filter(entry -> entry.getValue() == Boolean.TRUE)
+                                                                      .map(Entry::getKey)
+                                                                      .map(RecordIdUtils::decomposeFullRecordId)
+                                                                      .collect(Collectors.groupingBy(Pair::getLeft,
+                                                                          Collectors.mapping(Pair::getRight,
+                                                                              Collectors.toSet())));
     successfulRecords.forEach((dataset, records) ->
         depublishRecordIdDao.markRecordIdsWithDepublicationStatus(dataset, records,
             DepublicationStatus.DEPUBLISHED, new Date(), depublishPlugin.getPluginMetadata().getDepublicationReason()));
@@ -230,7 +233,7 @@ public class WorkflowPostProcessor {
    * can have.
    */
   void performPluginPostProcessing(AbstractExecutablePlugin<?> plugin, String datasetId)
-      throws DpsException, InvalidIndexPluginException, BadContentException {
+      throws DpsException, InvalidIndexPluginException, BadContentException, ExternalTaskException {
 
     final PluginType pluginType = plugin.getPluginType();
     LOGGER.info("Starting postprocessing of plugin {} in dataset {}.", pluginType, datasetId);

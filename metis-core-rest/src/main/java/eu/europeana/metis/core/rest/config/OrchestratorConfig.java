@@ -1,11 +1,15 @@
 package eu.europeana.metis.core.rest.config;
 
 import com.rabbitmq.client.Channel;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.client.uis.rest.UISClient;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
 import eu.europeana.cloud.mcs.driver.FileServiceClient;
 import eu.europeana.cloud.mcs.driver.RecordServiceClient;
+import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
+import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
+import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
+import eu.europeana.metis.common.config.properties.redis.RedisConfigurationProperties;
+import eu.europeana.metis.common.config.properties.validation.ValidationConfigurationProperties;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -17,6 +21,8 @@ import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
@@ -25,15 +31,10 @@ import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
-import eu.europeana.metis.core.util.EcloudClients;
+import eu.europeana.metis.core.util.ExternalEngineClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.time.Duration;
-import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
-import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
-import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
-import eu.europeana.metis.common.config.properties.redis.RedisConfigurationProperties;
-import eu.europeana.metis.common.config.properties.validation.ValidationConfigurationProperties;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -165,7 +166,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param ecloudDataSetServiceClient the client service for eCloud datasets.
    * @param recordServiceClient the client for interacting with record services.
    * @param fileServiceClient the client for managing file services.
-   * @param dpsClient the client for Data Processing Services.
+   * @param processingEngineTaskClient the client for Data Processing Services.
    * @param uisClient the client for Unified Information Services.
    * @param datasetDao the data access object for datasets.
    * @param ecloudConfigurationProperties the configuration properties for eCloud integration.
@@ -175,12 +176,12 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   public ProxiesService getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      DpsClient dpsClient, UISClient uisClient, DatasetDao datasetDao,
+      ProcessingEngineTaskClient<? extends ProcessingEngineTask> processingEngineTaskClient, UISClient uisClient, DatasetDao datasetDao,
       EcloudConfigurationProperties ecloudConfigurationProperties) {
-    final EcloudClients ecloudClients = new EcloudClients(ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
-        dpsClient, uisClient);
+    ExternalEngineClients<? extends ProcessingEngineTask> externalEngineClients = new ExternalEngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
+        fileServiceClient, processingEngineTaskClient, uisClient);
 
-    return new ProxiesService(ecloudClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
+    return new ProxiesService(externalEngineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
   }
 
   /**
@@ -189,14 +190,13 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param depublishRecordIdDao the depublish record id dao
    * @param datasetDao the dataset dao
    * @param workflowExecutionDao the workflow execution dao
-   * @param dpsClient the dps client
+   * @param processingEngineTaskClient the dps client
    * @return the workflow post processor
    */
   @Bean
   public WorkflowPostProcessor workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
-      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, DpsClient dpsClient) {
-    return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao,
-        dpsClient);
+      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, ProcessingEngineTaskClient<? extends ProcessingEngineTask> processingEngineTaskClient) {
+    return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, processingEngineTaskClient);
   }
 
   /**
@@ -212,18 +212,18 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  public WorkflowExecutorManager getWorkflowExecutorManager(
+  public WorkflowExecutorManager  getWorkflowExecutorManager(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, DpsClient dpsClient,
+      RedissonClient redissonClient, ProcessingEngineTaskClient<? extends ProcessingEngineTask> processingEngineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties) {
     WorkflowExecutorManager workflowExecutorManager = new WorkflowExecutorManager(
         semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
-        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, dpsClient);
+        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
     workflowExecutorManager
         .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());

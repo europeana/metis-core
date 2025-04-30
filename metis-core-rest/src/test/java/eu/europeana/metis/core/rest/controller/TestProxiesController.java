@@ -1,46 +1,5 @@
 package eu.europeana.metis.core.rest.controller;
 
-import eu.europeana.cloud.common.model.dps.SubTaskInfo;
-import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
-import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
-import eu.europeana.metis.core.rest.ListOfIds;
-import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
-import eu.europeana.metis.core.rest.Record;
-import eu.europeana.metis.core.rest.RecordsResponse;
-import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.stats.AttributeStatistics;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
-import eu.europeana.metis.security.test.JwtUtils;
-import eu.europeana.metis.core.rest.utils.TestObjectFactory;
-import eu.europeana.metis.core.service.ProxiesService;
-import eu.europeana.metis.core.service.UserService;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
-import eu.europeana.metis.core.workflow.plugins.PluginType;
-import eu.europeana.metis.utils.RestEndpoints;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Stream;
-import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
 import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
 import static eu.europeana.metis.security.test.JwtUtils.BEARER;
 import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
@@ -57,6 +16,47 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import eu.europeana.cloud.common.model.dps.SubTaskInfo;
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
+import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
+import eu.europeana.metis.core.rest.ListOfIds;
+import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
+import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.rest.RecordsResponse;
+import eu.europeana.metis.core.rest.config.SecurityConfig;
+import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.stats.AttributeStatistics;
+import eu.europeana.metis.core.rest.stats.NodePathStatistics;
+import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
+import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.utils.TestObjectFactory;
+import eu.europeana.metis.core.service.ProxiesService;
+import eu.europeana.metis.core.service.UserService;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.core.workflow.plugins.PluginType;
+import eu.europeana.metis.security.test.JwtUtils;
+import eu.europeana.metis.utils.RestEndpoints;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(ProxiesController.class)
 @ContextConfiguration(classes = {ProxiesController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
@@ -100,12 +100,9 @@ class TestProxiesController {
 
     int from = 1;
     int to = 100;
-    List<SubTaskInfo> listOfSubTaskInfo = TestObjectFactory.createListOfSubTaskInfo();
-    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
-      subTaskInfo.setAdditionalInformations(null);
-    }
+    List<DataItemStatus> dataItemStatuses = TestObjectFactory.createExternalRecordStatusList();
     when(proxiesService.getExternalTaskLogs(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, from, to)).thenReturn(listOfSubTaskInfo);
+        TestObjectFactory.EXTERNAL_TASK_ID, from, to)).thenReturn(dataItemStatuses);
 
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
@@ -114,9 +111,7 @@ class TestProxiesController {
                .param("to", Integer.toString(to))
                .contentType(MediaType.APPLICATION_JSON)
                .content(""))
-           .andExpect(status().isOk())
-           .andExpect(jsonPath("$[0].additionalInformations", is(IsNull.nullValue())))
-           .andExpect(jsonPath("$[1].additionalInformations", is(IsNull.nullValue())));
+           .andExpect(status().isOk());
   }
 
   @Test
@@ -142,9 +137,9 @@ class TestProxiesController {
       subTaskInfo.setAdditionalInformations(null);
     }
 
-    TaskErrorsInfo taskErrorsInfo = TestObjectFactory.createTaskErrorsInfoListWithIdentifiers(2);
+    ProcessingEngineTaskErrors processingEngineTaskErrors = TestObjectFactory.createExternalTaskErrorsListWithIdentifiers(2);
     when(proxiesService.getExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(taskErrorsInfo);
+        TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(processingEngineTaskErrors);
 
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
@@ -154,11 +149,11 @@ class TestProxiesController {
                .content(""))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.id", is(TestObjectFactory.EXTERNAL_TASK_ID)))
-           .andExpect(jsonPath("$.errors", hasSize(taskErrorsInfo.getErrors().size())))
+           .andExpect(jsonPath("$.errors", hasSize(processingEngineTaskErrors.errors().size())))
            .andExpect(jsonPath("$.errors[0].errorDetails",
-               hasSize(taskErrorsInfo.getErrors().get(0).getErrorDetails().size())))
+               hasSize(processingEngineTaskErrors.errors().get(0).errorDetails().size())))
            .andExpect(jsonPath("$.errors[1].errorDetails",
-               hasSize(taskErrorsInfo.getErrors().get(1).getErrorDetails().size())));
+               hasSize(processingEngineTaskErrors.errors().get(1).errorDetails().size())));
   }
 
   @Test
@@ -168,7 +163,8 @@ class TestProxiesController {
     // Create response object.
     final NodeValueStatistics nodeValue = new NodeValueStatistics("node value", 3, Collections.emptyList());
     final NodePathStatistics nodePath = new NodePathStatistics("node path", Collections.singletonList(nodeValue));
-    final RecordStatistics recordStatistics = new RecordStatistics(TestObjectFactory.EXTERNAL_TASK_ID, Collections.singletonList(nodePath));
+    final RecordStatistics recordStatistics = new RecordStatistics(TestObjectFactory.EXTERNAL_TASK_ID,
+        Collections.singletonList(nodePath));
 
     // Make the call and verify the result.
     when(proxiesService.getExternalTaskStatistics(TestObjectFactory.TOPOLOGY_NAME,

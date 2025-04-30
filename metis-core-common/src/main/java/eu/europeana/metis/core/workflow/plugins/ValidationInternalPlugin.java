@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.Map;
 
 /**
@@ -9,8 +10,7 @@ import java.util.Map;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2018-01-29
  */
-public class ValidationInternalPlugin extends
-    AbstractExecutablePlugin<ValidationInternalPluginMetadata> {
+public class ValidationInternalPlugin extends AbstractExecutablePlugin<ValidationInternalPluginMetadata> {
 
   private final String topologyName = Topology.VALIDATION.getTopologyName();
 
@@ -44,12 +44,12 @@ public class ValidationInternalPlugin extends
   }
 
   @Override
-  DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
     String urlOfSchemasZip = getPluginMetadata().getUrlOfSchemasZip();
     String schemaRootPath = getPluginMetadata().getSchemaRootPath();
     String schematronRootPath = getPluginMetadata().getSchematronRootPath();
     Map<String, String> extraParameters = createParametersForValidationInternal(urlOfSchemasZip,
         schemaRootPath, schematronRootPath);
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
+    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
   }
 }

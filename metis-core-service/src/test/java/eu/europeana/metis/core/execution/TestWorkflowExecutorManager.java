@@ -6,13 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.bson.types.ObjectId;
@@ -45,10 +46,10 @@ class TestWorkflowExecutorManager {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    DpsClient dpsClient = Mockito.mock(DpsClient.class);
+    ProcessingEngineTaskClient<?> processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
     workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
-        rabbitmqConsumerChannel, redissonClient, dpsClient);
+        rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
     workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(5);
     workflowExecutorManager.setEcloudBaseUrl("http://universe.space");

@@ -1,13 +1,17 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.client.dps.rest.DpsClient;
-import eu.europeana.cloud.common.model.Revision;
+import static eu.europeana.metis.core.engine.base.ProcessingEngineTask.InputDataType.EXTERNAL_REPOSITORY;
+import static eu.europeana.metis.core.engine.base.ProcessingEngineTask.InputDataType.INTERNAL_DATASET;
+
 import eu.europeana.cloud.common.model.dps.TaskInfo;
-import eu.europeana.cloud.service.dps.DpsTask;
-import eu.europeana.cloud.service.dps.InputDataType;
+import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
-import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
-import eu.europeana.cloud.service.dps.exception.DpsException;
+import eu.europeana.metis.core.engine.base.DataRevision;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
@@ -15,10 +19,7 @@ import eu.europeana.metis.utils.CommonStringValues;
 import java.lang.invoke.MethodHandles;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -30,8 +31,8 @@ import org.slf4j.LoggerFactory;
  *
  * @param <M> The type of the plugin metadata that this plugin represents.
  */
-public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePluginMetadata> extends
-    AbstractMetisPlugin<M> implements ExecutablePlugin {
+public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePluginMetadata>
+    extends AbstractMetisPlugin<M> implements ExecutablePlugin {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -89,31 +90,31 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     this.executionProgress = executionProgress;
   }
 
-  private Revision createOutputRevisionForExecution(String ecloudProvider) {
-    return new Revision(getPluginType().name(), ecloudProvider, getStartedDate(), false);
+  //NEW
+  private DataRevision createDataRevisionOutput(String ecloudProvider) {
+    return new DataRevision(getPluginType().name(), ecloudProvider, getStartedDate(), false);
   }
 
-  private DpsTask createDpsTaskForPluginWithExistingDataset(Map<String, String> parameters, DpsTaskSettings dpsTaskSettings) {
-    DpsTask dpsTask = new DpsTask();
+  // NEW
+  private <T extends ProcessingEngineTask> T createExternalTaskForPluginWithExistingDataset(Map<String, String> parameters,
+      ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
+    T externalTask = processingEngineTaskSettings.getTaskCreator().get();
+    final String inputDataLocation =
+        String.format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.getBaseUrl(),
+            processingEngineTaskSettings.getProvider(), processingEngineTaskSettings.getDatasetId());
 
-    Map<InputDataType, List<String>> dataEntries = new EnumMap<>(InputDataType.class);
-    dataEntries.put(InputDataType.DATASET_URLS, Collections.singletonList(String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.ecloudBaseUrl(),
-            dpsTaskSettings.ecloudProvider(), dpsTaskSettings.ecloudDatasetId())));
-    dpsTask.setInputData(dataEntries);
-
-    dpsTask.setParameters(parameters);
-    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.ecloudProvider()));
-    return dpsTask;
+    externalTask.setInputDataLocation(INTERNAL_DATASET, inputDataLocation);
+    externalTask.setParameters(parameters);
+    externalTask.setOutputRevision(createDataRevisionOutput(processingEngineTaskSettings.getProvider()));
+    return externalTask;
   }
 
-  DpsTask createDpsTaskForHarvestPlugin(DpsTaskSettings dpsTaskSettings,
+  //NEW
+  <T extends ProcessingEngineTask> T createExternalTaskForHarvestPlugin(
+      ProcessingEngineTaskSettings<T> processingEngineTaskSettings,
       Map<String, String> extraParameters, String targetUrl, boolean incrementalProcessing) {
-    DpsTask dpsTask = new DpsTask();
-
-    Map<InputDataType, List<String>> dataEntries = new EnumMap<>(InputDataType.class);
-    dataEntries.put(InputDataType.REPOSITORY_URLS, Collections.singletonList(targetUrl));
-    dpsTask.setInputData(dataEntries);
+    T externalTask = processingEngineTaskSettings.getTaskCreator().get();
+    externalTask.setInputDataLocation(EXTERNAL_REPOSITORY, targetUrl);
 
     Map<String, String> parameters = new HashMap<>();
     if (extraParameters != null) {
@@ -122,41 +123,43 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
 
     final DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    parameters.put(PluginParameterKeys.INCREMENTAL_HARVEST, String.valueOf(incrementalProcessing));
-    parameters.put(PluginParameterKeys.HARVEST_DATE, dateFormat.format(getStartedDate()));
-    parameters.put(PluginParameterKeys.PROVIDER_ID, dpsTaskSettings.ecloudProvider());
-    parameters.put(PluginParameterKeys.OUTPUT_DATA_SETS, String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.ecloudBaseUrl(),
-            dpsTaskSettings.ecloudProvider(), dpsTaskSettings.ecloudDatasetId()));
+    parameters.put("INCREMENTAL_HARVEST", String.valueOf(incrementalProcessing));
+    parameters.put("HARVEST_DATE", dateFormat.format(getStartedDate()));
+    parameters.put("PROVIDER_ID", processingEngineTaskSettings.getProvider());
+    parameters.put("OUTPUT_DATA_SETS", String
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.getBaseUrl(),
+            processingEngineTaskSettings.getProvider(), processingEngineTaskSettings.getDatasetId()));
     parameters.put(PluginParameterKeys.NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    dpsTask.setParameters(parameters);
 
-    dpsTask.setOutputRevision(createOutputRevisionForExecution(dpsTaskSettings.ecloudProvider()));
-    return dpsTask;
+    externalTask.setParameters(parameters);
+    externalTask.setOutputRevision(createDataRevisionOutput(processingEngineTaskSettings.getProvider()));
+    return externalTask;
   }
 
-  DpsTask createDpsTaskForProcessPlugin(DpsTaskSettings dpsTaskSettings,
+  //NEW
+  <T extends ProcessingEngineTask> T createExternalTaskForProcessPlugin(
+      ProcessingEngineTaskSettings<T> processingEngineTaskSettings,
       Map<String, String> extraParameters) {
     Map<String, String> parameters = new HashMap<>();
     if (extraParameters != null) {
       parameters.putAll(extraParameters);
     }
-    parameters.put(PluginParameterKeys.REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    parameters.put(PluginParameterKeys.REVISION_NAME, getPluginMetadata().getRevisionNamePreviousPlugin());
-    parameters.put(PluginParameterKeys.REVISION_PROVIDER, dpsTaskSettings.ecloudProvider());
+    parameters.put("REPRESENTATION_NAME", MetisPlugin.getRepresentationName());
+    parameters.put("REVISION_NAME", getPluginMetadata().getRevisionNamePreviousPlugin());
+    parameters.put("REVISION_PROVIDER", processingEngineTaskSettings.getProvider());
     DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    parameters
-        .put(PluginParameterKeys.REVISION_TIMESTAMP, dateFormat.format(getPluginMetadata().getRevisionTimestampPreviousPlugin()));
-    parameters.put(PluginParameterKeys.PREVIOUS_TASK_ID, dpsTaskSettings.previousExternalTaskId());
-    parameters.put(PluginParameterKeys.NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    parameters.put(PluginParameterKeys.OUTPUT_DATA_SETS, String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, dpsTaskSettings.ecloudBaseUrl(),
-            dpsTaskSettings.ecloudProvider(), dpsTaskSettings.ecloudDatasetId()));
-    return createDpsTaskForPluginWithExistingDataset(parameters, dpsTaskSettings);
+    parameters.put("REVISION_TIMESTAMP", dateFormat.format(getPluginMetadata().getRevisionTimestampPreviousPlugin()));
+    parameters.put("PREVIOUS_TASK_ID", processingEngineTaskSettings.getPreviousTaskId());
+    parameters.put("NEW_REPRESENTATION_NAME", MetisPlugin.getRepresentationName());
+    parameters.put("OUTPUT_DATA_SETS", String
+        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, processingEngineTaskSettings.getBaseUrl(),
+            processingEngineTaskSettings.getProvider(), processingEngineTaskSettings.getDatasetId()));
+    return createExternalTaskForPluginWithExistingDataset(parameters, processingEngineTaskSettings);
   }
 
-  DpsTask createDpsTaskForIndexPlugin(DpsTaskSettings dpsTaskSettings, String datasetId,
+  <T extends ProcessingEngineTask> T createExternalTaskForIndexPlugin(
+      ProcessingEngineTaskSettings<T> processingEngineTaskSettings, String datasetId,
       AbstractIndexPluginMetadata abstractIndexPluginMetadata, String targetDatabase) {
     final DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -172,7 +175,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     extraParameters.put(PluginParameterKeys.DATASET_IDS_TO_REDIRECT_FROM,
         String.join(",", abstractIndexPluginMetadata.getDatasetIdsToRedirectFrom()));
     extraParameters.put(PluginParameterKeys.PERFORM_REDIRECTS, String.valueOf(abstractIndexPluginMetadata.isPerformRedirects()));
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
+    return createExternalTaskForProcessPlugin(processingEngineTaskSettings, extraParameters);
   }
 
   Map<String, String> createParametersForValidationExternal(String urlOfSchemasZip, String schemaRootPath,
@@ -200,45 +203,36 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     return extraParameters;
   }
 
-  /**
-   * Prepare the {@link DpsTask} based on the specific implementation of the plugin.
-   *
-   * @param dpsTaskSettings the basic parameter required for each execution
-   * @return the {@link DpsTask} prepared with all the required parameters
-   */
-  abstract DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings);
+  abstract <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings);
 
   @Override
-  public void execute(String datasetId, DpsClient dpsClient, DpsTaskSettings dpsTaskSettings)
+  public <T extends ProcessingEngineTask> void execute(String datasetId, ProcessingEngineTaskClient<T> processingEngineTaskClient,
+      ProcessingEngineTaskSettings<T> processingEngineTaskSettings)
+  //  public void execute(String datasetId, DpsClient dpsClient, DpsTaskSettings dpsTaskSettings)
       throws ExternalTaskException {
     String pluginTypeName = getPluginType().name();
-    LOGGER.info("Starting execution of {} plugin for ecloudDatasetId {}", pluginTypeName,
-        dpsTaskSettings.ecloudDatasetId());
+    LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", pluginTypeName, processingEngineTaskSettings.getDatasetId());
+    T externalTask = prepareExternalTask(datasetId, processingEngineTaskSettings);
 
-    DpsTask dpsTask = prepareDpsTask(datasetId, dpsTaskSettings);
     try {
-      setExternalTaskId(Long.toString(dpsClient.submitTask(dpsTask, getTopologyName())));
+      setExternalTaskId(Long.toString(processingEngineTaskClient.submitTask(externalTask, getTopologyName())));
       setDataStatus(DataStatus.VALID);
-    } catch (DpsException | RuntimeException e) {
+    } catch (ExternalTaskException | RuntimeException e) {
       throw new ExternalTaskException("Submitting task failed", e);
     }
     LOGGER.info("Submitted task with externalTaskId: {}", getExternalTaskId());
   }
 
   @Override
-  public MonitorResult monitor(DpsClient dpsClient) throws ExternalTaskException, UnrecoverableExternalTaskException {
+  public <T extends ProcessingEngineTask> MonitorResult monitor(ProcessingEngineTaskClient<T> processingEngineTaskClient)
+      throws ExternalTaskException, UnrecoverableExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", getExternalTaskId());
-    TaskInfo taskInfo;
-    try {
-      taskInfo = dpsClient.getTaskProgress(getTopologyName(), Long.parseLong(getExternalTaskId()));
-    } catch (AccessDeniedOrObjectDoesNotExistException e) {
-      throw new UnrecoverableExternalTaskException("Requesting task progress failed", e);
-    } catch (DpsException | RuntimeException e) {
-      throw new ExternalTaskException("Requesting task progress failed", e);
-    }
+    ProcessingEngineTaskProgress processingEngineTaskProgress = processingEngineTaskClient.getTaskProgress(getTopologyName(),
+        Long.parseLong(getExternalTaskId()));
     LOGGER.info("Task information received for externalTaskId: {}", getExternalTaskId());
-    updateExecutionProgress(taskInfo);
-    return new MonitorResult(taskInfo.getState(), taskInfo.getStateDescription());
+    updateExecutionProgress(processingEngineTaskProgress);
+    TaskState taskState = TaskState.valueOf(processingEngineTaskProgress.getExternalTaskState().name());
+    return new MonitorResult(taskState, processingEngineTaskProgress.getExternalTaskState().getDefaultMessage());
   }
 
   /**
@@ -246,7 +240,22 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
    *
    * @param taskInfo {@link TaskInfo}
    */
-  void updateExecutionProgress(TaskInfo taskInfo) {
+  //OLD
+  public static ProcessingEngineTaskProgress getExternalTaskProgress(TaskInfo taskInfo) {
+    ProcessingEngineTaskProgress processingEngineTaskProgress = new ProcessingEngineTaskProgress();
+    processingEngineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
+    processingEngineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
+    processingEngineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
+    processingEngineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
+    processingEngineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
+    processingEngineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
+    ProcessingEngineTaskState processingEngineTaskState = ProcessingEngineTaskState.valueOf(taskInfo.getState().name());
+    processingEngineTaskProgress.setExternalTaskState(processingEngineTaskState);
+    return processingEngineTaskProgress;
+  }
+
+  //NEW
+  void updateExecutionProgress(ProcessingEngineTaskProgress processingEngineTaskProgress) {
 
     // Calculate the various counts.
     // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
@@ -255,61 +264,59 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     int deletedRecordCount;
 
     switch (getPluginMetadata()) {
-      case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata when abstractHarvestPluginMetadata.isIncrementalHarvest() -> {
+      case
+          AbstractHarvestPluginMetadata abstractHarvestPluginMetadata when abstractHarvestPluginMetadata.isIncrementalHarvest() -> {
         //Incremental Harvest
         //deletedRecordsCount never used
         //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-        expectedRecordCount = taskInfo.getExpectedRecordsNumber();
-        processedRecordCount = taskInfo.getProcessedRecordsCount() + taskInfo.getIgnoredRecordsCount();
-        deletedRecordCount = taskInfo.getPostProcessedRecordsCount();
+        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
+        processedRecordCount = processingEngineTaskProgress.getProcessedRecords() + processingEngineTaskProgress.getIgnoredRecords();
+        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
       }
       case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata -> {
         //Full Harvest
         //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
         //deletedRecordsCount is always 0
-        expectedRecordCount = taskInfo.getExpectedRecordsNumber();
-        processedRecordCount = taskInfo.getProcessedRecordsCount();
-        deletedRecordCount = taskInfo.getDeletedRecordsCount();
+        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
+        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
+        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
       }
       case AbstractIndexPluginMetadata abstractIndexPluginMetadata when !abstractIndexPluginMetadata.isIncrementalIndexing() -> {
         //Full Indexing
         //ignoredRecordsCount never used
         //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
         //The deletedRecordsCount is always 0
-        expectedRecordCount = taskInfo.getExpectedRecordsNumber();
-        processedRecordCount = taskInfo.getProcessedRecordsCount();
-        deletedRecordCount = taskInfo.getPostProcessedRecordsCount();
+        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
+        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
+        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
       }
       case null, default -> {
         //Other plugins including incremental indexing
         //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-        expectedRecordCount = taskInfo.getExpectedRecordsNumber() - taskInfo.getDeletedRecordsCount();
-        processedRecordCount = taskInfo.getProcessedRecordsCount();
-        deletedRecordCount = taskInfo.getDeletedRecordsCount();
+        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords() - processingEngineTaskProgress.getDeletedRecords();
+        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
+        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
       }
     }
 
-    int errorCount = taskInfo.getProcessedErrorsCount() + taskInfo.getDeletedErrorsCount();
-    int ignoredCount = taskInfo.getIgnoredRecordsCount();
-
+    int errorCount = processingEngineTaskProgress.getProcessedErrors() + processingEngineTaskProgress.getDeletedErrors();
     // Update the execution progress.
     getExecutionProgress().setExpectedRecords(expectedRecordCount);
     getExecutionProgress().setProcessedRecords(processedRecordCount);
     getExecutionProgress().setDeletedRecords(deletedRecordCount);
-    getExecutionProgress().setIgnoredRecords(ignoredCount);
+    getExecutionProgress().setIgnoredRecords(processingEngineTaskProgress.getIgnoredRecords());
     getExecutionProgress().setErrors(errorCount);
     getExecutionProgress().recalculateProgressPercentage();
-    getExecutionProgress().setStatus(taskInfo.getState());
+    TaskState taskState = TaskState.valueOf(processingEngineTaskProgress.getExternalTaskState().name());
+    getExecutionProgress().setStatus(taskState);
   }
 
+
   @Override
-  public void cancel(DpsClient dpsClient, String cancelledById) throws ExternalTaskException {
+  public <T extends ProcessingEngineTask> void cancel(ProcessingEngineTaskClient<T> processingEngineTaskClient, String cancelledById)
+      throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", getExternalTaskId());
-    try {
-      dpsClient.killTask(getTopologyName(), Long.parseLong(getExternalTaskId()),
-          SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");
-    } catch (DpsException | RuntimeException e) {
-      throw new ExternalTaskException("Requesting task cancellation failed", e);
-    }
+    processingEngineTaskClient.cancel(getTopologyName(), Long.parseLong(getExternalTaskId()),
+        SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");
   }
 }

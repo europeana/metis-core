@@ -1,11 +1,12 @@
 package eu.europeana.metis.core.execution;
 
 import com.rabbitmq.client.Channel;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import org.redisson.api.RedissonClient;
 
-class PersistenceProvider {
+class PersistenceProvider<T extends ProcessingEngineTask> {
 
   private final Channel rabbitmqPublisherChannel;
   private final Channel rabbitmqConsumerChannel;
@@ -13,19 +14,19 @@ class PersistenceProvider {
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowPostProcessor workflowPostProcessor;
   private final RedissonClient redissonClient;
-  private final DpsClient dpsClient;
+  private final ProcessingEngineTaskClient<T> processingEngineTaskClient;
 
   PersistenceProvider(Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
-      RedissonClient redissonClient, DpsClient dpsClient) {
+      RedissonClient redissonClient, ProcessingEngineTaskClient<T> processingEngineTaskClient) {
     this.rabbitmqPublisherChannel = rabbitmqPublisherChannel;
     this.rabbitmqConsumerChannel = rabbitmqConsumerChannel;
     this.semaphoresPerPluginManager = semaphoresPerPluginManager;
     this.workflowExecutionDao = workflowExecutionDao;
     this.workflowPostProcessor = workflowPostProcessor;
     this.redissonClient = redissonClient;
-    this.dpsClient = dpsClient;
+    this.processingEngineTaskClient = processingEngineTaskClient;
   }
 
   public SemaphoresPerPluginManager getSemaphoresPerPluginManager() {
@@ -40,8 +41,8 @@ class PersistenceProvider {
     return workflowPostProcessor;
   }
 
-  DpsClient getDpsClient() {
-    return dpsClient;
+  ProcessingEngineTaskClient<T> getExternalTaskClient() {
+    return processingEngineTaskClient;
   }
 
   RedissonClient getRedissonClient() {

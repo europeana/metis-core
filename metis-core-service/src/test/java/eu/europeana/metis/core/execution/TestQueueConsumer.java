@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,9 +23,9 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -72,10 +73,10 @@ class TestQueueConsumer {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    DpsClient dpsClient = Mockito.mock(DpsClient.class);
+    ProcessingEngineTaskClient<?> processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
     workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
-        rabbitmqConsumerChannel, redissonClient, dpsClient);
+        rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
     workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(1);
     workflowExecutorManager.setEcloudBaseUrl("http://universe.space");
@@ -251,10 +252,10 @@ class TestQueueConsumer {
     when(workflowExecutionDao.isCancelling(any(ObjectId.class))).thenReturn(false);
     doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
         .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin1).monitor(any(DpsClient.class));
+        .when(oaipmhHarvestPlugin1).monitor(any(ProcessingEngineTaskClient.class));
     doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
         .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin2).monitor(any(DpsClient.class));
+        .when(oaipmhHarvestPlugin2).monitor(any(ProcessingEngineTaskClient.class));
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(any(WorkflowExecution.class));
     when(workflowExecutionDao.update(any(WorkflowExecution.class))).thenReturn(anyString());
 

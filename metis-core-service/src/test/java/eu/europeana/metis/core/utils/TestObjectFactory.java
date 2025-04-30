@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.utils;
 
+import eu.europeana.cloud.common.model.dps.AttributeStatistics;
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.NodeStatistics;
 import eu.europeana.cloud.common.model.dps.RecordState;
@@ -13,6 +14,14 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.engine.base.report.item.content.ContentAttributeStatistics;
+import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeStatistics;
+import eu.europeana.metis.core.engine.base.report.item.DataItemState;
+import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
+import eu.europeana.metis.core.engine.base.report.item.content.ContentStatisticsReport;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.user.User.UserBuilder;
@@ -35,8 +44,11 @@ import eu.europeana.metis.utils.Country;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 
 public class TestObjectFactory {
@@ -298,6 +310,25 @@ public class TestObjectFactory {
     return subTaskInfos;
   }
 
+  public static List<DataItemStatus> createExternalRecordStatusList() {
+    List<SubTaskInfo> listOfSubTaskInfo = createListOfSubTaskInfo();
+
+    List<DataItemStatus> dataItemStatusList = new ArrayList<>();
+    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
+      DataItemStatus dataItemStatus = new DataItemStatus(
+          subTaskInfo.getResourceNum(),
+          subTaskInfo.getResource(),
+          DataItemState.valueOf(subTaskInfo.getRecordState().name()),
+          subTaskInfo.getInfo(),
+          subTaskInfo.getEuropeanaId(),
+          subTaskInfo.getProcessingTime(),
+          subTaskInfo.getResultResource());
+      dataItemStatusList.add(dataItemStatus);
+    }
+    return dataItemStatusList;
+
+  }
+
   /**
    * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects.
    *
@@ -356,6 +387,22 @@ public class TestObjectFactory {
     return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
   }
 
+  public static ProcessingEngineTaskErrors createTaskErrorsInfoWithIdentifiersExternal(String errorType, String message) {
+    TaskErrorsInfo taskErrorsInfo = createTaskErrorsInfoWithIdentifiers(errorType, message);
+
+    List<ProcessingEngineTaskErrorInfo> processingEngineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
+      List<ProcessingEngineTaskErrorDetails> processingEngineTaskErrorDetailsList = new ArrayList<>();
+      for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
+        ProcessingEngineTaskErrorDetails processingEngineTaskErrorDetails = new ProcessingEngineTaskErrorDetails(errorDetail.getIdentifier(),
+            errorDetail.getAdditionalInfo());
+        processingEngineTaskErrorDetailsList.add(processingEngineTaskErrorDetails);
+      }
+      return new ProcessingEngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
+          taskErrorInfo.getOccurrences(), processingEngineTaskErrorDetailsList);
+    }).collect(Collectors.toList());
+    return new ProcessingEngineTaskErrors(taskErrorsInfo.getId(), processingEngineTaskErrorInfoList);
+  }
+
   /**
    * Create a dummy {@link StatisticsReport}
    *
@@ -366,6 +413,26 @@ public class TestObjectFactory {
     nodeStatistics.add(new NodeStatistics("parentpath1", "path1", "value1", 1));
     nodeStatistics.add(new NodeStatistics("parentpath2", "path2", "value2", OCCURRENCES));
     return new StatisticsReport(EXTERNAL_TASK_ID, nodeStatistics);
+  }
+
+  public static ContentStatisticsReport createTaskStatisticsReportExternal() {
+    StatisticsReport taskStatisticsReport = createTaskStatisticsReport();
+
+    List<ContentNodeStatistics> contentNodeStatisticsList = new ArrayList<>();
+    for (NodeStatistics nodeStatistics : taskStatisticsReport.getNodeStatistics()) {
+      Set<ContentAttributeStatistics> contentAttributeStatisticsList = new HashSet<>();
+      for (AttributeStatistics attributeStatistics : nodeStatistics.getAttributesStatistics()) {
+        contentAttributeStatisticsList.add(
+            new ContentAttributeStatistics(attributeStatistics.getName(), attributeStatistics.getValue(),
+                attributeStatistics.getOccurrence())
+        );
+      }
+      contentNodeStatisticsList.add(
+          new ContentNodeStatistics(nodeStatistics.getParentXpath(), nodeStatistics.getXpath(), nodeStatistics.getValue(),
+              nodeStatistics.getOccurrence(), contentAttributeStatisticsList)
+      );
+    }
+    return new ContentStatisticsReport(taskStatisticsReport.getTaskId(), contentNodeStatisticsList);
   }
 
   /**

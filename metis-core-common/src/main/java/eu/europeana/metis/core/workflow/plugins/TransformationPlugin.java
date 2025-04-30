@@ -1,7 +1,8 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.PluginParameterKeys;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,21 +47,20 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
     return topologyName;
   }
 
-  @Override
-  public DpsTask prepareDpsTask(String datasetId,
-      DpsTaskSettings dpsTaskSettings) {
+   @Override
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
     Map<String, String> extraParameters = new HashMap<>();
     extraParameters.put(PluginParameterKeys.XSLT_URL,
-            dpsTaskSettings.metisCoreBaseUrl() + RestEndpoints
-                    .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
-                            Collections.singletonList(getPluginMetadata().getXsltId())));
+        processingEngineTaskSettings.getMetisCoreBaseUrl() + RestEndpoints
+            .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
+                Collections.singletonList(getPluginMetadata().getXsltId())));
     extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
     extraParameters
-            .put(PluginParameterKeys.METIS_DATASET_NAME, getPluginMetadata().getDatasetName());
+        .put(PluginParameterKeys.METIS_DATASET_NAME, getPluginMetadata().getDatasetName());
     extraParameters
-            .put(PluginParameterKeys.METIS_DATASET_COUNTRY, getPluginMetadata().getCountry());
+        .put(PluginParameterKeys.METIS_DATASET_COUNTRY, getPluginMetadata().getCountry());
     extraParameters
-            .put(PluginParameterKeys.METIS_DATASET_LANGUAGE, getPluginMetadata().getLanguage());
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
+        .put(PluginParameterKeys.METIS_DATASET_LANGUAGE, getPluginMetadata().getLanguage());
+    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
   }
 }

@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import java.util.Map;
 
 /**
@@ -45,12 +46,12 @@ public class ValidationExternalPlugin extends
   }
 
   @Override
-  DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
+  <T extends ProcessingEngineTask> T prepareExternalTask(String datasetId, ProcessingEngineTaskSettings<T> processingEngineTaskSettings) {
     String urlOfSchemasZip = getPluginMetadata().getUrlOfSchemasZip();
     String schemaRootPath = getPluginMetadata().getSchemaRootPath();
     String schematronRootPath = getPluginMetadata().getSchematronRootPath();
     Map<String, String> extraParameters = createParametersForValidationExternal(urlOfSchemasZip,
         schemaRootPath, schematronRootPath);
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
+    return createExternalTaskForProcessPlugin(processingEngineTaskSettings,  extraParameters);
   }
 }

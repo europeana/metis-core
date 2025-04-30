@@ -1,14 +1,9 @@
 package eu.europeana.metis.core.service;
 
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.client.uis.rest.CloudException;
 import eu.europeana.cloud.common.model.File;
 import eu.europeana.cloud.common.model.Representation;
 import eu.europeana.cloud.common.model.Revision;
-import eu.europeana.cloud.common.model.dps.NodeReport;
-import eu.europeana.cloud.common.model.dps.StatisticsReport;
-import eu.europeana.cloud.common.model.dps.SubTaskInfo;
-import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.response.CloudTagsResponse;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
@@ -18,13 +13,18 @@ import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
+import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeReport;
+import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
+import eu.europeana.metis.core.engine.base.report.item.content.ContentStatisticsReport;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
-import eu.europeana.metis.core.util.EcloudClients;
+import eu.europeana.metis.core.util.ExternalEngineClients;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
@@ -51,7 +51,7 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
  */
-public class ProxiesService {
+public class ProxiesService<T extends ProcessingEngineTask> {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
@@ -60,26 +60,27 @@ public class ProxiesService {
   private final DatasetDao datasetDao;
   private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
-  private final EcloudClients ecloudClients;
+  private final ExternalEngineClients<T> externalEngineClients;
   private final String ecloudProvider;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
    * Constructor with required parameters.
    *
-   * @param ecloudClients the ecloud components
+   * @param externalEngineClients the ecloud components
    * @param workflowExecutionDao {@link WorkflowExecutionDao}
    * @param ecloudProvider the ecloud provider
    * @param datasetDao the Dao instance to access the Dataset database
    */
-  public ProxiesService(EcloudClients ecloudClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
+  public ProxiesService(ExternalEngineClients<T> externalEngineClients, String ecloudProvider,
+      WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao) {
-    this(ecloudClients, ecloudProvider, workflowExecutionDao, datasetDao, new ProxiesHelper());
+    this(externalEngineClients, ecloudProvider, workflowExecutionDao, datasetDao, new ProxiesHelper());
   }
 
-  ProxiesService(EcloudClients ecloudClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
+  ProxiesService(ExternalEngineClients<T> externalEngineClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
-    this.ecloudClients = ecloudClients;
+    this.externalEngineClients = externalEngineClients;
     this.ecloudProvider = ecloudProvider;
     this.workflowExecutionDao = workflowExecutionDao;
     this.datasetDao = datasetDao;
@@ -103,22 +104,13 @@ public class ProxiesService {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public List<SubTaskInfo> getExternalTaskLogs(String topologyName, long externalTaskId, int from, int to)
+  public List<DataItemStatus> getExternalTaskLogs(String topologyName, long externalTaskId, int from, int to)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    List<SubTaskInfo> detailedTaskReportBetweenChunks;
-    try {
-      detailedTaskReportBetweenChunks =
-          ecloudClients.dpsClient().getDetailedTaskReportBetweenChunks(topologyName, externalTaskId, from, to);
-    } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
-          "Getting the task detailed logs failed. topologyName: %s, externalTaskId: %s, from: %s, to: %s",
-          topologyName, externalTaskId, from, to), e);
-    }
-    for (SubTaskInfo subTaskInfo : detailedTaskReportBetweenChunks) { // Hide sensitive information
-      subTaskInfo.setAdditionalInformations(null);
-    }
-    return detailedTaskReportBetweenChunks;
+    List<DataItemStatus> dataItemStatuses;
+    dataItemStatuses = externalEngineClients.processingEngineTaskClient()
+                                            .getExternalRecordStatuses(topologyName, externalTaskId, from, to);
+    return dataItemStatuses;
   }
 
   /**
@@ -126,8 +118,7 @@ public class ProxiesService {
    *
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
-   * @return true if final report available, false if not or ecloud response {@link jakarta.ws.rs.core.Response.Status)} is not
-   * OK, based on {@link DpsClient#checkIfErrorReportExists}
+   * @return true if final report available, false otherwise
    * @throws GenericMetisException can be one of:
    * <ul>
    * <li>{@link NoWorkflowExecutionFoundException} if no
@@ -137,13 +128,7 @@ public class ProxiesService {
    */
   public boolean existsExternalTaskReport(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    try {
-      return ecloudClients.dpsClient().checkIfErrorReportExists(topologyName, externalTaskId);
-    } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
-          "Checking if the error report exists failed. topologyName: %s, externalTaskId: %s",
-          topologyName, externalTaskId), e);
-    }
+    return externalEngineClients.processingEngineTaskClient().hasErrorReport(topologyName, externalTaskId);
   }
 
   /**
@@ -162,19 +147,10 @@ public class ProxiesService {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public TaskErrorsInfo getExternalTaskReport(String topologyName, long externalTaskId, int idsPerError)
+  public ProcessingEngineTaskErrors getExternalTaskReport(String topologyName, long externalTaskId, int idsPerError)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    TaskErrorsInfo taskErrorsInfo;
-    try {
-      taskErrorsInfo =
-          ecloudClients.dpsClient().getTaskErrorsReport(topologyName, externalTaskId, null, idsPerError);
-    } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
-          "Getting the task error report failed. topologyName: %s, externalTaskId: %s, idsPerError: %s",
-          topologyName, externalTaskId, idsPerError), e);
-    }
-    return taskErrorsInfo;
+    return externalEngineClients.processingEngineTaskClient().getTaskErrorReport(topologyName, externalTaskId, null, idsPerError);
   }
 
   /**
@@ -193,19 +169,9 @@ public class ProxiesService {
    */
   public RecordStatistics getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-
-    // Obtain the report from eCloud.
-    final StatisticsReport report;
-    try {
-      report = ecloudClients.dpsClient().getTaskStatisticsReport(topologyName, externalTaskId);
-    } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
-          "Getting the task statistics failed. topologyName: %s, externalTaskId: %s",
-          topologyName, externalTaskId), e);
-    }
-
-    // Convert them and done.
-    return proxiesHelper.compileRecordStatistics(report);
+    final ContentStatisticsReport contentStatisticsReport;
+    contentStatisticsReport = externalEngineClients.processingEngineTaskClient().getTaskStatisticsReport(topologyName, externalTaskId);
+    return proxiesHelper.compileRecordStatisticsExternal(contentStatisticsReport);
   }
 
   /**
@@ -227,19 +193,9 @@ public class ProxiesService {
   public NodePathStatistics getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-
-    // Obtain the reports from eCloud.
-    final List<NodeReport> nodeReports;
-    try {
-      nodeReports = ecloudClients.dpsClient().getElementReport(topologyName, externalTaskId, nodePath);
-    } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
-          "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
-          topologyName, externalTaskId), e);
-    }
-
-    // Convert them and done.
-    return proxiesHelper.compileNodePathStatistics(nodePath, nodeReports);
+    final List<ContentNodeReport> nodeReports;
+    nodeReports = externalEngineClients.processingEngineTaskClient().getElementReport(topologyName, externalTaskId, nodePath);
+    return proxiesHelper.compileNodePathStatisticsExternal(nodePath, nodeReports);
   }
 
   private String getDatasetIdFromExternalTaskId(long externalTaskId)
@@ -288,9 +244,11 @@ public class ProxiesService {
         .format(executionAndPlugin.getRight().getStartedDate());
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
     try {
-      revisionsWithDeletedFlagSetToFalse = ecloudClients.ecloudDataSetServiceClient().getRevisionsWithDeletedFlagSetToFalse(
-          ecloudProvider, datasetId, representationName, revisionName, ecloudProvider,
-          revisionTimestamp, numberOfRecords);
+      revisionsWithDeletedFlagSetToFalse = externalEngineClients.ecloudDataSetServiceClient()
+                                                                .getRevisionsWithDeletedFlagSetToFalse(
+                                                                    ecloudProvider, datasetId, representationName, revisionName,
+                                                                    ecloudProvider,
+                                                                    revisionTimestamp, numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(
           "Getting record list with file content failed. workflowExecutionId: %s, pluginType: %s",
@@ -425,7 +383,7 @@ public class ProxiesService {
       final String normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
                                                      .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
       if (normalizedRecordId != null) {
-        ecloudId = ecloudClients.uisClient().getCloudId(ecloudProvider, normalizedRecordId).getId();
+        ecloudId = externalEngineClients.uisClient().getCloudId(ecloudProvider, normalizedRecordId).getId();
       }
     } catch (BadContentException e) {
       // Normalization failed. Check whether the ID is already an eCloud ID.
@@ -448,7 +406,7 @@ public class ProxiesService {
 
   private String verifyExistenceOfEcloudId(String potentialEcloudId) {
     try {
-      return ecloudClients.uisClient().getRecordId(potentialEcloudId).getResults().isEmpty() ? null
+      return externalEngineClients.uisClient().getRecordId(potentialEcloudId).getResults().isEmpty() ? null
           : potentialEcloudId;
     } catch (CloudException e) {
       // TODO currently we can't distinguish between a connection issue and a non-existing eCloud ID.
@@ -471,7 +429,8 @@ public class ProxiesService {
     datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());
 
     // Get the plugin for which to get the records and return.
-    final MetisPlugin plugin = workflowExecutionHelper.getMetisPluginWithType(workflowExecution, pluginType.toPluginType()).orElse(null);
+    final MetisPlugin plugin = workflowExecutionHelper.getMetisPluginWithType(workflowExecution, pluginType.toPluginType())
+                                                      .orElse(null);
     if (plugin instanceof ExecutablePlugin executablePlugin) {
       return new ImmutablePair<>(workflowExecution, executablePlugin);
     }
@@ -485,7 +444,7 @@ public class ProxiesService {
     try {
       final Revision revision = new Revision(plugin.getPluginType().name(), ecloudProvider,
           plugin.getStartedDate());
-      representations = ecloudClients.recordServiceClient().getRepresentationsByRevision(ecloudId,
+      representations = externalEngineClients.recordServiceClient().getRepresentationsByRevision(ecloudId,
           MetisPlugin.getRepresentationName(), revision);
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(
@@ -509,7 +468,7 @@ public class ProxiesService {
 
     // Obtain the file contents belonging to this representation version.
     try {
-      final InputStream inputStream = ecloudClients.fileServiceClient().getFile(file.getContentUri().toString());
+      final InputStream inputStream = externalEngineClients.fileServiceClient().getFile(file.getContentUri().toString());
       return new Record(ecloudId, IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(
