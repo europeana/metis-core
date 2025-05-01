@@ -7,7 +7,6 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
@@ -32,10 +31,6 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
   private int periodOfNoProcessedRecordsChangeInMinutes = DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES; //Use setter otherwise default
 
   private String rabbitmqQueueName; //Initialize with setter
-  private String ecloudBaseUrl; //Initialize with setter
-  private String ecloudProvider; //Initialize with setter
-  private String metisCoreBaseUrl; //Initialize with setter
-  private ThrottlingValues throttlingValues; //Initialize with setter
 
   /**
    * Autowired constructor.
@@ -80,22 +75,6 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
     this.rabbitmqQueueName = rabbitmqQueueName;
   }
 
-  public void setEcloudBaseUrl(String ecloudBaseUrl) {
-    this.ecloudBaseUrl = ecloudBaseUrl;
-  }
-
-  public void setEcloudProvider(String ecloudProvider) {
-    this.ecloudProvider = ecloudProvider;
-  }
-
-  public void setMetisCoreBaseUrl(String metisCoreBaseUrl) {
-    this.metisCoreBaseUrl = metisCoreBaseUrl;
-  }
-
-  public void setThrottlingValues(ThrottlingValues throttlingValues){
-    this.throttlingValues = throttlingValues;
-  }
-
   public void setDpsMonitorCheckIntervalInSecs(int dpsMonitorCheckIntervalInSecs) {
     this.dpsMonitorCheckIntervalInSecs = dpsMonitorCheckIntervalInSecs;
   }
@@ -113,25 +92,5 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
   @Override
   public int getPeriodOfNoProcessedRecordsChangeInMinutes() {
     return periodOfNoProcessedRecordsChangeInMinutes;
-  }
-
-  @Override
-  public String getEcloudBaseUrl() {
-    return ecloudBaseUrl;
-  }
-
-  @Override
-  public String getEcloudProvider() {
-    return ecloudProvider;
-  }
-
-  @Override
-  public String getMetisCoreBaseUrl() {
-    return metisCoreBaseUrl;
-  }
-
-  @Override
-  public ThrottlingValues getThrottlingValues() {
-    return throttlingValues;
   }
 }

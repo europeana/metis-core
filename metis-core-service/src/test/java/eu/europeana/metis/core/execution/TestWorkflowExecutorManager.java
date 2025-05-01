@@ -52,8 +52,6 @@ class TestWorkflowExecutorManager {
         rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
     workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(5);
-    workflowExecutorManager.setEcloudBaseUrl("http://universe.space");
-    workflowExecutorManager.setEcloudProvider("providerExample");
     assertEquals(5, workflowExecutorManager.getDpsMonitorCheckIntervalInSecs());
   }
 

@@ -287,7 +287,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
         if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
           plugin.setStartedDate(startDateToUse);
         }
-        plugin.execute(workflowExecution.getDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata), processingEngineTaskClient);
+        plugin.execute(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata), processingEngineTaskClient);
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "

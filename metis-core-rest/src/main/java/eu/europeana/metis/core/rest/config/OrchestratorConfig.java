@@ -233,10 +233,6 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
     workflowExecutorManager.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
-    workflowExecutorManager.setEcloudBaseUrl(ecloudConfigurationProperties.getBaseUrl());
-    workflowExecutorManager.setEcloudProvider(ecloudConfigurationProperties.getProvider());
-    workflowExecutorManager.setMetisCoreBaseUrl(metisCoreConfigurationProperties.baseUrl());
-    workflowExecutorManager.setThrottlingValues(getThrottlingValues(metisCoreConfigurationProperties));
     return workflowExecutorManager;
   }
 
