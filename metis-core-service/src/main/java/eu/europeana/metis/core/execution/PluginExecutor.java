@@ -240,5 +240,4 @@ public class PluginExecutor {
     };
     return pluginParameters;
   }
-
 }

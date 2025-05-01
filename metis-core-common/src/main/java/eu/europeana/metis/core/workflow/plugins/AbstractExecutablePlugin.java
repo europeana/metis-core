@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import eu.europeana.cloud.common.model.dps.TaskInfo;
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
@@ -9,7 +8,6 @@ import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgr
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.exception.ExternalTaskException;
-import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,26 +75,11 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
   public void setExecutionProgress(ExecutionProgress executionProgress) {
     this.executionProgress = executionProgress;
   }
-
-  @Override
-  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  MonitorResult monitor(ProcessingEngineTaskClient<S, T> processingEngineTaskClient)
-      throws ExternalTaskException, UnrecoverableExternalTaskException {
-    LOGGER.info("Requesting progress information for externalTaskId: {}", getExternalTaskId());
-    ProcessingEngineTaskProgress processingEngineTaskProgress = processingEngineTaskClient.getTaskProgress(getTopologyName(),
-        Long.parseLong(getExternalTaskId()));
-    LOGGER.info("Task information received for externalTaskId: {}", getExternalTaskId());
-    updateExecutionProgress(processingEngineTaskProgress);
-    TaskState taskState = TaskState.valueOf(processingEngineTaskProgress.getExternalTaskState().name());
-    return new MonitorResult(taskState, processingEngineTaskProgress.getExternalTaskState().getDefaultMessage());
-  }
-
   /**
    * Update this object's {@link ExecutionProgress} based on the received {@link TaskInfo}.
    *
    * @param taskInfo {@link TaskInfo}
    */
-  //OLD
   public static ProcessingEngineTaskProgress getExternalTaskProgress(TaskInfo taskInfo) {
     ProcessingEngineTaskProgress processingEngineTaskProgress = new ProcessingEngineTaskProgress();
     processingEngineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
@@ -106,67 +89,10 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     processingEngineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
     processingEngineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
     ProcessingEngineTaskState processingEngineTaskState = ProcessingEngineTaskState.valueOf(taskInfo.getState().name());
-    processingEngineTaskProgress.setExternalTaskState(processingEngineTaskState);
+    processingEngineTaskProgress.setProcessingEngineTaskStateInfo(taskInfo.getStateDescription());
+    processingEngineTaskProgress.setProcessingEngineTaskState(processingEngineTaskState);
     return processingEngineTaskProgress;
   }
-
-  //NEW
-  void updateExecutionProgress(ProcessingEngineTaskProgress processingEngineTaskProgress) {
-
-    // Calculate the various counts.
-    // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
-    int expectedRecordCount;
-    int processedRecordCount;
-    int deletedRecordCount;
-
-    switch (getPluginMetadata()) {
-      case
-          AbstractHarvestPluginMetadata abstractHarvestPluginMetadata when abstractHarvestPluginMetadata.isIncrementalHarvest() -> {
-        //Incremental Harvest
-        //deletedRecordsCount never used
-        //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords() + processingEngineTaskProgress.getIgnoredRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
-      }
-      case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata -> {
-        //Full Harvest
-        //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-        //deletedRecordsCount is always 0
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
-      }
-      case AbstractIndexPluginMetadata abstractIndexPluginMetadata when !abstractIndexPluginMetadata.isIncrementalIndexing() -> {
-        //Full Indexing
-        //ignoredRecordsCount never used
-        //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-        //The deletedRecordsCount is always 0
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
-      }
-      case null, default -> {
-        //Other plugins including incremental indexing
-        //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords() - processingEngineTaskProgress.getDeletedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
-      }
-    }
-
-    int errorCount = processingEngineTaskProgress.getProcessedErrors() + processingEngineTaskProgress.getDeletedErrors();
-    // Update the execution progress.
-    getExecutionProgress().setExpectedRecords(expectedRecordCount);
-    getExecutionProgress().setProcessedRecords(processedRecordCount);
-    getExecutionProgress().setDeletedRecords(deletedRecordCount);
-    getExecutionProgress().setIgnoredRecords(processingEngineTaskProgress.getIgnoredRecords());
-    getExecutionProgress().setErrors(errorCount);
-    getExecutionProgress().recalculateProgressPercentage();
-    TaskState taskState = TaskState.valueOf(processingEngineTaskProgress.getExternalTaskState().name());
-    getExecutionProgress().setStatus(taskState);
-  }
-
 
   @Override
   public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>

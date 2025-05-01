@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -23,17 +23,16 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin.MonitorResult;
-import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import java.io.IOException;
@@ -192,12 +191,6 @@ class TestQueueConsumer {
 
   @Test
   void handleDeliveryInterruptWhilePolling() throws Exception {
-
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-    ExecutionProgress processedExecutionProgress = new ExecutionProgress();
-    processedExecutionProgress.setStatus(TaskState.PROCESSED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin1 = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata1 = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin1.setPluginMetadata(oaipmhHarvestPluginMetadata1);
@@ -259,12 +252,18 @@ class TestQueueConsumer {
         .thenReturn(new ImmutablePair<>(workflowExecution3, false));
     doNothing().when(workflowExecutionDao).updateMonitorInformation(any(WorkflowExecution.class));
     when(workflowExecutionDao.isCancelling(any(ObjectId.class))).thenReturn(false);
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin1).monitor(any(ProcessingEngineTaskClient.class));
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin2).monitor(any(ProcessingEngineTaskClient.class));
+
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
+    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
+    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin1.getTopologyName()), anyLong()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
+    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin2.getTopologyName()), anyLong()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
+
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(any(WorkflowExecution.class));
     when(workflowExecutionDao.update(any(WorkflowExecution.class))).thenReturn(anyString());
 

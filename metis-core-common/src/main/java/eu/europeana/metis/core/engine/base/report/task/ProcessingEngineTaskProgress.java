@@ -25,6 +25,8 @@ public class ProcessingEngineTaskProgress {
   // The current state of the task.
   private ProcessingEngineTaskState processingEngineTaskState;
 
+  private String processingEngineTaskStateInfo;
+
   public int getExpectedRecords() {
     return expectedRecords;
   }
@@ -73,11 +75,19 @@ public class ProcessingEngineTaskProgress {
     this.deletedErrors = deletedErrors;
   }
 
-  public ProcessingEngineTaskState getExternalTaskState() {
+  public ProcessingEngineTaskState getProcessingEngineTaskState() {
     return processingEngineTaskState;
   }
 
-  public void setExternalTaskState(ProcessingEngineTaskState processingEngineTaskState) {
+  public void setProcessingEngineTaskState(ProcessingEngineTaskState processingEngineTaskState) {
     this.processingEngineTaskState = processingEngineTaskState;
+  }
+
+  public String getProcessingEngineTaskStateInfo() {
+    return processingEngineTaskStateInfo;
+  }
+
+  public void setProcessingEngineTaskStateInfo(String processingEngineTaskStateInfo) {
+    this.processingEngineTaskStateInfo = processingEngineTaskStateInfo;
   }
 }

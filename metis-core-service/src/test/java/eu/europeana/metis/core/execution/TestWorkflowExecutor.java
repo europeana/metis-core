@@ -3,13 +3,13 @@ package eu.europeana.metis.core.execution;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -17,18 +17,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin.MonitorResult;
-import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
@@ -90,11 +89,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue() throws Exception {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-    ExecutionProgress processedExecutionProgress = new ExecutionProgress();
-    processedExecutionProgress.setStatus(TaskState.PROCESSED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -108,11 +102,14 @@ class TestWorkflowExecutor {
     workflowExecution.setStartedDate(new Date());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
-    doReturn(currentlyProcessingExecutionProgress).doReturn(processedExecutionProgress)
-                                                  .when(oaipmhHarvestPlugin).getExecutionProgress();
+
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
+    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
@@ -140,11 +137,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_DROPPEDExeternalTaskButNotCancelled() throws Exception {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-    ExecutionProgress droppedExecutionProgress = new ExecutionProgress();
-    droppedExecutionProgress.setStatus(TaskState.DROPPED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -157,12 +149,13 @@ class TestWorkflowExecutor {
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setStartedDate(new Date());
 
-    doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(droppedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
-    doReturn(currentlyProcessingExecutionProgress).doReturn(droppedExecutionProgress)
-                                                  .when(oaipmhHarvestPlugin).getExecutionProgress();
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    ProcessingEngineTaskProgress droppedProgress = new ProcessingEngineTaskProgress();
+    droppedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.DROPPED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(droppedProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
@@ -191,9 +184,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_ConsecutiveMonitorFailures() throws Exception {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -208,13 +198,14 @@ class TestWorkflowExecutor {
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
-    Throwable[] dpsException100Times = new Throwable[100];
-    Arrays.setAll(dpsException100Times, index -> new ExternalTaskException("Some error"));
-    doThrow(dpsException100Times)
-        .doReturn(new MonitorResult(TaskState.PROCESSED, null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
+    Throwable[] externalTaskException100Times = new Throwable[100];
+    Arrays.setAll(externalTaskException100Times, index -> new ExternalTaskException("Some error"));
 
-    doReturn(currentlyProcessingExecutionProgress).when(oaipmhHarvestPlugin).getExecutionProgress();
+    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
+    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenThrow(externalTaskException100Times)
+        .thenReturn(processedProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
@@ -237,9 +228,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_MonitorFailsOnUnrecoverableExternalTaskException() throws Exception {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -253,9 +241,9 @@ class TestWorkflowExecutor {
     workflowExecution.setStartedDate(new Date());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
-    doThrow(new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error")))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
-    doReturn(currentlyProcessingExecutionProgress).when(oaipmhHarvestPlugin).getExecutionProgress();
+
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenThrow(new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error")));
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
@@ -279,11 +267,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_ReachPendingState_and_then_finish() throws Exception {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-    ExecutionProgress processedExecutionProgress = new ExecutionProgress();
-    processedExecutionProgress.setStatus(TaskState.PROCESSED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -301,12 +284,15 @@ class TestWorkflowExecutor {
         new HttpServerErrorException(HttpStatus.BAD_GATEWAY));
     final ExternalTaskException[] externalTaskExceptions = new ExternalTaskException[WorkflowExecutor.MAX_CANCEL_OR_MONITOR_FAILURES];
     Arrays.fill(externalTaskExceptions, exception);
-    doThrow(externalTaskExceptions)
-        .doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
-    doReturn(currentlyProcessingExecutionProgress).doReturn(processedExecutionProgress)
-                                                  .when(oaipmhHarvestPlugin).getExecutionProgress();
+
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
+    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenThrow(externalTaskExceptions)
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
@@ -337,11 +323,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValueCancellingState() throws Exception {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-    ExecutionProgress processedExecutionProgress = new ExecutionProgress();
-    processedExecutionProgress.setStatus(TaskState.PROCESSED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -355,11 +336,15 @@ class TestWorkflowExecutor {
     workflowExecution.setStartedDate(new Date());
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
-    doReturn(currentlyProcessingExecutionProgress).doReturn(processedExecutionProgress)
-                                                  .when(oaipmhHarvestPlugin).getExecutionProgress();
+
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
+    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
+
     doNothing().when(oaipmhHarvestPlugin)
                .cancel(processingEngineTaskClient, SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
@@ -385,9 +370,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callExecutionInRUNNINGState() throws ExternalTaskException, UnrecoverableExternalTaskException {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.FINISHED);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
@@ -403,16 +385,21 @@ class TestWorkflowExecutor {
     workflowExecution.setStartedDate(oaipmhHarvestPlugin.getStartedDate());
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
-    when(oaipmhHarvestPlugin.getExecutionProgress())
-        .thenReturn(currentlyProcessingExecutionProgress);
+
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(currentlyProcessingProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
-    when(oaipmhHarvestPlugin.monitor(processingEngineTaskClient))
-        .thenReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .thenReturn(new MonitorResult(TaskState.PROCESSED, null));
+
+    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
+    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
+
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
@@ -431,9 +418,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callCancellingStateINQUEUE() throws ExternalTaskException, UnrecoverableExternalTaskException {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.DROPPED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -450,8 +434,12 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
     doNothing().when(oaipmhHarvestPlugin)
                .cancel(processingEngineTaskClient, SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
+
+    ProcessingEngineTaskProgress droppedProgress = new ProcessingEngineTaskProgress();
+    droppedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.DROPPED);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(droppedProgress);
+
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
         .thenReturn(workflowExecution);
 
@@ -470,9 +458,6 @@ class TestWorkflowExecutor {
 
   @Test
   void callCancellingStateRUNNING() throws ExternalTaskException, UnrecoverableExternalTaskException {
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.DROPPED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
@@ -491,8 +476,11 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
     doNothing().when(oaipmhHarvestPlugin)
                .cancel(processingEngineTaskClient, SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin).monitor(processingEngineTaskClient);
+    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
+    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
+    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+        .thenReturn(currentlyProcessingProgress);
+
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
         .thenReturn(workflowExecution);
 

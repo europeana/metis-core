@@ -1,13 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.europeana.metis.core.common.TestSerializationUtils;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Objects;
-import org.junit.jupiter.api.Test;
-
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DELETED_RECORDS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DELETED_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.ERRORS;
@@ -27,6 +19,14 @@ import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUt
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.europeana.metis.core.common.TestSerializationUtils;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
 class TestExecutionProgress {
 
@@ -76,7 +76,7 @@ class TestExecutionProgress {
     TestSerializationUtils.assertFieldEquals(jsonOutput, IGNORED_RECORDS, IGNORED_RECORDS_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, DELETED_RECORDS, DELETED_RECORDS_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, ERRORS, ERRORS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, STATUS, STATUS_VALUE.name());
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STATUS, STATUS_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
   }
 

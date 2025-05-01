@@ -1,11 +1,9 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.exception.ExternalTaskException;
-import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 
 /**
  * This interface represents plugins that are executable by Metis.
@@ -40,13 +38,6 @@ public interface ExecutablePlugin extends MetisPlugin {
   String getTopologyName();
 
   <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  MonitorResult monitor(ProcessingEngineTaskClient<S, T> processingEngineTaskClient) throws ExternalTaskException, UnrecoverableExternalTaskException;
-
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
   void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById) throws ExternalTaskException;
 
-  /**
-   * This object represents the result of a monitor call. It contains the information that monitoring processes need.
-   */
-    record MonitorResult(TaskState taskState, String taskInfo) {}
 }

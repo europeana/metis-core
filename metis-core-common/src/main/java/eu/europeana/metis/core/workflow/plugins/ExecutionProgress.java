@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.workflow.plugins;
 
 import dev.morphia.annotations.Entity;
-import eu.europeana.cloud.common.model.dps.TaskState;
 
 /**
  * Contains execution progress information of a task.
@@ -29,7 +28,7 @@ public class ExecutionProgress {
   private int errors;
 
   // The current state of the task.
-  private TaskState status;
+  private String status;
 
   // TODO: 01/11/2021 The correct values should be updated with a script for the latest preview and publish executions, during release
   // The total records in the database, not used to capture progress but the final result(post process check)
@@ -83,11 +82,11 @@ public class ExecutionProgress {
     this.errors = errors;
   }
 
-  public TaskState getStatus() {
+  public String getStatus() {
     return status;
   }
 
-  public void setStatus(TaskState status) {
+  public void setStatus(String status) {
     this.status = status;
   }
 

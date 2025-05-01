@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.workflow.execution;
 
-import eu.europeana.cloud.common.model.dps.TaskState;
-
 /**
  * This class contains executionProgress information on a plugin's execution.
  */
@@ -13,7 +11,7 @@ public class ExecutionProgressDTO {
   private int ignoredRecords;
   private int deletedRecords;
   private int errors;
-  private TaskState status;
+  private String status;
   private int totalDatabaseRecords;
 
   public ExecutionProgressDTO() {
@@ -68,11 +66,11 @@ public class ExecutionProgressDTO {
     this.errors = errors;
   }
 
-  public TaskState getStatus() {
+  public String getStatus() {
     return status;
   }
 
-  public void setStatus(TaskState status) {
+  public void setStatus(String status) {
     this.status = status;
   }
 
