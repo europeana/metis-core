@@ -1,14 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.PluginParameterKeys;
-import eu.europeana.metis.core.common.RecordIdUtils;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import java.util.HashMap;
-import java.util.Map;
-import org.springframework.util.CollectionUtils;
-
 /**
  * Depublish Plugin.
  *
@@ -46,28 +37,5 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
   @Override
   public String getTopologyName() {
     return topologyName;
-  }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    Map<String, String> extraParameters = new HashMap<>();
-    extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
-    //Do set the records ids parameter only if record ids depublication enabled and there are record ids
-    if (!getPluginMetadata().isDatasetDepublish()) {
-      if (CollectionUtils.isEmpty(getPluginMetadata().getRecordIdsToDepublish())) {
-        throw new IllegalStateException(
-            "Requested record depublication but there are no records ids for depublication in the db");
-      } else {
-        final String recordIdList = String.join(",", RecordIdUtils
-            .composeFullRecordIds(datasetId, getPluginMetadata().getRecordIdsToDepublish()));
-        extraParameters.put("RECORD_IDS_TO_DEPUBLISH", recordIdList);
-      }
-    }
-    extraParameters.put("DEPUBLICATION_REASON", getPluginMetadata().getDepublicationReason().name());
-
-    T externalTask = processingEngineTaskClient.getTaskCreator().get();
-    externalTask.setParameters(extraParameters);
-    return externalTask;
   }
 }

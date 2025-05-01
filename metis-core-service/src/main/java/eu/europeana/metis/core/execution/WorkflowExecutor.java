@@ -45,17 +45,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that
- * WorkflowExecution given to it and will continue monitoring and updating its progress until it
- * ends either by user interaction or by the end of the Workflow. When the WorkflowExecution is
- * received there is a chance that the execution is already being handled from another
- * WorkflowExecutor in another instance and if that is the case the WorkflowExecution will be
- * dropped.
+ * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that WorkflowExecution given to it
+ * and will continue monitoring and updating its progress until it ends either by user interaction or by the end of the Workflow.
+ * When the WorkflowExecution is received there is a chance that the execution is already being handled from another
+ * WorkflowExecutor in another instance and if that is the case the WorkflowExecution will be dropped.
  *
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-05-29
  */
-public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> implements Callable<Pair<WorkflowExecution, Boolean>> {
+public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> implements
+    Callable<Pair<WorkflowExecution, Boolean>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
@@ -103,7 +102,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
         workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
         // Make sure the cancelledBy information is not lost
         String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString())
-            .getCancelledBy();
+                                                 .getCancelledBy();
         workflowExecution.setCancelledBy(cancelledBy);
         LOGGER.info("workflowExecutionId: {} - Cancelled running workflow execution",
             workflowExecution.getId());
@@ -129,8 +128,8 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
   }
 
   /**
-   * Will determine from which plugin of the workflow to start execution from and will iterate
-   * through the plugins of the workflow and run them one by one.
+   * Will determine from which plugin of the workflow to start execution from and will iterate through the plugins of the workflow
+   * and run them one by one.
    * <p>It returns a {@link Pair} of a finished {@link Date} and a {@link Boolean} flag.
    * <ul>
    *   <li>
@@ -246,12 +245,11 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
   }
 
   /**
-   * It will prepare the plugin, request the external execution and will periodically monitor,
-   * update the plugin's progress and at the end finalize the plugin's status and finished date.
+   * It will prepare the plugin, request the external execution and will periodically monitor, update the plugin's progress and at
+   * the end finalize the plugin's status and finished date.
    *
    * @param plugin the plugin to run
-   * @param startDateToUse The date that should be used as start date (if the plugin is not already
-   * running).
+   * @param startDateToUse The date that should be used as start date (if the plugin is not already running).
    * @param datasetId The dataset ID.
    */
   private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse,
@@ -275,10 +273,10 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
       // Compute base harvesting plugin information. We can't do this when creating the workflow
       // execution: the harvest might be part of this very workflow.
       if (DataEvolutionUtils.getIndexPluginGroup()
-              .contains(plugin.getPluginMetadata().getExecutablePluginType())) {
+                            .contains(plugin.getPluginMetadata().getExecutablePluginType())) {
         final PluginWithExecutionId<ExecutablePlugin> rootAncestor = new DataEvolutionUtils(
-                workflowExecutionDao).getRootAncestor(
-                new PluginWithExecutionId<>(workflowExecution, plugin));
+            workflowExecutionDao).getRootAncestor(
+            new PluginWithExecutionId<>(workflowExecution, plugin));
         setHarvestParametersToIndexingPlugin(plugin, rootAncestor.getPlugin());
       }
 
@@ -287,7 +285,11 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
         if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
           plugin.setStartedDate(startDateToUse);
         }
-        plugin.execute(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata), processingEngineTaskClient);
+
+        // Execution of plugin
+        PluginExecutor pluginExecutor = new PluginExecutor(plugin);
+        pluginExecutor.execute(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata), processingEngineTaskClient);
+        //End execution plugin
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
@@ -307,14 +309,14 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
   }
 
   private void setHarvestParametersToIndexingPlugin(ExecutablePlugin indexingPlugin,
-          ExecutablePlugin harvestPlugin) {
+      ExecutablePlugin harvestPlugin) {
 
     // Check the harvesting types
     if (!DataEvolutionUtils.getHarvestPluginGroup()
-            .contains(harvestPlugin.getPluginMetadata().getExecutablePluginType())) {
+                           .contains(harvestPlugin.getPluginMetadata().getExecutablePluginType())) {
       throw new IllegalStateException(String.format(
-              "workflowExecutionId: %s, pluginId: %s - Found plugin root that is not a harvesting plugin.",
-              workflowExecution.getId(), indexingPlugin.getId()));
+          "workflowExecutionId: %s, pluginId: %s - Found plugin root that is not a harvesting plugin.",
+          workflowExecution.getId(), indexingPlugin.getId()));
     }
 
     // get the information from the harvesting plugin.
@@ -342,9 +344,10 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
     final WorkflowExecution previousExecution = workflowExecutionDao
         .getByTaskExecution(predecessorPlugin, workflowExecution.getDatasetId());
     return Optional.ofNullable(previousExecution)
-        .flatMap(execution -> workflowExecutionHelper.getMetisPluginWithType(execution, predecessorPlugin.getPluginType()))
-        .map(this::expectExecutablePlugin).map(AbstractExecutablePlugin::getExternalTaskId)
-        .orElse(null);
+                   .flatMap(
+                       execution -> workflowExecutionHelper.getMetisPluginWithType(execution, predecessorPlugin.getPluginType()))
+                   .map(this::expectExecutablePlugin).map(AbstractExecutablePlugin::getExternalTaskId)
+                   .orElse(null);
   }
 
   private AbstractExecutablePlugin<?> expectExecutablePlugin(AbstractMetisPlugin<?> plugin) {

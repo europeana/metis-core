@@ -45,10 +45,4 @@ public class IndexToPreviewPlugin extends AbstractExecutablePlugin<IndexToPrevie
   public IndexDatabase getTargetIndexingDatabase() {
     return IndexDatabase.PREVIEW;
   }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    return createExternalTaskForIndexPlugin(datasetId, previousTaskId, processingEngineTaskClient, getPluginMetadata(), getTargetIndexingDatabase().name());
-  }
 }

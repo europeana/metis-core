@@ -1,8 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 
 /**
@@ -44,12 +41,5 @@ public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublis
    */
   public IndexDatabase getTargetIndexingDatabase() {
     return IndexDatabase.PUBLISH;
-  }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    return createExternalTaskForIndexPlugin(datasetId, previousTaskId, processingEngineTaskClient, getPluginMetadata(),
-        getTargetIndexingDatabase().name());
   }
 }

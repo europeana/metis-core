@@ -1,12 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.PluginParameterKeys;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * HTTP Harvest Plugin.
  */
@@ -38,14 +31,5 @@ public class HTTPHarvestPlugin extends AbstractExecutablePlugin<HTTPHarvestPlugi
   @Override
   public String getTopologyName() {
     return topologyName;
-  }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    String targetUrl = getPluginMetadata().getUrl();
-    Map<String, String> parameters = new HashMap<>();
-    parameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
-    return createExternalTaskForHarvestPlugin(datasetId, processingEngineTaskClient,  parameters, targetUrl, getPluginMetadata().isIncrementalHarvest());
   }
 }

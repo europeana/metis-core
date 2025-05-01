@@ -1,10 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import java.util.Map;
-
 /**
  * Validation Internal Plugin.
  *
@@ -42,16 +37,5 @@ public class ValidationInternalPlugin extends AbstractExecutablePlugin<Validatio
   @Override
   public String getTopologyName() {
     return topologyName;
-  }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    String urlOfSchemasZip = getPluginMetadata().getUrlOfSchemasZip();
-    String schemaRootPath = getPluginMetadata().getSchemaRootPath();
-    String schematronRootPath = getPluginMetadata().getSchematronRootPath();
-    Map<String, String> extraParameters = createParametersForValidationInternal(urlOfSchemasZip,
-        schemaRootPath, schematronRootPath);
-    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  extraParameters);
   }
 }

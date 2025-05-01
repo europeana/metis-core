@@ -139,46 +139,6 @@ class TestWorkflowExecutor {
   }
 
   @Test
-  void callNonMockedFieldValue_ExceptionWhenExecuteIsCalled() throws Exception {
-
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
-    OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
-    oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
-    abstractMetisPlugins.add(oaipmhHarvestPlugin);
-
-    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    workflowExecution.setId(new ObjectId());
-    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setMetisPlugins(abstractMetisPlugins);
-
-    doThrow(new ExternalTaskException("Some error"))
-        .when(oaipmhHarvestPlugin)
-        .execute(any(String.class), any(String.class), any(ProcessingEngineTaskClient.class));
-
-    doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
-
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
-    when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
-
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
-    when(workflowExecutionDao.update(workflowExecution))
-        .thenReturn(workflowExecution.getId().toString());
-    when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
-
-    WorkflowExecutor workflowExecutor = new WorkflowExecutor(workflowExecution, workflowExecutorManager,
-        workflowExecutionSettings);
-    workflowExecutor.call();
-
-    verify(workflowExecutionDao, times(1)).update(workflowExecution);
-
-    verify(oaipmhHarvestPlugin).setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-    verify(oaipmhHarvestPlugin, atMost(1)).setPluginStatusAndResetFailMessage(any());
-    verify(oaipmhHarvestPlugin).setFailMessage(notNull());
-    verify(oaipmhHarvestPlugin, times(1)).setFailMessage(anyString());
-  }
-
-  @Test
   void callNonMockedFieldValue_DROPPEDExeternalTaskButNotCancelled() throws Exception {
     ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
     currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);

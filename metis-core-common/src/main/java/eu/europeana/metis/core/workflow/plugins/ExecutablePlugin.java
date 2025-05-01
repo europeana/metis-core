@@ -40,10 +40,6 @@ public interface ExecutablePlugin extends MetisPlugin {
   String getTopologyName();
 
   <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  void execute(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient)
-      throws ExternalTaskException;
-
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
   MonitorResult monitor(ProcessingEngineTaskClient<S, T> processingEngineTaskClient) throws ExternalTaskException, UnrecoverableExternalTaskException;
 
   <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>

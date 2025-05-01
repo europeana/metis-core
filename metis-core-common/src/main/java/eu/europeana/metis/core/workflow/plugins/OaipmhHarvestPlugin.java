@@ -42,23 +42,4 @@ public class OaipmhHarvestPlugin extends AbstractExecutablePlugin<OaipmhHarvestP
   public String getTopologyName() {
     return topologyName;
   }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    String targetUrl = getPluginMetadata().getUrl();
-    Map<String, String> parameters = new HashMap<>();
-    parameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
-    T externalTaskForHarvestPlugin =
-        createExternalTaskForHarvestPlugin(datasetId, processingEngineTaskClient, parameters, targetUrl,
-            getPluginMetadata().isIncrementalHarvest());
-    OaiHarvestParameters oaiHarvestParameters = new OaiHarvestParameters(
-        getPluginMetadata().getSetSpec(),
-        getPluginMetadata().getMetadataFormat(),
-        getPluginMetadata().getFromDate(),
-        getPluginMetadata().getUntilDate());
-
-    externalTaskForHarvestPlugin.setOaiHarvestParameters(oaiHarvestParameters);
-    return externalTaskForHarvestPlugin;
-  }
 }

@@ -40,15 +40,4 @@ public class LinkCheckingPlugin extends AbstractExecutablePlugin<LinkCheckingPlu
   public String getTopologyName() {
     return topologyName;
   }
-
-  @Override
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  T prepareExternalTask(String datasetId, String previousTaskId, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
-    final Map<String, String> extraParameters = new HashMap<>();
-    if (Boolean.TRUE.equals(getPluginMetadata().getPerformSampling())
-        && getPluginMetadata().getSampleSize() != null) {
-      extraParameters.put(PluginParameterKeys.SAMPLE_SIZE, getPluginMetadata().getSampleSize().toString());
-    }
-    return createExternalTaskForProcessPlugin(datasetId, previousTaskId, processingEngineTaskClient,  null);
-  }
 }
