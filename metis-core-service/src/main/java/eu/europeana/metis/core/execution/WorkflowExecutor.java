@@ -373,7 +373,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
       try {
         Thread.sleep(sleepTime);
         // Check if the task is cancelling and send the external cancelling call if needed
-        sendExternalCancelCallIfNeeded(externalCancelCallSent, plugin, previousProcessedRecords,
+        sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin, previousProcessedRecords,
             checkPointDateOfProcessedRecordsPeriodInMillis);
         processingEngineTaskProgress = pluginMonitor.monitor(processingEngineTaskClient);
         consecutiveCancelOrMonitorFailures = 0;
@@ -452,13 +452,16 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
-      AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
+      PluginMonitor pluginMonitor, AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
       AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, previousProcessedRecords,
         checkPointDateOfProcessedRecordsPeriodInMillis)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
-      plugin.cancel(processingEngineTaskClient, workflowExecution.getCancelledBy());
+
+      pluginMonitor.cancel(processingEngineTaskClient, workflowExecution.getCancelledBy());
+
+
       externalCancelCallSent.set(true);
     }
   }

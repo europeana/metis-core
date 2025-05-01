@@ -4,6 +4,7 @@ import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
@@ -90,5 +91,13 @@ public class PluginMonitor {
     executionProgress.setErrors(errorCount);
     executionProgress.recalculateProgressPercentage();
     executionProgress.setStatus(processingEngineTaskProgress.getProcessingEngineTaskState().name());
+  }
+
+  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
+  void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById)
+      throws ExternalTaskException {
+    LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
+    processingEngineTaskClient.cancel(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()),
+        SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");
   }
 }

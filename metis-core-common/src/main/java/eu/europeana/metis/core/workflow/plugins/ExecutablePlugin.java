@@ -1,10 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.exception.ExternalTaskException;
-
 /**
  * This interface represents plugins that are executable by Metis.
  */
@@ -36,8 +31,4 @@ public interface ExecutablePlugin extends MetisPlugin {
    * @return the topologyName string coming from {@link Topology}
    */
   String getTopologyName();
-
-  <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById) throws ExternalTaskException;
-
 }

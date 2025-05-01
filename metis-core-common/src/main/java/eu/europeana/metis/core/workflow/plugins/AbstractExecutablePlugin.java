@@ -1,10 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.workflow.execution.SystemId;
-import eu.europeana.metis.exception.ExternalTaskException;
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,14 +66,5 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
    */
   public void setExecutionProgress(ExecutionProgress executionProgress) {
     this.executionProgress = executionProgress;
-  }
-
-  @Override
-  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById)
-      throws ExternalTaskException {
-    LOGGER.info("Cancel execution for externalTaskId: {}", getExternalTaskId());
-    processingEngineTaskClient.cancel(getTopologyName(), Long.parseLong(getExternalTaskId()),
-        SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");
   }
 }
