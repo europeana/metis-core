@@ -35,7 +35,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient<DpsProcessingEngineTaskSettings, DpsProcessingEngineTask> {
+public class DpsProcessingEngineTaskClient implements
+    ProcessingEngineTaskClient<DpsProcessingEngineTaskSettings, DpsProcessingEngineTask> {
 
   private final DpsClient dpsClient;
   private final DpsProcessingEngineTaskSettings dpsProcessingEngineTaskProcessing;
@@ -166,16 +167,23 @@ public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient
     try {
       TaskErrorsInfo taskErrorsInfo = dpsClient.getTaskErrorsReport(topologyName, taskId, null, idsCount);
 
-      List<ProcessingEngineTaskErrorInfo> processingEngineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
-        List<ProcessingEngineTaskErrorDetails> processingEngineTaskErrorDetailsList = new ArrayList<>();
-        for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
-          ProcessingEngineTaskErrorDetails processingEngineTaskErrorDetails = new ProcessingEngineTaskErrorDetails(errorDetail.getIdentifier(),
-              errorDetail.getAdditionalInfo());
-          processingEngineTaskErrorDetailsList.add(processingEngineTaskErrorDetails);
-        }
-        return new ProcessingEngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
-            taskErrorInfo.getOccurrences(), processingEngineTaskErrorDetailsList);
-      }).toList();
+      List<ProcessingEngineTaskErrorInfo> processingEngineTaskErrorInfoList =
+          taskErrorsInfo.getErrors().stream()
+                        .map(taskErrorInfo -> {
+                          List<ProcessingEngineTaskErrorDetails> processingEngineTaskErrorDetailsList = new ArrayList<>();
+                          for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
+                            ProcessingEngineTaskErrorDetails processingEngineTaskErrorDetails = new ProcessingEngineTaskErrorDetails(
+                                errorDetail.getIdentifier(),
+                                errorDetail.getAdditionalInfo());
+                            processingEngineTaskErrorDetailsList.add(
+                                processingEngineTaskErrorDetails);
+                          }
+                          return new ProcessingEngineTaskErrorInfo(
+                              taskErrorInfo.getErrorType(),
+                              taskErrorInfo.getMessage(),
+                              taskErrorInfo.getOccurrences(),
+                              processingEngineTaskErrorDetailsList);
+                        }).toList();
       return new ProcessingEngineTaskErrors(taskErrorsInfo.getId(), processingEngineTaskErrorInfoList);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
@@ -220,14 +228,7 @@ public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient
       nodeReports = dpsClient.getElementReport(topologyName, taskId, elementPath);
       List<ContentNodeReport> contentNodeReportList = new ArrayList<>();
       for (NodeReport nodeReport : nodeReports) {
-        List<ContentAttributeStatistics> contentAttributeStatisticsList = new ArrayList<>();
-        for (AttributeStatistics attributeStatistics : nodeReport.getAttributeStatistics()){
-          ContentAttributeStatistics contentAttributeStatistics = new ContentAttributeStatistics(attributeStatistics.getName(),
-              attributeStatistics.getValue(), attributeStatistics.getOccurrence());
-          contentAttributeStatisticsList.add(contentAttributeStatistics);
-        }
-        ContentNodeReport contentNodeReport = new ContentNodeReport(nodeReport.getNodeValue(), nodeReport.getOccurrence(),
-            contentAttributeStatisticsList);
+        ContentNodeReport contentNodeReport = getContentNodeReport(nodeReport);
         contentNodeReportList.add(contentNodeReport);
       }
       return contentNodeReportList;
@@ -236,6 +237,16 @@ public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient
           "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
           topologyName, taskId), e);
     }
+  }
+
+  private static ContentNodeReport getContentNodeReport(NodeReport nodeReport) {
+    List<ContentAttributeStatistics> contentAttributeStatisticsList = new ArrayList<>();
+    for (AttributeStatistics attributeStatistics : nodeReport.getAttributeStatistics()) {
+      ContentAttributeStatistics contentAttributeStatistics = new ContentAttributeStatistics(attributeStatistics.getName(),
+          attributeStatistics.getValue(), attributeStatistics.getOccurrence());
+      contentAttributeStatisticsList.add(contentAttributeStatistics);
+    }
+    return new ContentNodeReport(nodeReport.getNodeValue(), nodeReport.getOccurrence(), contentAttributeStatisticsList);
   }
 
   @Override

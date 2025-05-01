@@ -41,6 +41,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -59,7 +60,7 @@ public class ProcessingEngineTaskConfigurator {
       Date revisionTimestampPreviousPlugin,
       ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     S processingEngineTaskSettings = processingEngineTaskClient.getProcessingEngineTaskSettings();
-    Map<ProcessingEngineTaskKeys, String> parameters = new HashMap<>();
+    final Map<ProcessingEngineTaskKeys, String> parameters = new EnumMap<>(ProcessingEngineTaskKeys.class);
     parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     parameters.put(REVISION_NAME, revisionNamePreviousPlugin);
     parameters.put(REVISION_PROVIDER, processingEngineTaskSettings.provider());
@@ -79,7 +80,7 @@ public class ProcessingEngineTaskConfigurator {
       String datasetId, boolean incrementalHarvest, Date startedDate,
       ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
     S processingEngineTaskSettings = processingEngineTaskClient.getProcessingEngineTaskSettings();
-    final Map<ProcessingEngineTaskKeys, String> parameters = new HashMap<>();
+    final Map<ProcessingEngineTaskKeys, String> parameters = new EnumMap<>(ProcessingEngineTaskKeys.class);
     parameters.put(METIS_DATASET_ID, datasetId);
     final DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -158,8 +159,8 @@ public class ProcessingEngineTaskConfigurator {
   public static Map<ProcessingEngineTaskKeys, String> createParametersForValidationInternal(String urlOfSchemasZip,
       String schemaRootPath,
       String schematronRootPath) {
-    final Map<ProcessingEngineTaskKeys, String> parameters = createParametersForValidation(urlOfSchemasZip, schemaRootPath,
-        schematronRootPath);
+    final Map<ProcessingEngineTaskKeys, String> parameters =
+        createParametersForValidation(urlOfSchemasZip, schemaRootPath, schematronRootPath);
     parameters.put(GENERATE_STATS, Boolean.FALSE.toString());
     return parameters;
   }
@@ -167,7 +168,7 @@ public class ProcessingEngineTaskConfigurator {
   private static Map<ProcessingEngineTaskKeys, String> createParametersForValidation(String urlOfSchemasZip,
       String schemaRootPath,
       String schematronRootPath) {
-    Map<ProcessingEngineTaskKeys, String> parameters = new HashMap<>();
+    final Map<ProcessingEngineTaskKeys, String> parameters = new EnumMap<>(ProcessingEngineTaskKeys.class);
     parameters.put(SCHEMA_NAME, urlOfSchemasZip);
     parameters.put(ROOT_LOCATION, schemaRootPath);
     parameters.put(SCHEMATRON_LOCATION, schematronRootPath);
@@ -197,7 +198,7 @@ public class ProcessingEngineTaskConfigurator {
 
   public static Map<ProcessingEngineTaskKeys, String> createParametersForLinkChecking(boolean performSampling,
       Integer sampleSize) {
-    final Map<ProcessingEngineTaskKeys, String> parameters = new HashMap<>();
+    final Map<ProcessingEngineTaskKeys, String> parameters = new EnumMap<>(ProcessingEngineTaskKeys.class);
     if (performSampling && sampleSize != null) {
       parameters.put(SAMPLE_SIZE, sampleSize.toString());
     }
@@ -215,7 +216,7 @@ public class ProcessingEngineTaskConfigurator {
       String targetIndexingDatabase) {
     final DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    final Map<ProcessingEngineTaskKeys, String> parameters = new HashMap<>();
+    final Map<ProcessingEngineTaskKeys, String> parameters = new EnumMap<>(ProcessingEngineTaskKeys.class);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(INCREMENTAL_INDEXING, String.valueOf(incrementalIndexing));
     parameters.put(HARVEST_DATE, dateFormat.format(harvestDate));
@@ -232,7 +233,7 @@ public class ProcessingEngineTaskConfigurator {
       boolean datasetDepublish,
       Set<String> recordIdsToDepublish,
       String depublicationReason) {
-    final Map<ProcessingEngineTaskKeys, String> parameters = new HashMap<>();
+    final Map<ProcessingEngineTaskKeys, String> parameters = new EnumMap<>(ProcessingEngineTaskKeys.class);
     parameters.put(METIS_DATASET_ID, datasetId);
 
     //Do set the records ids parameter only if record ids depublication enabled and there are record ids

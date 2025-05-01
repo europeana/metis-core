@@ -35,11 +35,13 @@ public interface ProcessingEngineTaskClient<S extends ProcessingEngineTaskSettin
 
   boolean hasErrorReport(final String topologyName, final long taskId) throws ExternalTaskException;
 
-  ProcessingEngineTaskErrors getTaskErrorReport(final String topologyName, final long taskId, final String error, final int idsCount) throws ExternalTaskException;
+  ProcessingEngineTaskErrors getTaskErrorReport(final String topologyName, final long taskId, final String error,
+      final int idsCount) throws ExternalTaskException;
 
   ContentStatisticsReport getTaskStatisticsReport(final String topologyName, final long taskId) throws ExternalTaskException;
 
-  List<ContentNodeReport> getElementReport(final String topologyName, final long taskId, String elementPath) throws ExternalTaskException;
+  List<ContentNodeReport> getElementReport(final String topologyName, final long taskId, String elementPath)
+      throws ExternalTaskException;
 
   void cancel(String topologyName, long taskId, String message) throws ExternalTaskException;
 
