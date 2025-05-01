@@ -7,7 +7,7 @@ import java.util.Map;
  */
 public interface ProcessingEngineTask {
 
-  void setParameters(Map<String, String> parameters);
+  void setParameters(Map<ProcessingEngineTaskKeys, String> parameters);
   void setOutputRevision(DataRevision dataRevision);
   void setInputDataLocation(InputDataType inputDataType,String inputDataLocation);
   void setOaiHarvestParameters(OaiHarvestParameters oaiHarvestParameters);
