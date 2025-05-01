@@ -24,7 +24,7 @@ import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskError
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
 import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
-import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
+import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.ArrayList;
@@ -70,12 +70,26 @@ public class DpsProcessingEngineTaskClient implements ProcessingEngineTaskClient
       throws ExternalTaskException, UnrecoverableExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, taskId);
-      return AbstractExecutablePlugin.getExternalTaskProgress(taskInfo);
+      return convertToProcessingEngineTaskProgress(taskInfo);
     } catch (DpsException e) {
       throw new UnrecoverableExternalTaskException("Fetching task progress failed", e);
     } catch (RuntimeException e) {
       throw new ExternalTaskException("Fetching task progress failed", e);
     }
+  }
+
+  private static ProcessingEngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
+    ProcessingEngineTaskProgress processingEngineTaskProgress = new ProcessingEngineTaskProgress();
+    processingEngineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
+    processingEngineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
+    processingEngineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
+    processingEngineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
+    processingEngineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
+    processingEngineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
+    ProcessingEngineTaskState processingEngineTaskState = ProcessingEngineTaskState.valueOf(taskInfo.getState().name());
+    processingEngineTaskProgress.setProcessingEngineTaskState(processingEngineTaskState);
+    processingEngineTaskProgress.setProcessingEngineTaskStateInfo(taskInfo.getStateDescription());
+    return processingEngineTaskProgress;
   }
 
   @Override

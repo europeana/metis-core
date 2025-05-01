@@ -1,11 +1,8 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.common.model.dps.TaskInfo;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
 import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.lang.invoke.MethodHandles;
@@ -74,24 +71,6 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
    */
   public void setExecutionProgress(ExecutionProgress executionProgress) {
     this.executionProgress = executionProgress;
-  }
-  /**
-   * Update this object's {@link ExecutionProgress} based on the received {@link TaskInfo}.
-   *
-   * @param taskInfo {@link TaskInfo}
-   */
-  public static ProcessingEngineTaskProgress getExternalTaskProgress(TaskInfo taskInfo) {
-    ProcessingEngineTaskProgress processingEngineTaskProgress = new ProcessingEngineTaskProgress();
-    processingEngineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
-    processingEngineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
-    processingEngineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
-    processingEngineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
-    processingEngineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
-    processingEngineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
-    ProcessingEngineTaskState processingEngineTaskState = ProcessingEngineTaskState.valueOf(taskInfo.getState().name());
-    processingEngineTaskProgress.setProcessingEngineTaskStateInfo(taskInfo.getStateDescription());
-    processingEngineTaskProgress.setProcessingEngineTaskState(processingEngineTaskState);
-    return processingEngineTaskProgress;
   }
 
   @Override
