@@ -179,10 +179,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
       EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient,
       UISClient uisClient, DatasetDao datasetDao, EcloudConfigurationProperties ecloudConfigurationProperties) {
-    EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients =
-        new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
-        fileServiceClient, engineTaskClient, uisClient);
-
+    EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients = new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
+            fileServiceClient, engineTaskClient, uisClient);
     return new ProxiesService(engineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
   }
 
@@ -196,7 +194,8 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @return the workflow post processor
    */
   @Bean
-  public WorkflowPostProcessor<? extends EngineTaskSettings, ? extends EngineTask> workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
+  public WorkflowPostProcessor workflowPostProcessor(
+      DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
       EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
     return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, engineTaskClient);
@@ -215,10 +214,10 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  public WorkflowExecutorManager  getWorkflowExecutorManager(
+  public WorkflowExecutorManager getWorkflowExecutorManager(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao,
-      WorkflowPostProcessor<? extends EngineTaskSettings, ? extends EngineTask> workflowPostProcessor,
+      WorkflowPostProcessor workflowPostProcessor,
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
       RedissonClient redissonClient,

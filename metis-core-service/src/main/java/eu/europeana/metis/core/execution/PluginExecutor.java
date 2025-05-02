@@ -35,7 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> {
+public class PluginExecutor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
@@ -44,7 +44,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     this.plugin = plugin;
   }
 
-  public void execute(String datasetId, String previousTaskId, EngineTaskClient<S, T> engineTaskClient)
+  public <S extends EngineTaskSettings, T extends EngineTask> void execute(String datasetId, String previousTaskId, EngineTaskClient<S, T> engineTaskClient)
       throws ExternalTaskException {
     //Prepare task
     Map<EngineTaskKey, String> pluginParameters;
@@ -75,7 +75,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     LOGGER.info("Submitted task with externalTaskId: {}", plugin.getExternalTaskId());
   }
 
-  private @NotNull T createEngineTask(
+  private @NotNull <S extends EngineTaskSettings, T extends EngineTask> T createEngineTask(
       String datasetId,
       EngineTaskClient<S, T> engineTaskClient, PluginHarvestParameters pluginHarvestParameters) {
     T engineTask;
@@ -104,7 +104,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   }
 
   @NotNull
-  private T createEngineTask(String datasetId,
+  private <S extends EngineTaskSettings, T extends EngineTask> T createEngineTask(String datasetId,
       String previousTaskId, EngineTaskClient<S, T> engineTaskClient,
       Map<EngineTaskKey, String> pluginParameters) {
     T engineTask;
@@ -127,7 +127,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   }
 
   @NotNull
-  private T createDepublishEngineTask(
+  private <S extends EngineTaskSettings, T extends EngineTask> T createDepublishEngineTask(
       EngineTaskClient<S, T> engineTaskClient, Map<EngineTaskKey, String> pluginParameters) {
     return EngineTaskConfigurator.createDepublishEngineTask(pluginParameters, engineTaskClient);
   }
@@ -158,7 +158,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     return new PluginHarvestParameters(targetUrl, incrementalHarvest, pluginParameters, oaiHarvestInputDataParameters);
   }
 
-  private @NotNull Map<EngineTaskKey, String> getProcessPluginParameters(
+  private @NotNull <S extends EngineTaskSettings, T extends EngineTask> Map<EngineTaskKey, String> getProcessPluginParameters(
       String datasetId, EngineTaskClient<S, T> engineTaskClient) {
     return switch (plugin.getPluginMetadata()) {
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> {

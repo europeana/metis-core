@@ -2,9 +2,6 @@ package eu.europeana.metis.core.rest.config;
 
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
-import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
@@ -15,29 +12,25 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class EngineClientConfig {
+
   private DpsClient dpsClient;
-  private EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient;
+  private DpsEngineTaskClient engineTaskClient;
 
   @Bean
-  public EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient(
+  public DpsEngineTaskClient engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
-    String type = "ECLOUD";
-    return switch (type) {
-      case "ECLOUD" -> {
-        dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-        DpsEngineTaskSettings dpsProcessingEngineTaskSettings = new DpsEngineTaskSettings(
-            ecloudConfigurationProperties.getBaseUrl(),
-            ecloudConfigurationProperties.getProvider(),
-            metisCoreConfigurationProperties.baseUrl(),
-            throttlingValues
-        );
-        engineTaskClient = new DpsEngineTaskClient(dpsClient, dpsProcessingEngineTaskSettings);
-        yield engineTaskClient;
-      }
-      default -> throw new IllegalArgumentException("Unknown task client type: " + type);
-    };
+    dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
+    DpsEngineTaskSettings dpsProcessingEngineTaskSettings = new DpsEngineTaskSettings(
+        ecloudConfigurationProperties.getBaseUrl(),
+        ecloudConfigurationProperties.getProvider(),
+        metisCoreConfigurationProperties.baseUrl(),
+        throttlingValues
+    );
+    engineTaskClient = new DpsEngineTaskClient(dpsClient, dpsProcessingEngineTaskSettings);
+
+    return engineTaskClient;
   }
 
   private DpsClient dpsClient(

@@ -7,7 +7,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import org.redisson.api.RedissonClient;
 
-class PersistenceProvider<S extends EngineTaskSettings, T extends EngineTask> {
+class PersistenceProvider {
 
   private final Channel rabbitmqPublisherChannel;
   private final Channel rabbitmqConsumerChannel;
@@ -15,12 +15,12 @@ class PersistenceProvider<S extends EngineTaskSettings, T extends EngineTask> {
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowPostProcessor workflowPostProcessor;
   private final RedissonClient redissonClient;
-  private final EngineTaskClient<S, T> engineTaskClient;
+  private final EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient;
 
   PersistenceProvider(Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
-      RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
+      RedissonClient redissonClient, EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
     this.rabbitmqPublisherChannel = rabbitmqPublisherChannel;
     this.rabbitmqConsumerChannel = rabbitmqConsumerChannel;
     this.semaphoresPerPluginManager = semaphoresPerPluginManager;
@@ -42,7 +42,7 @@ class PersistenceProvider<S extends EngineTaskSettings, T extends EngineTask> {
     return workflowPostProcessor;
   }
 
-  EngineTaskClient<S, T> getExternalTaskClient() {
+  EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> getExternalTaskClient() {
     return engineTaskClient;
   }
 

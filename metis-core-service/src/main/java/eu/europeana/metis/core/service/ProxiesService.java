@@ -52,7 +52,7 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
  */
-public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> {
+public class ProxiesService {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
@@ -61,7 +61,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
   private final DatasetDao datasetDao;
   private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
-  private final EngineClients<S, T> engineClients;
+  private final EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients;
   private final String ecloudProvider;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
@@ -73,13 +73,13 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * @param ecloudProvider the ecloud provider
    * @param datasetDao the Dao instance to access the Dataset database
    */
-  public ProxiesService(EngineClients<S, T> engineClients, String ecloudProvider,
+  public ProxiesService(EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients, String ecloudProvider,
       WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao) {
     this(engineClients, ecloudProvider, workflowExecutionDao, datasetDao, new ProxiesHelper());
   }
 
-  ProxiesService(EngineClients<S, T> engineClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
+  ProxiesService(EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
     this.engineClients = engineClients;
     this.ecloudProvider = ecloudProvider;

@@ -51,7 +51,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * This object can perform post-processing for workflows.
  */
-public class WorkflowPostProcessor<S extends EngineTaskSettings, T extends EngineTask> {
+public class WorkflowPostProcessor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -60,7 +60,7 @@ public class WorkflowPostProcessor<S extends EngineTaskSettings, T extends Engin
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetDao datasetDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final EngineTaskClient<S, T> engineTaskClient;
+  private final EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
@@ -73,7 +73,7 @@ public class WorkflowPostProcessor<S extends EngineTaskSettings, T extends Engin
    */
   public WorkflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
-      EngineTaskClient<S, T> engineTaskClient) {
+      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.datasetDao = datasetDao;
     this.workflowExecutionDao = workflowExecutionDao;

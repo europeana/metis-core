@@ -104,8 +104,7 @@ class TestProxiesService {
         new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
             engineTaskClient, uisClient);
 
-    proxiesService = spy(
-        new ProxiesService<>(engineClients, "ecloudProvider", workflowExecutionDao, datasetDao, proxiesHelper));
+    proxiesService = spy(new ProxiesService(engineClients, "ecloudProvider", workflowExecutionDao, datasetDao, proxiesHelper));
   }
 
   @AfterEach

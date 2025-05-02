@@ -53,8 +53,8 @@ import org.slf4j.LoggerFactory;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-05-29
  */
-public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask> implements
-    Callable<Pair<WorkflowExecution, Boolean>> {
+public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask>
+    implements Callable<Pair<WorkflowExecution, Boolean>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
@@ -70,11 +70,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final WorkflowPostProcessor workflowPostProcessor;
   private final int monitorCheckIntervalInSecs;
   private final long periodOfNoProcessedRecordsChangeInSeconds;
-  private final EngineTaskClient<S, T> engineTaskClient;
+  private final EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
 
-  WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager workflowExecutorManager,
+  WorkflowExecutor(
+      WorkflowExecution workflowExecution,
+      WorkflowExecutorManager workflowExecutorManager,
       WorkflowExecutionSettings workflowExecutionSettings) {
     this.workflowExecution = workflowExecution;
     this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
@@ -253,7 +255,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
    * @param datasetId The dataset ID.
    */
   private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, String datasetId) {
-    final PluginExecutor<S, T> pluginExecutor = new PluginExecutor(plugin);
+    final PluginExecutor pluginExecutor = new PluginExecutor(plugin);
     try {
       // Compute previous plugin revision information. Only need to look within the workflow: when
       // scheduling the workflow, the previous plugin information is set for the first plugin.
@@ -362,7 +364,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
-    final PluginMonitor<S, T> pluginMonitor = new PluginMonitor(plugin);
+    final PluginMonitor pluginMonitor = new PluginMonitor(plugin);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);

@@ -15,7 +15,7 @@ import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
+public class PluginMonitor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
@@ -24,7 +24,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
     this.plugin = plugin;
   }
 
-  public EngineTaskProgress monitor(EngineTaskClient<S, T> engineTaskClient)
+  public <S extends EngineTaskSettings, T extends EngineTask> EngineTaskProgress monitor(EngineTaskClient<S, T> engineTaskClient)
       throws ExternalTaskException, UnrecoverableExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
     EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
@@ -92,7 +92,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
   }
 
-  public void cancel(EngineTaskClient<S, T> engineTaskClient, String cancelledById)
+  public <S extends EngineTaskSettings, T extends EngineTask> void cancel(EngineTaskClient<S, T> engineTaskClient, String cancelledById)
       throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
     engineTaskClient.cancelEngineTask(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()),

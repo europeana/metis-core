@@ -16,12 +16,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Manager class for adding executions in the distributed queue.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-30
  */
-public class WorkflowExecutorManager extends PersistenceProvider implements
-    WorkflowExecutionSettings {
+public class WorkflowExecutorManager
+    extends PersistenceProvider implements WorkflowExecutionSettings {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS = 5;
@@ -43,10 +40,11 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
    * @param redissonClient the redisson client for distributed locks
    * @param engineTaskClient the Data Processing Service client from ECloud
    */
-  public <S extends EngineTaskSettings, T extends EngineTask> WorkflowExecutorManager(SemaphoresPerPluginManager semaphoresPerPluginManager,
+  public WorkflowExecutorManager(
+      SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
+      RedissonClient redissonClient, EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
     super(rabbitmqPublisherChannel, rabbitmqConsumerChannel, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, redissonClient, engineTaskClient);
   }
