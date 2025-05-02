@@ -51,15 +51,18 @@ import java.util.Set;
 import java.util.TimeZone;
 import org.springframework.util.CollectionUtils;
 
-public class EngineTaskConfigurator {
+public class EngineTaskConfigurator<S extends EngineTaskSettings, T extends EngineTask> {
+  private final EngineTaskClient<S, T> engineTaskClient;
 
-  public static <S extends EngineTaskSettings, T extends EngineTask>
-  Map<EngineTaskKey, String> createDefaultTaskParameters(
+  public EngineTaskConfigurator(EngineTaskClient<S, T> engineTaskClient) {
+    this.engineTaskClient = engineTaskClient;
+  }
+
+  public Map<EngineTaskKey, String> createDefaultTaskParameters(
       String externalDatasetId,
       String previousTaskId,
       String revisionNamePreviousPlugin,
-      Date revisionTimestampPreviousPlugin,
-      EngineTaskClient<S, T> engineTaskClient) {
+      Date revisionTimestampPreviousPlugin) {
     S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
@@ -74,10 +77,8 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
-  public static <S extends EngineTaskSettings, T extends EngineTask>
-  Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
-      String datasetId, boolean incrementalHarvest, Date startedDate,
-      EngineTaskClient<S, T> engineTaskClient) {
+  public Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
+      String datasetId, boolean incrementalHarvest, Date startedDate) {
     S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(METIS_DATASET_ID, datasetId);
@@ -91,13 +92,11 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
-  public static <S extends EngineTaskSettings, T extends EngineTask>
-  T createHarvestEngineTask(
+  public T createHarvestEngineTask(
       String targetUrl,
       PluginType pluginType,
       Date pluginStartedDate,
       Map<EngineTaskKey, String> parameters,
-      EngineTaskClient<S, T> engineTaskClient,
       OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
     S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
     T engineTask = engineTaskClient.getEngineTaskCreator().get();
@@ -111,13 +110,11 @@ public class EngineTaskConfigurator {
     return engineTask;
   }
 
-  public static <S extends EngineTaskSettings, T extends EngineTask>
-  T createEngineTask(
+  public T createEngineTask(
       String externalDatasetId,
       PluginType pluginType,
       Date pluginStartedDate,
-      Map<EngineTaskKey, String> parameters,
-      EngineTaskClient<S, T> engineTaskClient) {
+      Map<EngineTaskKey, String> parameters) {
     S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
     T engineTask = engineTaskClient.getEngineTaskCreator().get();
     final String inputDataLocation =
@@ -131,10 +128,7 @@ public class EngineTaskConfigurator {
     return engineTask;
   }
 
-  public static <S extends EngineTaskSettings, T extends EngineTask>
-  T createDepublishEngineTask(
-      Map<EngineTaskKey, String> parameters,
-      EngineTaskClient<S, T> engineTaskClient) {
+  public T createDepublishEngineTask(Map<EngineTaskKey, String> parameters) {
     T engineTask = engineTaskClient.getEngineTaskCreator().get();
     engineTask.setParameters(parameters);
     return engineTask;

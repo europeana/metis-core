@@ -39,9 +39,11 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
+  private final EngineTaskConfigurator<S, T> engineTaskConfigurator;
 
-  public PluginExecutor(AbstractExecutablePlugin<?> plugin) {
+  public PluginExecutor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
+    this.engineTaskConfigurator = new EngineTaskConfigurator<>(engineTaskClient);
   }
 
   public void execute(String datasetId, String previousTaskId, EngineTaskClient<S, T> engineTaskClient)
@@ -52,16 +54,16 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     T engineTask = null;
     if (DataEvolutionUtils.getHarvestPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
       pluginHarvestParameters = getPluginHarvestParameters();
-      engineTask = createEngineTask(datasetId, engineTaskClient, pluginHarvestParameters);
+      engineTask = createEngineTask(datasetId, pluginHarvestParameters);
     } else if (DataEvolutionUtils.getProcessPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
       pluginParameters = getProcessPluginParameters(datasetId, engineTaskClient);
-      engineTask = createEngineTask(datasetId, previousTaskId, engineTaskClient, pluginParameters);
+      engineTask = createEngineTask(datasetId, previousTaskId, pluginParameters);
     } else if (DataEvolutionUtils.getIndexPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
       pluginParameters = getIndexPluginParameters(datasetId);
-      engineTask = createEngineTask(datasetId, previousTaskId, engineTaskClient, pluginParameters);
+      engineTask = createEngineTask(datasetId, previousTaskId, pluginParameters);
     } else if (plugin.getPluginMetadata().getExecutablePluginType().equals(ExecutablePluginType.DEPUBLISH)) {
       pluginParameters = getDepublishPluginParameters(datasetId);
-      engineTask = createDepublishEngineTask(engineTaskClient, pluginParameters);
+      engineTask = createDepublishEngineTask(pluginParameters);
     }
 
     LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", plugin.getPluginType(), datasetId);
@@ -75,23 +77,19 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     LOGGER.info("Submitted task with externalTaskId: {}", plugin.getExternalTaskId());
   }
 
-  private @NotNull T createEngineTask(
-      String datasetId,
-      EngineTaskClient<S, T> engineTaskClient, PluginHarvestParameters pluginHarvestParameters) {
+  private @NotNull T createEngineTask(String datasetId, PluginHarvestParameters pluginHarvestParameters) {
     T engineTask;
-    final Map<EngineTaskKey, String> basicTaskParameters = EngineTaskConfigurator.createDefaultTaskParametersHarvest(
+    final Map<EngineTaskKey, String> basicTaskParameters = engineTaskConfigurator.createDefaultTaskParametersHarvest(
         datasetId,
         pluginHarvestParameters.incrementalHarvest(),
-        plugin.getStartedDate(),
-        engineTaskClient);
+        plugin.getStartedDate());
     final Map<EngineTaskKey, String> allParameters = new HashMap<>(basicTaskParameters);
     allParameters.putAll(pluginHarvestParameters.pluginParameters());
-    engineTask = EngineTaskConfigurator.createHarvestEngineTask(
+    engineTask = engineTaskConfigurator.createHarvestEngineTask(
         pluginHarvestParameters.targetUrl(),
         plugin.getPluginType(),
         plugin.getStartedDate(),
         allParameters,
-        engineTaskClient,
         pluginHarvestParameters.oaiHarvestInputDataParameters()
     );
     return engineTask;
@@ -104,32 +102,28 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   }
 
   @NotNull
-  private T createEngineTask(String datasetId,
-      String previousTaskId, EngineTaskClient<S, T> engineTaskClient,
+  private T createEngineTask(String datasetId, String previousTaskId,
       Map<EngineTaskKey, String> pluginParameters) {
     T engineTask;
-    final Map<EngineTaskKey, String> basicTaskParameters = EngineTaskConfigurator.createDefaultTaskParameters(
+    final Map<EngineTaskKey, String> basicTaskParameters = engineTaskConfigurator.createDefaultTaskParameters(
         datasetId,
         previousTaskId,
         plugin.getPluginMetadata().getRevisionNamePreviousPlugin(),
-        plugin.getPluginMetadata().getRevisionTimestampPreviousPlugin(),
-        engineTaskClient);
+        plugin.getPluginMetadata().getRevisionTimestampPreviousPlugin());
     final Map<EngineTaskKey, String> allParameters = new HashMap<>(basicTaskParameters);
     allParameters.putAll(pluginParameters);
-    engineTask = EngineTaskConfigurator.createEngineTask(
+    engineTask = engineTaskConfigurator.createEngineTask(
         datasetId,
         plugin.getPluginType(),
         plugin.getStartedDate(),
-        allParameters,
-        engineTaskClient
+        allParameters
     );
     return engineTask;
   }
 
   @NotNull
-  private T createDepublishEngineTask(
-      EngineTaskClient<S, T> engineTaskClient, Map<EngineTaskKey, String> pluginParameters) {
-    return EngineTaskConfigurator.createDepublishEngineTask(pluginParameters, engineTaskClient);
+  private T createDepublishEngineTask(Map<EngineTaskKey, String> pluginParameters) {
+    return engineTaskConfigurator.createDepublishEngineTask(pluginParameters);
   }
 
   private @NotNull PluginHarvestParameters getPluginHarvestParameters() {

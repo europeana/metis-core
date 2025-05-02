@@ -19,12 +19,14 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
+  private final EngineTaskClient<S, T> engineTaskClient;
 
-  public PluginMonitor(AbstractExecutablePlugin<?> plugin) {
+  public PluginMonitor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
+    this.engineTaskClient = engineTaskClient;
   }
 
-  public EngineTaskProgress monitor(EngineTaskClient<S, T> engineTaskClient)
+  public EngineTaskProgress monitor()
       throws ExternalTaskException, UnrecoverableExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
     EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
@@ -92,8 +94,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
   }
 
-  public void cancel(EngineTaskClient<S, T> engineTaskClient, String cancelledById)
-      throws ExternalTaskException {
+  public void cancel(String cancelledById) throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
     engineTaskClient.cancelEngineTask(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()),
         SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");

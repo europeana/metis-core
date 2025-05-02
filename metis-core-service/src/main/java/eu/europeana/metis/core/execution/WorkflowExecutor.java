@@ -255,7 +255,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
    * @param datasetId The dataset ID.
    */
   private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, String datasetId) {
-    final PluginExecutor<S, T> pluginExecutor = new PluginExecutor<>(plugin);
+    final PluginExecutor<S, T> pluginExecutor = new PluginExecutor<>(plugin, engineTaskClient);
     try {
       // Compute previous plugin revision information. Only need to look within the workflow: when
       // scheduling the workflow, the previous plugin information is set for the first plugin.
@@ -364,7 +364,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
-    final PluginMonitor pluginMonitor = new PluginMonitor(plugin);
+    final PluginMonitor<S, T> pluginMonitor = new PluginMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
@@ -377,7 +377,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         // Check if the task is cancelling and send the external cancelling call if needed
         sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin, previousProcessedRecords,
             checkPointDateOfProcessedRecordsPeriodInMillis);
-        engineTaskProgress = pluginMonitor.monitor(engineTaskClient);
+        engineTaskProgress = pluginMonitor.monitor();
         consecutiveCancelOrMonitorFailures = 0;
 
         EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
@@ -454,16 +454,14 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
-      PluginMonitor pluginMonitor, AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
+      PluginMonitor<S, T> pluginMonitor, AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
       AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, previousProcessedRecords,
         checkPointDateOfProcessedRecordsPeriodInMillis)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
 
-      pluginMonitor.cancel(engineTaskClient, workflowExecution.getCancelledBy());
-
-
+      pluginMonitor.cancel(workflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }
