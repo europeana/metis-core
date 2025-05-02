@@ -1,4 +1,4 @@
-package eu.europeana.metis.core.engine.base.report.item;
+package eu.europeana.metis.core.engine.base.item.report;
 
 public record DataItemStatus(int resourceNum,
                              String resource,

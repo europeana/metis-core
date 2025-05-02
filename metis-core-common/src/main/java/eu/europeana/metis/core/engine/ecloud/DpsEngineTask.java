@@ -1,15 +1,19 @@
 package eu.europeana.metis.core.engine.ecloud;
 
 import static eu.europeana.cloud.service.dps.InputDataType.DATASET_URLS;
+import static eu.europeana.cloud.service.dps.InputDataType.REPOSITORY_URLS;
 
 import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.service.dps.DpsTask;
+import eu.europeana.cloud.service.dps.InputDataType;
 import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.OaiHarvestParameters;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
-import java.util.Collections;
+import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import java.util.List;
 import java.util.Map;
 
@@ -31,30 +35,36 @@ public class DpsEngineTask implements EngineTask {
   }
 
   @Override
+  public <T extends InputDataEndpoint> void setInputDataLocation(T inputDataEndpoint) {
+    final InputDataType inputDataType = switch (inputDataEndpoint) {
+      case InternalInputDataEndpoint ignored -> DATASET_URLS;
+      case HarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
+      case OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters -> {
+        setOaiHarvestParameters(oaiHarvestInputDataParameters);
+        yield REPOSITORY_URLS;
+      }
+      default -> null;
+    };
+
+    if (inputDataType != null) {
+      Map<InputDataType, List<String>> inputDataLocation = Map.of(inputDataType, List.of(inputDataEndpoint.url()));
+      dpsTask.setInputData(inputDataLocation);
+    }
+  }
+
+  public void setOaiHarvestParameters(OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
+    OAIPMHHarvestingDetails oaipmhHarvestingDetails = new OAIPMHHarvestingDetails();
+    oaipmhHarvestingDetails.setSet(oaiHarvestInputDataParameters.set());
+    oaipmhHarvestingDetails.setSchema(oaiHarvestInputDataParameters.metadataPrefix());
+    oaipmhHarvestingDetails.setDateFrom(oaiHarvestInputDataParameters.from());
+    oaipmhHarvestingDetails.setDateUntil(oaiHarvestInputDataParameters.until());
+    dpsTask.setHarvestingDetails(oaipmhHarvestingDetails);
+  }
+
+  @Override
   public void setOutputRevision(DataRevision dataRevision) {
     final Revision revision = new Revision(dataRevision.name(), dataRevision.providerId(), dataRevision.creationTimeStamp(),
         dataRevision.deleted());
     dpsTask.setOutputRevision(revision);
-  }
-
-  @Override
-  public void setInputDataLocation(InputDataType inputDataType, String inputDataLocation) {
-    Map<eu.europeana.cloud.service.dps.InputDataType, List<String>> dataEntries;
-    if (inputDataType.equals(InputDataType.INTERNAL_DATASET)) {
-      dataEntries = Map.of(DATASET_URLS, Collections.singletonList(inputDataLocation));
-    } else {
-      dataEntries = Map.of(eu.europeana.cloud.service.dps.InputDataType.REPOSITORY_URLS, Collections.singletonList(inputDataLocation));
-    }
-    dpsTask.setInputData(dataEntries);
-  }
-
-  @Override
-  public void setOaiHarvestParameters(OaiHarvestParameters oaiHarvestParameters) {
-    OAIPMHHarvestingDetails oaipmhHarvestingDetails = new OAIPMHHarvestingDetails();
-    oaipmhHarvestingDetails.setSet(oaiHarvestParameters.set());
-    oaipmhHarvestingDetails.setSchema(oaiHarvestParameters.metadataPrefix());
-    oaipmhHarvestingDetails.setDateFrom(oaiHarvestParameters.from());
-    oaipmhHarvestingDetails.setDateUntil(oaiHarvestParameters.until());
-    dpsTask.setHarvestingDetails(oaipmhHarvestingDetails);
   }
 }

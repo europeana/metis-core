@@ -1,4 +1,4 @@
-package eu.europeana.metis.core.engine.base.report.task;
+package eu.europeana.metis.core.engine.base.task.report;
 
 public enum EngineTaskState {
   PENDING("Task is being prepared by the REST application"),

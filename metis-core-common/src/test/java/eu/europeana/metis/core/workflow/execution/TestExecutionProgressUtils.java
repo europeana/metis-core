@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.workflow.execution;
 
-import eu.europeana.metis.core.engine.base.report.task.EngineTaskState;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 
 public class TestExecutionProgressUtils {

@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.engine.base;
 
-import static eu.europeana.metis.core.engine.base.EngineTask.InputDataType.EXTERNAL_REPOSITORY;
-import static eu.europeana.metis.core.engine.base.EngineTask.InputDataType.INTERNAL_DATASET;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.DATASET_IDS_TO_REDIRECT_FROM;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.DEPUBLICATION_REASON;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.GENERATE_STATS;
@@ -33,6 +31,9 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
+import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
@@ -97,15 +98,16 @@ public class EngineTaskConfigurator {
       Date pluginStartedDate,
       Map<EngineTaskKey, String> parameters,
       EngineTaskClient<S, T> engineTaskClient,
-      OaiHarvestParameters oaiHarvestParameters) {
+      OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
     S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
     T engineTask = engineTaskClient.getEngineTaskCreator().get();
-    engineTask.setInputDataLocation(EXTERNAL_REPOSITORY, targetUrl);
     engineTask.setParameters(parameters);
     engineTask.setOutputRevision(
         createDataRevisionOutput(pluginType, pluginStartedDate, engineTaskSettings.provider()));
-    if (oaiHarvestParameters != null) {
-      engineTask.setOaiHarvestParameters(oaiHarvestParameters);
+    if(oaiHarvestInputDataParameters == null){
+      engineTask.setInputDataLocation(new HarvestInputDataEndpoint(targetUrl));
+    } else {
+      engineTask.setInputDataLocation(oaiHarvestInputDataParameters);
     }
     return engineTask;
   }
@@ -123,7 +125,7 @@ public class EngineTaskConfigurator {
         String.format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, engineTaskSettings.baseUrl(),
             engineTaskSettings.provider(), externalDatasetId);
 
-    engineTask.setInputDataLocation(INTERNAL_DATASET, inputDataLocation);
+    engineTask.setInputDataLocation(new InternalInputDataEndpoint(inputDataLocation));
     engineTask.setParameters(parameters);
     engineTask.setOutputRevision(
         createDataRevisionOutput(pluginType, pluginStartedDate, engineTaskSettings.provider()));

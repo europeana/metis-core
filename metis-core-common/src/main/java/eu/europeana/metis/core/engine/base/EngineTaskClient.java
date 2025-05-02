@@ -1,10 +1,10 @@
 package eu.europeana.metis.core.engine.base;
 
-import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeReport;
-import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
-import eu.europeana.metis.core.engine.base.report.item.content.ContentStatisticsReport;
-import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrors;
-import eu.europeana.metis.core.engine.base.report.task.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeReport;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.List;

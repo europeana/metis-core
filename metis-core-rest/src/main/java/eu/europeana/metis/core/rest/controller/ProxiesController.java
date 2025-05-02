@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.rest.controller;
 
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
-import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
-import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrors;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;

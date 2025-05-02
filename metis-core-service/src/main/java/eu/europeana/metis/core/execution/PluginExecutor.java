@@ -1,7 +1,7 @@
 package eu.europeana.metis.core.execution;
 
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
-import eu.europeana.metis.core.engine.base.OaiHarvestParameters;
+import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskConfigurator;
@@ -99,14 +99,14 @@ public class PluginExecutor {
         plugin.getStartedDate(),
         allParameters,
         engineTaskClient,
-        pluginHarvestParameters.oaiHarvestParameters()
+        pluginHarvestParameters.oaiHarvestInputDataParameters()
     );
     return engineTask;
   }
 
   private record PluginHarvestParameters(String targetUrl, boolean incrementalHarvest,
                                          Map<EngineTaskKey, String> pluginParameters,
-                                         OaiHarvestParameters oaiHarvestParameters) {
+                                         OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
 
   }
 
@@ -143,13 +143,14 @@ public class PluginExecutor {
 
   private @NotNull PluginHarvestParameters getPluginHarvestParameters() {
     boolean incrementalHarvest;
-    OaiHarvestParameters oaiHarvestParameters = null;
+    OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters = null;
     String targetUrl;
     final Map<EngineTaskKey, String> pluginParameters = switch (plugin.getPluginMetadata()) {
       case OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata -> {
         incrementalHarvest = oaipmhHarvestPluginMetadata.isIncrementalHarvest();
         targetUrl = oaipmhHarvestPluginMetadata.getUrl();
-        oaiHarvestParameters = new OaiHarvestParameters(
+        oaiHarvestInputDataParameters = new OaiHarvestInputDataEndpoint(
+            oaipmhHarvestPluginMetadata.getUrl(),
             oaipmhHarvestPluginMetadata.getSetSpec(),
             oaipmhHarvestPluginMetadata.getMetadataFormat(),
             oaipmhHarvestPluginMetadata.getFromDate(),
@@ -163,7 +164,7 @@ public class PluginExecutor {
       }
       default -> throw new IllegalStateException("Unexpected value: " + plugin);
     };
-    return new PluginHarvestParameters(targetUrl, incrementalHarvest, pluginParameters, oaiHarvestParameters);
+    return new PluginHarvestParameters(targetUrl, incrementalHarvest, pluginParameters, oaiHarvestInputDataParameters);
   }
 
   private <S extends EngineTaskSettings, T extends EngineTask> @NotNull Map<EngineTaskKey, String> getProcessPluginParameters(
