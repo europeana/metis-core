@@ -196,7 +196,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @return the workflow post processor
    */
   @Bean
-  public WorkflowPostProcessor workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
+  public WorkflowPostProcessor<? extends EngineTaskSettings, ? extends EngineTask> workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
       EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
     return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, engineTaskClient);
@@ -217,14 +217,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   @Bean
   public WorkflowExecutorManager  getWorkflowExecutorManager(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
-      WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
+      WorkflowExecutionDao workflowExecutionDao,
+      WorkflowPostProcessor<? extends EngineTaskSettings, ? extends EngineTask> workflowPostProcessor,
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
       RedissonClient redissonClient,
       EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
-      MetisCoreConfigurationProperties metisCoreConfigurationProperties,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
+      MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     WorkflowExecutorManager workflowExecutorManager = new WorkflowExecutorManager(
         semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
         rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);

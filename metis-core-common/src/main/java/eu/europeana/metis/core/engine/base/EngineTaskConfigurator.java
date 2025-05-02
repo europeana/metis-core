@@ -102,8 +102,7 @@ public class EngineTaskConfigurator {
     S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
     T engineTask = engineTaskClient.getEngineTaskCreator().get();
     engineTask.setParameters(parameters);
-    engineTask.setOutputRevision(
-        createDataRevisionOutput(pluginType, pluginStartedDate, engineTaskSettings.provider()));
+    engineTask.setOutputRevision(createDataRevisionOutput(pluginType, pluginStartedDate, engineTaskSettings.provider()));
     if(oaiHarvestInputDataParameters == null){
       engineTask.setInputDataLocation(new HarvestInputDataEndpoint(targetUrl));
     } else {

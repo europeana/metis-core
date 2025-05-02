@@ -253,7 +253,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
    * @param datasetId The dataset ID.
    */
   private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, String datasetId) {
-    final PluginExecutor pluginExecutor = new PluginExecutor(plugin);
+    final PluginExecutor<S, T> pluginExecutor = new PluginExecutor(plugin);
     try {
       // Compute previous plugin revision information. Only need to look within the workflow: when
       // scheduling the workflow, the previous plugin information is set for the first plugin.
@@ -362,7 +362,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
-    final PluginMonitor pluginMonitor = new PluginMonitor(plugin);
+    final PluginMonitor<S, T> pluginMonitor = new PluginMonitor(plugin);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
