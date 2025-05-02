@@ -2,6 +2,7 @@ package eu.europeana.metis.core.rest.config;
 
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskSettings;
 import eu.europeana.metis.core.engine.mock.MockEngineTaskClient;
@@ -17,12 +18,10 @@ import org.springframework.context.annotation.Configuration;
 public class EngineClientConfig {
 
   private DpsClient dpsClient;
-  private DpsEngineTaskClient engineTaskClient;
-  private MockEngineTaskClient mockEngineTaskClient;
 
-  @Bean
+  @Bean(destroyMethod = "close")
   @ConditionalOnProperty(name = "engine.mode", havingValue = "real")
-  public DpsEngineTaskClient engineTaskClient(
+  public EngineTaskClient<?, ?> engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
@@ -33,14 +32,13 @@ public class EngineClientConfig {
         metisCoreConfigurationProperties.baseUrl(),
         throttlingValues
     );
-    engineTaskClient = new DpsEngineTaskClient(dpsClient, dpsProcessingEngineTaskSettings);
-
-    return engineTaskClient;
+    return new DpsEngineTaskClient(dpsClient, dpsProcessingEngineTaskSettings);
   }
 
-  @Bean
+  //todo not really a mock yet
+  @Bean(destroyMethod = "close")
   @ConditionalOnProperty(name = "engine.mode", havingValue = "mock", matchIfMissing = true)
-  public MockEngineTaskClient mockEngineTaskClient(
+  public EngineTaskClient<?, ?> mockEngineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
@@ -51,9 +49,7 @@ public class EngineClientConfig {
         metisCoreConfigurationProperties.baseUrl(),
         throttlingValues
     );
-    mockEngineTaskClient = new MockEngineTaskClient(dpsClient, mockEngineTaskSettings);
-
-    return mockEngineTaskClient;
+    return new MockEngineTaskClient(dpsClient, mockEngineTaskSettings);
   }
 
   private DpsClient dpsClient(
@@ -69,12 +65,6 @@ public class EngineClientConfig {
 
   @PreDestroy
   public void close() {
-    if (engineTaskClient != null) {
-      engineTaskClient.close();
-    }
-    if (mockEngineTaskClient != null) {
-      mockEngineTaskClient.close();
-    }
     if (dpsClient != null) {
       dpsClient.close();
     }

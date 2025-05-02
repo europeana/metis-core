@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Manager class for adding executions in the distributed queue.
  */
-public class WorkflowExecutorManager
-    extends PersistenceProvider implements WorkflowExecutionSettings {
+public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends EngineTask>
+    extends PersistenceProvider<S, T> implements WorkflowExecutionSettings {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS = 5;
@@ -44,7 +44,7 @@ public class WorkflowExecutorManager
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
+      RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
     super(rabbitmqPublisherChannel, rabbitmqConsumerChannel, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, redissonClient, engineTaskClient);
   }

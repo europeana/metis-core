@@ -17,13 +17,13 @@ import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
-import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
@@ -42,7 +42,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Orchestrator configuration class.
@@ -53,7 +52,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
     RedisConfigurationProperties.class, MetisCoreConfigurationProperties.class,
     EcloudConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-public class OrchestratorConfig implements WebMvcConfigurer {
+public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -80,7 +79,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
       DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
       WorkflowExecutionFactory workflowExecutionFactory,
-      WorkflowExecutorManager workflowExecutorManager,
+      WorkflowExecutorManager<S, T> workflowExecutorManager,
       DepublishRecordIdDao depublishRecordIdDao,
       RedissonClient redissonClient, UserService userService, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
@@ -143,12 +142,10 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       RedirectionInferrer redirectionInferrer,
       DatasetXsltDao datasetXsltDao, DepublishRecordIdDao depublishRecordIdDao,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    WorkflowExecutionFactory workflowExecutionFactory = new WorkflowExecutionFactory(datasetXsltDao,
-        depublishRecordIdDao, redirectionInferrer);
-    workflowExecutionFactory
-        .setValidationExternalProperties(validationExternalProperties);
-    workflowExecutionFactory
-        .setValidationInternalProperties(validationInternalProperties);
+    WorkflowExecutionFactory workflowExecutionFactory =
+        new WorkflowExecutionFactory(datasetXsltDao, depublishRecordIdDao, redirectionInferrer);
+    workflowExecutionFactory.setValidationExternalProperties(validationExternalProperties);
+    workflowExecutionFactory.setValidationInternalProperties(validationInternalProperties);
     workflowExecutionFactory.setDefaultSamplingSizeForLinkChecking(
         metisCoreConfigurationProperties.linkCheckingDefaultSamplingSize());
     return workflowExecutionFactory;
@@ -174,14 +171,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @return an initialized instance of SecuredProxiesService.
    */
   @Bean
-  public ProxiesService getProxiesService(
+  public ProxiesService<S, T> getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient,
+      EngineTaskClient<S, T> engineTaskClient,
       UISClient uisClient, DatasetDao datasetDao, EcloudConfigurationProperties ecloudConfigurationProperties) {
-    EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients = new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
-            fileServiceClient, engineTaskClient, uisClient);
-    return new ProxiesService(engineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
+    EngineClients<S, T> engineClients = new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
+        fileServiceClient, engineTaskClient, uisClient);
+    return new ProxiesService<>(engineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
   }
 
   /**
@@ -197,7 +194,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   public WorkflowPostProcessor workflowPostProcessor(
       DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
-      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
+      EngineTaskClient<S, T> engineTaskClient) {
     return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, engineTaskClient);
   }
 
@@ -214,17 +211,17 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  public WorkflowExecutorManager getWorkflowExecutorManager(
+  public WorkflowExecutorManager<S, T> getWorkflowExecutorManager(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao,
       WorkflowPostProcessor workflowPostProcessor,
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
       RedissonClient redissonClient,
-      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient,
+      EngineTaskClient<S, T> engineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    WorkflowExecutorManager workflowExecutorManager = new WorkflowExecutorManager(
+    WorkflowExecutorManager<S, T> workflowExecutorManager = new WorkflowExecutorManager<>(
         semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
         rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
@@ -265,7 +262,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
 
   @Bean
   public WorkflowExecutionMonitor getWorkflowExecutionMonitor(
-      WorkflowExecutorManager workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
+      WorkflowExecutorManager<S, T> workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
       RedissonClient redissonClient, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
 
     // Computes the leniency for the failsafe action: how long ago (worst case) can the last update

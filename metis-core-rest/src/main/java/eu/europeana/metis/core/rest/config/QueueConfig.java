@@ -6,6 +6,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.ForgivingExceptionHandler;
 import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
 import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.QueueConsumer;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
@@ -35,7 +37,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * RabbitMQ configuration class.
@@ -43,7 +44,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @EnableConfigurationProperties({RabbitmqConfigurationProperties.class, TruststoreConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-public class QueueConfig implements WebMvcConfigurer {
+public class QueueConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String X_QUEUE_TYPE = "quorum";
@@ -123,7 +124,7 @@ public class QueueConfig implements WebMvcConfigurer {
   @Bean
   public QueueConsumer getQueueConsumer(
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
-      WorkflowExecutorManager workflowExecutionManager,
+      WorkflowExecutorManager<S, T> workflowExecutionManager,
       WorkflowExecutionMonitor workflowExecutionMonitor,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel) throws IOException {
     queueConsumer = new QueueConsumer(rabbitmqConsumerChannel,

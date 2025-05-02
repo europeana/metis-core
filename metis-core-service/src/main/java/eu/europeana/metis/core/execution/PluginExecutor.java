@@ -35,7 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PluginExecutor {
+public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
@@ -44,7 +44,7 @@ public class PluginExecutor {
     this.plugin = plugin;
   }
 
-  public <S extends EngineTaskSettings, T extends EngineTask> void execute(String datasetId, String previousTaskId, EngineTaskClient<S, T> engineTaskClient)
+  public void execute(String datasetId, String previousTaskId, EngineTaskClient<S, T> engineTaskClient)
       throws ExternalTaskException {
     //Prepare task
     Map<EngineTaskKey, String> pluginParameters;
@@ -52,7 +52,7 @@ public class PluginExecutor {
     T engineTask = null;
     if (DataEvolutionUtils.getHarvestPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
       pluginHarvestParameters = getPluginHarvestParameters();
-      createEngineTask(datasetId, engineTaskClient, pluginHarvestParameters);
+      engineTask = createEngineTask(datasetId, engineTaskClient, pluginHarvestParameters);
     } else if (DataEvolutionUtils.getProcessPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
       pluginParameters = getProcessPluginParameters(datasetId, engineTaskClient);
       engineTask = createEngineTask(datasetId, previousTaskId, engineTaskClient, pluginParameters);
@@ -75,7 +75,7 @@ public class PluginExecutor {
     LOGGER.info("Submitted task with externalTaskId: {}", plugin.getExternalTaskId());
   }
 
-  private @NotNull <S extends EngineTaskSettings, T extends EngineTask> T createEngineTask(
+  private @NotNull T createEngineTask(
       String datasetId,
       EngineTaskClient<S, T> engineTaskClient, PluginHarvestParameters pluginHarvestParameters) {
     T engineTask;
@@ -104,7 +104,7 @@ public class PluginExecutor {
   }
 
   @NotNull
-  private <S extends EngineTaskSettings, T extends EngineTask> T createEngineTask(String datasetId,
+  private T createEngineTask(String datasetId,
       String previousTaskId, EngineTaskClient<S, T> engineTaskClient,
       Map<EngineTaskKey, String> pluginParameters) {
     T engineTask;
@@ -127,7 +127,7 @@ public class PluginExecutor {
   }
 
   @NotNull
-  private <S extends EngineTaskSettings, T extends EngineTask> T createDepublishEngineTask(
+  private T createDepublishEngineTask(
       EngineTaskClient<S, T> engineTaskClient, Map<EngineTaskKey, String> pluginParameters) {
     return EngineTaskConfigurator.createDepublishEngineTask(pluginParameters, engineTaskClient);
   }
@@ -158,7 +158,7 @@ public class PluginExecutor {
     return new PluginHarvestParameters(targetUrl, incrementalHarvest, pluginParameters, oaiHarvestInputDataParameters);
   }
 
-  private @NotNull <S extends EngineTaskSettings, T extends EngineTask> Map<EngineTaskKey, String> getProcessPluginParameters(
+  private @NotNull Map<EngineTaskKey, String> getProcessPluginParameters(
       String datasetId, EngineTaskClient<S, T> engineTaskClient) {
     return switch (plugin.getPluginMetadata()) {
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> {
@@ -184,8 +184,8 @@ public class PluginExecutor {
         yield EngineTaskConfigurator.createValidationInternalParameters(urlOfSchemasZip, schemaRootPath,
             schematronRootPath);
       }
-      case NormalizationPluginMetadata normalizationPluginMetadata -> new HashMap<>();
-      case EnrichmentPluginMetadata enrichmentPluginMetadata -> new HashMap<>();
+      case NormalizationPluginMetadata ignored -> new HashMap<>();
+      case EnrichmentPluginMetadata ignored -> new HashMap<>();
       case MediaProcessPluginMetadata mediaProcessPluginMetadata -> {
         ThrottlingValues throttlingValues = engineTaskClient.getEngineTaskSettings().throttlingValues();
         ThrottlingLevel throttlingLevel = mediaProcessPluginMetadata.getThrottlingLevel() == null ?

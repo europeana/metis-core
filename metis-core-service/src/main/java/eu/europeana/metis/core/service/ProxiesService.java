@@ -52,7 +52,7 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
  */
-public class ProxiesService {
+public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
@@ -61,7 +61,7 @@ public class ProxiesService {
   private final DatasetDao datasetDao;
   private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
-  private final EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients;
+  private final EngineClients<S, T> engineClients;
   private final String ecloudProvider;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
@@ -73,13 +73,14 @@ public class ProxiesService {
    * @param ecloudProvider the ecloud provider
    * @param datasetDao the Dao instance to access the Dataset database
    */
-  public ProxiesService(EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients, String ecloudProvider,
+  public ProxiesService(EngineClients<S, T> engineClients, String ecloudProvider,
       WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao) {
     this(engineClients, ecloudProvider, workflowExecutionDao, datasetDao, new ProxiesHelper());
   }
 
-  ProxiesService(EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients, String ecloudProvider, WorkflowExecutionDao workflowExecutionDao,
+  ProxiesService(EngineClients<S, T> engineClients, String ecloudProvider,
+      WorkflowExecutionDao workflowExecutionDao,
       DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
     this.engineClients = engineClients;
     this.ecloudProvider = ecloudProvider;
@@ -247,9 +248,9 @@ public class ProxiesService {
     try {
       revisionsWithDeletedFlagSetToFalse = engineClients.ecloudDataSetServiceClient()
                                                         .getRevisionsWithDeletedFlagSetToFalse(
-                                                                    ecloudProvider, datasetId, representationName, revisionName,
-                                                                    ecloudProvider,
-                                                                    revisionTimestamp, numberOfRecords);
+                                                            ecloudProvider, datasetId, representationName, revisionName,
+                                                            ecloudProvider,
+                                                            revisionTimestamp, numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(String.format(
           "Getting record list with file content failed. workflowExecutionId: %s, pluginType: %s",
