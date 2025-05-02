@@ -21,7 +21,7 @@ import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrors;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
@@ -137,9 +137,9 @@ class TestProxiesController {
       subTaskInfo.setAdditionalInformations(null);
     }
 
-    ProcessingEngineTaskErrors processingEngineTaskErrors = TestObjectFactory.createExternalTaskErrorsListWithIdentifiers(2);
+    EngineTaskErrors engineTaskErrors = TestObjectFactory.createExternalTaskErrorsListWithIdentifiers(2);
     when(proxiesService.getExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(processingEngineTaskErrors);
+        TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(engineTaskErrors);
 
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
@@ -149,11 +149,11 @@ class TestProxiesController {
                .content(""))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.id", is(TestObjectFactory.EXTERNAL_TASK_ID)))
-           .andExpect(jsonPath("$.errors", hasSize(processingEngineTaskErrors.errors().size())))
+           .andExpect(jsonPath("$.errors", hasSize(engineTaskErrors.errors().size())))
            .andExpect(jsonPath("$.errors[0].errorDetails",
-               hasSize(processingEngineTaskErrors.errors().get(0).errorDetails().size())))
+               hasSize(engineTaskErrors.errors().get(0).errorDetails().size())))
            .andExpect(jsonPath("$.errors[1].errorDetails",
-               hasSize(processingEngineTaskErrors.errors().get(1).errorDetails().size())));
+               hasSize(engineTaskErrors.errors().get(1).errorDetails().size())));
   }
 
   @Test

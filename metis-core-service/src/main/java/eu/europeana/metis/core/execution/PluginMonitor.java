@@ -1,9 +1,9 @@
 package eu.europeana.metis.core.execution;
 
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskProgress;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
@@ -24,18 +24,18 @@ public class PluginMonitor {
     this.plugin = plugin;
   }
 
-  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  ProcessingEngineTaskProgress monitor(ProcessingEngineTaskClient<S, T> processingEngineTaskClient)
+  public <S extends EngineTaskSettings, T extends EngineTask>
+  EngineTaskProgress monitor(EngineTaskClient<S, T> engineTaskClient)
       throws ExternalTaskException, UnrecoverableExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
-    ProcessingEngineTaskProgress processingEngineTaskProgress = processingEngineTaskClient.getTaskProgress(
+    EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
         plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()));
     LOGGER.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
-    updateExecutionProgress(processingEngineTaskProgress);
-    return processingEngineTaskProgress;
+    updateExecutionProgress(engineTaskProgress);
+    return engineTaskProgress;
   }
 
-  void updateExecutionProgress(ProcessingEngineTaskProgress processingEngineTaskProgress) {
+  void updateExecutionProgress(EngineTaskProgress engineTaskProgress) {
 
     // Calculate the various counts.
     // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
@@ -49,55 +49,55 @@ public class PluginMonitor {
         //Incremental Harvest
         //deletedRecordsCount never used
         //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
+        expectedRecordCount = engineTaskProgress.getExpectedRecords();
         processedRecordCount =
-            processingEngineTaskProgress.getProcessedRecords() + processingEngineTaskProgress.getIgnoredRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
+            engineTaskProgress.getProcessedRecords() + engineTaskProgress.getIgnoredRecords();
+        deletedRecordCount = engineTaskProgress.getDeletedRecords();
       }
       case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata -> {
         //Full Harvest
         //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
         //deletedRecordsCount is always 0
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
+        expectedRecordCount = engineTaskProgress.getExpectedRecords();
+        processedRecordCount = engineTaskProgress.getProcessedRecords();
+        deletedRecordCount = engineTaskProgress.getDeletedRecords();
       }
       case AbstractIndexPluginMetadata abstractIndexPluginMetadata when !abstractIndexPluginMetadata.isIncrementalIndexing() -> {
         //Full Indexing
         //ignoredRecordsCount never used
         //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
         //The deletedRecordsCount is always 0
-        expectedRecordCount = processingEngineTaskProgress.getExpectedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
+        expectedRecordCount = engineTaskProgress.getExpectedRecords();
+        processedRecordCount = engineTaskProgress.getProcessedRecords();
+        deletedRecordCount = engineTaskProgress.getDeletedRecords();
       }
       case null, default -> {
         //Other plugins including incremental indexing
         //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
         expectedRecordCount =
-            processingEngineTaskProgress.getExpectedRecords() - processingEngineTaskProgress.getDeletedRecords();
-        processedRecordCount = processingEngineTaskProgress.getProcessedRecords();
-        deletedRecordCount = processingEngineTaskProgress.getDeletedRecords();
+            engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
+        processedRecordCount = engineTaskProgress.getProcessedRecords();
+        deletedRecordCount = engineTaskProgress.getDeletedRecords();
       }
     }
 
-    int errorCount = processingEngineTaskProgress.getProcessedErrors() + processingEngineTaskProgress.getDeletedErrors();
+    int errorCount = engineTaskProgress.getProcessedErrors() + engineTaskProgress.getDeletedErrors();
     // Update the execution progress.
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(expectedRecordCount);
     executionProgress.setProcessedRecords(processedRecordCount);
     executionProgress.setDeletedRecords(deletedRecordCount);
-    executionProgress.setIgnoredRecords(processingEngineTaskProgress.getIgnoredRecords());
+    executionProgress.setIgnoredRecords(engineTaskProgress.getIgnoredRecords());
     executionProgress.setErrors(errorCount);
     executionProgress.recalculateProgressPercentage();
-    executionProgress.setStatus(processingEngineTaskProgress.getProcessingEngineTaskState().name());
+    executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
   }
 
-  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>
-  void cancel(ProcessingEngineTaskClient<S, T> processingEngineTaskClient, String cancelledById)
+  public <S extends EngineTaskSettings, T extends EngineTask>
+  void cancel(EngineTaskClient<S, T> engineTaskClient, String cancelledById)
       throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
-    processingEngineTaskClient.cancel(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()),
+    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()),
         SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");
   }
 }

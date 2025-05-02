@@ -19,11 +19,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -57,7 +57,7 @@ class TestWorkflowExecutor {
 
   private static WorkflowExecutionDao workflowExecutionDao;
   private static WorkflowPostProcessor workflowPostProcessor;
-  private static ProcessingEngineTaskClient<ProcessingEngineTaskSettings, ProcessingEngineTask> processingEngineTaskClient;
+  private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
   private static WorkflowExecutionMonitor workflowExecutionMonitor;
   private static WorkflowExecutorManager workflowExecutorManager;
   private static WorkflowExecutionSettings workflowExecutionSettings;
@@ -66,10 +66,10 @@ class TestWorkflowExecutor {
   static void prepare() {
     workflowExecutionDao = Mockito.mock(WorkflowExecutionDao.class);
     workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
-    processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
+    engineTaskClient = mock(EngineTaskClient.class);
     workflowExecutionMonitor = Mockito.mock(WorkflowExecutionMonitor.class);
     workflowExecutorManager = new WorkflowExecutorManager(new SemaphoresPerPluginManager(2), workflowExecutionDao,
-        workflowPostProcessor, null, null, null, processingEngineTaskClient);
+        workflowPostProcessor, null, null, null, engineTaskClient);
     workflowExecutionSettings = Mockito.mock(WorkflowExecutionSettings.class);
     when(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes()).thenReturn(10);
   }
@@ -79,13 +79,13 @@ class TestWorkflowExecutor {
     Mockito.reset(workflowExecutionDao);
     Mockito.reset(workflowPostProcessor);
     Mockito.reset(workflowExecutionMonitor);
-    Mockito.reset(processingEngineTaskClient);
+    Mockito.reset(engineTaskClient);
 
-    ProcessingEngineTask processingEngineTask = mock(ProcessingEngineTask.class);
-    Supplier<ProcessingEngineTask> taskCreator = () -> processingEngineTask;
-    when(processingEngineTaskClient.getTaskCreator()).thenReturn(taskCreator);
-    ProcessingEngineTaskSettings processingEngineTaskSettings = mock(ProcessingEngineTaskSettings.class);
-    when(processingEngineTaskClient.getProcessingEngineTaskSettings()).thenReturn(processingEngineTaskSettings);
+    EngineTask engineTask = mock(EngineTask.class);
+    Supplier<EngineTask> taskCreator = () -> engineTask;
+    when(engineTaskClient.getEngineTaskCreator()).thenReturn(taskCreator);
+    EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
+    when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
 
   @Test
@@ -104,11 +104,11 @@ class TestWorkflowExecutor {
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
-    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
@@ -150,11 +150,11 @@ class TestWorkflowExecutor {
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setStartedDate(new Date());
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    ProcessingEngineTaskProgress droppedProgress = new ProcessingEngineTaskProgress();
-    droppedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.DROPPED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    EngineTaskProgress droppedProgress = new EngineTaskProgress();
+    droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(droppedProgress);
 
@@ -199,13 +199,13 @@ class TestWorkflowExecutor {
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
-    Throwable[] externalTaskException100Times = new Throwable[100];
-    Arrays.setAll(externalTaskException100Times, index -> new ExternalTaskException("Some error"));
+    Throwable[] engineTaskException100Times = new Throwable[100];
+    Arrays.setAll(engineTaskException100Times, index -> new ExternalTaskException("Some error"));
 
-    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
-    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
-        .thenThrow(externalTaskException100Times)
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+        .thenThrow(engineTaskException100Times)
         .thenReturn(processedProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
@@ -243,7 +243,7 @@ class TestWorkflowExecutor {
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
         .thenThrow(new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error")));
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
@@ -283,15 +283,15 @@ class TestWorkflowExecutor {
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
     final ExternalTaskException exception = new ExternalTaskException("Some error",
         new HttpServerErrorException(HttpStatus.BAD_GATEWAY));
-    final ExternalTaskException[] externalTaskExceptions = new ExternalTaskException[WorkflowExecutor.MAX_CANCEL_OR_MONITOR_FAILURES];
-    Arrays.fill(externalTaskExceptions, exception);
+    final ExternalTaskException[] engineTaskExceptions = new ExternalTaskException[WorkflowExecutor.MAX_CANCEL_OR_MONITOR_FAILURES];
+    Arrays.fill(engineTaskExceptions, exception);
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
-    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
-        .thenThrow(externalTaskExceptions)
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+        .thenThrow(engineTaskExceptions)
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
@@ -338,17 +338,17 @@ class TestWorkflowExecutor {
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
-    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    doNothing().when(processingEngineTaskClient).cancel(eq(topologyName), anyLong(), eq(message));
+    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), anyLong(), eq(message));
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false)
@@ -388,17 +388,17 @@ class TestWorkflowExecutor {
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress);
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
-    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
@@ -437,11 +437,11 @@ class TestWorkflowExecutor {
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    doNothing().when(processingEngineTaskClient).cancel(eq(topologyName), anyLong(), eq(message));
+    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), anyLong(), eq(message));
 
-    ProcessingEngineTaskProgress droppedProgress = new ProcessingEngineTaskProgress();
-    droppedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.DROPPED);
-    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+    EngineTaskProgress droppedProgress = new EngineTaskProgress();
+    droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), anyLong()))
         .thenReturn(droppedProgress);
 
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
@@ -481,11 +481,11 @@ class TestWorkflowExecutor {
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    doNothing().when(processingEngineTaskClient).cancel(eq(topologyName), anyLong(), eq(message));
+    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), anyLong(), eq(message));
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    when(processingEngineTaskClient.getTaskProgress(anyString(), anyLong()))
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), anyLong()))
         .thenReturn(currentlyProcessingProgress);
 
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))

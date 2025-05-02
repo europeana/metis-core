@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.engine.base.report.task;
 
-public enum ProcessingEngineTaskState {
+public enum EngineTaskState {
   PENDING("Task is being prepared by the REST application"),
   PROCESSING_BY_REST_APPLICATION("Task is being processed by the REST application"),
   QUEUED("All task's records pushed to Kafka queue"),
@@ -17,7 +17,7 @@ public enum ProcessingEngineTaskState {
 
   private final String defaultMessage;
 
-  ProcessingEngineTaskState(String s) {
+  EngineTaskState(String s) {
     this.defaultMessage = s;
   }
 

@@ -13,9 +13,9 @@ import eu.europeana.metis.core.dataset.DatasetConverter;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.engine.base.report.item.DataItemState;
 import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorDetails;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorInfo;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
@@ -280,21 +280,21 @@ public class TestObjectFactory {
     return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
   }
 
-  public static ProcessingEngineTaskErrors createExternalTaskErrorsListWithIdentifiers(int numberOfErrorTypes) {
+  public static EngineTaskErrors createExternalTaskErrorsListWithIdentifiers(int numberOfErrorTypes) {
     TaskErrorsInfo taskErrorsInfo = createTaskErrorsInfoListWithIdentifiers(numberOfErrorTypes);
 
-    List<ProcessingEngineTaskErrorInfo> processingEngineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
-      List<ProcessingEngineTaskErrorDetails> processingEngineTaskErrorDetailsList = new ArrayList<>();
+    List<EngineTaskErrorInfo> engineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
+      List<EngineTaskErrorDetails> engineTaskErrorDetailsList = new ArrayList<>();
       for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
-        ProcessingEngineTaskErrorDetails processingEngineTaskErrorDetails = new ProcessingEngineTaskErrorDetails(errorDetail.getIdentifier(),
+        EngineTaskErrorDetails engineTaskErrorDetails = new EngineTaskErrorDetails(errorDetail.getIdentifier(),
             errorDetail.getAdditionalInfo());
-        processingEngineTaskErrorDetailsList.add(processingEngineTaskErrorDetails);
+        engineTaskErrorDetailsList.add(engineTaskErrorDetails);
       }
-      return new ProcessingEngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
-          taskErrorInfo.getOccurrences(), processingEngineTaskErrorDetailsList);
+      return new EngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
+          taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
     }).collect(Collectors.toList());
 
-    return new ProcessingEngineTaskErrors(taskErrorsInfo.getId(), processingEngineTaskErrorInfoList);
+    return new EngineTaskErrors(taskErrorsInfo.getId(), engineTaskErrorInfoList);
   }
 
   /**

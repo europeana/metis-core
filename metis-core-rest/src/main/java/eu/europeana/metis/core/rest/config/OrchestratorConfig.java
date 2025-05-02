@@ -17,13 +17,13 @@ import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
@@ -32,7 +32,7 @@ import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
-import eu.europeana.metis.core.util.ExternalEngineClients;
+import eu.europeana.metis.core.util.EngineClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.time.Duration;
@@ -167,7 +167,7 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param ecloudDataSetServiceClient the client service for eCloud datasets.
    * @param recordServiceClient the client for interacting with record services.
    * @param fileServiceClient the client for managing file services.
-   * @param processingEngineTaskClient the client for Data Processing Services.
+   * @param engineTaskClient the client for Data Processing Services.
    * @param uisClient the client for Unified Information Services.
    * @param datasetDao the data access object for datasets.
    * @param ecloudConfigurationProperties the configuration properties for eCloud integration.
@@ -177,13 +177,13 @@ public class OrchestratorConfig implements WebMvcConfigurer {
   public ProxiesService getProxiesService(
       WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient,
+      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient,
       UISClient uisClient, DatasetDao datasetDao, EcloudConfigurationProperties ecloudConfigurationProperties) {
-    ExternalEngineClients<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> externalEngineClients =
-        new ExternalEngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
-        fileServiceClient, processingEngineTaskClient, uisClient);
+    EngineClients<? extends EngineTaskSettings, ? extends EngineTask> engineClients =
+        new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
+        fileServiceClient, engineTaskClient, uisClient);
 
-    return new ProxiesService(externalEngineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
+    return new ProxiesService(engineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
   }
 
   /**
@@ -192,14 +192,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param depublishRecordIdDao the depublish record id dao
    * @param datasetDao the dataset dao
    * @param workflowExecutionDao the workflow execution dao
-   * @param processingEngineTaskClient the dps client
+   * @param engineTaskClient the dps client
    * @return the workflow post processor
    */
   @Bean
   public WorkflowPostProcessor workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
-      ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient) {
-    return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, processingEngineTaskClient);
+      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
+    return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, engineTaskClient);
   }
 
   /**
@@ -221,13 +221,13 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
       RedissonClient redissonClient,
-      ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient,
+      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties) {
     WorkflowExecutorManager workflowExecutorManager = new WorkflowExecutorManager(
         semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
-        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
+        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
     workflowExecutorManager
         .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());

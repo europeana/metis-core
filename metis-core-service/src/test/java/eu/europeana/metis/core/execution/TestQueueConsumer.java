@@ -24,11 +24,11 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -59,7 +59,7 @@ class TestQueueConsumer {
 
   private static SemaphoresPerPluginManager semaphoresPerPluginManager;
   private static WorkflowExecutionDao workflowExecutionDao;
-  private static ProcessingEngineTaskClient<ProcessingEngineTaskSettings, ProcessingEngineTask> processingEngineTaskClient;
+  private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
   private static WorkflowPostProcessor workflowPostProcessor;
   private static RedissonClient redissonClient;
   private static Channel rabbitmqConsumerChannel;
@@ -76,10 +76,10 @@ class TestQueueConsumer {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
+    engineTaskClient = mock(EngineTaskClient.class);
     workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
-        rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
+        rabbitmqConsumerChannel, redissonClient, engineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
     workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(1);
   }
@@ -92,13 +92,13 @@ class TestQueueConsumer {
     Mockito.reset(redissonClient);
     Mockito.reset(rabbitmqPublisherChannel);
     Mockito.reset(rabbitmqConsumerChannel);
-    Mockito.reset(processingEngineTaskClient);
+    Mockito.reset(engineTaskClient);
 
-    ProcessingEngineTask processingEngineTask = mock(ProcessingEngineTask.class);
-    Supplier<ProcessingEngineTask> taskCreator = () -> processingEngineTask;
-    when(processingEngineTaskClient.getTaskCreator()).thenReturn(taskCreator);
-    ProcessingEngineTaskSettings processingEngineTaskSettings = mock(ProcessingEngineTaskSettings.class);
-    when(processingEngineTaskClient.getProcessingEngineTaskSettings()).thenReturn(processingEngineTaskSettings);
+    EngineTask engineTask = mock(EngineTask.class);
+    Supplier<EngineTask> taskCreator = () -> engineTask;
+    when(engineTaskClient.getEngineTaskCreator()).thenReturn(taskCreator);
+    EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
+    when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
 
   @Test
@@ -253,14 +253,14 @@ class TestQueueConsumer {
     doNothing().when(workflowExecutionDao).updateMonitorInformation(any(WorkflowExecution.class));
     when(workflowExecutionDao.isCancelling(any(ObjectId.class))).thenReturn(false);
 
-    ProcessingEngineTaskProgress currentlyProcessingProgress = new ProcessingEngineTaskProgress();
-    currentlyProcessingProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.CURRENTLY_PROCESSING);
-    ProcessingEngineTaskProgress processedProgress = new ProcessingEngineTaskProgress();
-    processedProgress.setProcessingEngineTaskState(ProcessingEngineTaskState.PROCESSED);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin1.getTopologyName()), anyLong()))
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin1.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
-    when(processingEngineTaskClient.getTaskProgress(eq(oaipmhHarvestPlugin2.getTopologyName()), anyLong()))
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin2.getTopologyName()), anyLong()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 

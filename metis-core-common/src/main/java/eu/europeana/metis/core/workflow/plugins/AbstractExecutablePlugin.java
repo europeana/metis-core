@@ -1,9 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * This abstract class is the base implementation of {@link ExecutablePlugin} and all executable plugins should inherit from it.
  *
@@ -11,8 +7,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePluginMetadata>
     extends AbstractMetisPlugin<M> implements ExecutablePlugin {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private String externalTaskId;
   private ExecutionProgress executionProgress = new ExecutionProgress();

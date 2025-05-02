@@ -2,7 +2,7 @@ package eu.europeana.metis.core.rest.controller;
 
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrors;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
@@ -133,7 +133,7 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public ProcessingEngineTaskErrors getExternalTaskReport(
+  public EngineTaskErrors getExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") long externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {

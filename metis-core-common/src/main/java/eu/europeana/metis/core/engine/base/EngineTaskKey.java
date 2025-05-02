@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.engine.base;
 
-public enum ProcessingEngineTaskKeys {
+public enum EngineTaskKey {
   XSLT_URL,
   PREVIOUS_TASK_ID,
   METIS_DATASET_ID,

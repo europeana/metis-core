@@ -2,11 +2,11 @@ package eu.europeana.metis.core.rest.config;
 
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.ecloud.DpsProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.ecloud.DpsProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskClient;
+import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import jakarta.annotation.PreDestroy;
@@ -14,12 +14,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ProcessingEngineClientConfig {
+public class EngineClientConfig {
   private DpsClient dpsClient;
-  private ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> processingEngineTaskClient;
+  private EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient;
 
   @Bean
-  public ProcessingEngineTaskClient<? extends ProcessingEngineTaskSettings, ? extends ProcessingEngineTask> externalTaskClient(
+  public EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
@@ -27,14 +27,14 @@ public class ProcessingEngineClientConfig {
     return switch (type) {
       case "ECLOUD" -> {
         dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-        DpsProcessingEngineTaskSettings dpsProcessingEngineTaskSettings = new DpsProcessingEngineTaskSettings(
+        DpsEngineTaskSettings dpsProcessingEngineTaskSettings = new DpsEngineTaskSettings(
             ecloudConfigurationProperties.getBaseUrl(),
             ecloudConfigurationProperties.getProvider(),
             metisCoreConfigurationProperties.baseUrl(),
             throttlingValues
         );
-        processingEngineTaskClient = new DpsProcessingEngineTaskClient(dpsClient, dpsProcessingEngineTaskSettings);
-        yield processingEngineTaskClient;
+        engineTaskClient = new DpsEngineTaskClient(dpsClient, dpsProcessingEngineTaskSettings);
+        yield engineTaskClient;
       }
       default -> throw new IllegalArgumentException("Unknown task client type: " + type);
     };
@@ -53,8 +53,8 @@ public class ProcessingEngineClientConfig {
 
   @PreDestroy
   public void close() {
-    if (processingEngineTaskClient != null) {
-      processingEngineTaskClient.close();
+    if (engineTaskClient != null) {
+      engineTaskClient.close();
     }
     if (dpsClient != null) {
       dpsClient.close();

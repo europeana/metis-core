@@ -5,7 +5,7 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 /**
  * Basic task settings needed for executing tasks in external systems.
  */
-public interface ProcessingEngineTaskSettings {
+public interface EngineTaskSettings {
 
   String baseUrl();
 

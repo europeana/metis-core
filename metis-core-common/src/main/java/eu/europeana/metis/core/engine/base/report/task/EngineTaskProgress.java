@@ -3,7 +3,7 @@ package eu.europeana.metis.core.engine.base.report.task;
 /**
  * Contains execution progress information of a task.
  */
-public class ProcessingEngineTaskProgress {
+public class EngineTaskProgress {
 
   // The total number of expected records excluding deleted records.
   private int expectedRecords;
@@ -23,9 +23,9 @@ public class ProcessingEngineTaskProgress {
   private int deletedErrors;
 
   // The current state of the task.
-  private ProcessingEngineTaskState processingEngineTaskState;
+  private EngineTaskState engineTaskState;
 
-  private String processingEngineTaskStateInfo;
+  private String engineTaskStateInfo;
 
   public int getExpectedRecords() {
     return expectedRecords;
@@ -75,19 +75,19 @@ public class ProcessingEngineTaskProgress {
     this.deletedErrors = deletedErrors;
   }
 
-  public ProcessingEngineTaskState getProcessingEngineTaskState() {
-    return processingEngineTaskState;
+  public EngineTaskState getEngineTaskState() {
+    return engineTaskState;
   }
 
-  public void setProcessingEngineTaskState(ProcessingEngineTaskState processingEngineTaskState) {
-    this.processingEngineTaskState = processingEngineTaskState;
+  public void setEngineTaskState(EngineTaskState engineTaskState) {
+    this.engineTaskState = engineTaskState;
   }
 
-  public String getProcessingEngineTaskStateInfo() {
-    return processingEngineTaskStateInfo;
+  public String getEngineTaskStateInfo() {
+    return engineTaskStateInfo;
   }
 
-  public void setProcessingEngineTaskStateInfo(String processingEngineTaskStateInfo) {
-    this.processingEngineTaskStateInfo = processingEngineTaskStateInfo;
+  public void setEngineTaskStateInfo(String engineTaskStateInfo) {
+    this.engineTaskStateInfo = engineTaskStateInfo;
   }
 }

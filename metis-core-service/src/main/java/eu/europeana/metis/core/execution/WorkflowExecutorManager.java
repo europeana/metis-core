@@ -4,9 +4,9 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
@@ -41,14 +41,14 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
    * @param rabbitmqPublisherChannel the channel for publishing to RabbitMQ
    * @param rabbitmqConsumerChannel the channel for consuming from RabbitMQ
    * @param redissonClient the redisson client for distributed locks
-   * @param processingEngineTaskClient the Data Processing Service client from ECloud
+   * @param engineTaskClient the Data Processing Service client from ECloud
    */
-  public <S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> WorkflowExecutorManager(SemaphoresPerPluginManager semaphoresPerPluginManager,
+  public <S extends EngineTaskSettings, T extends EngineTask> WorkflowExecutorManager(SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+      RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
     super(rabbitmqPublisherChannel, rabbitmqConsumerChannel, semaphoresPerPluginManager,
-        workflowExecutionDao, workflowPostProcessor, redissonClient, processingEngineTaskClient);
+        workflowExecutionDao, workflowPostProcessor, redissonClient, engineTaskClient);
   }
 
   /**

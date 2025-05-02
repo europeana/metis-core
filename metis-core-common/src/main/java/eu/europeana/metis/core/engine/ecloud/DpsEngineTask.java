@@ -6,18 +6,18 @@ import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
+import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.OaiHarvestParameters;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskKeys;
+import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class DpsProcessingEngineTask implements ProcessingEngineTask {
+public class DpsEngineTask implements EngineTask {
 
   private final DpsTask dpsTask;
 
-  public DpsProcessingEngineTask() {
+  public DpsEngineTask() {
     this.dpsTask = new DpsTask();
   }
 
@@ -26,7 +26,7 @@ public class DpsProcessingEngineTask implements ProcessingEngineTask {
   }
 
   @Override
-  public void setParameters(Map<ProcessingEngineTaskKeys, String> parameters) {
+  public void setParameters(Map<EngineTaskKey, String> parameters) {
     parameters.forEach((key, value) -> dpsTask.addParameter(key.name(), value));
   }
 

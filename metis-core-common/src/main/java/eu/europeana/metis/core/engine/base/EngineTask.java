@@ -5,9 +5,9 @@ import java.util.Map;
 /**
  * Represents a task that can be submitted to an external system.
  */
-public interface ProcessingEngineTask {
+public interface EngineTask {
 
-  void setParameters(Map<ProcessingEngineTaskKeys, String> parameters);
+  void setParameters(Map<EngineTaskKey, String> parameters);
   void setOutputRevision(DataRevision dataRevision);
   void setInputDataLocation(InputDataType inputDataType,String inputDataLocation);
   void setOaiHarvestParameters(OaiHarvestParameters oaiHarvestParameters);

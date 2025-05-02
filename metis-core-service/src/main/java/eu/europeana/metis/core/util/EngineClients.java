@@ -4,15 +4,15 @@ import eu.europeana.cloud.client.uis.rest.UISClient;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
 import eu.europeana.cloud.mcs.driver.FileServiceClient;
 import eu.europeana.cloud.mcs.driver.RecordServiceClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 
-public record ExternalEngineClients<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask>(
+public record EngineClients<S extends EngineTaskSettings, T extends EngineTask>(
     DataSetServiceClient ecloudDataSetServiceClient,
     RecordServiceClient recordServiceClient,
     FileServiceClient fileServiceClient,
-    ProcessingEngineTaskClient<S, T> processingEngineTaskClient,
+    EngineTaskClient<S, T> engineTaskClient,
     UISClient uisClient
 ) {
 

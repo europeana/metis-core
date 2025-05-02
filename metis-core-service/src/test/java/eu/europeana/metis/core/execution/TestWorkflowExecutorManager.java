@@ -13,7 +13,7 @@ import static org.mockito.Mockito.verify;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.bson.types.ObjectId;
@@ -46,10 +46,10 @@ class TestWorkflowExecutorManager {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    ProcessingEngineTaskClient<?, ?> processingEngineTaskClient = mock(ProcessingEngineTaskClient.class);
+    EngineTaskClient<?, ?> engineTaskClient = mock(EngineTaskClient.class);
     workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
-        rabbitmqConsumerChannel, redissonClient, processingEngineTaskClient);
+        rabbitmqConsumerChannel, redissonClient, engineTaskClient);
     workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
     workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(5);
     assertEquals(5, workflowExecutorManager.getDpsMonitorCheckIntervalInSecs());

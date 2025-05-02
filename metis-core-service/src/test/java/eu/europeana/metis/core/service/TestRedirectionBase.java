@@ -3,7 +3,7 @@ package eu.europeana.metis.core.service;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskState;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -205,7 +205,7 @@ public class TestRedirectionBase {
   @NotNull
   static ExecutionProgress getExecutionProgress() {
     final ExecutionProgress executionProgress = new ExecutionProgress();
-    executionProgress.setStatus(ProcessingEngineTaskState.PROCESSED.name());
+    executionProgress.setStatus(EngineTaskState.PROCESSED.name());
     executionProgress.setExpectedRecords(1);
     executionProgress.setProcessedRecords(1);
     executionProgress.setProgressPercentage(100);

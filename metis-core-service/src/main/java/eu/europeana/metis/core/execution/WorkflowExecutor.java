@@ -7,11 +7,11 @@ import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.ExecutedMetisPluginId;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskState;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-05-29
  */
-public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> implements
+public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask> implements
     Callable<Pair<WorkflowExecution, Boolean>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -70,7 +70,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
   private final WorkflowPostProcessor workflowPostProcessor;
   private final int monitorCheckIntervalInSecs;
   private final long periodOfNoProcessedRecordsChangeInSeconds;
-  private final ProcessingEngineTaskClient<S, T> processingEngineTaskClient;
+  private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
 
@@ -80,7 +80,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
     this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
     this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
     this.workflowPostProcessor = workflowExecutorManager.getWorkflowPostProcessor();
-    this.processingEngineTaskClient = workflowExecutorManager.getExternalTaskClient();
+    this.engineTaskClient = workflowExecutorManager.getExternalTaskClient();
     this.monitorCheckIntervalInSecs = workflowExecutionSettings.getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
         .toSeconds(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
@@ -287,7 +287,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
         }
 
         pluginExecutor.execute(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata),
-            processingEngineTaskClient);
+            engineTaskClient);
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
@@ -363,7 +363,7 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
 
   private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
     final PluginMonitor pluginMonitor = new PluginMonitor(plugin);
-    ProcessingEngineTaskProgress processingEngineTaskProgress = null;
+    EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
     AtomicInteger previousProcessedRecords = new AtomicInteger(0);
@@ -375,15 +375,15 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
         // Check if the task is cancelling and send the external cancelling call if needed
         sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin, previousProcessedRecords,
             checkPointDateOfProcessedRecordsPeriodInMillis);
-        processingEngineTaskProgress = pluginMonitor.monitor(processingEngineTaskClient);
+        engineTaskProgress = pluginMonitor.monitor(engineTaskClient);
         consecutiveCancelOrMonitorFailures = 0;
 
-        ProcessingEngineTaskState processingEngineTaskState = processingEngineTaskProgress.getProcessingEngineTaskState();
-        if (processingEngineTaskState == ProcessingEngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
-            isIndexingInPostProcessing(processingEngineTaskState, plugin)) {
+        EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
+        if (engineTaskState == EngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
+            isIndexingInPostProcessing(engineTaskState, plugin)) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
 
-        } else if (isHarvestingInPostProcessing(processingEngineTaskState, plugin)) {
+        } else if (isHarvestingInPostProcessing(engineTaskState, plugin)) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.IDENTIFYING_DELETED_RECORDS);
 
         } else {
@@ -426,27 +426,27 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
         workflowExecution.setUpdatedDate(updatedDate);
         workflowExecutionDao.updateMonitorInformation(workflowExecution);
       }
-    } while (isContinueMonitor(processingEngineTaskProgress));
+    } while (isContinueMonitor(engineTaskProgress));
 
     // Perform post-processing if needed.
-    if (!applyPostProcessing(processingEngineTaskProgress, plugin, datasetId)) {
+    if (!applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
       return;
     }
 
     // Set the status of the task.
-    preparePluginStateAndFinishedDate(plugin, processingEngineTaskProgress);
+    preparePluginStateAndFinishedDate(plugin, engineTaskProgress);
   }
 
-  private boolean isIndexingInPostProcessing(ProcessingEngineTaskState processingEngineTaskState,
+  private boolean isIndexingInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
-    return processingEngineTaskState == ProcessingEngineTaskState.IN_POST_PROCESSING &&
+    return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.REINDEX_TO_PREVIEW ||
             plugin.getPluginType() == PluginType.REINDEX_TO_PUBLISH);
   }
 
-  private boolean isHarvestingInPostProcessing(ProcessingEngineTaskState processingEngineTaskState,
+  private boolean isHarvestingInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
-    return processingEngineTaskState == ProcessingEngineTaskState.IN_POST_PROCESSING &&
+    return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.HTTP_HARVEST ||
             plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
   }
@@ -459,18 +459,18 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
 
-      pluginMonitor.cancel(processingEngineTaskClient, workflowExecution.getCancelledBy());
+      pluginMonitor.cancel(engineTaskClient, workflowExecution.getCancelledBy());
 
 
       externalCancelCallSent.set(true);
     }
   }
 
-  private boolean applyPostProcessing(ProcessingEngineTaskProgress processingEngineTaskProgress,
+  private boolean applyPostProcessing(EngineTaskProgress engineTaskProgress,
       AbstractExecutablePlugin<?> plugin,
       String datasetId) {
     boolean processingAppliedOrNotRequired = true;
-    if (processingEngineTaskProgress.getProcessingEngineTaskState() == ProcessingEngineTaskState.PROCESSED) {
+    if (engineTaskProgress.getEngineTaskState() == EngineTaskState.PROCESSED) {
       try {
         this.workflowPostProcessor.performPluginPostProcessing(plugin, datasetId);
       } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException | ExternalTaskException e) {
@@ -485,10 +485,10 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
     return processingAppliedOrNotRequired;
   }
 
-  private boolean isContinueMonitor(ProcessingEngineTaskProgress processingEngineTaskProgress) {
-    return processingEngineTaskProgress == null ||
-        (processingEngineTaskProgress.getProcessingEngineTaskState() != ProcessingEngineTaskState.DROPPED
-            && processingEngineTaskProgress.getProcessingEngineTaskState() != ProcessingEngineTaskState.PROCESSED);
+  private boolean isContinueMonitor(EngineTaskProgress engineTaskProgress) {
+    return engineTaskProgress == null ||
+        (engineTaskProgress.getEngineTaskState() != EngineTaskState.DROPPED
+            && engineTaskProgress.getEngineTaskState() != EngineTaskState.PROCESSED);
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
@@ -530,9 +530,9 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
   }
 
   private void preparePluginStateAndFinishedDate(AbstractExecutablePlugin<?> plugin,
-      ProcessingEngineTaskProgress processingEngineTaskProgress) {
-    ProcessingEngineTaskState processingEngineTaskState = processingEngineTaskProgress.getProcessingEngineTaskState();
-    switch (processingEngineTaskState) {
+      EngineTaskProgress engineTaskProgress) {
+    EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
+    switch (engineTaskState) {
       case PROCESSED -> {
         plugin.setFinishedDate(new Date());
         plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
@@ -540,10 +540,10 @@ public class WorkflowExecutor<S extends ProcessingEngineTaskSettings, T extends 
       case DROPPED -> {
         if (!workflowExecutionDao.isCancelling(workflowExecution.getId())) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-          String processingEngineTaskStateInfo = processingEngineTaskProgress.getProcessingEngineTaskStateInfo();
-          String message = StringUtils.isBlank(processingEngineTaskStateInfo)
+          String engineTaskStateInfo = engineTaskProgress.getEngineTaskStateInfo();
+          String message = StringUtils.isBlank(engineTaskStateInfo)
               ? "No further information received."
-              : processingEngineTaskStateInfo;
+              : engineTaskStateInfo;
           plugin.setFailMessage(EXECUTION_ERROR_PREFIX + message);
         }
       }

@@ -11,10 +11,10 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
@@ -51,7 +51,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * This object can perform post-processing for workflows.
  */
-public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> {
+public class WorkflowPostProcessor<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -60,7 +60,7 @@ public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T ext
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetDao datasetDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final ProcessingEngineTaskClient<S, T> processingEngineTaskClient;
+  private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
@@ -69,15 +69,15 @@ public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T ext
    * @param depublishRecordIdDao The DAO for de-published records
    * @param datasetDao The DAO for datasets
    * @param workflowExecutionDao The DAO for workflow executions
-   * @param processingEngineTaskClient the dps client
+   * @param engineTaskClient the dps client
    */
   public WorkflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
-      ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+      EngineTaskClient<S, T> engineTaskClient) {
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.datasetDao = datasetDao;
     this.workflowExecutionDao = workflowExecutionDao;
-    this.processingEngineTaskClient = processingEngineTaskClient;
+    this.engineTaskClient = engineTaskClient;
   }
 
   /**
@@ -102,7 +102,7 @@ public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T ext
       default -> throw new InvalidIndexPluginException("Plugin is not of the types supported");
     }
     final Integer databaseTotalRecords = retryableExternalRequestForNetworkExceptionsThrowing(() ->
-        (int) processingEngineTaskClient.getTotalIndexedRecords(datasetId, indexDatabase));
+        (int) engineTaskClient.getTotalIndexedRecords(datasetId, indexDatabase));
     indexPlugin.getExecutionProgress().setTotalDatabaseRecords(databaseTotalRecords);
   }
 
@@ -122,7 +122,7 @@ public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T ext
 
       // Check which have been published by the index action - use full record IDs for eCloud.
       if (!CollectionUtils.isEmpty(depublishedRecordIdsByFullId)) {
-        final List<String> publishedRecordIds = processingEngineTaskClient.getPublishedRecords(datasetId,
+        final List<String> publishedRecordIds = engineTaskClient.getPublishedRecords(datasetId,
             new ArrayList<>(depublishedRecordIdsByFullId.keySet()));
 
         // Remove the 'depublished' status. Note: we need to check for an empty result (otherwise
@@ -170,7 +170,7 @@ public class WorkflowPostProcessor<S extends ProcessingEngineTaskSettings, T ext
     Map<String, Boolean> recordStatusBatchMap;
     do {
       recordStatusBatchMap = retryableExternalRequestForNetworkExceptionsThrowing(
-          () -> processingEngineTaskClient.getRecordStatus(
+          () -> engineTaskClient.getRecordStatus(
               depublishPlugin.getTopologyName(), externalTaskId, recordStatusMap.size(),
               recordStatusMap.size() + ECLOUD_REQUEST_BATCH_SIZE));
       recordStatusMap.putAll(recordStatusBatchMap);

@@ -2,12 +2,12 @@ package eu.europeana.metis.core.execution;
 
 import com.rabbitmq.client.Channel;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTask;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import org.redisson.api.RedissonClient;
 
-class PersistenceProvider<S extends ProcessingEngineTaskSettings, T extends ProcessingEngineTask> {
+class PersistenceProvider<S extends EngineTaskSettings, T extends EngineTask> {
 
   private final Channel rabbitmqPublisherChannel;
   private final Channel rabbitmqConsumerChannel;
@@ -15,19 +15,19 @@ class PersistenceProvider<S extends ProcessingEngineTaskSettings, T extends Proc
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowPostProcessor workflowPostProcessor;
   private final RedissonClient redissonClient;
-  private final ProcessingEngineTaskClient<S, T> processingEngineTaskClient;
+  private final EngineTaskClient<S, T> engineTaskClient;
 
   PersistenceProvider(Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
-      RedissonClient redissonClient, ProcessingEngineTaskClient<S, T> processingEngineTaskClient) {
+      RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
     this.rabbitmqPublisherChannel = rabbitmqPublisherChannel;
     this.rabbitmqConsumerChannel = rabbitmqConsumerChannel;
     this.semaphoresPerPluginManager = semaphoresPerPluginManager;
     this.workflowExecutionDao = workflowExecutionDao;
     this.workflowPostProcessor = workflowPostProcessor;
     this.redissonClient = redissonClient;
-    this.processingEngineTaskClient = processingEngineTaskClient;
+    this.engineTaskClient = engineTaskClient;
   }
 
   public SemaphoresPerPluginManager getSemaphoresPerPluginManager() {
@@ -42,8 +42,8 @@ class PersistenceProvider<S extends ProcessingEngineTaskSettings, T extends Proc
     return workflowPostProcessor;
   }
 
-  ProcessingEngineTaskClient<S, T> getExternalTaskClient() {
-    return processingEngineTaskClient;
+  EngineTaskClient<S, T> getExternalTaskClient() {
+    return engineTaskClient;
   }
 
   RedissonClient getRedissonClient() {

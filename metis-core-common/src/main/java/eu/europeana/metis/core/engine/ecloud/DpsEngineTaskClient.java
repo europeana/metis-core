@@ -13,18 +13,18 @@ import eu.europeana.cloud.common.model.dps.TaskInfo;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
-import eu.europeana.metis.core.engine.base.ProcessingEngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.report.item.DataItemState;
 import eu.europeana.metis.core.engine.base.report.item.DataItemStatus;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentAttributeStatistics;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeReport;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentNodeStatistics;
 import eu.europeana.metis.core.engine.base.report.item.content.ContentStatisticsReport;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorDetails;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrorInfo;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskErrors;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskProgress;
-import eu.europeana.metis.core.engine.base.report.task.ProcessingEngineTaskState;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskErrors;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.report.task.EngineTaskState;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.ArrayList;
@@ -35,39 +35,39 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class DpsProcessingEngineTaskClient implements
-    ProcessingEngineTaskClient<DpsProcessingEngineTaskSettings, DpsProcessingEngineTask> {
+public class DpsEngineTaskClient implements
+    EngineTaskClient<DpsEngineTaskSettings, DpsEngineTask> {
 
   private final DpsClient dpsClient;
-  private final DpsProcessingEngineTaskSettings dpsProcessingEngineTaskProcessing;
+  private final DpsEngineTaskSettings dpsEngineTaskSettings;
 
-  public DpsProcessingEngineTaskClient(DpsClient dpsClient,
-      DpsProcessingEngineTaskSettings dpsProcessingEngineTaskProcessing) {
+  public DpsEngineTaskClient(DpsClient dpsClient,
+      DpsEngineTaskSettings dpsEngineTaskSettings) {
     this.dpsClient = dpsClient;
-    this.dpsProcessingEngineTaskProcessing = dpsProcessingEngineTaskProcessing;
+    this.dpsEngineTaskSettings = dpsEngineTaskSettings;
   }
 
   @Override
-  public DpsProcessingEngineTaskSettings getProcessingEngineTaskSettings() {
-    return dpsProcessingEngineTaskProcessing;
+  public DpsEngineTaskSettings getEngineTaskSettings() {
+    return dpsEngineTaskSettings;
   }
 
   @Override
-  public Supplier<DpsProcessingEngineTask> getTaskCreator() {
-    return DpsProcessingEngineTask::new;
+  public Supplier<DpsEngineTask> getEngineTaskCreator() {
+    return DpsEngineTask::new;
   }
 
   @Override
-  public long submitTask(DpsProcessingEngineTask externalTask, String topologyName) throws ExternalTaskException {
+  public long submitEngineTask(DpsEngineTask engineTask, String topologyName) throws ExternalTaskException {
     try {
-      return dpsClient.submitTask(externalTask.toDpsTask(), topologyName);
+      return dpsClient.submitTask(engineTask.toDpsTask(), topologyName);
     } catch (DpsException | RuntimeException e) {
       throw new ExternalTaskException("Submitting task to DPS failed", e);
     }
   }
 
   @Override
-  public ProcessingEngineTaskProgress getTaskProgress(String topologyName, long taskId)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, long taskId)
       throws ExternalTaskException, UnrecoverableExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, taskId);
@@ -79,18 +79,18 @@ public class DpsProcessingEngineTaskClient implements
     }
   }
 
-  private static ProcessingEngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
-    ProcessingEngineTaskProgress processingEngineTaskProgress = new ProcessingEngineTaskProgress();
-    processingEngineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
-    processingEngineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
-    processingEngineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
-    processingEngineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
-    processingEngineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
-    processingEngineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
-    ProcessingEngineTaskState processingEngineTaskState = ProcessingEngineTaskState.valueOf(taskInfo.getState().name());
-    processingEngineTaskProgress.setProcessingEngineTaskState(processingEngineTaskState);
-    processingEngineTaskProgress.setProcessingEngineTaskStateInfo(taskInfo.getStateDescription());
-    return processingEngineTaskProgress;
+  private static EngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
+    EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
+    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
+    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
+    engineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
+    engineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
+    engineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
+    engineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
+    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
+    engineTaskProgress.setEngineTaskState(engineTaskState);
+    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getStateDescription());
+    return engineTaskProgress;
   }
 
   @Override
@@ -126,7 +126,7 @@ public class DpsProcessingEngineTaskClient implements
   }
 
   @Override
-  public List<DataItemStatus> getExternalRecordStatuses(String topologyName, long taskId, int from, int to)
+  public List<DataItemStatus> getDataItemStatuses(String topologyName, long taskId, int from, int to)
       throws ExternalTaskException {
     try {
       List<SubTaskInfo> detailedTaskReportBetweenChunks =
@@ -162,29 +162,29 @@ public class DpsProcessingEngineTaskClient implements
   }
 
   @Override
-  public ProcessingEngineTaskErrors getTaskErrorReport(String topologyName, long taskId, String error, int idsCount)
+  public EngineTaskErrors getEngineTaskErrors(String topologyName, long taskId, String error, int idsCount)
       throws ExternalTaskException {
     try {
       TaskErrorsInfo taskErrorsInfo = dpsClient.getTaskErrorsReport(topologyName, taskId, null, idsCount);
 
-      List<ProcessingEngineTaskErrorInfo> processingEngineTaskErrorInfoList =
+      List<EngineTaskErrorInfo> engineTaskErrorInfoList =
           taskErrorsInfo.getErrors().stream()
                         .map(taskErrorInfo -> {
-                          List<ProcessingEngineTaskErrorDetails> processingEngineTaskErrorDetailsList = new ArrayList<>();
+                          List<EngineTaskErrorDetails> engineTaskErrorDetailsList = new ArrayList<>();
                           for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
-                            ProcessingEngineTaskErrorDetails processingEngineTaskErrorDetails = new ProcessingEngineTaskErrorDetails(
+                            EngineTaskErrorDetails engineTaskErrorDetails = new EngineTaskErrorDetails(
                                 errorDetail.getIdentifier(),
                                 errorDetail.getAdditionalInfo());
-                            processingEngineTaskErrorDetailsList.add(
-                                processingEngineTaskErrorDetails);
+                            engineTaskErrorDetailsList.add(
+                                engineTaskErrorDetails);
                           }
-                          return new ProcessingEngineTaskErrorInfo(
+                          return new EngineTaskErrorInfo(
                               taskErrorInfo.getErrorType(),
                               taskErrorInfo.getMessage(),
                               taskErrorInfo.getOccurrences(),
-                              processingEngineTaskErrorDetailsList);
+                              engineTaskErrorDetailsList);
                         }).toList();
-      return new ProcessingEngineTaskErrors(taskErrorsInfo.getId(), processingEngineTaskErrorInfoList);
+      return new EngineTaskErrors(taskErrorsInfo.getId(), engineTaskErrorInfoList);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task error report failed. topologyName: %s, externalTaskId: %s, idsPerError: %s",
@@ -193,7 +193,7 @@ public class DpsProcessingEngineTaskClient implements
   }
 
   @Override
-  public ContentStatisticsReport getTaskStatisticsReport(String topologyName, long taskId)
+  public ContentStatisticsReport getEngineTaskContentStatisticsReport(String topologyName, long taskId)
       throws ExternalTaskException {
     final StatisticsReport statisticsReport;
     try {
@@ -221,11 +221,11 @@ public class DpsProcessingEngineTaskClient implements
   }
 
   @Override
-  public List<ContentNodeReport> getElementReport(String topologyName, long taskId, String elementPath)
+  public List<ContentNodeReport> getContentNodeReport(String topologyName, long taskId, String nodePath)
       throws ExternalTaskException {
     final List<NodeReport> nodeReports;
     try {
-      nodeReports = dpsClient.getElementReport(topologyName, taskId, elementPath);
+      nodeReports = dpsClient.getElementReport(topologyName, taskId, nodePath);
       List<ContentNodeReport> contentNodeReportList = new ArrayList<>();
       for (NodeReport nodeReport : nodeReports) {
         ContentNodeReport contentNodeReport = getContentNodeReport(nodeReport);
@@ -250,7 +250,7 @@ public class DpsProcessingEngineTaskClient implements
   }
 
   @Override
-  public void cancel(String topologyName, long taskId, String message) throws ExternalTaskException {
+  public void cancelEngineTask(String topologyName, long taskId, String message) throws ExternalTaskException {
     try {
       dpsClient.killTask(topologyName, taskId, message);
     } catch (DpsException | RuntimeException e) {
