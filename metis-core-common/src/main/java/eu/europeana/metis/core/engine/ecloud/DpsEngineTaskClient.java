@@ -344,7 +344,6 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
   public Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException {
     String ecloudId = null;
     try {
-
       if (recordId != null) {
         ecloudId = uisClient.getCloudId(dpsEngineTaskSettings.provider(), recordId).getId();
       }

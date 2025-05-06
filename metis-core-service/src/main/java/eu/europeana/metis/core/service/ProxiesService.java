@@ -332,15 +332,20 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
-    String normalizedRecordId = idToSearch;
-    try {
-      normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
-                                                     .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
-    } catch (BadContentException e) {
-      LOGGER.info("Normalization of recordId '{}' failed. Using as is.", normalizedRecordId);
-    }
 
-    return engineTaskClient.getRecord(revisionName, executionAndPlugin.getRight().getStartedDate(), normalizedRecordId);
+    //Check engine record id and then europeana record id.
+    Record record = engineTaskClient.getRecord(revisionName, executionAndPlugin.getRight().getStartedDate(), idToSearch);
+    if (record == null) {
+      String normalizedRecordId = idToSearch;
+      try {
+        normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
+                                          .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
+      } catch (BadContentException e) {
+        LOGGER.info("Normalization of recordId '{}' failed. Using as is.", normalizedRecordId);
+      }
+      record = engineTaskClient.getRecord(revisionName, executionAndPlugin.getRight().getStartedDate(), normalizedRecordId);
+    }
+    return record;
   }
 
   Pair<WorkflowExecution, ExecutablePlugin> getExecutionAndPlugin(String workflowExecutionId, ExecutablePluginType pluginType)
