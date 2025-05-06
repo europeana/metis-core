@@ -18,8 +18,6 @@ import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeReport;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
@@ -40,7 +38,6 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -63,23 +60,20 @@ class TestProxiesService {
   private static ProxiesService proxiesService;
   private static WorkflowExecutionDao workflowExecutionDao;
   private static EngineTaskClient<?, ?> engineTaskClient;
-  private static ProxiesHelper proxiesHelper;
 
   @BeforeAll
   static void prepare() {
     workflowExecutionDao = mock(WorkflowExecutionDao.class);
     DatasetDao datasetDao = mock(DatasetDao.class);
     engineTaskClient = mock(EngineTaskClient.class);
-    proxiesHelper = mock(ProxiesHelper.class);
 
-    proxiesService = spy(new ProxiesService(engineTaskClient, workflowExecutionDao, datasetDao, proxiesHelper));
+    proxiesService = spy(new ProxiesService(engineTaskClient, workflowExecutionDao, datasetDao));
   }
 
   @AfterEach
   void cleanUp() {
     reset(workflowExecutionDao);
     reset(engineTaskClient);
-    reset(proxiesHelper);
     reset(proxiesService);
   }
 
@@ -220,13 +214,11 @@ class TestProxiesService {
   @Test
   void getAdditionalNodeStatistics() throws Exception {
     final String nodePath = "node path";
-    final List<ContentNodeReport> nodeReportList = new ArrayList<>();
+    final NodePathStatistics nodePathStatistics = new NodePathStatistics(nodePath, List.of());
     when(engineTaskClient.getContentNodeReport(Topology.OAIPMH_HARVEST.getTopologyName(),
-        TestObjectFactory.EXTERNAL_TASK_ID, nodePath)).thenReturn(nodeReportList);
+        TestObjectFactory.EXTERNAL_TASK_ID, nodePath)).thenReturn(nodePathStatistics);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    final NodePathStatistics nodePathStatistics = new NodePathStatistics(nodePath, List.of());
-    when(proxiesHelper.compileNodePathStatisticsExternal(nodePath, nodeReportList)).thenReturn(nodePathStatistics);
     final NodePathStatistics result = proxiesService.getAdditionalNodeStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID, nodePath);
     assertSame(nodePathStatistics, result);
@@ -254,14 +246,11 @@ class TestProxiesService {
 
   @Test
   void getExternalTaskStatistics() throws Exception {
-    final ContentStatisticsReport contentStatisticsReport = TestObjectFactory.createTaskStatisticsReportExternal();
-
+    final RecordStatistics recordStatistics = new RecordStatistics(0, List.of());
     when(engineTaskClient.getEngineTaskContentStatisticsReport(Topology.OAIPMH_HARVEST.getTopologyName(),
-        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(contentStatisticsReport);
+        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    final RecordStatistics recordStatistics = new RecordStatistics(0, List.of());
-    when(proxiesHelper.compileRecordStatisticsExternal(contentStatisticsReport)).thenReturn(recordStatistics);
     final RecordStatistics result = proxiesService.getExternalTaskStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID);
     assertSame(recordStatistics, result);

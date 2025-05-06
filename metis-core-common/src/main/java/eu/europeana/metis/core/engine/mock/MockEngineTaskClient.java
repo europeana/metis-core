@@ -6,10 +6,8 @@ import eu.europeana.cloud.client.uis.rest.UISClient;
 import eu.europeana.cloud.common.model.File;
 import eu.europeana.cloud.common.model.Representation;
 import eu.europeana.cloud.common.model.Revision;
-import eu.europeana.cloud.common.model.dps.AttributeStatistics;
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.NodeReport;
-import eu.europeana.cloud.common.model.dps.NodeStatistics;
 import eu.europeana.cloud.common.model.dps.RecordState;
 import eu.europeana.cloud.common.model.dps.StatisticsReport;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
@@ -25,10 +23,6 @@ import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentAttributeStatistics;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeReport;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeStatistics;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
@@ -36,7 +30,10 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
+import eu.europeana.metis.core.engine.ecloud.DpsEngineRecordStatisticsConverter;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.rest.stats.NodePathStatistics;
+import eu.europeana.metis.core.rest.stats.RecordStatistics;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
@@ -47,12 +44,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
@@ -224,26 +219,12 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public ContentStatisticsReport getEngineTaskContentStatisticsReport(String topologyName, long taskId)
+  public RecordStatistics getEngineTaskContentStatisticsReport(String topologyName, long taskId)
       throws ExternalTaskException {
     final StatisticsReport statisticsReport;
     try {
       statisticsReport = dpsClient.getTaskStatisticsReport(topologyName, taskId);
-      List<ContentNodeStatistics> contentNodeStatisticsList = new ArrayList<>();
-      for (NodeStatistics nodeStatistics : statisticsReport.getNodeStatistics()) {
-        Set<ContentAttributeStatistics> contentAttributeStatisticsList = new HashSet<>();
-        for (AttributeStatistics attributeStatistics : nodeStatistics.getAttributesStatistics()) {
-          contentAttributeStatisticsList.add(
-              new ContentAttributeStatistics(attributeStatistics.getName(), attributeStatistics.getValue(),
-                  attributeStatistics.getOccurrence())
-          );
-        }
-        contentNodeStatisticsList.add(
-            new ContentNodeStatistics(nodeStatistics.getParentXpath(), nodeStatistics.getXpath(), nodeStatistics.getValue(),
-                nodeStatistics.getOccurrence(), contentAttributeStatisticsList)
-        );
-      }
-      return new ContentStatisticsReport(taskId, contentNodeStatisticsList);
+      return DpsEngineRecordStatisticsConverter.compileRecordStatistics(statisticsReport);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task statistics failed. topologyName: %s, externalTaskId: %s",
@@ -252,32 +233,17 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public List<ContentNodeReport> getContentNodeReport(String topologyName, long taskId, String nodePath)
+  public NodePathStatistics getContentNodeReport(String topologyName, long taskId, String nodePath)
       throws ExternalTaskException {
     final List<NodeReport> nodeReports;
     try {
       nodeReports = dpsClient.getElementReport(topologyName, taskId, nodePath);
-      List<ContentNodeReport> contentNodeReportList = new ArrayList<>();
-      for (NodeReport nodeReport : nodeReports) {
-        ContentNodeReport contentNodeReport = getContentNodeReport(nodeReport);
-        contentNodeReportList.add(contentNodeReport);
-      }
-      return contentNodeReportList;
+      return DpsEngineRecordStatisticsConverter.compileNodePathStatistics(nodePath, nodeReports);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
           topologyName, taskId), e);
     }
-  }
-
-  private static ContentNodeReport getContentNodeReport(NodeReport nodeReport) {
-    List<ContentAttributeStatistics> contentAttributeStatisticsList = new ArrayList<>();
-    for (AttributeStatistics attributeStatistics : nodeReport.getAttributeStatistics()) {
-      ContentAttributeStatistics contentAttributeStatistics = new ContentAttributeStatistics(attributeStatistics.getName(),
-          attributeStatistics.getValue(), attributeStatistics.getOccurrence());
-      contentAttributeStatisticsList.add(contentAttributeStatistics);
-    }
-    return new ContentNodeReport(nodeReport.getNodeValue(), nodeReport.getOccurrence(), contentAttributeStatisticsList);
   }
 
   @Override
@@ -305,7 +271,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public List<eu.europeana.metis.core.rest.Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
+  public List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
     try {
@@ -317,9 +283,9 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     }
 
     // Get the records themselves.
-    final List<eu.europeana.metis.core.rest.Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
+    final List<Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
     for (CloudTagsResponse cloudTagsResponse : revisionsWithDeletedFlagSetToFalse) {
-      final eu.europeana.metis.core.rest.Record eloudXmlRecord = getRecord(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
+      final Record eloudXmlRecord = getRecord(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
       if (eloudXmlRecord == null) {
         throw new IllegalStateException("This can't happen: eCloud just told us the record exists");
       }
@@ -330,9 +296,9 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public List<eu.europeana.metis.core.rest.Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException {
+  public List<Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException {
 
-    final List<eu.europeana.metis.core.rest.Record> records = new ArrayList<>(recordIds.size());
+    final List<Record> records = new ArrayList<>(recordIds.size());
     for (String recordId : recordIds) {
       Optional.ofNullable(getRecord(recordId, revisionName, revisionTimestamp)).ifPresent(records::add);
     }
@@ -341,7 +307,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public eu.europeana.metis.core.rest.Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException {
+  public Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException {
     String ecloudId = null;
     try {
 
@@ -364,7 +330,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     return ecloudId == null ? null : getRecord(ecloudId, revisionName, revisionTimestamp);
   }
 
-  eu.europeana.metis.core.rest.Record getRecord(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+  Record getRecord(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
 
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;

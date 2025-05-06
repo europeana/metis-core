@@ -1,11 +1,11 @@
 package eu.europeana.metis.core.engine.base;
 
-import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeReport;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.rest.stats.NodePathStatistics;
+import eu.europeana.metis.core.rest.stats.RecordStatistics;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.Date;
@@ -39,9 +39,9 @@ public interface EngineTaskClient<S extends EngineTaskSettings, T extends Engine
 
   EngineTaskErrors getEngineTaskErrors(String topologyName, long taskId, String error, int idsCount) throws ExternalTaskException;
 
-  ContentStatisticsReport getEngineTaskContentStatisticsReport(String topologyName, long taskId) throws ExternalTaskException;
+  RecordStatistics getEngineTaskContentStatisticsReport(String topologyName, long taskId) throws ExternalTaskException;
 
-  List<ContentNodeReport> getContentNodeReport(String topologyName, long taskId, String nodePath)
+  NodePathStatistics getContentNodeReport(String topologyName, long taskId, String nodePath)
       throws ExternalTaskException;
 
   void cancelEngineTask(String topologyName, long taskId, String message) throws ExternalTaskException;

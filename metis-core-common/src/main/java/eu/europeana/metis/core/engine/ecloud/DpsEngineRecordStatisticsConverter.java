@@ -1,0 +1,73 @@
+package eu.europeana.metis.core.engine.ecloud;
+
+import eu.europeana.cloud.common.model.dps.NodeReport;
+import eu.europeana.cloud.common.model.dps.NodeStatistics;
+import eu.europeana.cloud.common.model.dps.StatisticsReport;
+import eu.europeana.metis.core.rest.stats.AttributeStatistics;
+import eu.europeana.metis.core.rest.stats.NodePathStatistics;
+import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
+import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class DpsEngineRecordStatisticsConverter {
+
+  public static RecordStatistics compileRecordStatistics(StatisticsReport report) {
+
+    // Group the node statistics by their respective xpath.
+    final Map<String, List<NodeStatistics>> nodesByXPath = report.getNodeStatistics().stream()
+                                                                 .collect(Collectors.groupingBy(NodeStatistics::getXpath));
+    final List<NodePathStatistics> nodePathStatisticsList =
+        nodesByXPath.entrySet().stream().map(DpsEngineRecordStatisticsConverter::compileNodePathStatistics)
+                    .sorted(Comparator.comparing(NodePathStatistics::xPath)).toList();
+    return new RecordStatistics(report.getTaskId(), nodePathStatisticsList);
+  }
+
+  public static NodePathStatistics compileNodePathStatistics(String nodePath, List<NodeReport> nodeReports) {
+    return compileNodePathStatistics(nodePath, nodeReports,
+        DpsEngineRecordStatisticsConverter::compileNodeValueStatistics);
+  }
+
+  private static NodePathStatistics compileNodePathStatistics(
+      Entry<String, List<NodeStatistics>> nodeWithXPath) {
+    return compileNodePathStatistics(nodeWithXPath.getKey(), nodeWithXPath.getValue(),
+        DpsEngineRecordStatisticsConverter::compileNodeValueStatistics);
+  }
+
+  private static <I> NodePathStatistics compileNodePathStatistics(String nodePath,
+      List<I> nodes, Function<I, NodeValueStatistics> nodeValueConverter) {
+    final List<NodeValueStatistics> nodeValueStatisticsList =
+        nodes.stream().map(nodeValueConverter).sorted(Comparator.comparing(NodeValueStatistics::value)).toList();
+    return new NodePathStatistics(nodePath, nodeValueStatisticsList);
+  }
+
+  private static NodeValueStatistics compileNodeValueStatistics(NodeStatistics nodeStatistics) {
+    return compileNodeValueStatistics(nodeStatistics.getValue(), nodeStatistics.getOccurrence(),
+        nodeStatistics.getAttributesStatistics());
+  }
+
+  private static NodeValueStatistics compileNodeValueStatistics(NodeReport nodeReport) {
+    return compileNodeValueStatistics(nodeReport.getNodeValue(), nodeReport.getOccurrence(),
+        nodeReport.getAttributeStatistics());
+  }
+
+  private static NodeValueStatistics compileNodeValueStatistics(String nodeValue,
+      long occurrence,
+      Collection<eu.europeana.cloud.common.model.dps.AttributeStatistics> attributes) {
+    final List<AttributeStatistics> attributeStatistics =
+        attributes.stream().map(DpsEngineRecordStatisticsConverter::compileAttributeStatistics)
+                  .sorted(Comparator.comparing(AttributeStatistics::xPath).thenComparing(
+                      AttributeStatistics::value)).toList();
+    return new NodeValueStatistics(nodeValue, occurrence, attributeStatistics);
+  }
+
+  private static AttributeStatistics compileAttributeStatistics(
+      eu.europeana.cloud.common.model.dps.AttributeStatistics input) {
+    return new AttributeStatistics(input.getName(), input.getValue(), input.getOccurrence());
+  }
+}

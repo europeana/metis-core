@@ -14,6 +14,9 @@ import eu.europeana.metis.core.engine.mock.MockEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import jakarta.annotation.PreDestroy;
+import java.lang.invoke.MethodHandles;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class EngineClientConfig {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private DpsClient dpsClient;
   private DataSetServiceClient dataSetServiceClient;
   private RecordServiceClient recordServiceClient;
@@ -33,6 +37,7 @@ public class EngineClientConfig {
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
+    LOGGER.info("Initializing DPS Engine Task Client");
 
     dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     dataSetServiceClient = dataSetServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
@@ -55,6 +60,7 @@ public class EngineClientConfig {
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
+    LOGGER.info("Initializing Mock Engine Task Client");
 
     dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     dataSetServiceClient = dataSetServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);

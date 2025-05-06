@@ -14,11 +14,8 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentAttributeStatistics;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeStatistics;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
@@ -413,26 +410,6 @@ public class TestObjectFactory {
     nodeStatistics.add(new NodeStatistics("parentpath1", "path1", "value1", 1));
     nodeStatistics.add(new NodeStatistics("parentpath2", "path2", "value2", OCCURRENCES));
     return new StatisticsReport(EXTERNAL_TASK_ID, nodeStatistics);
-  }
-
-  public static ContentStatisticsReport createTaskStatisticsReportExternal() {
-    StatisticsReport taskStatisticsReport = createTaskStatisticsReport();
-
-    List<ContentNodeStatistics> contentNodeStatisticsList = new ArrayList<>();
-    for (NodeStatistics nodeStatistics : taskStatisticsReport.getNodeStatistics()) {
-      Set<ContentAttributeStatistics> contentAttributeStatisticsList = new HashSet<>();
-      for (AttributeStatistics attributeStatistics : nodeStatistics.getAttributesStatistics()) {
-        contentAttributeStatisticsList.add(
-            new ContentAttributeStatistics(attributeStatistics.getName(), attributeStatistics.getValue(),
-                attributeStatistics.getOccurrence())
-        );
-      }
-      contentNodeStatisticsList.add(
-          new ContentNodeStatistics(nodeStatistics.getParentXpath(), nodeStatistics.getXpath(), nodeStatistics.getValue(),
-              nodeStatistics.getOccurrence(), contentAttributeStatisticsList)
-      );
-    }
-    return new ContentStatisticsReport(taskStatisticsReport.getTaskId(), contentNodeStatisticsList);
   }
 
   /**

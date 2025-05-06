@@ -199,8 +199,7 @@ public class ProxiesController {
       LOGGER.info("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
           topologyName, externalTaskId);
     }
-    return proxiesService
-        .getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
+    return proxiesService.getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
 
   /**

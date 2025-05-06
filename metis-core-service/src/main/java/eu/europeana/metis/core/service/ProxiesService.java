@@ -8,8 +8,6 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeReport;
-import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
@@ -44,7 +42,6 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final WorkflowExecutionDao workflowExecutionDao;
   private final DatasetDao datasetDao;
-  private final ProxiesHelper proxiesHelper;
   private final DataEvolutionUtils dataEvolutionUtils;
   private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
@@ -56,17 +53,10 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * @param ecloudProvider the ecloud provider
    * @param datasetDao the Dao instance to access the Dataset database
    */
-  public ProxiesService(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao,
-      DatasetDao datasetDao) {
-    this(engineTaskClient, workflowExecutionDao, datasetDao, new ProxiesHelper());
-  }
-
-  ProxiesService(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao,
-      DatasetDao datasetDao, ProxiesHelper proxiesHelper) {
+  public ProxiesService(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao, DatasetDao datasetDao) {
     this.engineTaskClient = engineTaskClient;
     this.workflowExecutionDao = workflowExecutionDao;
     this.datasetDao = datasetDao;
-    this.proxiesHelper = proxiesHelper;
     this.dataEvolutionUtils = new DataEvolutionUtils(this.workflowExecutionDao);
   }
 
@@ -150,9 +140,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    */
   public RecordStatistics getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    final ContentStatisticsReport contentStatisticsReport;
-    contentStatisticsReport = engineTaskClient.getEngineTaskContentStatisticsReport(topologyName, externalTaskId);
-    return proxiesHelper.compileRecordStatisticsExternal(contentStatisticsReport);
+    return engineTaskClient.getEngineTaskContentStatisticsReport(topologyName, externalTaskId);
   }
 
   /**
@@ -174,9 +162,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
   public NodePathStatistics getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    final List<ContentNodeReport> nodeReports;
-    nodeReports = engineTaskClient.getContentNodeReport(topologyName, externalTaskId, nodePath);
-    return proxiesHelper.compileNodePathStatisticsExternal(nodePath, nodeReports);
+    return engineTaskClient.getContentNodeReport(topologyName, externalTaskId, nodePath);
   }
 
   private String getDatasetIdFromExternalTaskId(long externalTaskId)
