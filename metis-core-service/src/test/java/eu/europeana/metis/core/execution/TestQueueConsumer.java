@@ -77,11 +77,14 @@ class TestQueueConsumer {
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
     engineTaskClient = mock(EngineTaskClient.class);
-    workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
+
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
+    workflowExecutorManagerSettings.setRabbitmqQueueName("ExampleQueueName");
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(1);
+
+    workflowExecutorManager = new WorkflowExecutorManager(workflowExecutorManagerSettings, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
         rabbitmqConsumerChannel, redissonClient, engineTaskClient);
-    workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
-    workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(1);
   }
 
   @BeforeEach
@@ -104,8 +107,7 @@ class TestQueueConsumer {
   @Test
   void initiateConsumer() throws Exception {
     final String rabbitmqQueueName = "testname";
-    new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager,
-        workflowExecutorManager, workflowExecutionMonitor);
+    new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager, workflowExecutionMonitor);
     ArgumentCaptor<Integer> basicQos = ArgumentCaptor.forClass(Integer.class);
     verify(rabbitmqConsumerChannel, times(1)).basicQos(basicQos.capture());
     assertEquals(Integer.valueOf(1), basicQos.getValue());
@@ -122,8 +124,7 @@ class TestQueueConsumer {
         .basicConsume(eq(rabbitmqQueueName), anyBoolean(), any(QueueConsumer.class)))
         .thenThrow(new IOException("Some Error"));
     assertThrows(IOException.class,
-        () -> new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager,
-            workflowExecutorManager, workflowExecutionMonitor));
+        () -> new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager, workflowExecutionMonitor));
     ArgumentCaptor<Integer> basicQos = ArgumentCaptor.forClass(Integer.class);
     verify(rabbitmqConsumerChannel, times(1)).basicQos(basicQos.capture());
     verify(rabbitmqConsumerChannel, times(1)).basicConsume(eq(rabbitmqQueueName), eq(false), any());
@@ -143,7 +144,7 @@ class TestQueueConsumer {
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
     QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null,
-        workflowExecutorManager, workflowExecutorManager, workflowExecutionMonitor);
+        workflowExecutorManager, workflowExecutionMonitor);
     assertDoesNotThrow(
         () -> queueConsumer.handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8)));
   }
@@ -160,8 +161,7 @@ class TestQueueConsumer {
         .thenReturn(new ImmutablePair<>(workflowExecution, false));
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
-    QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null,
-        workflowExecutorManager, workflowExecutorManager, workflowExecutionMonitor);
+    QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager, workflowExecutionMonitor);
     queueConsumer
         .handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8));
 
@@ -182,7 +182,7 @@ class TestQueueConsumer {
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
     QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null,
-        workflowExecutorManager, workflowExecutorManager, workflowExecutionMonitor);
+        workflowExecutorManager, workflowExecutionMonitor);
     queueConsumer
         .handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8));
 
@@ -268,8 +268,7 @@ class TestQueueConsumer {
     when(workflowExecutionDao.update(any(WorkflowExecution.class))).thenReturn(anyString());
 
     QueueConsumer queueConsumer = spy(
-        new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager,
-            workflowExecutorManager, workflowExecutionMonitor));
+        new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager, workflowExecutionMonitor));
     doThrow(InterruptedException.class).doCallRealMethod().when(queueConsumer)
                                        .checkAndCleanCompletionService();
 

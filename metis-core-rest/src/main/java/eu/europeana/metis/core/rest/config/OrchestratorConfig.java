@@ -22,6 +22,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
+import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
@@ -221,14 +222,16 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
       EngineTaskClient<S, T> engineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    WorkflowExecutorManager<S, T> workflowExecutorManager = new WorkflowExecutorManager<>(
-        semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
-        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
-    workflowExecutorManager.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
-    workflowExecutorManager
-        .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
-    workflowExecutorManager.setPeriodOfNoProcessedRecordsChangeInMinutes(
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
+    workflowExecutorManagerSettings.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
+    workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
+
+    WorkflowExecutorManager<S, T> workflowExecutorManager = new WorkflowExecutorManager<>(
+        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
+        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
+
     return workflowExecutorManager;
   }
 

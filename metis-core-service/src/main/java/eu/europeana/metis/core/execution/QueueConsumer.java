@@ -33,7 +33,6 @@ public class QueueConsumer extends DefaultConsumer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  private final WorkflowExecutionSettings workflowExecutionSettings;
   private final WorkflowExecutorManager workflowExecutorManager;
   private final WorkflowExecutionMonitor workflowExecutionMonitor;
 
@@ -54,11 +53,9 @@ public class QueueConsumer extends DefaultConsumer {
    * @throws IOException if the consumer channel initialization fails
    */
   public QueueConsumer(Channel rabbitmqConsumerChannel, String rabbitmqQueueName,
-      WorkflowExecutionSettings workflowExecutionSettings,
       WorkflowExecutorManager workflowExecutorManager,
       WorkflowExecutionMonitor workflowExecutionMonitor) throws IOException {
     super(workflowExecutorManager.getRabbitmqConsumerChannel());
-    this.workflowExecutionSettings = workflowExecutionSettings;
     this.workflowExecutorManager = workflowExecutorManager;
     threadPool = Executors.newCachedThreadPool();
     completionService = new ExecutorCompletionService<>(threadPool);
@@ -143,8 +140,8 @@ public class QueueConsumer extends DefaultConsumer {
   }
 
   private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor<DpsEngineTaskSettings, DpsEngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
-        workflowExecutorManager, workflowExecutionSettings);
+    WorkflowExecutor<DpsEngineTaskSettings, DpsEngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
     completionService.submit(workflowExecutor);
     threadsCounter++;
   }

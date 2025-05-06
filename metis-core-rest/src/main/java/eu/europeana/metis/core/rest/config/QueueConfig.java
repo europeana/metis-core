@@ -128,8 +128,7 @@ public class QueueConfig<S extends EngineTaskSettings, T extends EngineTask> {
       WorkflowExecutionMonitor workflowExecutionMonitor,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel) throws IOException {
     queueConsumer = new QueueConsumer(rabbitmqConsumerChannel,
-        rabbitmqConfigurationProperties.getQueueName(), workflowExecutionManager, workflowExecutionManager,
-        workflowExecutionMonitor);
+        rabbitmqConfigurationProperties.getQueueName(), workflowExecutionManager, workflowExecutionMonitor);
     return queueConsumer;
   }
 

@@ -2,7 +2,6 @@ package eu.europeana.metis.core.execution;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -47,12 +46,14 @@ class TestWorkflowExecutorManager {
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
     EngineTaskClient<?, ?> engineTaskClient = mock(EngineTaskClient.class);
-    workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
+
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
+    workflowExecutorManagerSettings.setRabbitmqQueueName("ExampleQueueName");
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(5);
+
+    workflowExecutorManager = new WorkflowExecutorManager(workflowExecutorManagerSettings, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
         rabbitmqConsumerChannel, redissonClient, engineTaskClient);
-    workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
-    workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(5);
-    assertEquals(5, workflowExecutorManager.getDpsMonitorCheckIntervalInSecs());
   }
 
   @AfterEach

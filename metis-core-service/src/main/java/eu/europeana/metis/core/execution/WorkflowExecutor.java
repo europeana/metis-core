@@ -74,18 +74,15 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
 
-  WorkflowExecutor(
-      WorkflowExecution workflowExecution,
-      WorkflowExecutorManager<S, T> workflowExecutorManager,
-      WorkflowExecutionSettings workflowExecutionSettings) {
+  WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager<S, T> workflowExecutorManager) {
     this.workflowExecution = workflowExecution;
     this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
     this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
     this.workflowPostProcessor = workflowExecutorManager.getWorkflowPostProcessor();
-    this.engineTaskClient = workflowExecutorManager.getExternalTaskClient();
-    this.monitorCheckIntervalInSecs = workflowExecutionSettings.getDpsMonitorCheckIntervalInSecs();
+    this.engineTaskClient = workflowExecutorManager.getEngineTaskClient();
+    this.monitorCheckIntervalInSecs = workflowExecutorManager.getWorkflowExecutionSettings().getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
-        .toSeconds(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
+        .toSeconds(workflowExecutorManager.getWorkflowExecutionSettings().getPeriodOfNoProcessedRecordsChangeInMinutes());
   }
 
   @Override

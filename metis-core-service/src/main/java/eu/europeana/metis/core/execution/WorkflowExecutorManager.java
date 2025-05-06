@@ -17,17 +17,17 @@ import org.slf4j.LoggerFactory;
 /**
  * Manager class for adding executions in the distributed queue.
  */
-public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends EngineTask>
-    extends PersistenceProvider<S, T> implements WorkflowExecutionSettings {
+public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS = 5;
-  private static final int DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES = 30;
-
-  private int dpsMonitorCheckIntervalInSecs = DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS; //Use setter otherwise default
-  private int periodOfNoProcessedRecordsChangeInMinutes = DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES; //Use setter otherwise default
-
-  private String rabbitmqQueueName; //Initialize with setter
+  private final WorkflowExecutorManagerSettings workflowExecutorManagerSettings;
+  private final Channel rabbitmqPublisherChannel;
+  private final Channel rabbitmqConsumerChannel;
+  private final SemaphoresPerPluginManager semaphoresPerPluginManager;
+  private final WorkflowExecutionDao workflowExecutionDao;
+  private final WorkflowPostProcessor workflowPostProcessor;
+  private final RedissonClient redissonClient;
+  private final EngineTaskClient<S, T> engineTaskClient;
 
   /**
    * Autowired constructor.
@@ -41,12 +41,18 @@ public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends Eng
    * @param engineTaskClient the Data Processing Service client from ECloud
    */
   public WorkflowExecutorManager(
-      SemaphoresPerPluginManager semaphoresPerPluginManager,
+      WorkflowExecutorManagerSettings workflowExecutorManagerSettings, SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
       RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
-    super(rabbitmqPublisherChannel, rabbitmqConsumerChannel, semaphoresPerPluginManager,
-        workflowExecutionDao, workflowPostProcessor, redissonClient, engineTaskClient);
+    this.workflowExecutorManagerSettings = workflowExecutorManagerSettings;
+    this.rabbitmqPublisherChannel = rabbitmqPublisherChannel;
+    this.rabbitmqConsumerChannel = rabbitmqConsumerChannel;
+    this.semaphoresPerPluginManager = semaphoresPerPluginManager;
+    this.workflowExecutionDao = workflowExecutionDao;
+    this.workflowPostProcessor = workflowPostProcessor;
+    this.redissonClient = redissonClient;
+    this.engineTaskClient = engineTaskClient;
   }
 
   /**
@@ -60,7 +66,7 @@ public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends Eng
       BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
       try {
         //First parameter is the ExchangeName which is not used
-        getRabbitmqPublisherChannel().basicPublish("", rabbitmqQueueName, basicProperties,
+        getRabbitmqPublisherChannel().basicPublish("", workflowExecutorManagerSettings.getRabbitmqQueueName(), basicProperties,
             userWorkflowExecutionObjectId.getBytes(StandardCharsets.UTF_8));
       } catch (IOException e) {
         LOGGER.error("WorkflowExecution with objectId: {} not added in queue..",
@@ -69,26 +75,35 @@ public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends Eng
     }
   }
 
-  public void setRabbitmqQueueName(String rabbitmqQueueName) {
-    this.rabbitmqQueueName = rabbitmqQueueName;
+  public WorkflowExecutorManagerSettings getWorkflowExecutionSettings() {
+    return workflowExecutorManagerSettings;
   }
 
-  public void setDpsMonitorCheckIntervalInSecs(int dpsMonitorCheckIntervalInSecs) {
-    this.dpsMonitorCheckIntervalInSecs = dpsMonitorCheckIntervalInSecs;
+  public Channel getRabbitmqPublisherChannel() {
+    return rabbitmqPublisherChannel;
   }
 
-  public void setPeriodOfNoProcessedRecordsChangeInMinutes(
-      int periodOfNoProcessedRecordsChangeInMinutes) {
-    this.periodOfNoProcessedRecordsChangeInMinutes = periodOfNoProcessedRecordsChangeInMinutes;
+  public Channel getRabbitmqConsumerChannel() {
+    return rabbitmqConsumerChannel;
   }
 
-  @Override
-  public int getDpsMonitorCheckIntervalInSecs() {
-    return dpsMonitorCheckIntervalInSecs;
+  public SemaphoresPerPluginManager getSemaphoresPerPluginManager() {
+    return semaphoresPerPluginManager;
   }
 
-  @Override
-  public int getPeriodOfNoProcessedRecordsChangeInMinutes() {
-    return periodOfNoProcessedRecordsChangeInMinutes;
+  public WorkflowExecutionDao getWorkflowExecutionDao() {
+    return workflowExecutionDao;
+  }
+
+  public WorkflowPostProcessor getWorkflowPostProcessor() {
+    return workflowPostProcessor;
+  }
+
+  public RedissonClient getRedissonClient() {
+    return redissonClient;
+  }
+
+  public EngineTaskClient<S, T> getEngineTaskClient() {
+    return engineTaskClient;
   }
 }
