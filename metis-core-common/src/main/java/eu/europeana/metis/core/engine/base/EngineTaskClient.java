@@ -5,8 +5,10 @@ import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
+import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -46,5 +48,10 @@ public interface EngineTaskClient<S extends EngineTaskSettings, T extends Engine
 
   void close();
 
+  List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp, int numberOfRecords) throws ExternalTaskException;
+
+  List<Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException;
+
+  Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException;
 
 }

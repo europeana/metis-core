@@ -7,9 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -17,31 +14,21 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import eu.europeana.cloud.client.uis.rest.UISClient;
-import eu.europeana.cloud.common.model.File;
-import eu.europeana.cloud.common.model.Representation;
-import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
-import eu.europeana.cloud.common.response.CloudTagsResponse;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.mcs.driver.FileServiceClient;
-import eu.europeana.cloud.mcs.driver.RecordServiceClient;
-import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.item.content.report.ContentNodeReport;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.item.content.report.ContentStatisticsReport;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
-import eu.europeana.metis.core.util.EngineClients;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -53,16 +40,9 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -81,41 +61,24 @@ class TestProxiesService {
   private static final long EXTERNAL_TASK_ID = 2070373127078497810L;
 
   private static ProxiesService proxiesService;
-  private static DatasetDao datasetDao;
   private static WorkflowExecutionDao workflowExecutionDao;
   private static EngineTaskClient<?, ?> engineTaskClient;
-  private static UISClient uisClient;
-  private static DataSetServiceClient ecloudDataSetServiceClient;
-  private static RecordServiceClient recordServiceClient;
-  private static FileServiceClient fileServiceClient;
   private static ProxiesHelper proxiesHelper;
 
   @BeforeAll
   static void prepare() {
     workflowExecutionDao = mock(WorkflowExecutionDao.class);
-    datasetDao = mock(DatasetDao.class);
-    ecloudDataSetServiceClient = mock(DataSetServiceClient.class);
-    recordServiceClient = mock(RecordServiceClient.class);
-    fileServiceClient = mock(FileServiceClient.class);
+    DatasetDao datasetDao = mock(DatasetDao.class);
     engineTaskClient = mock(EngineTaskClient.class);
-    uisClient = mock(UISClient.class);
     proxiesHelper = mock(ProxiesHelper.class);
-    EngineClients<?, ?> engineClients =
-        new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
-            engineTaskClient, uisClient);
 
-    proxiesService = spy(new ProxiesService(engineClients, "ecloudProvider", workflowExecutionDao, datasetDao, proxiesHelper));
+    proxiesService = spy(new ProxiesService(engineTaskClient, workflowExecutionDao, datasetDao, proxiesHelper));
   }
 
   @AfterEach
   void cleanUp() {
-    reset(datasetDao);
     reset(workflowExecutionDao);
-    reset(ecloudDataSetServiceClient);
-    reset(recordServiceClient);
-    reset(fileServiceClient);
     reset(engineTaskClient);
-    reset(uisClient);
     reset(proxiesHelper);
     reset(proxiesService);
   }
@@ -124,8 +87,7 @@ class TestProxiesService {
   void getExternalTaskLogs() throws Exception {
     List<DataItemStatus> dataItemStatusList = TestObjectFactory.createExternalRecordStatusList();
 
-    when(engineTaskClient
-        .getDataItemStatuses(Topology.OAIPMH_HARVEST.getTopologyName(),
+    when(engineTaskClient.getDataItemStatuses(Topology.OAIPMH_HARVEST.getTopologyName(),
             EXTERNAL_TASK_ID, 1, 100)).thenReturn(dataItemStatusList);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -322,29 +284,32 @@ class TestProxiesService {
 
     // Mock getting the records from eCloud.
     final String ecloudId = "ECLOUDID1";
-    final CloudTagsResponse cloudTagsResponse = new CloudTagsResponse(ecloudId, false);
-    when(ecloudDataSetServiceClient
-        .getRevisionsWithDeletedFlagSetToFalse(anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyInt())).thenReturn(Collections.singletonList(cloudTagsResponse));
 
+    int numberOfRecords = 5;
     // Mock obtaining the actual record.
     final Record record = new Record(ecloudId, "test content");
-    doReturn(record).when(proxiesService).getRecord(plugin, ecloudId);
+    doReturn(List.of(record)).when(engineTaskClient)
+                             .getRecords(execution.getEcloudDatasetId(), MetisPlugin.getRepresentationName(),
+                                 plugin.getPluginType().name(),
+                                 plugin.getStartedDate(), numberOfRecords);
 
+    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
     // Execute the call.
     PaginatedRecordsResponse listOfFileContentsFromPluginExecution = proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), null, 5);
+            executablePluginType, null, numberOfRecords);
     assertEquals(record.getXmlRecord(),
         listOfFileContentsFromPluginExecution.getRecords().getFirst().getXmlRecord());
     assertEquals(ecloudId, listOfFileContentsFromPluginExecution.getRecords().getFirst().getEcloudId());
 
-    // If the actual record could not be gotten, we need to see an exception.
-    doReturn(null).when(proxiesService).getRecord(plugin, ecloudId);
-    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
-    assertThrows(IllegalStateException.class, () -> proxiesService
+    // Test exception.
+    doThrow(ExternalTaskException.class).when(engineTaskClient)
+                                        .getRecords(execution.getEcloudDatasetId(), MetisPlugin.getRepresentationName(),
+                                            plugin.getPluginType().name(),
+                                            plugin.getStartedDate(), numberOfRecords);
+    assertThrows(ExternalTaskException.class, () -> proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID, executablePluginType
-            , null, 5));
+            , null, numberOfRecords));
   }
 
   @Test
@@ -372,30 +337,6 @@ class TestProxiesService {
   }
 
   @Test
-  void getListOfFileContentsFromPluginExecution_ExceptionRequestingRevisions() throws Exception {
-
-    // Create execution and plugin and mock relevant method getting them.
-    final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
-    execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(new Date()));
-    final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
-    doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
-                                                    .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
-                                                        plugin.getPluginMetadata().getExecutablePluginType());
-
-    // Mock ecloud client method.
-    when(ecloudDataSetServiceClient
-        .getRevisionsWithDeletedFlagSetToFalse(anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyInt()))
-        .thenThrow(new MCSException("Chunk cannot be retrieved"));
-
-    // Check exception.
-    assertThrows(ExternalTaskException.class, () -> proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), null, 5));
-  }
-
-  @Test
   void testGetListOfFileContentsFromPluginExecution() throws GenericMetisException {
 
     // Create execution and plugin and mock relevant method getting them.
@@ -408,57 +349,42 @@ class TestProxiesService {
                                                         plugin.getPluginMetadata().getExecutablePluginType());
 
     // Create the test records and the list of IDs.
+    ListOfIds listOfIds = new ListOfIds();
+    listOfIds.setIds(List.of("ID 1", "ID 2", "ID 3"));
     final Record record1 = new Record("ID 1", "test content 1");
     final Record record2 = new Record("ID 2", "test content 2");
     final Record record3 = new Record("ID 3", "test content 3");
-    final List<String> idList = Stream.of(record1, record2, record3).map(Record::getEcloudId)
-                                      .toList();
+    final List<Record> recordList = List.of(record1, record2, record3);
 
     // Mock the method for getting records
-    doReturn(record1).when(proxiesService).getRecord(plugin, record1.getEcloudId());
-    doReturn(record2).when(proxiesService).getRecord(plugin, record2.getEcloudId());
-    doReturn(record3).when(proxiesService).getRecord(plugin, record3.getEcloudId());
+    doReturn(recordList).when(engineTaskClient)
+                        .getRecords(plugin.getPluginType().name(), plugin.getStartedDate(), listOfIds.getIds());
 
-    // Make the call - happy flow
-    final ListOfIds input = new ListOfIds();
-    input.setIds(idList);
     final RecordsResponse result = proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), input);
+            plugin.getPluginMetadata().getExecutablePluginType(), listOfIds);
 
     // Verify that the result contains the record in the right order
     assertNotNull(result);
     assertNotNull(result.getRecords());
-    assertEquals(idList.size(), result.getRecords().size());
-    assertEquals(idList, result.getRecords().stream().map(Record::getEcloudId).toList());
+    assertEquals(listOfIds.getIds().size(), result.getRecords().size());
+    assertEquals(listOfIds.getIds(), result.getRecords().stream().map(Record::getEcloudId).toList());
 
     // Check that the call also works for an empty list
-    input.setIds(Collections.emptyList());
+    listOfIds.setIds(Collections.emptyList());
     final RecordsResponse emptyResult = proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), input);
+            plugin.getPluginMetadata().getExecutablePluginType(), listOfIds);
     assertNotNull(emptyResult);
     assertNotNull(emptyResult.getRecords());
     assertTrue(emptyResult.getRecords().isEmpty());
-    input.setIds(idList);
-
-    // Check that if a record does not exist, the method still returns with the other records.
-    doReturn(null).when(proxiesService).getRecord(plugin, record3.getEcloudId());
-    final RecordsResponse resultWithMissingRecord = proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), input);
-    assertNotNull(resultWithMissingRecord);
-    assertNotNull(resultWithMissingRecord.getRecords());
-    assertEquals(idList.size() - 1, resultWithMissingRecord.getRecords().size());
-    assertTrue(new HashSet<>(idList).containsAll(resultWithMissingRecord.getRecords().stream()
-                                                                        .map(Record::getEcloudId).toList()));
 
     // Check that if a record cannot be retrieved, the method fails.
-    doThrow(ExternalTaskException.class).when(proxiesService)
-                                        .getRecord(plugin, record3.getEcloudId());
+    doThrow(ExternalTaskException.class).when(engineTaskClient)
+                                        .getRecords(plugin.getPluginType().name(), plugin.getStartedDate(), listOfIds.getIds());
     assertThrows(ExternalTaskException.class, () -> proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), input));
+            plugin.getPluginMetadata().getExecutablePluginType(), listOfIds));
   }
 
   @Test
@@ -466,16 +392,14 @@ class TestProxiesService {
 
     // If there is no execution
     final ExecutablePluginType pluginType = ExecutablePluginType.OAIPMH_HARVEST;
-    doThrow(NoWorkflowExecutionFoundException.class).when(proxiesService)
-                                                    .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
-                                                        pluginType);
+    doThrow(NoWorkflowExecutionFoundException.class)
+        .when(proxiesService).getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, pluginType);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             pluginType, new ListOfIds()));
 
     // If the execution does not have the plugin an empty result should be returned.
-    doReturn(null).when(proxiesService)
-                  .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, pluginType);
+    doReturn(null).when(proxiesService).getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, pluginType);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             pluginType, new ListOfIds()));
@@ -504,8 +428,7 @@ class TestProxiesService {
     assertSame(plugin, result.getRight());
 
     // Test happy flow without result
-    assertNull(proxiesService
-        .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, unusedPluginType));
+    assertNull(proxiesService.getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, unusedPluginType));
 
     // Test execution not found
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(null);
@@ -513,88 +436,5 @@ class TestProxiesService {
         .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
             plugin.getPluginMetadata().getExecutablePluginType()));
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(execution);
-  }
-
-  @Test
-  void testGetRecord() throws MCSException, ExternalTaskException {
-
-    // Create representation
-    final Representation representation = mock(Representation.class);
-    final String contentUri = "https://example.com";
-    final File file = new File();
-    file.setContentUri(URI.create(contentUri));
-    when(representation.getFiles()).thenReturn(Collections.singletonList(file));
-
-    // Create plugin
-    final PluginType pluginType = PluginType.MEDIA_PROCESS;
-    final ExecutablePlugin plugin = mock(ExecutablePlugin.class);
-    when(plugin.getPluginType()).thenReturn(pluginType);
-    when(plugin.getStartedDate()).thenReturn(new Date());
-
-    // Configure mocks
-    final String ecloudId = "ecloud ID";
-    final String ecloudProvider = proxiesService.getEcloudProvider();
-    final Date startedDate = plugin.getStartedDate();
-    final Revision revision = new Revision(pluginType.name(), ecloudProvider, startedDate);
-    doReturn(Collections.singletonList(representation)).when(recordServiceClient)
-                                                       .getRepresentationsByRevision(ecloudId,
-                                                           MetisPlugin.getRepresentationName(), revision);
-    final String testContent = "test content";
-    when(fileServiceClient.getFile(contentUri))
-        .thenReturn(new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8)));
-
-    // Test happy flow
-    final Record result = proxiesService.getRecord(plugin, ecloudId);
-    assertNotNull(result);
-    assertEquals(ecloudId, result.getEcloudId());
-    assertEquals(testContent, result.getXmlRecord());
-
-    // When the file service client returns an invalid input stream
-    when(fileServiceClient.getFile(contentUri)).thenReturn(new InputStream() {
-      @Override
-      public int read() throws IOException {
-        throw new IOException("Test generated exception");
-      }
-    });
-    assertThrows(ExternalTaskException.class, () -> proxiesService.getRecord(plugin, ecloudId));
-
-    // When the file service client throws exception
-    when(fileServiceClient.getFile(contentUri)).thenThrow(new MCSException());
-    assertThrows(ExternalTaskException.class, () -> proxiesService.getRecord(plugin, ecloudId));
-
-    doReturn(new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8)))
-        .when(fileServiceClient).getFile(contentUri);
-    proxiesService.getRecord(plugin, ecloudId);
-
-    // When the file service client throws exception
-    doReturn(null).when(recordServiceClient)
-                  .getRepresentationsByRevision(ecloudId, MetisPlugin.getRepresentationName(),
-                      revision);
-    assertNull(proxiesService.getRecord(plugin, ecloudId));
-    doReturn(Collections.emptyList()).when(recordServiceClient)
-                                     .getRepresentationsByRevision(ecloudId, MetisPlugin.getRepresentationName(),
-                                         revision);
-    assertNull(proxiesService.getRecord(plugin, ecloudId));
-    doReturn(Arrays.asList(representation, representation)).when(recordServiceClient).getRepresentationsByRevision(ecloudId,
-        MetisPlugin.getRepresentationName(), revision);
-
-    // When the record service client returns an exception or an unexpected list size.
-    proxiesService.getRecord(plugin, ecloudId);
-    when(recordServiceClient.getRepresentationsByRevision(anyString(), anyString(),
-        any(Revision.class))).thenThrow(MCSException.class);
-    assertThrows(ExternalTaskException.class, () -> proxiesService.getRecord(plugin, ecloudId));
-    doReturn(Collections.singletonList(representation)).when(recordServiceClient).getRepresentationsByRevision(ecloudId,
-        MetisPlugin.getRepresentationName(), revision);
-    proxiesService.getRecord(plugin, ecloudId);
-
-    // When the revision has an unexpected number of files
-    when(representation.getFiles()).thenReturn(null);
-    assertThrows(ExternalTaskException.class, () -> proxiesService.getRecord(plugin, ecloudId));
-    when(representation.getFiles()).thenReturn(Collections.emptyList());
-    assertThrows(ExternalTaskException.class, () -> proxiesService.getRecord(plugin, ecloudId));
-    when(representation.getFiles()).thenReturn(Arrays.asList(file, file));
-    proxiesService.getRecord(plugin, ecloudId);
-    when(representation.getFiles()).thenReturn(Collections.singletonList(file));
-    proxiesService.getRecord(plugin, ecloudId);
   }
 }

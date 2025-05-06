@@ -1,6 +1,11 @@
 package eu.europeana.metis.core.engine.mock;
 
 import eu.europeana.cloud.client.dps.rest.DpsClient;
+import eu.europeana.cloud.client.uis.rest.CloudException;
+import eu.europeana.cloud.client.uis.rest.UISClient;
+import eu.europeana.cloud.common.model.File;
+import eu.europeana.cloud.common.model.Representation;
+import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.common.model.dps.AttributeStatistics;
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.NodeReport;
@@ -10,8 +15,14 @@ import eu.europeana.cloud.common.model.dps.StatisticsReport;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.model.dps.TaskInfo;
+import eu.europeana.cloud.common.response.CloudTagsResponse;
+import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
+import eu.europeana.cloud.mcs.driver.FileServiceClient;
+import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.cloud.service.mcs.exception.MCSException;
+import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.content.report.ContentAttributeStatistics;
@@ -25,25 +36,46 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
+import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.io.IOUtils;
 
 public class MockEngineTaskClient implements
     EngineTaskClient<MockEngineTaskSettings, MockEngineTask> {
 
+  protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
   private final DpsClient dpsClient;
+  private final DataSetServiceClient dataSetServiceClient;
+  private final RecordServiceClient recordServiceClient;
+  private final FileServiceClient fileServiceClient;
+  private final UISClient uisClient;
   private final MockEngineTaskSettings dpsEngineTaskSettings;
 
-  public MockEngineTaskClient(DpsClient dpsClient,
-      MockEngineTaskSettings dpsEngineTaskSettings) {
+  public MockEngineTaskClient(DpsClient dpsClient, DataSetServiceClient dataSetServiceClient,
+      RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
+      UISClient uisClient, MockEngineTaskSettings dpsEngineTaskSettings) {
     this.dpsClient = dpsClient;
+    this.dataSetServiceClient = dataSetServiceClient;
+    this.recordServiceClient = recordServiceClient;
+    this.fileServiceClient = fileServiceClient;
+    this.uisClient = uisClient;
     this.dpsEngineTaskSettings = dpsEngineTaskSettings;
   }
 
@@ -261,5 +293,113 @@ public class MockEngineTaskClient implements
   @Override
   public void close() {
     dpsClient.close();
+  }
+
+  @Override
+  public List<eu.europeana.metis.core.rest.Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
+      int numberOfRecords) throws ExternalTaskException {
+    final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
+    try {
+      revisionsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
+          dpsEngineTaskSettings.provider(), datasetId, representationName, revisionName,
+          dpsEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
+    } catch (MCSException e) {
+      throw new ExternalTaskException("Getting record list with file content failed.", e);
+    }
+
+    // Get the records themselves.
+    final List<eu.europeana.metis.core.rest.Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
+    for (CloudTagsResponse cloudTagsResponse : revisionsWithDeletedFlagSetToFalse) {
+      final eu.europeana.metis.core.rest.Record eloudXmlRecord = getRecord(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
+      if (eloudXmlRecord == null) {
+        throw new IllegalStateException("This can't happen: eCloud just told us the record exists");
+      }
+      records.add(eloudXmlRecord);
+    }
+
+    return records;
+  }
+
+  @Override
+  public List<eu.europeana.metis.core.rest.Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException {
+
+    final List<eu.europeana.metis.core.rest.Record> records = new ArrayList<>(recordIds.size());
+    for (String recordId : recordIds) {
+      Optional.ofNullable(getRecord(recordId, revisionName, revisionTimestamp)).ifPresent(records::add);
+    }
+
+    return records;
+  }
+
+  @Override
+  public eu.europeana.metis.core.rest.Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException {
+    String ecloudId = null;
+    try {
+
+      if (recordId != null) {
+        ecloudId = uisClient.getCloudId(dpsEngineTaskSettings.provider(), recordId).getId();
+      }
+    } catch (CloudException e) {
+      if (e.getCause() instanceof RecordDoesNotExistException) {
+        // The record ID does not exist. Check whether the ID is already an eCloud ID.
+        ecloudId = verifyExistenceOfEcloudId(recordId);
+      } else {
+        // Some other connectivity issue.
+        throw new ExternalTaskException(
+            String.format("Failed to lookup cloudId for idToSearch: %s", recordId), e);
+      }
+    }
+
+    // Try to retrieve the record. Note: we need to know if the eCloud ID exists at this point
+    // because getRecord() cannot detect non-existing eCloud IDs.
+    return ecloudId == null ? null : getRecord(ecloudId, revisionName, revisionTimestamp);
+  }
+
+  eu.europeana.metis.core.rest.Record getRecord(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+
+    // Get the representation(s) for the given combination of plugin and record ID.
+    final List<Representation> representations;
+    try {
+      final Revision revision = new Revision(revisionName, dpsEngineTaskSettings.provider(), revisionTimestamp);
+      representations = recordServiceClient.getRepresentationsByRevision(ecloudId,
+          MetisPlugin.getRepresentationName(), revision);
+    } catch (MCSException e) {
+      throw new ExternalTaskException(String.format(
+          "Getting record list with file content failed. ecloudId: %s", ecloudId), e);
+    }
+
+    // If no representation is found, return null.
+    if (representations == null || representations.isEmpty()) {
+      return null;
+    }
+    final Representation representation = representations.getFirst();
+
+    // Perform checks on the file lists.
+    if (representation.getFiles() == null || representation.getFiles().isEmpty()) {
+      throw new ExternalTaskException(String.format(
+          "Expecting one file in the representation, but received none. ecloudId: %s", ecloudId));
+    }
+    final File file = representation.getFiles().getFirst();
+
+    // Obtain the file contents belonging to this representation version.
+    try {
+      final InputStream inputStream = fileServiceClient.getFile(file.getContentUri().toString());
+      return new Record(ecloudId, IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+    } catch (MCSException e) {
+      throw new ExternalTaskException("Getting record list with file content failed.", e);
+    } catch (IOException e) {
+      throw new ExternalTaskException("Problem while reading the contents of the file.", e);
+    }
+  }
+
+  private String verifyExistenceOfEcloudId(String potentialEcloudId) {
+    try {
+      return uisClient.getRecordId(potentialEcloudId).getResults().isEmpty() ? null : potentialEcloudId;
+    } catch (CloudException e) {
+      // TODO currently we can't distinguish between a connection issue and a non-existing eCloud ID.
+      //  The client should be changed to allow for this. We assume here that there is not a connection
+      //  issue because, where this method is called, we just did a successful call to the UIS service.
+      return null;
+    }
   }
 }

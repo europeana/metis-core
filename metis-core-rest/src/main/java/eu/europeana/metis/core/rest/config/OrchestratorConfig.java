@@ -1,10 +1,6 @@
 package eu.europeana.metis.core.rest.config;
 
 import com.rabbitmq.client.Channel;
-import eu.europeana.cloud.client.uis.rest.UISClient;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.mcs.driver.FileServiceClient;
-import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
 import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
@@ -22,8 +18,8 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
-import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
+import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
@@ -33,7 +29,6 @@ import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
-import eu.europeana.metis.core.util.EngineClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.time.Duration;
@@ -162,24 +157,15 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * Creates and returns an instance of SecuredProxiesService with the provided dependencies.
    *
    * @param workflowExecutionDao the data access object for workflow execution.
-   * @param ecloudDataSetServiceClient the client service for eCloud datasets.
-   * @param recordServiceClient the client for interacting with record services.
-   * @param fileServiceClient the client for managing file services.
    * @param engineTaskClient the client for Data Processing Services.
-   * @param uisClient the client for Unified Information Services.
    * @param datasetDao the data access object for datasets.
    * @param ecloudConfigurationProperties the configuration properties for eCloud integration.
    * @return an initialized instance of SecuredProxiesService.
    */
   @Bean
   public ProxiesService<S, T> getProxiesService(
-      WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
-      RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      EngineTaskClient<S, T> engineTaskClient,
-      UISClient uisClient, DatasetDao datasetDao, EcloudConfigurationProperties ecloudConfigurationProperties) {
-    EngineClients<S, T> engineClients = new EngineClients<>(ecloudDataSetServiceClient, recordServiceClient,
-        fileServiceClient, engineTaskClient, uisClient);
-    return new ProxiesService<>(engineClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
+      WorkflowExecutionDao workflowExecutionDao, EngineTaskClient<S, T> engineTaskClient, DatasetDao datasetDao) {
+    return new ProxiesService<>(engineTaskClient, workflowExecutionDao, datasetDao);
   }
 
   /**
