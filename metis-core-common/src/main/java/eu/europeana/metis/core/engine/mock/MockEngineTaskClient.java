@@ -57,8 +57,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 
-public class MockEngineTaskClient implements
-    EngineTaskClient<MockEngineTaskSettings, MockEngineTask> {
+public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSettings, MockEngineTask> {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
   private final DpsClient dpsClient;
@@ -293,6 +292,16 @@ public class MockEngineTaskClient implements
   @Override
   public void close() {
     dpsClient.close();
+  }
+
+  @Override
+  public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
+    try {
+      dataSetServiceClient.createDataSet(dpsEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
+    } catch (MCSException e) {
+      throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
+    }
+    return true;
   }
 
   @Override

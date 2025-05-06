@@ -295,6 +295,16 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
   }
 
   @Override
+  public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
+    try {
+      dataSetServiceClient.createDataSet(dpsEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
+    } catch (MCSException e) {
+      throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
+    }
+    return true;
+  }
+
+  @Override
   public List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;

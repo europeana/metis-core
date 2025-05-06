@@ -1,7 +1,9 @@
 package eu.europeana.metis.core.rest.config;
 
 import com.mongodb.client.MongoClient;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
+import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
+import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
+import eu.europeana.metis.common.config.properties.mongo.MongoConfigurationProperties;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
@@ -25,9 +27,6 @@ import eu.europeana.metis.utils.apm.ElasticAPMConfiguration;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
-import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
-import eu.europeana.metis.common.config.properties.mongo.MongoConfigurationProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -136,11 +135,9 @@ public class ApplicationConfiguration {
    */
   @Bean
   public DatasetDao getDatasetDao(
-      MorphiaDatastoreProvider morphiaDatastoreProvider, DataSetServiceClient ecloudDataSetServiceClient,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
-    DatasetDao datasetDao = new DatasetDao(morphiaDatastoreProvider, ecloudDataSetServiceClient);
+      MorphiaDatastoreProvider morphiaDatastoreProvider, EcloudConfigurationProperties ecloudConfigurationProperties) {
+    DatasetDao datasetDao = new DatasetDao(morphiaDatastoreProvider);
     datasetDao.setDatasetsPerRequest(RequestLimits.DATASETS_PER_REQUEST.getLimit());
-    datasetDao.setEcloudProvider(ecloudConfigurationProperties.getProvider());
     return datasetDao;
   }
 

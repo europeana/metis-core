@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
@@ -378,7 +379,7 @@ public class OrchestratorService {
         .validateWorkflowPlugins(workflow, enforcedPredecessorType);
 
     // Make sure that eCloud knows the dataset (needs to happen before we create the workflow).
-    datasetDao.checkAndCreateDatasetInEcloud(dataset);
+    createEngineDatasetId(dataset);
 
     // Create the workflow execution (without adding it to the database).
     final WorkflowExecution workflowExecution = workflowExecutionFactory
@@ -417,6 +418,24 @@ public class OrchestratorService {
 
     // Done. Get a fresh copy of the workflow execution to return.
     return workflowExecutionDao.getById(objectId);
+  }
+
+  private String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
+    if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
+        || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
+      final String datasetUuid = UUID.randomUUID().toString();
+      boolean isEngineDatasetIdCreated = workflowExecutorManager.getEngineTaskClient().createEngineDatasetId(datasetUuid);
+      if (!isEngineDatasetIdCreated) {
+        throw new ExternalTaskException(
+            String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
+      }
+      dataset.setEcloudDatasetId(datasetUuid);
+      datasetDao.update(dataset);
+    } else {
+      LOGGER.info("Dataset with datasetId {} already has a dataset initialized in Ecloud with id {}",
+              dataset.getDatasetId(), dataset.getEcloudDatasetId());
+    }
+    return dataset.getEcloudDatasetId();
   }
 
   /**
@@ -839,10 +858,11 @@ public class OrchestratorService {
 
     List<WorkflowExecutionDTO> workflowExecutionDTOList =
         allExecutions.results().stream()
-                     .map(workflowExecution ->{
+                     .map(workflowExecution -> {
                        User startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
                        User cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
-                       return WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser, cancelledUser);
+                       return WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser,
+                           cancelledUser);
                      })
                      .toList();
 
@@ -892,7 +912,8 @@ public class OrchestratorService {
 
     // Compile the result.
     final List<PluginWithDataAvailability> plugins = workflowExecutionDTO.getMetisPlugins().stream()
-                                                                         .filter(MetisPluginDTO::isCanDisplayRawXml).map(OrchestratorService::convert).toList();
+                                                                         .filter(MetisPluginDTO::isCanDisplayRawXml)
+                                                                         .map(OrchestratorService::convert).toList();
     final PluginsWithDataAvailability result = new PluginsWithDataAvailability();
     result.setPlugins(plugins);
 
