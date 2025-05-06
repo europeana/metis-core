@@ -12,12 +12,12 @@ import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskSettings;
 import eu.europeana.metis.core.engine.mock.MockEngineTaskClient;
 import eu.europeana.metis.core.engine.mock.MockEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
+import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties.EngineType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import jakarta.annotation.PreDestroy;
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -32,12 +32,24 @@ public class EngineClientConfig {
   private UISClient uisClient;
 
   @Bean(destroyMethod = "close")
-  @ConditionalOnProperty(name = "engine.mode", havingValue = "real")
-  public EngineTaskClient<?, ?> engineTaskClient(
+  public EngineTaskClient<?, ?> engine(
+      MetisCoreConfigurationProperties metisCoreConfigurationProperties,
+      EcloudConfigurationProperties ecloudConfigurationProperties,
+      ThrottlingValues throttlingValues
+  ) {
+    if (EngineType.DPS.equals(metisCoreConfigurationProperties.engineType())) {
+      LOGGER.info("Initializing DPS Engine Task Client");
+      return engineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
+    } else {
+      LOGGER.info("Initializing Mock Engine Task Client");
+      return mockEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
+    }
+  }
+
+  private EngineTaskClient<?, ?> engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
-    LOGGER.info("Initializing DPS Engine Task Client");
 
     dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     dataSetServiceClient = dataSetServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
@@ -54,13 +66,10 @@ public class EngineClientConfig {
   }
 
   //todo not really a mock yet
-  @Bean(destroyMethod = "close")
-  @ConditionalOnProperty(name = "engine.mode", havingValue = "mock", matchIfMissing = true)
-  public EngineTaskClient<?, ?> mockEngineTaskClient(
+  private EngineTaskClient<?, ?> mockEngineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
-    LOGGER.info("Initializing Mock Engine Task Client");
 
     dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     dataSetServiceClient = dataSetServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);

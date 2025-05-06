@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "metis-core")
 public record MetisCoreConfigurationProperties(
+    EngineType engineType,
     int maxConcurrentThreads,
     int dpsMonitorCheckIntervalInSeconds,
     int dpsConnectTimeoutInMilliseconds,
@@ -27,4 +28,10 @@ public record MetisCoreConfigurationProperties(
     int linkCheckingDefaultSamplingSize,
     int solrCommitPeriodInMinutes,
     List<String> allowedCorsHosts
-) {}
+) {
+
+  public enum EngineType {
+    DPS,
+    MOCK;
+  }
+}
