@@ -17,11 +17,11 @@ import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoin
 import java.util.List;
 import java.util.Map;
 
-public class DpsEngineTask implements EngineTask {
+public class EcloudEngineTask implements EngineTask {
 
   private final DpsTask dpsTask;
 
-  public DpsEngineTask() {
+  public EcloudEngineTask() {
     this.dpsTask = new DpsTask();
   }
 

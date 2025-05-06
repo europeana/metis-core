@@ -7,8 +7,8 @@ import eu.europeana.cloud.mcs.driver.FileServiceClient;
 import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskClient;
-import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskSettings;
+import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
+import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskSettings;
 import eu.europeana.metis.core.engine.mock.MockEngineTaskClient;
 import eu.europeana.metis.core.engine.mock.MockEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
@@ -32,21 +32,21 @@ public class EngineClientConfig {
   private UISClient uisClient;
 
   @Bean(destroyMethod = "close")
-  public EngineTaskClient<?, ?> engine(
+  public EngineTaskClient<?, ?> engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues
   ) {
     if (EngineType.DPS.equals(metisCoreConfigurationProperties.engineType())) {
       LOGGER.info("Initializing DPS Engine Task Client");
-      return engineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
+      return ecloudEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
     } else {
       LOGGER.info("Initializing Mock Engine Task Client");
       return mockEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
     }
   }
 
-  private EngineTaskClient<?, ?> engineTaskClient(
+  private EngineTaskClient<?, ?> ecloudEngineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues) {
@@ -56,13 +56,13 @@ public class EngineClientConfig {
     recordServiceClient = recordServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     fileServiceClient = fileServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     uisClient = uisClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    DpsEngineTaskSettings dpsProcessingEngineTaskSettings = new DpsEngineTaskSettings(
+    EcloudEngineTaskSettings dpsProcessingEngineTaskSettings = new EcloudEngineTaskSettings(
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getProvider(),
         metisCoreConfigurationProperties.baseUrl(),
         throttlingValues
     );
-    return new DpsEngineTaskClient(dpsClient, dataSetServiceClient, recordServiceClient, fileServiceClient, uisClient, dpsProcessingEngineTaskSettings);
+    return new EcloudEngineTaskClient(dpsClient, dataSetServiceClient, recordServiceClient, fileServiceClient, uisClient, dpsProcessingEngineTaskSettings);
   }
 
   //todo not really a mock yet

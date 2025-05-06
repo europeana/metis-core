@@ -5,8 +5,8 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import eu.europeana.metis.core.engine.ecloud.DpsEngineTask;
-import eu.europeana.metis.core.engine.ecloud.DpsEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import java.io.IOException;
@@ -29,11 +29,11 @@ import org.slf4j.LoggerFactory;
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2018-04-13
  */
-public class QueueConsumer extends DefaultConsumer {
+public class QueueConsumer<S extends EngineTaskSettings, T extends EngineTask> extends DefaultConsumer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  private final WorkflowExecutorManager workflowExecutorManager;
+  private final WorkflowExecutorManager<S, T> workflowExecutorManager;
   private final WorkflowExecutionMonitor workflowExecutionMonitor;
 
   private final ExecutorService threadPool;
@@ -53,7 +53,7 @@ public class QueueConsumer extends DefaultConsumer {
    * @throws IOException if the consumer channel initialization fails
    */
   public QueueConsumer(Channel rabbitmqConsumerChannel, String rabbitmqQueueName,
-      WorkflowExecutorManager workflowExecutorManager,
+      WorkflowExecutorManager<S,T> workflowExecutorManager,
       WorkflowExecutionMonitor workflowExecutionMonitor) throws IOException {
     super(workflowExecutorManager.getRabbitmqConsumerChannel());
     this.workflowExecutorManager = workflowExecutorManager;
@@ -140,8 +140,7 @@ public class QueueConsumer extends DefaultConsumer {
   }
 
   private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor<DpsEngineTaskSettings, DpsEngineTask> workflowExecutor =
-        new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<S, T> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
     completionService.submit(workflowExecutor);
     threadsCounter++;
   }

@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DpsEngineRecordStatisticsConverter {
+public class EcloudEngineRecordStatisticsConverter {
 
   public static RecordStatistics compileRecordStatistics(StatisticsReport report) {
 
@@ -23,20 +23,20 @@ public class DpsEngineRecordStatisticsConverter {
     final Map<String, List<NodeStatistics>> nodesByXPath = report.getNodeStatistics().stream()
                                                                  .collect(Collectors.groupingBy(NodeStatistics::getXpath));
     final List<NodePathStatistics> nodePathStatisticsList =
-        nodesByXPath.entrySet().stream().map(DpsEngineRecordStatisticsConverter::compileNodePathStatistics)
+        nodesByXPath.entrySet().stream().map(EcloudEngineRecordStatisticsConverter::compileNodePathStatistics)
                     .sorted(Comparator.comparing(NodePathStatistics::xPath)).toList();
     return new RecordStatistics(report.getTaskId(), nodePathStatisticsList);
   }
 
   public static NodePathStatistics compileNodePathStatistics(String nodePath, List<NodeReport> nodeReports) {
     return compileNodePathStatistics(nodePath, nodeReports,
-        DpsEngineRecordStatisticsConverter::compileNodeValueStatistics);
+        EcloudEngineRecordStatisticsConverter::compileNodeValueStatistics);
   }
 
   private static NodePathStatistics compileNodePathStatistics(
       Entry<String, List<NodeStatistics>> nodeWithXPath) {
     return compileNodePathStatistics(nodeWithXPath.getKey(), nodeWithXPath.getValue(),
-        DpsEngineRecordStatisticsConverter::compileNodeValueStatistics);
+        EcloudEngineRecordStatisticsConverter::compileNodeValueStatistics);
   }
 
   private static <I> NodePathStatistics compileNodePathStatistics(String nodePath,
@@ -60,7 +60,7 @@ public class DpsEngineRecordStatisticsConverter {
       long occurrence,
       Collection<eu.europeana.cloud.common.model.dps.AttributeStatistics> attributes) {
     final List<AttributeStatistics> attributeStatistics =
-        attributes.stream().map(DpsEngineRecordStatisticsConverter::compileAttributeStatistics)
+        attributes.stream().map(EcloudEngineRecordStatisticsConverter::compileAttributeStatistics)
                   .sorted(Comparator.comparing(AttributeStatistics::xPath).thenComparing(
                       AttributeStatistics::value)).toList();
     return new NodeValueStatistics(nodeValue, occurrence, attributeStatistics);

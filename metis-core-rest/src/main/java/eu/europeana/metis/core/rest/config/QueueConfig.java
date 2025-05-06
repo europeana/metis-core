@@ -48,7 +48,7 @@ public class QueueConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String X_QUEUE_TYPE = "quorum";
-  private QueueConsumer queueConsumer;
+  private QueueConsumer<S, T> queueConsumer;
 
   private Connection connection;
   private Channel publisherChannel;
@@ -122,12 +122,12 @@ public class QueueConfig<S extends EngineTaskSettings, T extends EngineTask> {
   }
 
   @Bean
-  public QueueConsumer getQueueConsumer(
+  public QueueConsumer<S, T> getQueueConsumer(
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       WorkflowExecutorManager<S, T> workflowExecutionManager,
       WorkflowExecutionMonitor workflowExecutionMonitor,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel) throws IOException {
-    queueConsumer = new QueueConsumer(rabbitmqConsumerChannel,
+    queueConsumer = new QueueConsumer<>(rabbitmqConsumerChannel,
         rabbitmqConfigurationProperties.getQueueName(), workflowExecutionManager, workflowExecutionMonitor);
     return queueConsumer;
   }

@@ -51,7 +51,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 
-public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettings, DpsEngineTask> {
+public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTaskSettings, EcloudEngineTask> {
 
   protected final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
   private final DpsClient dpsClient;
@@ -59,31 +59,31 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
   private final RecordServiceClient recordServiceClient;
   private final FileServiceClient fileServiceClient;
   private final UISClient uisClient;
-  private final DpsEngineTaskSettings dpsEngineTaskSettings;
+  private final EcloudEngineTaskSettings ecloudEngineTaskSettings;
 
-  public DpsEngineTaskClient(DpsClient dpsClient, DataSetServiceClient dataSetServiceClient,
+  public EcloudEngineTaskClient(DpsClient dpsClient, DataSetServiceClient dataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      UISClient uisClient, DpsEngineTaskSettings dpsEngineTaskSettings) {
+      UISClient uisClient, EcloudEngineTaskSettings ecloudEngineTaskSettings) {
     this.dpsClient = dpsClient;
     this.dataSetServiceClient = dataSetServiceClient;
     this.recordServiceClient = recordServiceClient;
     this.fileServiceClient = fileServiceClient;
     this.uisClient = uisClient;
-    this.dpsEngineTaskSettings = dpsEngineTaskSettings;
+    this.ecloudEngineTaskSettings = ecloudEngineTaskSettings;
   }
 
   @Override
-  public DpsEngineTaskSettings getEngineTaskSettings() {
-    return dpsEngineTaskSettings;
+  public EcloudEngineTaskSettings getEngineTaskSettings() {
+    return ecloudEngineTaskSettings;
   }
 
   @Override
-  public Supplier<DpsEngineTask> getEngineTaskCreator() {
-    return DpsEngineTask::new;
+  public Supplier<EcloudEngineTask> getEngineTaskCreator() {
+    return EcloudEngineTask::new;
   }
 
   @Override
-  public long submitEngineTask(DpsEngineTask engineTask, String topologyName) throws ExternalTaskException {
+  public long submitEngineTask(EcloudEngineTask engineTask, String topologyName) throws ExternalTaskException {
     try {
       return dpsClient.submitTask(engineTask.toDpsTask(), topologyName);
     } catch (DpsException | RuntimeException e) {
@@ -223,7 +223,7 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
     final StatisticsReport statisticsReport;
     try {
       statisticsReport = dpsClient.getTaskStatisticsReport(topologyName, taskId);
-      return DpsEngineRecordStatisticsConverter.compileRecordStatistics(statisticsReport);
+      return EcloudEngineRecordStatisticsConverter.compileRecordStatistics(statisticsReport);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task statistics failed. topologyName: %s, externalTaskId: %s",
@@ -237,7 +237,7 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
     final List<NodeReport> nodeReports;
     try {
       nodeReports = dpsClient.getElementReport(topologyName, taskId, nodePath);
-      return DpsEngineRecordStatisticsConverter.compileNodePathStatistics(nodePath, nodeReports);
+      return EcloudEngineRecordStatisticsConverter.compileNodePathStatistics(nodePath, nodeReports);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
@@ -262,7 +262,7 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
   @Override
   public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
     try {
-      dataSetServiceClient.createDataSet(dpsEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
+      dataSetServiceClient.createDataSet(ecloudEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
     } catch (MCSException e) {
       throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
     }
@@ -275,8 +275,8 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
     try {
       revisionsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-          dpsEngineTaskSettings.provider(), datasetId, representationName, revisionName,
-          dpsEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
+          ecloudEngineTaskSettings.provider(), datasetId, representationName, revisionName,
+          ecloudEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException("Getting record list with file content failed.", e);
     }
@@ -310,7 +310,7 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
     String ecloudId = null;
     try {
       if (recordId != null) {
-        ecloudId = uisClient.getCloudId(dpsEngineTaskSettings.provider(), recordId).getId();
+        ecloudId = uisClient.getCloudId(ecloudEngineTaskSettings.provider(), recordId).getId();
       }
     } catch (CloudException e) {
       if (e.getCause() instanceof RecordDoesNotExistException) {
@@ -333,7 +333,7 @@ public class DpsEngineTaskClient implements EngineTaskClient<DpsEngineTaskSettin
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
     try {
-      final Revision revision = new Revision(revisionName, dpsEngineTaskSettings.provider(), revisionTimestamp);
+      final Revision revision = new Revision(revisionName, ecloudEngineTaskSettings.provider(), revisionTimestamp);
       representations = recordServiceClient.getRepresentationsByRevision(ecloudId,
           MetisPlugin.getRepresentationName(), revision);
     } catch (MCSException e) {

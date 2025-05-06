@@ -30,7 +30,7 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
-import eu.europeana.metis.core.engine.ecloud.DpsEngineRecordStatisticsConverter;
+import eu.europeana.metis.core.engine.ecloud.EcloudEngineRecordStatisticsConverter;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.stats.NodePathStatistics;
 import eu.europeana.metis.core.rest.stats.RecordStatistics;
@@ -60,22 +60,22 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   private final RecordServiceClient recordServiceClient;
   private final FileServiceClient fileServiceClient;
   private final UISClient uisClient;
-  private final MockEngineTaskSettings dpsEngineTaskSettings;
+  private final MockEngineTaskSettings mockEngineTaskSettings;
 
   public MockEngineTaskClient(DpsClient dpsClient, DataSetServiceClient dataSetServiceClient,
       RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      UISClient uisClient, MockEngineTaskSettings dpsEngineTaskSettings) {
+      UISClient uisClient, MockEngineTaskSettings mockEngineTaskSettings) {
     this.dpsClient = dpsClient;
     this.dataSetServiceClient = dataSetServiceClient;
     this.recordServiceClient = recordServiceClient;
     this.fileServiceClient = fileServiceClient;
     this.uisClient = uisClient;
-    this.dpsEngineTaskSettings = dpsEngineTaskSettings;
+    this.mockEngineTaskSettings = mockEngineTaskSettings;
   }
 
   @Override
   public MockEngineTaskSettings getEngineTaskSettings() {
-    return dpsEngineTaskSettings;
+    return mockEngineTaskSettings;
   }
 
   @Override
@@ -224,7 +224,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     final StatisticsReport statisticsReport;
     try {
       statisticsReport = dpsClient.getTaskStatisticsReport(topologyName, taskId);
-      return DpsEngineRecordStatisticsConverter.compileRecordStatistics(statisticsReport);
+      return EcloudEngineRecordStatisticsConverter.compileRecordStatistics(statisticsReport);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task statistics failed. topologyName: %s, externalTaskId: %s",
@@ -238,7 +238,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     final List<NodeReport> nodeReports;
     try {
       nodeReports = dpsClient.getElementReport(topologyName, taskId, nodePath);
-      return DpsEngineRecordStatisticsConverter.compileNodePathStatistics(nodePath, nodeReports);
+      return EcloudEngineRecordStatisticsConverter.compileNodePathStatistics(nodePath, nodeReports);
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
@@ -263,7 +263,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   @Override
   public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
     try {
-      dataSetServiceClient.createDataSet(dpsEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
+      dataSetServiceClient.createDataSet(mockEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
     } catch (MCSException e) {
       throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
     }
@@ -276,8 +276,8 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
     try {
       revisionsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-          dpsEngineTaskSettings.provider(), datasetId, representationName, revisionName,
-          dpsEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
+          mockEngineTaskSettings.provider(), datasetId, representationName, revisionName,
+          mockEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException("Getting record list with file content failed.", e);
     }
@@ -312,7 +312,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     try {
 
       if (recordId != null) {
-        ecloudId = uisClient.getCloudId(dpsEngineTaskSettings.provider(), recordId).getId();
+        ecloudId = uisClient.getCloudId(mockEngineTaskSettings.provider(), recordId).getId();
       }
     } catch (CloudException e) {
       if (e.getCause() instanceof RecordDoesNotExistException) {
@@ -335,7 +335,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
     try {
-      final Revision revision = new Revision(revisionName, dpsEngineTaskSettings.provider(), revisionTimestamp);
+      final Revision revision = new Revision(revisionName, mockEngineTaskSettings.provider(), revisionTimestamp);
       representations = recordServiceClient.getRepresentationsByRevision(ecloudId,
           MetisPlugin.getRepresentationName(), revision);
     } catch (MCSException e) {
