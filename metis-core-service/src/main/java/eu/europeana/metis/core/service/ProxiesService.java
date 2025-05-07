@@ -99,7 +99,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    */
   public boolean existsExternalTaskReport(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    return engineTaskClient.hasErrorReport(topologyName, externalTaskId);
+    return engineTaskClient.hasEngineTaskErrorReport(topologyName, externalTaskId);
   }
 
   /**
@@ -121,7 +121,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
   public EngineTaskErrors getExternalTaskReport(String topologyName, long externalTaskId, int idsPerError)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    return engineTaskClient.getEngineTaskErrors(topologyName, externalTaskId, null, idsPerError);
+    return engineTaskClient.getEngineTaskErrors(topologyName, externalTaskId, idsPerError);
   }
 
   /**
@@ -140,7 +140,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    */
   public RecordStatistics getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    return engineTaskClient.getEngineTaskContentStatisticsReport(topologyName, externalTaskId);
+    return engineTaskClient.getEngineTaskContentRecordStatistics(topologyName, externalTaskId);
   }
 
   /**
@@ -162,7 +162,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
   public NodePathStatistics getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    return engineTaskClient.getContentNodeReport(topologyName, externalTaskId, nodePath);
+    return engineTaskClient.getEngineTaskContentNodePathStatistics(topologyName, externalTaskId, nodePath);
   }
 
   private String getDatasetIdFromExternalTaskId(long externalTaskId)

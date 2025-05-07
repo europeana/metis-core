@@ -113,7 +113,7 @@ class TestProxiesService {
   @Test
   void existsExternalTaskReport() throws Exception {
 
-    when(engineTaskClient.hasErrorReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+    when(engineTaskClient.hasEngineTaskErrorReport(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(true).thenThrow(ExternalTaskException.class);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -136,7 +136,7 @@ class TestProxiesService {
             taskErrorsInfo.getErrors().getFirst().getMessage());
 
     when(engineTaskClient.getEngineTaskErrors(Topology.OAIPMH_HARVEST.getTopologyName(),
-        TestObjectFactory.EXTERNAL_TASK_ID, null, 10))
+        TestObjectFactory.EXTERNAL_TASK_ID, 10))
         .thenReturn(taskErrorsInfoWithIdentifiers);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -160,7 +160,7 @@ class TestProxiesService {
   @Test
   void getExternalTaskReport_ExternalTaskException() throws Exception {
     when(engineTaskClient.getEngineTaskErrors(Topology.OAIPMH_HARVEST.getTopologyName(),
-        TestObjectFactory.EXTERNAL_TASK_ID, null,
+        TestObjectFactory.EXTERNAL_TASK_ID,
         10)).thenThrow(new ExternalTaskException(""));
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -202,7 +202,7 @@ class TestProxiesService {
 
   @Test
   void getExternalTaskStatistics_ExternalTaskException() throws Exception {
-    when(engineTaskClient.getEngineTaskContentStatisticsReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+    when(engineTaskClient.getEngineTaskContentRecordStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID)).thenThrow(new ExternalTaskException(""));
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -215,7 +215,7 @@ class TestProxiesService {
   void getAdditionalNodeStatistics() throws Exception {
     final String nodePath = "node path";
     final NodePathStatistics nodePathStatistics = new NodePathStatistics(nodePath, List.of());
-    when(engineTaskClient.getContentNodeReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+    when(engineTaskClient.getEngineTaskContentNodePathStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID, nodePath)).thenReturn(nodePathStatistics);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -235,7 +235,7 @@ class TestProxiesService {
   @Test
   void getAdditionalNodeStatistics_ExternalTaskException() throws Exception {
     final String nodePath = "node path";
-    when(engineTaskClient.getContentNodeReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+    when(engineTaskClient.getEngineTaskContentNodePathStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID, nodePath)).thenThrow(new ExternalTaskException(""));
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
@@ -247,7 +247,7 @@ class TestProxiesService {
   @Test
   void getExternalTaskStatistics() throws Exception {
     final RecordStatistics recordStatistics = new RecordStatistics(0, List.of());
-    when(engineTaskClient.getEngineTaskContentStatisticsReport(Topology.OAIPMH_HARVEST.getTopologyName(),
+    when(engineTaskClient.getEngineTaskContentRecordStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);

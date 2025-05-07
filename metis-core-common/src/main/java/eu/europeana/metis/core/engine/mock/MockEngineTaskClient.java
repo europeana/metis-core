@@ -8,7 +8,6 @@ import eu.europeana.cloud.common.model.Representation;
 import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.NodeReport;
-import eu.europeana.cloud.common.model.dps.RecordState;
 import eu.europeana.cloud.common.model.dps.StatisticsReport;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
@@ -46,10 +45,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 
 public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSettings, MockEngineTask> {
@@ -139,19 +136,6 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public Map<String, Boolean> getRecordStatus(String topologyName, long taskId, int from, int to) throws ExternalTaskException {
-    try {
-      List<SubTaskInfo> detailedTaskReportBetweenChunks =
-          dpsClient.getDetailedTaskReportBetweenChunks(topologyName, taskId, from, to);
-      return detailedTaskReportBetweenChunks.stream()
-                                            .collect(Collectors.toMap(SubTaskInfo::getResource,
-                                                subTaskInfo -> subTaskInfo.getRecordState().equals(RecordState.SUCCESS)));
-    } catch (DpsException e) {
-      throw new ExternalTaskException("Retrieve records status failed", e);
-    }
-  }
-
-  @Override
   public List<DataItemStatus> getDataItemStatuses(String topologyName, long taskId, int from, int to)
       throws ExternalTaskException {
     try {
@@ -178,7 +162,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public boolean hasErrorReport(String topologyName, long taskId) throws ExternalTaskException {
+  public boolean hasEngineTaskErrorReport(String topologyName, long taskId) throws ExternalTaskException {
     try {
       return dpsClient.checkIfErrorReportExists(topologyName, taskId);
     } catch (DpsException e) {
@@ -188,10 +172,10 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public EngineTaskErrors getEngineTaskErrors(String topologyName, long taskId, String error, int idsCount)
+  public EngineTaskErrors getEngineTaskErrors(String topologyName, long taskId, int maxEntries)
       throws ExternalTaskException {
     try {
-      TaskErrorsInfo taskErrorsInfo = dpsClient.getTaskErrorsReport(topologyName, taskId, null, idsCount);
+      TaskErrorsInfo taskErrorsInfo = dpsClient.getTaskErrorsReport(topologyName, taskId, null, maxEntries);
 
       List<EngineTaskErrorInfo> engineTaskErrorInfoList =
           taskErrorsInfo.getErrors().stream()
@@ -214,12 +198,12 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     } catch (DpsException e) {
       throw new ExternalTaskException(String.format(
           "Getting the task error report failed. topologyName: %s, externalTaskId: %s, idsPerError: %s",
-          topologyName, taskId, idsCount), e);
+          topologyName, taskId, maxEntries), e);
     }
   }
 
   @Override
-  public RecordStatistics getEngineTaskContentStatisticsReport(String topologyName, long taskId)
+  public RecordStatistics getEngineTaskContentRecordStatistics(String topologyName, long taskId)
       throws ExternalTaskException {
     final StatisticsReport statisticsReport;
     try {
@@ -233,7 +217,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public NodePathStatistics getContentNodeReport(String topologyName, long taskId, String nodePath)
+  public NodePathStatistics getEngineTaskContentNodePathStatistics(String topologyName, long taskId, String nodePath)
       throws ExternalTaskException {
     final List<NodeReport> nodeReports;
     try {

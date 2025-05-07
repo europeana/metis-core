@@ -4,6 +4,7 @@ import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRe
 
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.metis.core.common.RecordIdUtils;
+import eu.europeana.metis.core.common.RecordIdUtils.DatasetIdAndRecordId;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
@@ -11,11 +12,13 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
+import eu.europeana.metis.core.engine.base.item.report.DataItemState;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.service.OrchestratorService;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
@@ -35,15 +38,14 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
@@ -55,7 +57,7 @@ public class WorkflowPostProcessor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  private static final int ECLOUD_REQUEST_BATCH_SIZE = 1000;
+  private static final int ECLOUD_REQUEST_PAGE_SIZE = 1000;
 
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetDao datasetDao;
@@ -114,11 +116,10 @@ public class WorkflowPostProcessor {
       final Set<String> depublishedRecordIds = depublishRecordIdDao.getAllDepublishRecordIdsWithStatus(
           datasetId, DepublishRecordIdSortField.DEPUBLICATION_STATE, SortDirection.ASCENDING,
           DepublicationStatus.DEPUBLISHED);
-      final Map<String, String> depublishedRecordIdsByFullId = depublishedRecordIds.stream()
-                                                                                   .collect(Collectors.toMap(
-                                                                                       id -> RecordIdUtils.composeFullRecordId(
-                                                                                           datasetId, id),
-                                                                                       Function.identity()));
+      final Map<String, String> depublishedRecordIdsByFullId =
+          depublishedRecordIds.stream()
+                              .collect(Collectors.toMap(id -> RecordIdUtils.composeFullRecordId(datasetId, id),
+                                  Function.identity()));
 
       // Check which have been published by the index action - use full record IDs for eCloud.
       if (!CollectionUtils.isEmpty(depublishedRecordIdsByFullId)) {
@@ -166,24 +167,29 @@ public class WorkflowPostProcessor {
 
     // Retrieve the successfully depublished records.
     final long externalTaskId = Long.parseLong(depublishPlugin.getExternalTaskId());
-    final Map<String, Boolean> recordStatusMap = new HashMap<>();
-    Map<String, Boolean> recordStatusBatchMap;
+    final List<DataItemStatus> dataItemStatuses = new ArrayList<>();
+    List<DataItemStatus> dataItemStatusesPage;
     do {
-      recordStatusBatchMap = retryableExternalRequestForNetworkExceptionsThrowing(
-          () -> engineTaskClient.getRecordStatus(
-              depublishPlugin.getTopologyName(), externalTaskId, recordStatusMap.size(),
-              recordStatusMap.size() + ECLOUD_REQUEST_BATCH_SIZE));
-      recordStatusMap.putAll(recordStatusBatchMap);
-    } while (recordStatusBatchMap.size() == ECLOUD_REQUEST_BATCH_SIZE);
+      dataItemStatusesPage = retryableExternalRequestForNetworkExceptionsThrowing(
+          () -> engineTaskClient.getDataItemStatuses(
+              depublishPlugin.getTopologyName(), externalTaskId, dataItemStatuses.size(),
+              dataItemStatuses.size() + ECLOUD_REQUEST_PAGE_SIZE));
+      dataItemStatuses.addAll(dataItemStatusesPage);
+    } while (dataItemStatusesPage.size() == ECLOUD_REQUEST_PAGE_SIZE);
 
     // Mark the records as DEPUBLISHED.
-    final Map<String, Set<String>> successfulRecords = recordStatusMap.entrySet().stream()
-                                                                      .filter(entry -> entry.getValue() == Boolean.TRUE)
-                                                                      .map(Entry::getKey)
-                                                                      .map(RecordIdUtils::decomposeFullRecordId)
-                                                                      .collect(Collectors.groupingBy(Pair::getLeft,
-                                                                          Collectors.mapping(Pair::getRight,
-                                                                              Collectors.toSet())));
+    final Map<String, Set<String>> successfulRecords = new HashMap<>();
+    for (DataItemStatus dataItemStatus : dataItemStatuses) {
+      if (dataItemStatus.dataItemState().equals(DataItemState.SUCCESS)) {
+        String europeanaId = dataItemStatus.europeanaId();
+        DatasetIdAndRecordId datasetIdAndRecordId = RecordIdUtils.decomposeFullRecordId(europeanaId);
+        if (datasetIdAndRecordId != null) {
+          successfulRecords.computeIfAbsent(datasetIdAndRecordId.datasetId(), k -> new HashSet<>())
+                           .add(datasetIdAndRecordId.recordId());
+        }
+      }
+    }
+
     successfulRecords.forEach((dataset, records) ->
         depublishRecordIdDao.markRecordIdsWithDepublicationStatus(dataset, records,
             DepublicationStatus.DEPUBLISHED, new Date(), depublishPlugin.getPluginMetadata().getDepublicationReason()));
