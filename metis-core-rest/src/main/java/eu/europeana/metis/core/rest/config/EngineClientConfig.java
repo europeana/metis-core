@@ -56,13 +56,13 @@ public class EngineClientConfig {
     recordServiceClient = recordServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     fileServiceClient = fileServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     uisClient = uisClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    EcloudEngineTaskSettings dpsProcessingEngineTaskSettings = new EcloudEngineTaskSettings(
+    EcloudEngineTaskSettings ecloudEngineTaskSettings = new EcloudEngineTaskSettings(
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getProvider(),
         metisCoreConfigurationProperties.baseUrl(),
         throttlingValues
     );
-    return new EcloudEngineTaskClient(dpsClient, dataSetServiceClient, recordServiceClient, fileServiceClient, uisClient, dpsProcessingEngineTaskSettings);
+    return new EcloudEngineTaskClient(dpsClient, dataSetServiceClient, recordServiceClient, fileServiceClient, uisClient, ecloudEngineTaskSettings);
   }
 
   //todo not really a mock yet

@@ -285,8 +285,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
           plugin.setStartedDate(startDateToUse);
         }
 
-        pluginExecutor.execute(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata),
-            engineTaskClient);
+        pluginExecutor.submit(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata)
+        );
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "

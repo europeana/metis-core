@@ -1,33 +1,51 @@
 package eu.europeana.metis.core.execution;
 
-import eu.europeana.metis.core.dao.DataEvolutionUtils;
-import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDataRevision;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDefaultTaskParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDefaultTaskParametersHarvest;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDepublishParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createIndexParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createLinkCheckingParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createMediaParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createTransformationParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createValidationExternalParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createValidationInternalParameters;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
+
+import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.EngineTaskConfigurator;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.ExecutablePluginTypeGroup;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.MediaProcessPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.NormalizationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingLevel;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.exception.ExternalTaskException;
+import eu.europeana.metis.utils.CommonStringValues;
 import java.lang.invoke.MethodHandles;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,32 +57,15 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
-  private final EngineTaskConfigurator<S, T> engineTaskConfigurator;
+  private final EngineTaskClient<S, T> engineTaskClient;
 
   public PluginExecutor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
-    this.engineTaskConfigurator = new EngineTaskConfigurator<>(engineTaskClient);
+    this.engineTaskClient = engineTaskClient;
   }
 
-  public void execute(String datasetId, String previousTaskId, EngineTaskClient<S, T> engineTaskClient)
-      throws ExternalTaskException {
-    //Prepare task
-    Map<EngineTaskKey, String> pluginParameters;
-    PluginHarvestParameters pluginHarvestParameters;
-    T engineTask = null;
-    if (DataEvolutionUtils.getHarvestPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
-      pluginHarvestParameters = getPluginHarvestParameters();
-      engineTask = createEngineTask(datasetId, pluginHarvestParameters);
-    } else if (DataEvolutionUtils.getProcessPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
-      pluginParameters = getProcessPluginParameters(datasetId, engineTaskClient);
-      engineTask = createEngineTask(datasetId, previousTaskId, pluginParameters);
-    } else if (DataEvolutionUtils.getIndexPluginGroup().contains(plugin.getPluginMetadata().getExecutablePluginType())) {
-      pluginParameters = getIndexPluginParameters(datasetId);
-      engineTask = createEngineTask(datasetId, previousTaskId, pluginParameters);
-    } else if (plugin.getPluginMetadata().getExecutablePluginType().equals(ExecutablePluginType.DEPUBLISH)) {
-      pluginParameters = getDepublishPluginParameters(datasetId);
-      engineTask = createDepublishEngineTask(pluginParameters);
-    }
+  public void submit(String datasetId, String previousTaskId) throws ExternalTaskException {
+    T engineTask = createEngineTask(datasetId, previousTaskId);
 
     LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", plugin.getPluginType(), datasetId);
     try {
@@ -72,65 +73,103 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       plugin.setExternalTaskId(String.valueOf(taskId));
       plugin.setDataStatus(DataStatus.VALID);
     } catch (ExternalTaskException | RuntimeException e) {
-      throw new ExternalTaskException("Submitting task failed", e);
+      throw new ExternalTaskException(
+          format("Submitting task for plugin type %s and dataset %s failed", plugin.getPluginType(), datasetId), e);
     }
     LOGGER.info("Submitted task with externalTaskId: {}", plugin.getExternalTaskId());
   }
 
-  private @NotNull T createEngineTask(String datasetId, PluginHarvestParameters pluginHarvestParameters) {
-    T engineTask;
-    final Map<EngineTaskKey, String> basicTaskParameters = engineTaskConfigurator.createDefaultTaskParametersHarvest(
-        datasetId,
-        pluginHarvestParameters.incrementalHarvest(),
-        plugin.getStartedDate());
-    final Map<EngineTaskKey, String> allParameters = new HashMap<>(basicTaskParameters);
-    allParameters.putAll(pluginHarvestParameters.pluginParameters());
-    engineTask = engineTaskConfigurator.createHarvestEngineTask(
-        pluginHarvestParameters.targetUrl(),
-        plugin.getPluginType(),
-        plugin.getStartedDate(),
-        allParameters,
-        pluginHarvestParameters.oaiHarvestInputDataParameters()
-    );
+  private T createEngineTask(String datasetId, String previousTaskId) {
+    Map<EngineTaskKey, String> pluginParameters;
+    PluginHarvestParameters pluginHarvestParameters;
+    ExecutablePluginTypeGroup executablePluginTypeGroup = plugin.getPluginMetadata().getExecutablePluginType()
+                                                                .getExecutablePluginTypeGroup();
+    final T engineTask;
+    switch (executablePluginTypeGroup) {
+      case HARVEST -> {
+        pluginHarvestParameters = getPluginHarvestParameters();
+        engineTask = createHarvestEngineTask(datasetId, pluginHarvestParameters);
+      }
+      case PROCESS -> {
+        pluginParameters = getProcessPluginParameters(datasetId);
+        engineTask = createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
+      }
+      case INDEX -> {
+        pluginParameters = getIndexPluginParameters(datasetId);
+        engineTask = createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
+      }
+      case DEPUBLISH -> {
+        pluginParameters = getDepublishPluginParameters(datasetId);
+        engineTask = createDepublishEngineTask(pluginParameters);
+      }
+      default -> throw new IllegalStateException("Unexpected value: " + executablePluginTypeGroup);
+    }
     return engineTask;
   }
 
+  private @NotNull T createHarvestEngineTask(String datasetId, PluginHarvestParameters pluginHarvestParameters) {
+    final String dataLocation = getDataLocation(datasetId);
+    final Map<EngineTaskKey, String> basicTaskParameters =
+        createDefaultTaskParametersHarvest(
+            datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
+            engineTaskClient.getEngineTaskSettings().provider());
+    final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
+    allParameters.putAll(basicTaskParameters);
+
+    final DataRevision outputDataRevision = createDataRevision(
+        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().provider());
+
+    final InputDataEndpoint inputDataEndpoint =
+        requireNonNullElseGet(pluginHarvestParameters.oaiHarvestInputDataParameters(),
+            () -> new HarvestInputDataEndpoint(pluginHarvestParameters.targetUrl()));
+    return engineTaskClient.createEngineTask(allParameters, inputDataEndpoint, outputDataRevision);
+  }
+
   private record PluginHarvestParameters(String targetUrl, boolean incrementalHarvest,
-                                         Map<EngineTaskKey, String> pluginParameters,
                                          OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
 
   }
 
   @NotNull
-  private T createEngineTask(String datasetId, String previousTaskId,
+  private T createProcessEngineTask(String datasetId, String previousTaskId,
       Map<EngineTaskKey, String> pluginParameters) {
-    T engineTask;
-    final Map<EngineTaskKey, String> basicTaskParameters = engineTaskConfigurator.createDefaultTaskParameters(
-        datasetId,
-        previousTaskId,
-        plugin.getPluginMetadata().getRevisionNamePreviousPlugin(),
-        plugin.getPluginMetadata().getRevisionTimestampPreviousPlugin());
-    final Map<EngineTaskKey, String> allParameters = new HashMap<>(basicTaskParameters);
+    final DataRevision inputDataRevision = createDataRevision(
+        requireNonNull(PluginType.getPluginTypeFromEnumName(plugin.getPluginMetadata().getRevisionNamePreviousPlugin())),
+        plugin.getPluginMetadata().getRevisionTimestampPreviousPlugin(),
+        engineTaskClient.getEngineTaskSettings().provider());
+
+    final String dataLocation = getDataLocation(datasetId);
+    final Map<EngineTaskKey, String> basicTaskParameters =
+        createDefaultTaskParameters(previousTaskId, inputDataRevision, dataLocation);
+    final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
+    allParameters.putAll(basicTaskParameters);
     allParameters.putAll(pluginParameters);
-    engineTask = engineTaskConfigurator.createEngineTask(
-        datasetId,
-        plugin.getPluginType(),
-        plugin.getStartedDate(),
-        allParameters
-    );
-    return engineTask;
+
+    final DataRevision outputDataRevision = createDataRevision(
+        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().provider());
+
+    final InternalInputDataEndpoint internalInputDataEndpoint = new InternalInputDataEndpoint(dataLocation,
+        inputDataRevision);
+    return engineTaskClient.createEngineTask(allParameters, internalInputDataEndpoint, outputDataRevision);
+  }
+
+  private @NotNull String getDataLocation(String datasetId) {
+    return format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE,
+            engineTaskClient.getEngineTaskSettings().baseUrl(),
+            engineTaskClient.getEngineTaskSettings().provider(),
+            datasetId);
   }
 
   @NotNull
   private T createDepublishEngineTask(Map<EngineTaskKey, String> pluginParameters) {
-    return engineTaskConfigurator.createDepublishEngineTask(pluginParameters);
+    return engineTaskClient.createEngineTask(pluginParameters, null, null);
   }
 
   private @NotNull PluginHarvestParameters getPluginHarvestParameters() {
     boolean incrementalHarvest;
     OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters = null;
     String targetUrl;
-    final Map<EngineTaskKey, String> pluginParameters = switch (plugin.getPluginMetadata()) {
+    switch (plugin.getPluginMetadata()) {
       case OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata -> {
         incrementalHarvest = oaipmhHarvestPluginMetadata.isIncrementalHarvest();
         targetUrl = oaipmhHarvestPluginMetadata.getUrl();
@@ -140,26 +179,24 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
             oaipmhHarvestPluginMetadata.getMetadataFormat(),
             oaipmhHarvestPluginMetadata.getFromDate(),
             oaipmhHarvestPluginMetadata.getUntilDate());
-        yield new HashMap<>();
       }
       case HTTPHarvestPluginMetadata httpHarvestPluginMetadata -> {
         incrementalHarvest = httpHarvestPluginMetadata.isIncrementalHarvest();
         targetUrl = httpHarvestPluginMetadata.getUrl();
-        yield new HashMap<>();
       }
       default -> throw new IllegalStateException("Unexpected value: " + plugin);
-    };
-    return new PluginHarvestParameters(targetUrl, incrementalHarvest, pluginParameters, oaiHarvestInputDataParameters);
+    }
+    return new PluginHarvestParameters(targetUrl, incrementalHarvest, oaiHarvestInputDataParameters);
   }
 
   private @NotNull Map<EngineTaskKey, String> getProcessPluginParameters(
-      String datasetId, EngineTaskClient<S, T> engineTaskClient) {
+      String datasetId) {
     return switch (plugin.getPluginMetadata()) {
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> {
         String urlOfSchemasZip = validationExternalPluginMetadata.getUrlOfSchemasZip();
         String schemaRootPath = validationExternalPluginMetadata.getSchemaRootPath();
         String schematronRootPath = validationExternalPluginMetadata.getSchematronRootPath();
-        yield EngineTaskConfigurator.createValidationExternalParameters(urlOfSchemasZip, schemaRootPath,
+        yield createValidationExternalParameters(urlOfSchemasZip, schemaRootPath,
             schematronRootPath);
       }
       case TransformationPluginMetadata transformationPluginMetadata -> {
@@ -168,62 +205,58 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
         String datasetName = transformationPluginMetadata.getDatasetName();
         String country = transformationPluginMetadata.getCountry();
         String language = transformationPluginMetadata.getLanguage();
-        yield EngineTaskConfigurator.createTransformationParameters(metisCoreBaseUrl, xsltId, datasetId, datasetName,
+        yield createTransformationParameters(metisCoreBaseUrl, xsltId, datasetId, datasetName,
             country, language);
       }
       case ValidationInternalPluginMetadata validationInternalPluginMetadata -> {
         String urlOfSchemasZip = validationInternalPluginMetadata.getUrlOfSchemasZip();
         String schemaRootPath = validationInternalPluginMetadata.getSchemaRootPath();
         String schematronRootPath = validationInternalPluginMetadata.getSchematronRootPath();
-        yield EngineTaskConfigurator.createValidationInternalParameters(urlOfSchemasZip, schemaRootPath,
+        yield createValidationInternalParameters(urlOfSchemasZip, schemaRootPath,
             schematronRootPath);
       }
-      case NormalizationPluginMetadata ignored -> new HashMap<>();
-      case EnrichmentPluginMetadata ignored -> new HashMap<>();
+      case NormalizationPluginMetadata ignored -> new EnumMap<>(EngineTaskKey.class);
+      case EnrichmentPluginMetadata ignored -> new EnumMap<>(EngineTaskKey.class);
       case MediaProcessPluginMetadata mediaProcessPluginMetadata -> {
         ThrottlingValues throttlingValues = engineTaskClient.getEngineTaskSettings().throttlingValues();
         ThrottlingLevel throttlingLevel = mediaProcessPluginMetadata.getThrottlingLevel() == null ?
             ThrottlingLevel.WEAK : mediaProcessPluginMetadata.getThrottlingLevel();
         String maximumParallelization = String.valueOf(throttlingValues.getThreadNumberFromThrottlingLevel(throttlingLevel));
-        yield EngineTaskConfigurator.createMediaParameters(maximumParallelization);
+        yield createMediaParameters(maximumParallelization);
       }
       case LinkCheckingPluginMetadata linkCheckingPluginMetadata -> {
         Boolean performSampling = linkCheckingPluginMetadata.getPerformSampling();
         Integer sampleSize = linkCheckingPluginMetadata.getSampleSize();
-        yield EngineTaskConfigurator.createLinkCheckingParameters(performSampling, sampleSize);
+        yield createLinkCheckingParameters(performSampling, sampleSize);
       }
       default -> throw new IllegalStateException("Unexpected value: " + plugin);
     };
   }
 
   private @NotNull Map<EngineTaskKey, String> getIndexPluginParameters(String datasetId) {
-    final Map<EngineTaskKey, String> pluginParameters = switch (plugin.getPluginMetadata()) {
-      case AbstractIndexPluginMetadata indexPluginMetadata -> {
-        boolean incrementalIndexing = indexPluginMetadata.isIncrementalIndexing();
-        Date harvestDate = indexPluginMetadata.getHarvestDate();
-        boolean preserveTimestamps = indexPluginMetadata.isPreserveTimestamps();
-        List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
-        boolean performRedirects = indexPluginMetadata.isPerformRedirects();
-        String targetIndexingDatabase = ((IndexToPreviewPlugin) plugin).getTargetIndexingDatabase().name();
-        yield EngineTaskConfigurator.createIndexParameters(datasetId, plugin.getStartedDate(), incrementalIndexing,
-            harvestDate, preserveTimestamps, datasetIdsToRedirectFrom, performRedirects, targetIndexingDatabase);
-      }
-      default -> throw new IllegalStateException("Unexpected value: " + plugin);
-    };
-    return pluginParameters;
+    if (plugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata indexPluginMetadata) {
+      boolean incrementalIndexing = indexPluginMetadata.isIncrementalIndexing();
+      Date harvestDate = indexPluginMetadata.getHarvestDate();
+      boolean preserveTimestamps = indexPluginMetadata.isPreserveTimestamps();
+      List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
+      boolean performRedirects = indexPluginMetadata.isPerformRedirects();
+      String targetIndexingDatabase = ((IndexToPreviewPlugin) plugin).getTargetIndexingDatabase().name();
+      return createIndexParameters(datasetId, plugin.getStartedDate(), incrementalIndexing,
+          harvestDate, preserveTimestamps, datasetIdsToRedirectFrom, performRedirects, targetIndexingDatabase);
+    } else {
+      throw new IllegalStateException("Unexpected value: " + plugin);
+    }
   }
 
   private @NotNull Map<EngineTaskKey, String> getDepublishPluginParameters(String datasetId) {
-    final Map<EngineTaskKey, String> pluginParameters = switch (plugin.getPluginMetadata()) {
-      case DepublishPluginMetadata depublishPluginMetadata -> {
-        boolean datasetDepublish = depublishPluginMetadata.isDatasetDepublish();
-        Set<String> recordIdsToDepublish = depublishPluginMetadata.getRecordIdsToDepublish();
-        String depublicationReason = depublishPluginMetadata.getDepublicationReason().name();
-        yield EngineTaskConfigurator.createDepublishParameters(datasetId, datasetDepublish, recordIdsToDepublish,
-            depublicationReason);
-      }
-      default -> throw new IllegalStateException("Unexpected value: " + plugin);
-    };
-    return pluginParameters;
+    if (plugin.getPluginMetadata() instanceof DepublishPluginMetadata depublishPluginMetadata) {
+      boolean datasetDepublish = depublishPluginMetadata.isDatasetDepublish();
+      Set<String> recordIdsToDepublish = depublishPluginMetadata.getRecordIdsToDepublish();
+      String depublicationReason = depublishPluginMetadata.getDepublicationReason().name();
+      return createDepublishParameters(datasetId, datasetDepublish, recordIdsToDepublish,
+          depublicationReason);
+    } else {
+      throw new IllegalStateException("Unexpected value: " + plugin);
+    }
   }
 }

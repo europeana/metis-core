@@ -55,7 +55,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
             engineTaskProgress.getProcessedRecords() + engineTaskProgress.getIgnoredRecords();
         deletedRecordCount = engineTaskProgress.getDeletedRecords();
       }
-      case AbstractHarvestPluginMetadata abstractHarvestPluginMetadata -> {
+      case AbstractHarvestPluginMetadata ignored -> {
         //Full Harvest
         //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
         //deletedRecordsCount is always 0
@@ -96,7 +96,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
 
   public void cancel(String cancelledById) throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
-    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()),
-        SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User");
+    String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User";
+    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()), message);
   }
 }

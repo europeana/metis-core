@@ -31,9 +31,6 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
-import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
@@ -43,7 +40,6 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,90 +47,35 @@ import java.util.Set;
 import java.util.TimeZone;
 import org.springframework.util.CollectionUtils;
 
-public class EngineTaskConfigurator<S extends EngineTaskSettings, T extends EngineTask> {
-  private final EngineTaskClient<S, T> engineTaskClient;
+public class EngineTaskConfigurator {
 
-  public EngineTaskConfigurator(EngineTaskClient<S, T> engineTaskClient) {
-    this.engineTaskClient = engineTaskClient;
-  }
-
-  public Map<EngineTaskKey, String> createDefaultTaskParameters(
-      String externalDatasetId,
+  public static Map<EngineTaskKey, String> createDefaultTaskParameters(
       String previousTaskId,
-      String revisionNamePreviousPlugin,
-      Date revisionTimestampPreviousPlugin) {
-    S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
+      DataRevision inputDataRevision, String dataLocation) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    parameters.put(REVISION_NAME, revisionNamePreviousPlugin);
-    parameters.put(REVISION_PROVIDER, engineTaskSettings.provider());
-    parameters.put(REVISION_TIMESTAMP, formatUtcDate(revisionTimestampPreviousPlugin));
+    parameters.put(REVISION_NAME, inputDataRevision.name());
+    parameters.put(REVISION_PROVIDER, inputDataRevision.providerId());
+    parameters.put(REVISION_TIMESTAMP, formatUtcDate(inputDataRevision.creationTimeStamp()));
     parameters.put(PREVIOUS_TASK_ID, previousTaskId);
     parameters.put(NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    parameters.put(OUTPUT_DATA_SETS, String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, engineTaskSettings.baseUrl(),
-            engineTaskSettings.provider(), externalDatasetId));
+    parameters.put(OUTPUT_DATA_SETS, dataLocation);
     return parameters;
   }
 
-  public Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
-      String datasetId, boolean incrementalHarvest, Date startedDate) {
-    S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
+  public static Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
+      String datasetId, boolean incrementalHarvest, Date startedDate, String dataLocation, String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(INCREMENTAL_HARVEST, String.valueOf(incrementalHarvest));
     parameters.put(HARVEST_DATE, formatUtcDate(startedDate));
-    parameters.put(PROVIDER_ID, engineTaskSettings.provider());
-    parameters.put(OUTPUT_DATA_SETS, String
-        .format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, engineTaskSettings.baseUrl(),
-            engineTaskSettings.provider(), datasetId));
+    parameters.put(PROVIDER_ID, providerId);
+    parameters.put(OUTPUT_DATA_SETS, dataLocation);
     parameters.put(NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     return parameters;
   }
 
-  public T createHarvestEngineTask(
-      String targetUrl,
-      PluginType pluginType,
-      Date pluginStartedDate,
-      Map<EngineTaskKey, String> parameters,
-      OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
-    S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
-    T engineTask = engineTaskClient.getEngineTaskCreator().get();
-    engineTask.setParameters(parameters);
-    engineTask.setOutputRevision(createDataRevisionOutput(pluginType, pluginStartedDate, engineTaskSettings.provider()));
-    if(oaiHarvestInputDataParameters == null){
-      engineTask.setInputDataLocation(new HarvestInputDataEndpoint(targetUrl));
-    } else {
-      engineTask.setInputDataLocation(oaiHarvestInputDataParameters);
-    }
-    return engineTask;
-  }
-
-  public T createEngineTask(
-      String externalDatasetId,
-      PluginType pluginType,
-      Date pluginStartedDate,
-      Map<EngineTaskKey, String> parameters) {
-    S engineTaskSettings = engineTaskClient.getEngineTaskSettings();
-    T engineTask = engineTaskClient.getEngineTaskCreator().get();
-    final String inputDataLocation =
-        String.format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE, engineTaskSettings.baseUrl(),
-            engineTaskSettings.provider(), externalDatasetId);
-
-    engineTask.setInputDataLocation(new InternalInputDataEndpoint(inputDataLocation));
-    engineTask.setParameters(parameters);
-    engineTask.setOutputRevision(
-        createDataRevisionOutput(pluginType, pluginStartedDate, engineTaskSettings.provider()));
-    return engineTask;
-  }
-
-  public T createDepublishEngineTask(Map<EngineTaskKey, String> parameters) {
-    T engineTask = engineTaskClient.getEngineTaskCreator().get();
-    engineTask.setParameters(parameters);
-    return engineTask;
-  }
-
-  private static DataRevision createDataRevisionOutput(PluginType pluginType, Date pluginStartedDate, String ecloudProvider) {
+  public static DataRevision createDataRevision(PluginType pluginType, Date pluginStartedDate, String ecloudProvider) {
     return new DataRevision(pluginType.name(), ecloudProvider, pluginStartedDate, false);
   }
 
@@ -169,7 +110,7 @@ public class EngineTaskConfigurator<S extends EngineTaskSettings, T extends Engi
   public static Map<EngineTaskKey, String> createTransformationParameters(String metisCoreBaseUrl, String xsltId,
       String datasetId,
       String datasetName, String country, String language) {
-    Map<EngineTaskKey, String> parameters = new HashMap<>();
+    Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(XSLT_URL,
         metisCoreBaseUrl + RestEndpoints
             .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
@@ -182,7 +123,7 @@ public class EngineTaskConfigurator<S extends EngineTaskSettings, T extends Engi
   }
 
   public static Map<EngineTaskKey, String> createMediaParameters(String maximumParallelization) {
-    Map<EngineTaskKey, String> parameters = new HashMap<>();
+    Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(MAXIMUM_PARALLELIZATION, maximumParallelization);
     return parameters;
   }
@@ -224,6 +165,7 @@ public class EngineTaskConfigurator<S extends EngineTaskSettings, T extends Engi
       String depublicationReason) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(METIS_DATASET_ID, datasetId);
+    parameters.put(DEPUBLICATION_REASON, depublicationReason);
 
     //Do set the records ids parameter only if record ids depublication enabled and there are record ids
     if (!datasetDepublish) {
@@ -236,7 +178,6 @@ public class EngineTaskConfigurator<S extends EngineTaskSettings, T extends Engi
         parameters.put(RECORD_IDS_TO_DEPUBLISH, recordIdList);
       }
     }
-    parameters.put(DEPUBLICATION_REASON, depublicationReason);
     return parameters;
   }
 

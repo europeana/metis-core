@@ -17,25 +17,26 @@ import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoin
 import java.util.List;
 import java.util.Map;
 
-public class EcloudEngineTask implements EngineTask {
+public class EcloudEngineTask extends EngineTask {
 
-  private final DpsTask dpsTask;
+  private final DpsTask dpsTask = new DpsTask();
 
-  public EcloudEngineTask() {
-    this.dpsTask = new DpsTask();
+  public EcloudEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, DataRevision outputDataRevision) {
+    super(parameters, inputDataEndpoint, outputDataRevision);
+    setParameters();
+    setInputDataLocation();
+    setOutputRevision();
   }
 
   public DpsTask toDpsTask() {
     return dpsTask;
   }
 
-  @Override
-  public void setParameters(Map<EngineTaskKey, String> parameters) {
+  private void setParameters() {
     parameters.forEach((key, value) -> dpsTask.addParameter(key.name(), value));
   }
 
-  @Override
-  public <T extends InputDataEndpoint> void setInputDataLocation(T inputDataEndpoint) {
+  private <T extends InputDataEndpoint> void setInputDataLocation() {
     final InputDataType inputDataType = switch (inputDataEndpoint) {
       case InternalInputDataEndpoint ignored -> DATASET_URLS;
       case HarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
@@ -52,7 +53,7 @@ public class EcloudEngineTask implements EngineTask {
     }
   }
 
-  public void setOaiHarvestParameters(OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
+  private void setOaiHarvestParameters(OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
     OAIPMHHarvestingDetails oaipmhHarvestingDetails = new OAIPMHHarvestingDetails();
     oaipmhHarvestingDetails.setSet(oaiHarvestInputDataParameters.set());
     oaipmhHarvestingDetails.setSchema(oaiHarvestInputDataParameters.metadataPrefix());
@@ -61,10 +62,9 @@ public class EcloudEngineTask implements EngineTask {
     dpsTask.setHarvestingDetails(oaipmhHarvestingDetails);
   }
 
-  @Override
-  public void setOutputRevision(DataRevision dataRevision) {
-    final Revision revision = new Revision(dataRevision.name(), dataRevision.providerId(), dataRevision.creationTimeStamp(),
-        dataRevision.deleted());
+  private void setOutputRevision() {
+    final Revision revision = new Revision(outputDataRevision.name(), outputDataRevision.providerId(), outputDataRevision.creationTimeStamp(),
+        outputDataRevision.deleted());
     dpsTask.setOutputRevision(revision);
   }
 }

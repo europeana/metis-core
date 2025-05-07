@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -19,9 +20,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
@@ -37,7 +40,6 @@ import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
@@ -84,8 +86,8 @@ class TestWorkflowExecutor {
     Mockito.reset(engineTaskClient);
 
     EngineTask engineTask = mock(EngineTask.class);
-    Supplier<EngineTask> taskCreator = () -> engineTask;
-    when(engineTaskClient.getEngineTaskCreator()).thenReturn(taskCreator);
+    when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
+        .thenReturn(engineTask);
     EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
     when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }

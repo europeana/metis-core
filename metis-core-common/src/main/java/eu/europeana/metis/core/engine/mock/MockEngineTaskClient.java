@@ -20,10 +20,13 @@ import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
+import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
@@ -45,8 +48,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 
 public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSettings, MockEngineTask> {
@@ -76,8 +79,9 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public Supplier<MockEngineTask> getEngineTaskCreator() {
-    return MockEngineTask::new;
+  public MockEngineTask createEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint,
+      DataRevision outputDataRevision) {
+    return new MockEngineTask(parameters, inputDataEndpoint, outputDataRevision);
   }
 
   @Override

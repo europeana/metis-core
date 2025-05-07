@@ -9,34 +9,36 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public enum ExecutablePluginType {
 
-  HTTP_HARVEST(PluginType.HTTP_HARVEST),
+  HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
 
-  OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST),
+  OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST, ExecutablePluginTypeGroup.HARVEST),
 
-  ENRICHMENT(PluginType.ENRICHMENT),
+  ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.PROCESS),
 
-  MEDIA_PROCESS(PluginType.MEDIA_PROCESS),
+  MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.PROCESS),
 
-  LINK_CHECKING(PluginType.LINK_CHECKING),
+  LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.PROCESS),
 
-  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL),
+  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.PROCESS),
 
-  TRANSFORMATION(PluginType.TRANSFORMATION),
+  TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.PROCESS),
 
-  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL),
+  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL, ExecutablePluginTypeGroup.PROCESS),
 
-  NORMALIZATION(PluginType.NORMALIZATION),
+  NORMALIZATION(PluginType.NORMALIZATION, ExecutablePluginTypeGroup.PROCESS),
 
-  PREVIEW(PluginType.PREVIEW),
+  PREVIEW(PluginType.PREVIEW, ExecutablePluginTypeGroup.INDEX),
 
-  PUBLISH(PluginType.PUBLISH),
+  PUBLISH(PluginType.PUBLISH, ExecutablePluginTypeGroup.INDEX),
 
-  DEPUBLISH(PluginType.DEPUBLISH);
+  DEPUBLISH(PluginType.DEPUBLISH, ExecutablePluginTypeGroup.DEPUBLISH);
 
   private final PluginType pluginType;
+  private final ExecutablePluginTypeGroup executablePluginTypeGroup;
 
-  ExecutablePluginType(PluginType pluginType) {
+  ExecutablePluginType(PluginType pluginType, ExecutablePluginTypeGroup executablePluginTypeGroup) {
     this.pluginType = pluginType;
+    this.executablePluginTypeGroup = executablePluginTypeGroup;
   }
 
   /**
@@ -79,5 +81,13 @@ public enum ExecutablePluginType {
       }
     }
     return null;
+  }
+
+  public ExecutablePluginTypeGroup getExecutablePluginTypeGroup() {
+    return executablePluginTypeGroup;
+  }
+
+  public enum ExecutablePluginTypeGroup{
+    HARVEST, PROCESS, INDEX, DEPUBLISH
   }
 }

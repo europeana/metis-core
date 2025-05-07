@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -24,9 +25,11 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
@@ -40,7 +43,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.awaitility.Awaitility;
 import org.bson.types.ObjectId;
@@ -98,8 +100,8 @@ class TestQueueConsumer {
     Mockito.reset(engineTaskClient);
 
     EngineTask engineTask = mock(EngineTask.class);
-    Supplier<EngineTask> taskCreator = () -> engineTask;
-    when(engineTaskClient.getEngineTaskCreator()).thenReturn(taskCreator);
+    when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
+        .thenReturn(engineTask);
     EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
     when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
@@ -161,7 +163,8 @@ class TestQueueConsumer {
         .thenReturn(new ImmutablePair<>(workflowExecution, false));
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
-    QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager, workflowExecutionMonitor);
+    QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager,
+        workflowExecutionMonitor);
     queueConsumer
         .handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8));
 

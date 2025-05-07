@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.engine.base;
 
-import java.util.function.Supplier;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
+import java.util.Map;
 
 /**
  * Client for submitting, monitoring and cancelling external tasks.
@@ -14,6 +15,6 @@ public interface EngineTaskClient<S extends EngineTaskSettings, T extends Engine
 
   S getEngineTaskSettings();
 
-  Supplier<T> getEngineTaskCreator();
+  T createEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, DataRevision outputDataRevision);
 
 }
