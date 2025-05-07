@@ -13,9 +13,9 @@ import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
-import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.AbstractEngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
@@ -48,7 +48,7 @@ import org.springframework.context.annotation.Configuration;
     RedisConfigurationProperties.class, MetisCoreConfigurationProperties.class,
     EcloudConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTask> {
+public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -214,11 +214,9 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
     workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
 
-    WorkflowExecutorManager<S, T> workflowExecutorManager = new WorkflowExecutorManager<>(
+    return new WorkflowExecutorManager<>(
         workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
         rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
-
-    return workflowExecutorManager;
   }
 
   @Bean

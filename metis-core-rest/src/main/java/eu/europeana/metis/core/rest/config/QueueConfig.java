@@ -6,8 +6,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.ForgivingExceptionHandler;
 import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
 import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
-import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.AbstractEngineTask;
+import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
 import eu.europeana.metis.core.execution.QueueConsumer;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
@@ -44,7 +44,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({RabbitmqConfigurationProperties.class, TruststoreConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-public class QueueConfig<S extends EngineTaskSettings, T extends EngineTask> {
+public class QueueConfig<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String X_QUEUE_TYPE = "quorum";

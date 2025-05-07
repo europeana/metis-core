@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.execution;
 
-import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.AbstractEngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -15,7 +15,7 @@ import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
+public class PluginMonitor<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;

@@ -5,14 +5,14 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Represents a task that can be submitted to an external system.
+ * Represents a task that can be submitted to a processing engine.
  */
-public abstract class EngineTask {
+public abstract class AbstractEngineTask {
   protected final Map<EngineTaskKey, String> parameters;
   protected final InputDataEndpoint inputDataEndpoint;
   protected final DataRevision outputDataRevision;
 
-  protected EngineTask(
+  protected AbstractEngineTask(
       Map<EngineTaskKey, String> parameters,
       InputDataEndpoint inputDataEndpoint,
       DataRevision outputDataRevision) {

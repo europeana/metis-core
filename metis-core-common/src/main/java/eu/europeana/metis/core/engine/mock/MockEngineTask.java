@@ -8,7 +8,7 @@ import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.InputDataType;
 import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
-import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.AbstractEngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
@@ -17,7 +17,7 @@ import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoin
 import java.util.List;
 import java.util.Map;
 
-public class MockEngineTask extends EngineTask {
+public class MockEngineTask extends AbstractEngineTask {
 
   private final DpsTask dpsTask = new DpsTask();
 
