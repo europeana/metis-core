@@ -25,8 +25,8 @@ import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -214,14 +214,14 @@ class TestProxiesService {
   @Test
   void getAdditionalNodeStatistics() throws Exception {
     final String nodePath = "node path";
-    final NodePathStatistics nodePathStatistics = new NodePathStatistics(nodePath, List.of());
+    final NodePathStatisticsDTO nodePathStatisticsDTO = new NodePathStatisticsDTO(nodePath, List.of());
     when(engineTaskClient.getEngineTaskContentNodePathStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
-        TestObjectFactory.EXTERNAL_TASK_ID, nodePath)).thenReturn(nodePathStatistics);
+        TestObjectFactory.EXTERNAL_TASK_ID, nodePath)).thenReturn(nodePathStatisticsDTO);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    final NodePathStatistics result = proxiesService.getAdditionalNodeStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
+    final NodePathStatisticsDTO result = proxiesService.getAdditionalNodeStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID, nodePath);
-    assertSame(nodePathStatistics, result);
+    assertSame(nodePathStatisticsDTO, result);
   }
 
   @Test
@@ -246,14 +246,14 @@ class TestProxiesService {
 
   @Test
   void getExternalTaskStatistics() throws Exception {
-    final RecordStatistics recordStatistics = new RecordStatistics(0, List.of());
+    final RecordStatisticsDTO recordStatisticsDTO = new RecordStatisticsDTO(0, List.of());
     when(engineTaskClient.getEngineTaskContentRecordStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
-        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
+        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatisticsDTO);
     final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    final RecordStatistics result = proxiesService.getExternalTaskStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
+    final RecordStatisticsDTO result = proxiesService.getExternalTaskStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         TestObjectFactory.EXTERNAL_TASK_ID);
-    assertSame(recordStatistics, result);
+    assertSame(recordStatisticsDTO, result);
   }
 
   // TODO: add tests for searchRecordByIdFromPluginExecution

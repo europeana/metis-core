@@ -15,8 +15,8 @@ import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
@@ -138,7 +138,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public RecordStatistics getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
+  public RecordStatisticsDTO getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.getEngineTaskContentRecordStatistics(topologyName, externalTaskId);
   }
@@ -159,7 +159,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public NodePathStatistics getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
+  public NodePathStatisticsDTO getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.getEngineTaskContentNodePathStatistics(topologyName, externalTaskId, nodePath);

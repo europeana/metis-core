@@ -3,10 +3,10 @@ package eu.europeana.metis.core.engine.ecloud;
 import eu.europeana.cloud.common.model.dps.NodeReport;
 import eu.europeana.cloud.common.model.dps.NodeStatistics;
 import eu.europeana.cloud.common.model.dps.StatisticsReport;
-import eu.europeana.metis.core.rest.stats.AttributeStatistics;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.stats.AttributeStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.NodeValueStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -17,57 +17,57 @@ import java.util.stream.Collectors;
 
 public class EcloudEngineRecordStatisticsConverter {
 
-  public static RecordStatistics compileRecordStatistics(StatisticsReport report) {
+  public static RecordStatisticsDTO compileRecordStatistics(StatisticsReport report) {
 
     // Group the node statistics by their respective xpath.
     final Map<String, List<NodeStatistics>> nodesByXPath = report.getNodeStatistics().stream()
                                                                  .collect(Collectors.groupingBy(NodeStatistics::getXpath));
-    final List<NodePathStatistics> nodePathStatisticsList =
+    final List<NodePathStatisticsDTO> nodePathStatisticsDTOList =
         nodesByXPath.entrySet().stream().map(EcloudEngineRecordStatisticsConverter::compileNodePathStatistics)
-                    .sorted(Comparator.comparing(NodePathStatistics::xPath)).toList();
-    return new RecordStatistics(report.getTaskId(), nodePathStatisticsList);
+                    .sorted(Comparator.comparing(NodePathStatisticsDTO::xPath)).toList();
+    return new RecordStatisticsDTO(report.getTaskId(), nodePathStatisticsDTOList);
   }
 
-  public static NodePathStatistics compileNodePathStatistics(String nodePath, List<NodeReport> nodeReports) {
+  public static NodePathStatisticsDTO compileNodePathStatistics(String nodePath, List<NodeReport> nodeReports) {
     return compileNodePathStatistics(nodePath, nodeReports,
         EcloudEngineRecordStatisticsConverter::compileNodeValueStatistics);
   }
 
-  private static NodePathStatistics compileNodePathStatistics(
+  private static NodePathStatisticsDTO compileNodePathStatistics(
       Entry<String, List<NodeStatistics>> nodeWithXPath) {
     return compileNodePathStatistics(nodeWithXPath.getKey(), nodeWithXPath.getValue(),
         EcloudEngineRecordStatisticsConverter::compileNodeValueStatistics);
   }
 
-  private static <I> NodePathStatistics compileNodePathStatistics(String nodePath,
-      List<I> nodes, Function<I, NodeValueStatistics> nodeValueConverter) {
-    final List<NodeValueStatistics> nodeValueStatisticsList =
-        nodes.stream().map(nodeValueConverter).sorted(Comparator.comparing(NodeValueStatistics::value)).toList();
-    return new NodePathStatistics(nodePath, nodeValueStatisticsList);
+  private static <I> NodePathStatisticsDTO compileNodePathStatistics(String nodePath,
+      List<I> nodes, Function<I, NodeValueStatisticsDTO> nodeValueConverter) {
+    final List<NodeValueStatisticsDTO> nodeValueStatisticsDTOList =
+        nodes.stream().map(nodeValueConverter).sorted(Comparator.comparing(NodeValueStatisticsDTO::value)).toList();
+    return new NodePathStatisticsDTO(nodePath, nodeValueStatisticsDTOList);
   }
 
-  private static NodeValueStatistics compileNodeValueStatistics(NodeStatistics nodeStatistics) {
+  private static NodeValueStatisticsDTO compileNodeValueStatistics(NodeStatistics nodeStatistics) {
     return compileNodeValueStatistics(nodeStatistics.getValue(), nodeStatistics.getOccurrence(),
         nodeStatistics.getAttributesStatistics());
   }
 
-  private static NodeValueStatistics compileNodeValueStatistics(NodeReport nodeReport) {
+  private static NodeValueStatisticsDTO compileNodeValueStatistics(NodeReport nodeReport) {
     return compileNodeValueStatistics(nodeReport.getNodeValue(), nodeReport.getOccurrence(),
         nodeReport.getAttributeStatistics());
   }
 
-  private static NodeValueStatistics compileNodeValueStatistics(String nodeValue,
+  private static NodeValueStatisticsDTO compileNodeValueStatistics(String nodeValue,
       long occurrence,
       Collection<eu.europeana.cloud.common.model.dps.AttributeStatistics> attributes) {
-    final List<AttributeStatistics> attributeStatistics =
+    final List<AttributeStatisticsDTO> attributeStatisticDTOS =
         attributes.stream().map(EcloudEngineRecordStatisticsConverter::compileAttributeStatistics)
-                  .sorted(Comparator.comparing(AttributeStatistics::xPath).thenComparing(
-                      AttributeStatistics::value)).toList();
-    return new NodeValueStatistics(nodeValue, occurrence, attributeStatistics);
+                  .sorted(Comparator.comparing(AttributeStatisticsDTO::xPath).thenComparing(
+                      AttributeStatisticsDTO::value)).toList();
+    return new NodeValueStatisticsDTO(nodeValue, occurrence, attributeStatisticDTOS);
   }
 
-  private static AttributeStatistics compileAttributeStatistics(
+  private static AttributeStatisticsDTO compileAttributeStatistics(
       eu.europeana.cloud.common.model.dps.AttributeStatistics input) {
-    return new AttributeStatistics(input.getName(), input.getValue(), input.getOccurrence());
+    return new AttributeStatisticsDTO(input.getName(), input.getValue(), input.getOccurrence());
   }
 }

@@ -35,8 +35,8 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.rest.Record;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
@@ -208,7 +208,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public RecordStatistics getEngineTaskContentRecordStatistics(String topologyName, long taskId)
+  public RecordStatisticsDTO getEngineTaskContentRecordStatistics(String topologyName, long taskId)
       throws ExternalTaskException {
     final StatisticsReport statisticsReport;
     try {
@@ -222,7 +222,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public NodePathStatistics getEngineTaskContentNodePathStatistics(String topologyName, long taskId, String nodePath)
+  public NodePathStatisticsDTO getEngineTaskContentNodePathStatistics(String topologyName, long taskId, String nodePath)
       throws ExternalTaskException {
     final List<NodeReport> nodeReports;
     try {

@@ -7,4 +7,4 @@ package eu.europeana.metis.core.rest.stats;
  * @param value The value of the attribute.
  * @param occurrences The number of times this attribute value appears.
  */
-public record AttributeStatistics(String xPath, String value, long occurrences) {}
+public record AttributeStatisticsDTO(String xPath, String value, long occurrences) {}

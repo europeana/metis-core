@@ -28,10 +28,10 @@ import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.stats.AttributeStatistics;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.NodeValueStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.stats.AttributeStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.NodeValueStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.UserService;
@@ -161,21 +161,21 @@ class TestProxiesController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
     // Create response object.
-    final NodeValueStatistics nodeValue = new NodeValueStatistics("node value", 3, Collections.emptyList());
-    final NodePathStatistics nodePath = new NodePathStatistics("node path", Collections.singletonList(nodeValue));
-    final RecordStatistics recordStatistics = new RecordStatistics(TestObjectFactory.EXTERNAL_TASK_ID,
+    final NodeValueStatisticsDTO nodeValue = new NodeValueStatisticsDTO("node value", 3, Collections.emptyList());
+    final NodePathStatisticsDTO nodePath = new NodePathStatisticsDTO("node path", Collections.singletonList(nodeValue));
+    final RecordStatisticsDTO recordStatisticsDTO = new RecordStatisticsDTO(TestObjectFactory.EXTERNAL_TASK_ID,
         Collections.singletonList(nodePath));
 
     // Make the call and verify the result.
     when(proxiesService.getExternalTaskStatistics(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatistics);
+        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatisticsDTO);
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
                TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON).content(""))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.taskId", is(TestObjectFactory.EXTERNAL_TASK_ID)))
-           .andExpect(jsonPath("$.nodePathStatistics", hasSize(recordStatistics.nodePathStatistics().size())))
+           .andExpect(jsonPath("$.nodePathStatistics", hasSize(recordStatisticsDTO.nodePathStatistics().size())))
            .andExpect(jsonPath("$.nodePathStatistics[0].xPath", is(nodePath.xPath())))
            .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics", hasSize(nodePath.nodeValueStatistics().size())))
            .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics[0].value", is(nodeValue.value())))
@@ -190,10 +190,10 @@ class TestProxiesController {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
     // Create response object.
-    final AttributeStatistics attribute1 = new AttributeStatistics("attribute path 1", "attribute value 1", 1);
-    final AttributeStatistics attribute2 = new AttributeStatistics("attribute path 1", "attribute value 1", 1);
-    final NodeValueStatistics nodeValue = new NodeValueStatistics("node value", 3, Arrays.asList(attribute1, attribute2));
-    final NodePathStatistics nodePath = new NodePathStatistics("node path", Collections.singletonList(nodeValue));
+    final AttributeStatisticsDTO attribute1 = new AttributeStatisticsDTO("attribute path 1", "attribute value 1", 1);
+    final AttributeStatisticsDTO attribute2 = new AttributeStatisticsDTO("attribute path 1", "attribute value 1", 1);
+    final NodeValueStatisticsDTO nodeValue = new NodeValueStatisticsDTO("node value", 3, Arrays.asList(attribute1, attribute2));
+    final NodePathStatisticsDTO nodePath = new NodePathStatisticsDTO("node path", Collections.singletonList(nodeValue));
 
     when(proxiesService.getAdditionalNodeStatistics(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID, nodePath.xPath())).thenReturn(nodePath);
