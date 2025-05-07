@@ -5,13 +5,33 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 /**
  * Basic task settings needed for executing tasks in external systems.
  */
-public interface EngineTaskSettings {
+public abstract class EngineTaskSettings {
 
-  String baseUrl();
+  protected final String baseUrl;
+  protected final String provider;
+  protected final String metisCoreBaseUrl;
+  protected final ThrottlingValues throttlingValues;
 
-  String provider();
+  protected EngineTaskSettings(String baseUrl, String provider, String metisCoreBaseUrl, ThrottlingValues throttlingValues) {
+    this.baseUrl = baseUrl;
+    this.provider = provider;
+    this.metisCoreBaseUrl = metisCoreBaseUrl;
+    this.throttlingValues = throttlingValues;
+  }
 
-  String metisCoreBaseUrl();
+  public String getBaseUrl() {
+    return baseUrl;
+  }
 
-  ThrottlingValues throttlingValues();
+  public String getProvider() {
+    return provider;
+  }
+
+  public String getMetisCoreBaseUrl() {
+    return metisCoreBaseUrl;
+  }
+
+  public ThrottlingValues getThrottlingValues() {
+    return throttlingValues;
+  }
 }

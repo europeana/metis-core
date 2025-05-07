@@ -252,7 +252,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   @Override
   public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
     try {
-      dataSetServiceClient.createDataSet(ecloudEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
+      dataSetServiceClient.createDataSet(ecloudEngineTaskSettings.getProvider(), datasetId, "Metis generated dataset id");
     } catch (MCSException e) {
       throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
     }
@@ -265,8 +265,8 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     final List<CloudTagsResponse> cloudIdsWithDeletedFlagSetToFalse;
     try {
       cloudIdsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-          ecloudEngineTaskSettings.provider(), datasetId, representationName, revisionName,
-          ecloudEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
+          ecloudEngineTaskSettings.getProvider(), datasetId, representationName, revisionName,
+          ecloudEngineTaskSettings.getProvider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(format(
           "Getting record list with file content failed. datasetId: %s, representationName: %s, revisionName: %s, revisionTimestamp: %s",
@@ -304,7 +304,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     String ecloudId = null;
     try {
       if (recordId != null) {
-        ecloudId = uisClient.getCloudId(ecloudEngineTaskSettings.provider(), recordId).getId();
+        ecloudId = uisClient.getCloudId(ecloudEngineTaskSettings.getProvider(), recordId).getId();
       }
     } catch (CloudException e) {
       if (e.getCause() instanceof RecordDoesNotExistException) {
@@ -325,7 +325,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
 
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
-    final Revision revision = new Revision(revisionName, ecloudEngineTaskSettings.provider(), revisionTimestamp);
+    final Revision revision = new Revision(revisionName, ecloudEngineTaskSettings.getProvider(), revisionTimestamp);
     try {
       representations = recordServiceClient
           .getRepresentationsByRevision(ecloudId, MetisPlugin.getRepresentationName(), revision);

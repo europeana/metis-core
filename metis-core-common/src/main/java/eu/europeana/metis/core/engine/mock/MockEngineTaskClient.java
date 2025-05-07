@@ -251,7 +251,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   @Override
   public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
     try {
-      dataSetServiceClient.createDataSet(mockEngineTaskSettings.provider(), datasetId, "Metis generated dataset id");
+      dataSetServiceClient.createDataSet(mockEngineTaskSettings.getProvider(), datasetId, "Metis generated dataset id");
     } catch (MCSException e) {
       throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
     }
@@ -264,8 +264,8 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
     try {
       revisionsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-          mockEngineTaskSettings.provider(), datasetId, representationName, revisionName,
-          mockEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
+          mockEngineTaskSettings.getProvider(), datasetId, representationName, revisionName,
+          mockEngineTaskSettings.getProvider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException("Getting record list with file content failed.", e);
     }
@@ -300,7 +300,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     try {
 
       if (recordId != null) {
-        ecloudId = uisClient.getCloudId(mockEngineTaskSettings.provider(), recordId).getId();
+        ecloudId = uisClient.getCloudId(mockEngineTaskSettings.getProvider(), recordId).getId();
       }
     } catch (CloudException e) {
       if (e.getCause() instanceof RecordDoesNotExistException) {
@@ -323,7 +323,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
     try {
-      final Revision revision = new Revision(revisionName, mockEngineTaskSettings.provider(), revisionTimestamp);
+      final Revision revision = new Revision(revisionName, mockEngineTaskSettings.getProvider(), revisionTimestamp);
       representations = recordServiceClient.getRepresentationsByRevision(ecloudId,
           MetisPlugin.getRepresentationName(), revision);
     } catch (MCSException e) {

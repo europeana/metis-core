@@ -112,12 +112,12 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     final Map<EngineTaskKey, String> basicTaskParameters =
         createDefaultTaskParametersHarvest(
             datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
-            engineTaskClient.getEngineTaskSettings().provider());
+            engineTaskClient.getEngineTaskSettings().getProvider());
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
 
     final DataRevision outputDataRevision = createDataRevision(
-        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().provider());
+        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
 
     final InputDataEndpoint inputDataEndpoint =
         requireNonNullElseGet(pluginHarvestParameters.oaiHarvestInputDataParameters(),
@@ -136,7 +136,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     final DataRevision inputDataRevision = createDataRevision(
         requireNonNull(PluginType.getPluginTypeFromEnumName(plugin.getPluginMetadata().getRevisionNamePreviousPlugin())),
         plugin.getPluginMetadata().getRevisionTimestampPreviousPlugin(),
-        engineTaskClient.getEngineTaskSettings().provider());
+        engineTaskClient.getEngineTaskSettings().getProvider());
 
     final String dataLocation = getDataLocation(datasetId);
     final Map<EngineTaskKey, String> basicTaskParameters =
@@ -146,7 +146,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     allParameters.putAll(pluginParameters);
 
     final DataRevision outputDataRevision = createDataRevision(
-        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().provider());
+        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
 
     final InternalInputDataEndpoint internalInputDataEndpoint = new InternalInputDataEndpoint(dataLocation,
         inputDataRevision);
@@ -155,8 +155,8 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
 
   private @NotNull String getDataLocation(String datasetId) {
     return format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE,
-            engineTaskClient.getEngineTaskSettings().baseUrl(),
-            engineTaskClient.getEngineTaskSettings().provider(),
+            engineTaskClient.getEngineTaskSettings().getBaseUrl(),
+            engineTaskClient.getEngineTaskSettings().getProvider(),
             datasetId);
   }
 
@@ -200,7 +200,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
             schematronRootPath);
       }
       case TransformationPluginMetadata transformationPluginMetadata -> {
-        String metisCoreBaseUrl = engineTaskClient.getEngineTaskSettings().metisCoreBaseUrl();
+        String metisCoreBaseUrl = engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl();
         String xsltId = transformationPluginMetadata.getXsltId();
         String datasetName = transformationPluginMetadata.getDatasetName();
         String country = transformationPluginMetadata.getCountry();
@@ -218,7 +218,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       case NormalizationPluginMetadata ignored -> new EnumMap<>(EngineTaskKey.class);
       case EnrichmentPluginMetadata ignored -> new EnumMap<>(EngineTaskKey.class);
       case MediaProcessPluginMetadata mediaProcessPluginMetadata -> {
-        ThrottlingValues throttlingValues = engineTaskClient.getEngineTaskSettings().throttlingValues();
+        ThrottlingValues throttlingValues = engineTaskClient.getEngineTaskSettings().getThrottlingValues();
         ThrottlingLevel throttlingLevel = mediaProcessPluginMetadata.getThrottlingLevel() == null ?
             ThrottlingLevel.WEAK : mediaProcessPluginMetadata.getThrottlingLevel();
         String maximumParallelization = String.valueOf(throttlingValues.getThreadNumberFromThrottlingLevel(throttlingLevel));

@@ -6,10 +6,14 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 /**
  * Adapts DpsTaskSettings to the ExternalTaskSettings interface.
  */
-public record MockEngineTaskSettings(
-    String baseUrl,
-    String provider,
-    String metisCoreBaseUrl,
-    ThrottlingValues throttlingValues) implements EngineTaskSettings {
+public final class MockEngineTaskSettings extends EngineTaskSettings {
+
+  public MockEngineTaskSettings(
+      String baseUrl,
+      String provider,
+      String metisCoreBaseUrl,
+      ThrottlingValues throttlingValues) {
+    super(baseUrl, provider, metisCoreBaseUrl, throttlingValues);
+  }
 
 }
