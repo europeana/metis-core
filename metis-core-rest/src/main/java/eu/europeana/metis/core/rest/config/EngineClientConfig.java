@@ -37,7 +37,7 @@ public class EngineClientConfig {
       EcloudConfigurationProperties ecloudConfigurationProperties,
       ThrottlingValues throttlingValues
   ) {
-    if (EngineType.DPS.equals(metisCoreConfigurationProperties.engineType())) {
+    if (EngineType.ECLOUD.equals(metisCoreConfigurationProperties.engineType())) {
       LOGGER.info("Initializing DPS Engine Task Client");
       return ecloudEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
     } else {

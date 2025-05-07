@@ -53,8 +53,8 @@ public interface EngineTaskClient<S extends EngineTaskSettings, T extends Engine
   List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException;
 
-  List<Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException;
+  List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp) throws ExternalTaskException;
 
-  Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException;
+  Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException;
 
 }

@@ -31,7 +31,7 @@ public record MetisCoreConfigurationProperties(
 ) {
 
   public enum EngineType {
-    DPS,
+    ECLOUD,
     MOCK;
   }
 }

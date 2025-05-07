@@ -285,7 +285,7 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
     // Get the records themselves.
     final List<Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
     for (CloudTagsResponse cloudTagsResponse : revisionsWithDeletedFlagSetToFalse) {
-      final Record eloudXmlRecord = getRecord(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
+      final Record eloudXmlRecord = getRecordByEcloudIdAndRevision(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
       if (eloudXmlRecord == null) {
         throw new IllegalStateException("This can't happen: eCloud just told us the record exists");
       }
@@ -296,18 +296,18 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
   }
 
   @Override
-  public List<Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException {
+  public List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
 
     final List<Record> records = new ArrayList<>(recordIds.size());
     for (String recordId : recordIds) {
-      Optional.ofNullable(getRecord(recordId, revisionName, revisionTimestamp)).ifPresent(records::add);
+      Optional.ofNullable(getRecordByEcloudIdAndRevision(recordId, revisionName, revisionTimestamp)).ifPresent(records::add);
     }
 
     return records;
   }
 
   @Override
-  public Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException {
+  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
     String ecloudId = null;
     try {
 
@@ -327,10 +327,10 @@ public class MockEngineTaskClient implements EngineTaskClient<MockEngineTaskSett
 
     // Try to retrieve the record. Note: we need to know if the eCloud ID exists at this point
     // because getRecord() cannot detect non-existing eCloud IDs.
-    return ecloudId == null ? null : getRecord(ecloudId, revisionName, revisionTimestamp);
+    return ecloudId == null ? null : getRecordByEcloudIdAndRevision(ecloudId, revisionName, revisionTimestamp);
   }
 
-  Record getRecord(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+  private Record getRecordByEcloudIdAndRevision(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
 
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;

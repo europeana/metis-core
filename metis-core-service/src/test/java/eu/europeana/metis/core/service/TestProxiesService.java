@@ -347,7 +347,7 @@ class TestProxiesService {
 
     // Mock the method for getting records
     doReturn(recordList).when(engineTaskClient)
-                        .getRecords(plugin.getPluginType().name(), plugin.getStartedDate(), listOfIds.getIds());
+                        .getRecords(listOfIds.getIds(), plugin.getPluginType().name(), plugin.getStartedDate());
 
     final RecordsResponse result = proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
@@ -370,7 +370,7 @@ class TestProxiesService {
 
     // Check that if a record cannot be retrieved, the method fails.
     doThrow(ExternalTaskException.class).when(engineTaskClient)
-                                        .getRecords(plugin.getPluginType().name(), plugin.getStartedDate(), listOfIds.getIds());
+                                        .getRecords(listOfIds.getIds(), plugin.getPluginType().name(), plugin.getStartedDate());
     assertThrows(ExternalTaskException.class, () -> proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             plugin.getPluginMetadata().getExecutablePluginType(), listOfIds));

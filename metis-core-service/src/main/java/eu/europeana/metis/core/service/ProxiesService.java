@@ -238,8 +238,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
 
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
 
-    List<Record> records = engineTaskClient.getRecords(revisionName,
-        executionAndPlugin.getRight().getStartedDate(), ecloudIds.getIds());
+    List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), revisionName,
+        executionAndPlugin.getRight().getStartedDate());
 
     return new RecordsResponse(records);
   }
@@ -288,8 +288,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     ExecutablePlugin predecessorExecutablePlugin = (ExecutablePlugin) predecessorPlugin.getLeft();
 
     final String revisionName = predecessorExecutablePlugin.getPluginType().name();
-    List<Record> records = engineTaskClient.getRecords(revisionName,
-        predecessorExecutablePlugin.getStartedDate(), ecloudIds.getIds());
+    List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), revisionName,
+        predecessorExecutablePlugin.getStartedDate());
     return new RecordsResponse(records);
   }
 
@@ -320,7 +320,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
 
     //Check engine record id and then europeana record id.
-    Record record = engineTaskClient.getRecord(revisionName, executionAndPlugin.getRight().getStartedDate(), idToSearch);
+    Record record = engineTaskClient.getRecord(idToSearch, revisionName, executionAndPlugin.getRight().getStartedDate());
     if (record == null) {
       String normalizedRecordId = idToSearch;
       try {
@@ -329,7 +329,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       } catch (BadContentException e) {
         LOGGER.info("Normalization of recordId '{}' failed. Using as is.", normalizedRecordId);
       }
-      record = engineTaskClient.getRecord(revisionName, executionAndPlugin.getRight().getStartedDate(), normalizedRecordId);
+      record = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
     }
     return record;
   }

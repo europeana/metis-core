@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.engine.ecloud;
 
+import static java.lang.String.format;
+
 import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.cloud.client.uis.rest.CloudException;
 import eu.europeana.cloud.client.uis.rest.UISClient;
@@ -170,7 +172,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       }
       return dataItemStatuses;
     } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
+      throw new ExternalTaskException(format(
           "Getting the task detailed logs failed. topologyName: %s, externalTaskId: %s, from: %s, to: %s",
           topologyName, taskId, from, to), e);
     }
@@ -181,7 +183,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     try {
       return dpsClient.checkIfErrorReportExists(topologyName, taskId);
     } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
+      throw new ExternalTaskException(format(
           "Checking if the error report exists failed. topologyName: %s, externalTaskId: %s", topologyName, taskId), e);
     }
   }
@@ -211,7 +213,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
                         }).toList();
       return new EngineTaskErrors(taskErrorsInfo.getId(), engineTaskErrorInfoList);
     } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
+      throw new ExternalTaskException(format(
           "Getting the task error report failed. topologyName: %s, externalTaskId: %s, idsPerError: %s",
           topologyName, taskId, idsCount), e);
     }
@@ -225,7 +227,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       statisticsReport = dpsClient.getTaskStatisticsReport(topologyName, taskId);
       return EcloudEngineRecordStatisticsConverter.compileRecordStatistics(statisticsReport);
     } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
+      throw new ExternalTaskException(format(
           "Getting the task statistics failed. topologyName: %s, externalTaskId: %s",
           topologyName, taskId), e);
     }
@@ -239,7 +241,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       nodeReports = dpsClient.getElementReport(topologyName, taskId, nodePath);
       return EcloudEngineRecordStatisticsConverter.compileNodePathStatistics(nodePath, nodeReports);
     } catch (DpsException e) {
-      throw new ExternalTaskException(String.format(
+      throw new ExternalTaskException(format(
           "Getting the additional node statistics failed. topologyName: %s, externalTaskId: %s",
           topologyName, taskId), e);
     }
@@ -272,21 +274,24 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   @Override
   public List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
-    final List<CloudTagsResponse> revisionsWithDeletedFlagSetToFalse;
+    final List<CloudTagsResponse> cloudIdsWithDeletedFlagSetToFalse;
     try {
-      revisionsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
+      cloudIdsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
           ecloudEngineTaskSettings.provider(), datasetId, representationName, revisionName,
           ecloudEngineTaskSettings.provider(), pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
-      throw new ExternalTaskException("Getting record list with file content failed.", e);
+      throw new ExternalTaskException(format(
+          "Getting record list with file content failed. datasetId: %s, representationName: %s, revisionName: %s, revisionTimestamp: %s",
+          datasetId, representationName, revisionName, revisionTimestamp),
+          e);
     }
 
     // Get the records themselves.
-    final List<Record> records = new ArrayList<>(revisionsWithDeletedFlagSetToFalse.size());
-    for (CloudTagsResponse cloudTagsResponse : revisionsWithDeletedFlagSetToFalse) {
-      final Record eloudXmlRecord = getRecord(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
+    final List<Record> records = new ArrayList<>(cloudIdsWithDeletedFlagSetToFalse.size());
+    for (CloudTagsResponse cloudTagsResponse : cloudIdsWithDeletedFlagSetToFalse) {
+      final Record eloudXmlRecord = getRecordByEcloudIdAndRevision(cloudTagsResponse.getCloudId(), revisionName, revisionTimestamp);
       if (eloudXmlRecord == null) {
-        throw new IllegalStateException("This can't happen: eCloud just told us the record exists");
+        throw new IllegalStateException(format("Could not get record for ecloudId: %s", cloudTagsResponse.getCloudId()));
       }
       records.add(eloudXmlRecord);
     }
@@ -295,18 +300,19 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public List<Record> getRecords(String revisionName, Date revisionTimestamp, List<String> recordIds) throws ExternalTaskException {
+  public List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp)
+      throws ExternalTaskException {
 
     final List<Record> records = new ArrayList<>(recordIds.size());
     for (String recordId : recordIds) {
-      Optional.ofNullable(getRecord(recordId, revisionName, revisionTimestamp)).ifPresent(records::add);
+      Optional.ofNullable(getRecordByEcloudIdAndRevision(recordId, revisionName, revisionTimestamp)).ifPresent(records::add);
     }
 
     return records;
   }
 
   @Override
-  public Record getRecord(String revisionName, Date revisionTimestamp, String recordId) throws ExternalTaskException {
+  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
     String ecloudId = null;
     try {
       if (recordId != null) {
@@ -318,27 +324,26 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
         ecloudId = verifyExistenceOfEcloudId(recordId);
       } else {
         // Some other connectivity issue.
-        throw new ExternalTaskException(
-            String.format("Failed to lookup cloudId for idToSearch: %s", recordId), e);
+        throw new ExternalTaskException(format("Failed to lookup cloudId for idToSearch: %s", recordId), e);
       }
     }
 
     // Try to retrieve the record. Note: we need to know if the eCloud ID exists at this point
     // because getRecord() cannot detect non-existing eCloud IDs.
-    return ecloudId == null ? null : getRecord(ecloudId, revisionName, revisionTimestamp);
+    return ecloudId == null ? null : getRecordByEcloudIdAndRevision(ecloudId, revisionName, revisionTimestamp);
   }
 
-  Record getRecord(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+  private Record getRecordByEcloudIdAndRevision(String ecloudId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
 
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
+    final Revision revision = new Revision(revisionName, ecloudEngineTaskSettings.provider(), revisionTimestamp);
     try {
-      final Revision revision = new Revision(revisionName, ecloudEngineTaskSettings.provider(), revisionTimestamp);
-      representations = recordServiceClient.getRepresentationsByRevision(ecloudId,
-          MetisPlugin.getRepresentationName(), revision);
+      representations = recordServiceClient
+          .getRepresentationsByRevision(ecloudId, MetisPlugin.getRepresentationName(), revision);
     } catch (MCSException e) {
-      throw new ExternalTaskException(String.format(
-          "Getting record list with file content failed. ecloudId: %s", ecloudId), e);
+      throw new ExternalTaskException(format(
+          "Getting representation list with failed. ecloudId: %s, revision: %s", ecloudId, revision), e);
     }
 
     // If no representation is found, return null.
@@ -349,8 +354,9 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
 
     // Perform checks on the file lists.
     if (representation.getFiles() == null || representation.getFiles().isEmpty()) {
-      throw new ExternalTaskException(String.format(
-          "Expecting one file in the representation, but received none. ecloudId: %s", ecloudId));
+      throw new ExternalTaskException(format(
+          "Expecting one file in the representation, but received none. ecloudId: %s, representation: %s", ecloudId,
+          representation));
     }
     final File file = representation.getFiles().getFirst();
 
@@ -359,9 +365,9 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       final InputStream inputStream = fileServiceClient.getFile(file.getContentUri().toString());
       return new Record(ecloudId, IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
     } catch (MCSException e) {
-      throw new ExternalTaskException("Getting record list with file content failed.", e);
+      throw new ExternalTaskException(format("Getting file content failed. uri: %s", file.getContentUri()), e);
     } catch (IOException e) {
-      throw new ExternalTaskException("Problem while reading the contents of the file.", e);
+      throw new ExternalTaskException(format("Problem reading input stream. uri: %s", file.getContentUri()), e);
     }
   }
 
