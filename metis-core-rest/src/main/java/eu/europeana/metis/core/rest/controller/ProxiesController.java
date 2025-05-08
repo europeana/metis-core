@@ -105,6 +105,7 @@ public class ProxiesController {
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
+    externalTaskId = StringEscapeUtils.escapeJava(externalTaskId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info(
           "Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
@@ -173,7 +174,7 @@ public class ProxiesController {
 
   /**
    * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by
-   * {@link #getExternalTaskStatistics(String, long)}.
+   * {@link #getExternalTaskStatistics(String, String)}.
    *
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier

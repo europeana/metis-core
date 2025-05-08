@@ -78,14 +78,14 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * @return a configured instance of {@link OrchestratorService}
    */
   @Bean
-  public OrchestratorService getOrchestratorService(WorkflowDao workflowDao,
+  public OrchestratorService<S, T> getOrchestratorService(WorkflowDao workflowDao,
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
       DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
       WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowExecutorManager<S, T> workflowExecutorManager,
       DepublishRecordIdDao depublishRecordIdDao,
       RedissonClient redissonClient, UserService userService, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
+    OrchestratorService<S, T> orchestratorService = new OrchestratorService<>(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
         workflowExecutorManager, redissonClient, depublishRecordIdDao, userService);
     orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.solrCommitPeriodInMinutes());
