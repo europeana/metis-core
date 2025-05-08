@@ -16,6 +16,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Manager class for adding executions in the distributed queue.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 public class WorkflowExecutorManager<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
@@ -30,15 +33,17 @@ public class WorkflowExecutorManager<S extends AbstractEngineTaskSettings, T ext
   private final EngineTaskClient<S, T> engineTaskClient;
 
   /**
-   * Autowired constructor.
+   * Constructor for WorkflowExecutorManager that initializes various dependencies for managing
+   * workflow execution and processing.
    *
-   * @param semaphoresPerPluginManager the semaphores per plugin manager
-   * @param workflowExecutionDao the DAO for accessing WorkflowExecutions
-   * @param workflowPostProcessor the workflow post processor
-   * @param rabbitmqPublisherChannel the channel for publishing to RabbitMQ
-   * @param rabbitmqConsumerChannel the channel for consuming from RabbitMQ
-   * @param redissonClient the redisson client for distributed locks
-   * @param engineTaskClient the Data Processing Service client from ECloud
+   * @param workflowExecutorManagerSettings Settings related to workflow execution.
+   * @param semaphoresPerPluginManager Manager handling semaphores for different plugin types.
+   * @param workflowExecutionDao Data access object for workflow execution data.
+   * @param workflowPostProcessor Processor for post-workflow execution tasks.
+   * @param rabbitmqPublisherChannel RabbitMQ channel used for publishing messages.
+   * @param rabbitmqConsumerChannel RabbitMQ channel used for consuming messages.
+   * @param redissonClient Redisson client used for distributed operations.
+   * @param engineTaskClient Client for executing engine tasks.
    */
   public WorkflowExecutorManager(
       WorkflowExecutorManagerSettings workflowExecutorManagerSettings, SemaphoresPerPluginManager semaphoresPerPluginManager,

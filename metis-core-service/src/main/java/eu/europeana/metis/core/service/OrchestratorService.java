@@ -14,6 +14,8 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation.PublicationStatus;
+import eu.europeana.metis.core.engine.base.AbstractEngineTask;
+import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
@@ -76,9 +78,12 @@ import org.springframework.stereotype.Service;
 
 /**
  * Service class that controls the communication between the different DAOs of the system.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Service
-public class OrchestratorService {
+public class OrchestratorService<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   //Use with String.format to suffix the datasetId
@@ -102,7 +107,7 @@ public class OrchestratorService {
   private final DataEvolutionUtils dataEvolutionUtils;
   private final WorkflowDao workflowDao;
   private final DatasetDao datasetDao;
-  private final WorkflowExecutorManager workflowExecutorManager;
+  private final WorkflowExecutorManager<S, T> workflowExecutorManager;
   private final RedissonClient redissonClient;
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
@@ -128,7 +133,7 @@ public class OrchestratorService {
   public OrchestratorService(WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       WorkflowValidationUtils workflowValidationUtils, DataEvolutionUtils dataEvolutionUtils,
-      DatasetDao datasetDao, WorkflowExecutorManager workflowExecutorManager,
+      DatasetDao datasetDao, WorkflowExecutorManager<S, T> workflowExecutorManager,
       RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao, UserService userService) {
     this.workflowExecutionFactory = workflowExecutionFactory;
     this.workflowDao = workflowDao;

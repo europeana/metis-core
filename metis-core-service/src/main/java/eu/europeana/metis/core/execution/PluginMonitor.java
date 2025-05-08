@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.execution;
 
 import eu.europeana.metis.core.engine.base.AbstractEngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -10,24 +10,41 @@ import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.exception.ExternalTaskException;
-import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Monitors and manages the execution of a plugin task in a processing engine.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
+ */
 public class PluginMonitor<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
+  /**
+   * Constructs a PluginMonitor to monitor and interact with a plugin and its associated engine tasks.
+   *
+   * @param plugin The plugin instance to be monitored, of type {@link AbstractExecutablePlugin}.
+   * @param engineTaskClient The engine task client for managing and interacting with engine tasks.
+   */
   public PluginMonitor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
   }
 
-  public EngineTaskProgress monitor()
-      throws ExternalTaskException, UnrecoverableExternalTaskException {
+  /**
+   * Monitors and retrieves the progress of an external task associated with the plugin.
+   * Updates the execution progress based on the retrieved task information.
+   *
+   * @return An instance of {@link EngineTaskProgress} containing the progress details of the external task.
+   * @throws ExternalTaskException If an error occurs while interacting with the external resource.
+   */
+  public EngineTaskProgress monitor() throws ExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
     EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
         plugin.getTopologyName(), Long.parseLong(plugin.getExternalTaskId()));
@@ -94,6 +111,12 @@ public class PluginMonitor<S extends AbstractEngineTaskSettings, T extends Abstr
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
   }
 
+  /**
+   * Cancels the execution of an external task associated with the plugin.
+   *
+   * @param cancelledById Identifier indicating who initiated the cancellation. Either a system identifier or a user identifier.
+   * @throws ExternalTaskException If an error occurs while attempting to cancel the task.
+   */
   public void cancel(String cancelledById) throws ExternalTaskException {
     LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User";

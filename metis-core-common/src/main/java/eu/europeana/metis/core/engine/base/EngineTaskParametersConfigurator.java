@@ -47,12 +47,28 @@ import java.util.Set;
 import java.util.TimeZone;
 import org.springframework.util.CollectionUtils;
 
-public class EngineTaskConfigurator {
+/**
+ * Configures task parameters for the engine tasks in various contexts, such as harvesting, validation, transformation, and
+ * indexing.
+ */
+public final class EngineTaskParametersConfigurator {
 
+  private EngineTaskParametersConfigurator() {
+  }
+
+  /**
+   * Creates a default set of task parameters used for configuring an engine task.
+   *
+   * @param datasetId the identifier of the dataset
+   * @param previousTaskId the identifier of the previous task
+   * @param inputDataRevision the revision of input data
+   * @param dataLocation the location of the output data sets
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
   public static Map<EngineTaskKey, String> createDefaultTaskParameters(
-      String previousTaskId,
-      DataRevision inputDataRevision, String dataLocation) {
+      String datasetId, String previousTaskId, DataRevision inputDataRevision, String dataLocation) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     parameters.put(REVISION_NAME, inputDataRevision.name());
     parameters.put(REVISION_PROVIDER, inputDataRevision.providerId());
@@ -63,6 +79,16 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
+  /**
+   * Creates a map of default task parameters for a harvest operation.
+   *
+   * @param datasetId the identifier of the dataset to be harvested
+   * @param incrementalHarvest a flag indicating if the harvest should be incremental
+   * @param startedDate the starting date of the harvest operation
+   * @param dataLocation the location of the output data sets
+   * @param providerId the identifier of the data provider
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
   public static Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
       String datasetId, boolean incrementalHarvest, Date startedDate, String dataLocation, String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
@@ -75,31 +101,60 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
+  /**
+   * Creates a new instance of {@link DataRevision}.
+   *
+   * @param pluginType the type of the plugin initiating the data revision
+   * @param pluginStartedDate the start date of the plugin associated with the data revision
+   * @param ecloudProvider the identifier of the eCloud provider associated with the revision
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
   public static DataRevision createDataRevision(PluginType pluginType, Date pluginStartedDate, String ecloudProvider) {
     return new DataRevision(pluginType.name(), ecloudProvider, pluginStartedDate, false);
   }
 
-  public static Map<EngineTaskKey, String> createValidationExternalParameters(String urlOfSchemasZip,
-      String schemaRootPath,
-      String schematronRootPath) {
+  /**
+   * Creates a map of validation external parameters.
+   *
+   * @param urlOfSchemasZip the URL pointing to the zip file containing schemas
+   * @param schemaRootPath the root path for the extracted schemas
+   * @param schematronRootPath the root path for the extracted schematrons
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  public static Map<EngineTaskKey, String> createValidationExternalParameters(
+      String urlOfSchemasZip, String schemaRootPath, String schematronRootPath) {
     final Map<EngineTaskKey, String> parameters = createValidationParameters(urlOfSchemasZip, schemaRootPath,
         schematronRootPath);
     parameters.put(GENERATE_STATS, Boolean.TRUE.toString());
     return parameters;
   }
 
-  public static Map<EngineTaskKey, String> createValidationInternalParameters(String urlOfSchemasZip,
-      String schemaRootPath,
-      String schematronRootPath) {
+  /**
+   * Creates a map of validation internal parameters.
+   *
+   * @param urlOfSchemasZip the URL pointing to the zip file containing schema definitions
+   * @param schemaRootPath the root path where schema files are located
+   * @param schematronRootPath the root path where schematron files are located
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  public static Map<EngineTaskKey, String> createValidationInternalParameters(
+      String urlOfSchemasZip, String schemaRootPath, String schematronRootPath) {
     final Map<EngineTaskKey, String> parameters =
         createValidationParameters(urlOfSchemasZip, schemaRootPath, schematronRootPath);
     parameters.put(GENERATE_STATS, Boolean.FALSE.toString());
     return parameters;
   }
 
-  private static Map<EngineTaskKey, String> createValidationParameters(String urlOfSchemasZip,
-      String schemaRootPath,
-      String schematronRootPath) {
+  /**
+   * Creates a map of validation parameters required for the engine tasks.
+   *
+   * @param urlOfSchemasZip the URL pointing to the ZIP file containing schemas
+   * @param schemaRootPath the root path for schema validation
+   * @param schematronRootPath the root path for schematron validation
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  private static Map<EngineTaskKey, String> createValidationParameters(
+      String urlOfSchemasZip, String schemaRootPath, String schematronRootPath) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(SCHEMA_NAME, urlOfSchemasZip);
     parameters.put(ROOT_LOCATION, schemaRootPath);
@@ -107,29 +162,47 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
-  public static Map<EngineTaskKey, String> createTransformationParameters(String metisCoreBaseUrl, String xsltId,
-      String datasetId,
-      String datasetName, String country, String language) {
+  /**
+   * Creates a map of transformation parameters.
+   *
+   * @param metisCoreBaseUrl the base URL for the Metis core API
+   * @param xsltId the identifier of the XSLT transformation
+   * @param datasetName the name of the dataset
+   * @param country the country associated with the dataset
+   * @param language the language associated with the dataset
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  public static Map<EngineTaskKey, String> createTransformationParameters(
+      String metisCoreBaseUrl, String xsltId, String datasetName, String country, String language) {
     Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(XSLT_URL,
-        metisCoreBaseUrl + RestEndpoints
-            .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
-                Collections.singletonList(xsltId)));
-    parameters.put(METIS_DATASET_ID, datasetId);
+        metisCoreBaseUrl + RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID, Collections.singletonList(xsltId)));
     parameters.put(METIS_DATASET_NAME, datasetName);
     parameters.put(METIS_DATASET_COUNTRY, country);
     parameters.put(METIS_DATASET_LANGUAGE, language);
     return parameters;
   }
 
+  /**
+   * Creates a map of media parameters.
+   *
+   * @param maximumParallelization the maximum level of parallelization to include in the parameters
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
   public static Map<EngineTaskKey, String> createMediaParameters(String maximumParallelization) {
     Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(MAXIMUM_PARALLELIZATION, maximumParallelization);
     return parameters;
   }
 
-  public static Map<EngineTaskKey, String> createLinkCheckingParameters(boolean performSampling,
-      Integer sampleSize) {
+  /**
+   * Creates a map containing parameters for link-checking tasks.
+   *
+   * @param performSampling a boolean indicating whether sampling should be performed
+   * @param sampleSize the number of samples to include if sampling is enabled
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  public static Map<EngineTaskKey, String> createLinkCheckingParameters(boolean performSampling, Integer sampleSize) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     if (performSampling && sampleSize != null) {
       parameters.put(SAMPLE_SIZE, sampleSize.toString());
@@ -137,8 +210,19 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
+  /**
+   * Creates a map containing parameters for indexing tasks.
+   *
+   * @param pluginStartedDate the start date of the plugin process
+   * @param incrementalIndexing a flag indicating if indexing should be incremental
+   * @param harvestDate the date when the data was harvested
+   * @param preserveTimestamps a flag indicating if original timestamps should be preserved
+   * @param datasetIdsToRedirectFrom a list of dataset IDs to redirect from
+   * @param performRedirects a flag indicating if redirection should be performed
+   * @param targetIndexingDatabase the target database for indexing
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
   public static Map<EngineTaskKey, String> createIndexParameters(
-      String datasetId,
       Date pluginStartedDate,
       boolean incrementalIndexing,
       Date harvestDate,
@@ -147,7 +231,6 @@ public class EngineTaskConfigurator {
       boolean performRedirects,
       String targetIndexingDatabase) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
-    parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(INCREMENTAL_INDEXING, String.valueOf(incrementalIndexing));
     parameters.put(HARVEST_DATE, formatUtcDate(harvestDate));
     parameters.put(TARGET_INDEXING_DATABASE, targetIndexingDatabase);
@@ -158,6 +241,16 @@ public class EngineTaskConfigurator {
     return parameters;
   }
 
+  /**
+   * Creates a map of parameters for depublishing tasks.
+   *
+   * @param datasetId The unique identifier of the dataset to be depublished.
+   * @param datasetDepublish Flag indicating whether the entire dataset should be depublished.
+   * @param recordIdsToDepublish A set of record IDs to be depublished if partial depublishing is required.
+   * @param depublicationReason The reason for the depublishing operation.
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   * @throws IllegalStateException If partial depublishing is requested but no record IDs are provided.
+   */
   public static Map<EngineTaskKey, String> createDepublishParameters(
       String datasetId,
       boolean datasetDepublish,

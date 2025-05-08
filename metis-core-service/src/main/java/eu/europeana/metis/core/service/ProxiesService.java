@@ -36,6 +36,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Proxies Service which encapsulates functionality that has to be proxied to an external resource.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 public class ProxiesService<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
@@ -47,13 +50,14 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
-   * Constructor with required parameters.
+   * Constructs an instance of ProxiesService with the specified dependencies.
    *
-   * @param workflowExecutionDao {@link WorkflowExecutionDao}
-   * @param ecloudProvider the ecloud provider
-   * @param datasetDao the Dao instance to access the Dataset database
+   * @param engineTaskClient Client used to interact with engine tasks.
+   * @param workflowExecutionDao DAO for accessing workflow execution data.
+   * @param datasetDao DAO for managing dataset information.
    */
-  public ProxiesService(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao, DatasetDao datasetDao) {
+  public ProxiesService(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao,
+      DatasetDao datasetDao) {
     this.engineTaskClient = engineTaskClient;
     this.workflowExecutionDao = workflowExecutionDao;
     this.datasetDao = datasetDao;
@@ -79,9 +83,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
   public List<DataItemStatus> getExternalTaskLogs(String topologyName, long externalTaskId, int from, int to)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    List<DataItemStatus> dataItemStatuses;
-    dataItemStatuses = engineTaskClient.getDataItemStatuses(topologyName, externalTaskId, from, to);
-    return dataItemStatuses;
+    return engineTaskClient.getDataItemStatuses(topologyName, externalTaskId, from, to);
   }
 
   /**
@@ -327,7 +329,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
         normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
                                           .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
       } catch (BadContentException e) {
-        LOGGER.info("Normalization of recordId '{}' failed. Using as is.", normalizedRecordId);
+        LOGGER.info(String.format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
       record = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
     }

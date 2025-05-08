@@ -7,6 +7,7 @@ import eu.europeana.cloud.mcs.driver.FileServiceClient;
 import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.ecloud.EcloudEngineDatasetRecordClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskSettings;
 import eu.europeana.metis.core.engine.mock.MockEngineTaskClient;
@@ -21,6 +22,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration class responsible for providing clients and settings required for interacting with processing engines.
+ * <p>
+ * Determines which type of client should be initialized based on configuration properties.
+ */
 @Configuration
 public class EngineClientConfig {
 
@@ -31,7 +37,18 @@ public class EngineClientConfig {
   private FileServiceClient fileServiceClient;
   private UISClient uisClient;
 
+  /**
+   * Configures and returns an instance of EngineTaskClient based on the engine type.
+   * <p>
+   * If the engine type is ECLOUD, initializes an EcloudEngineTaskClient; otherwise, initializes a MockEngineTaskClient.
+   *
+   * @param metisCoreConfigurationProperties The core configuration properties for the Metis engine.
+   * @param ecloudConfigurationProperties The configuration properties specific to the ECLOUD engine.
+   * @param throttlingValues The throttling values for managing concurrency levels.
+   * @return An instance of EngineTaskClient configured based on the specified properties and engine type.
+   */
   @Bean(destroyMethod = "close")
+  @SuppressWarnings("java:S1452") //This is acceptable and the only way (at the time of writing) that spring allows.
   public EngineTaskClient<?, ?> engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
@@ -62,7 +79,10 @@ public class EngineClientConfig {
         metisCoreConfigurationProperties.baseUrl(),
         throttlingValues
     );
-    return new EcloudEngineTaskClient(dpsClient, dataSetServiceClient, recordServiceClient, fileServiceClient, uisClient, ecloudEngineTaskSettings);
+    final EcloudEngineDatasetRecordClient ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(
+        dataSetServiceClient,
+        recordServiceClient, fileServiceClient, uisClient);
+    return new EcloudEngineTaskClient(dpsClient, ecloudEngineTaskSettings, ecloudEngineDatasetRecordClient);
   }
 
   //todo not really a mock yet
@@ -82,7 +102,10 @@ public class EngineClientConfig {
         metisCoreConfigurationProperties.baseUrl(),
         throttlingValues
     );
-    return new MockEngineTaskClient(dpsClient, dataSetServiceClient, recordServiceClient, fileServiceClient, uisClient, mockEngineTaskSettings);
+    final EcloudEngineDatasetRecordClient ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(
+        dataSetServiceClient,
+        recordServiceClient, fileServiceClient, uisClient);
+    return new MockEngineTaskClient(dpsClient, mockEngineTaskSettings, ecloudEngineDatasetRecordClient);
   }
 
   private DpsClient dpsClient(
@@ -140,6 +163,10 @@ public class EngineClientConfig {
         metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
   }
 
+  /**
+   * Closes all initialized service clients, releasing their resources to prevent potential memory leaks. If a client is null, no
+   * action is performed for that client.
+   */
   @PreDestroy
   public void close() {
     if (dpsClient != null) {

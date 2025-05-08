@@ -15,8 +15,20 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class EcloudEngineRecordStatisticsConverter {
+/**
+ * Utility class for converting statistical data from ECloud to Metis classes.
+ */
+public final class EcloudEngineRecordStatisticsConverter {
 
+  private EcloudEngineRecordStatisticsConverter() {
+  }
+
+  /**
+   * Compiles record-level statistics from the given StatisticsReport.
+   *
+   * @param report The report containing record node statistics data.
+   * @return A RecordStatisticsDTO object containing compiled statistical data for the provided report.
+   */
   public static RecordStatisticsDTO compileRecordStatistics(StatisticsReport report) {
 
     // Group the node statistics by their respective xpath.
@@ -28,6 +40,12 @@ public class EcloudEngineRecordStatisticsConverter {
     return new RecordStatisticsDTO(report.getTaskId(), nodePathStatisticsDTOList);
   }
 
+  /**
+   * Compiles statistics for a specific node path based on the provided node reports.
+   *
+   * @param nodePath The XPath expression representing the node.
+   * @param nodeReports The list of node reports containing statistical data.
+   * @return A NodePath*/
   public static NodePathStatisticsDTO compileNodePathStatistics(String nodePath, List<NodeReport> nodeReports) {
     return compileNodePathStatistics(nodePath, nodeReports,
         EcloudEngineRecordStatisticsConverter::compileNodeValueStatistics);

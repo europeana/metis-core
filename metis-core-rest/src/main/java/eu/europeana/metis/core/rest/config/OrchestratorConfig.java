@@ -40,7 +40,14 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Orchestrator configuration class.
+ * Configuration class for setting up beans and managing the dependencies required by the orchestrator services in the
+ * application.
+ * <p>
+ * This class initializes and wires components such as services, DAOs, utilities, and configuration properties to enable workflow
+ * orchestration and execution.
+ *
+ * @param <S> The type representing the settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Configuration
 @EnableConfigurationProperties({
@@ -147,6 +154,13 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
     return workflowExecutionFactory;
   }
 
+  /**
+   * Provides an instance of RedirectionInferrer configured with the required dependencies.
+   *
+   * @param workflowExecutionDao WorkflowExecutionDao instance to manage workflow execution data.
+   * @param dataEvolutionUtils DataEvolutionUtils instance to assist with data transformations.
+   * @return A configured RedirectionInferrer object.
+   */
   @Bean
   public RedirectionInferrer getRedirectionInferrer(WorkflowExecutionDao workflowExecutionDao,
       DataEvolutionUtils dataEvolutionUtils) {
@@ -197,6 +211,20 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
     return new SemaphoresPerPluginManager(metisCoreConfigurationProperties.maxConcurrentThreads());
   }
 
+  /**
+   * Creates and configures a WorkflowExecutorManager bean for handling workflow execution operations.
+   *
+   * @param semaphoresPerPluginManager Manages semaphores for controlling access to plugins.
+   * @param workflowExecutionDao Data access object for managing workflow executions.
+   * @param workflowPostProcessor Post-processor for workflow execution-related actions.
+   * @param rabbitmqPublisherChannel RabbitMQ channel used for publishing messages.
+   * @param rabbitmqConsumerChannel RabbitMQ channel used for consuming messages.
+   * @param redissonClient Redisson client for distributed locking and caching.
+   * @param engineTaskClient Client for interactions with data processing services.
+   * @param rabbitmqConfigurationProperties Configuration properties for RabbitMQ setup.
+   * @param metisCoreConfigurationProperties Core configuration properties for the system.
+   * @return A configured instance of WorkflowExecutorManager.
+   */
   @Bean
   public WorkflowExecutorManager<S, T> getWorkflowExecutorManager(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
@@ -210,7 +238,8 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
     workflowExecutorManagerSettings.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
-    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(
+        metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
     workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
 
@@ -219,6 +248,13 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
         rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
   }
 
+  /**
+   * Provides an instance of WorkflowExecutionDao configured with datastore provider and properties.
+   *
+   * @param morphiaDatastoreProvider MorphiaDatastoreProvider instance to interact with the datastore.
+   * @param metisCoreConfigurationProperties Configuration properties for Metis Core settings.
+   * @return Configured instance of WorkflowExecutionDao.
+   */
   @Bean
   public WorkflowExecutionDao getWorkflowExecutionDao(
       MorphiaDatastoreProvider morphiaDatastoreProvider,
@@ -242,18 +278,33 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
     return new WorkflowValidationUtils(depublishRecordIdDao, dataEvolutionUtils);
   }
 
+  /**
+   * Provides an instance of WorkflowDao initialized with the provided MorphiaDatastoreProvider.
+   *
+   * @param morphiaDatastoreProvider MorphiaDatastoreProvider used to initialize the WorkflowDao.
+   * @return An instance of WorkflowDao.
+   */
   @Bean
   public WorkflowDao getWorkflowDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     return new WorkflowDao(morphiaDatastoreProvider);
   }
 
+  /**
+   * Creates and configures a WorkflowExecutionMonitor bean for monitoring the execution of workflows.
+   *
+   * @param workflowExecutorManager WorkflowExecutorManager instance responsible for managing workflow executions.
+   * @param workflowExecutionDao WorkflowExecutionDao instance used for accessing and managing workflow execution data.
+   * @param redissonClient RedissonClient instance for distributed caching and locking mechanisms.
+   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core system.
+   * @return A configured WorkflowExecutionMonitor instance.
+   */
   @Bean
   public WorkflowExecutionMonitor getWorkflowExecutionMonitor(
       WorkflowExecutorManager<S, T> workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
       RedissonClient redissonClient, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
 
-    // Computes the leniency for the failsafe action: how long ago (worst case) can the last update
-    // time have been set before we assume the execution hangs.
+    /*Computes the leniency for the failsafe action: how long ago (the worst case)
+     did the last update action take place before we assume the execution hangs.*/
     final Duration failsafeLeniency = Duration.ZERO
         .plusMillis(metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds())
         .plusMillis(metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds())
@@ -264,6 +315,12 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
         workflowExecutionDao, redissonClient, failsafeLeniency);
   }
 
+  /**
+   * Retrieves the throttling values based on the provided configuration properties.
+   *
+   * @param metisCoreConfigurationProperties Configuration properties containing the throttling level settings.
+   * @return An instance of ThrottlingValues initialized with the provided configuration properties.
+   */
   @Bean
   public ThrottlingValues getThrottlingValues(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     return new ThrottlingValues(metisCoreConfigurationProperties.threadLimitThrottlingLevelWeak(),

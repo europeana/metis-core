@@ -1,15 +1,15 @@
 package eu.europeana.metis.core.execution;
 
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDataRevision;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDefaultTaskParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDefaultTaskParametersHarvest;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createDepublishParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createIndexParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createLinkCheckingParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createMediaParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createTransformationParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createValidationExternalParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskConfigurator.createValidationInternalParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDataRevision;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDefaultTaskParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDefaultTaskParametersHarvest;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDepublishParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createIndexParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createLinkCheckingParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createMediaParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createTransformationParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createValidationExternalParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createValidationInternalParameters;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -19,7 +19,7 @@ import eu.europeana.metis.core.engine.base.AbstractEngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
-import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
@@ -53,17 +53,36 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A class responsible for executing plugins by creating and submitting corresponding engine tasks.
+ *
+ * @param <S> Generic type parameter extending AbstractEngineTaskSettings.
+ * @param <T> Generic type parameter extending AbstractEngineTask.
+ */
 public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
+  /**
+   * Constructs a PluginExecutor with the specified plugin and engine task client.
+   *
+   * @param plugin AbstractExecutablePlugin instance used to execute the plugin logic.
+   * @param engineTaskClient EngineTaskClient instance used to manage and interact with engine tasks.
+   */
   public PluginExecutor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
   }
 
+  /**
+   * Submits a task to the processing engine for the specified dataset and previous task if any.
+   *
+   * @param datasetId Identifier of the dataset for which the task is submitted.
+   * @param previousTaskId Identifier of the previous task to maintain task dependencies. Can be null or empty.
+   * @throws ExternalTaskException If an error occurs while submitting the task.
+   */
   public void submit(String datasetId, String previousTaskId) throws ExternalTaskException {
     T engineTask = createEngineTask(datasetId, previousTaskId);
 
@@ -91,11 +110,11 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
         engineTask = createHarvestEngineTask(datasetId, pluginHarvestParameters);
       }
       case PROCESS -> {
-        pluginParameters = getProcessPluginParameters(datasetId);
+        pluginParameters = getProcessPluginParameters();
         engineTask = createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
       }
       case INDEX -> {
-        pluginParameters = getIndexPluginParameters(datasetId);
+        pluginParameters = getIndexPluginParameters();
         engineTask = createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
       }
       case DEPUBLISH -> {
@@ -121,7 +140,7 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
 
     final InputDataEndpoint inputDataEndpoint =
         requireNonNullElseGet(pluginHarvestParameters.oaiHarvestInputDataParameters(),
-            () -> new HarvestInputDataEndpoint(pluginHarvestParameters.targetUrl()));
+            () -> new HttpHarvestInputDataEndpoint(pluginHarvestParameters.targetUrl()));
     return engineTaskClient.createEngineTask(allParameters, inputDataEndpoint, outputDataRevision);
   }
 
@@ -140,7 +159,7 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
 
     final String dataLocation = getDataLocation(datasetId);
     final Map<EngineTaskKey, String> basicTaskParameters =
-        createDefaultTaskParameters(previousTaskId, inputDataRevision, dataLocation);
+        createDefaultTaskParameters(datasetId, previousTaskId, inputDataRevision, dataLocation);
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
     allParameters.putAll(pluginParameters);
@@ -189,8 +208,7 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
     return new PluginHarvestParameters(targetUrl, incrementalHarvest, oaiHarvestInputDataParameters);
   }
 
-  private @NotNull Map<EngineTaskKey, String> getProcessPluginParameters(
-      String datasetId) {
+  private @NotNull Map<EngineTaskKey, String> getProcessPluginParameters() {
     return switch (plugin.getPluginMetadata()) {
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> {
         String urlOfSchemasZip = validationExternalPluginMetadata.getUrlOfSchemasZip();
@@ -205,8 +223,7 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
         String datasetName = transformationPluginMetadata.getDatasetName();
         String country = transformationPluginMetadata.getCountry();
         String language = transformationPluginMetadata.getLanguage();
-        yield createTransformationParameters(metisCoreBaseUrl, xsltId, datasetId, datasetName,
-            country, language);
+        yield createTransformationParameters(metisCoreBaseUrl, xsltId, datasetName, country, language);
       }
       case ValidationInternalPluginMetadata validationInternalPluginMetadata -> {
         String urlOfSchemasZip = validationInternalPluginMetadata.getUrlOfSchemasZip();
@@ -233,7 +250,7 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
     };
   }
 
-  private @NotNull Map<EngineTaskKey, String> getIndexPluginParameters(String datasetId) {
+  private @NotNull Map<EngineTaskKey, String> getIndexPluginParameters() {
     if (plugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata indexPluginMetadata) {
       boolean incrementalIndexing = indexPluginMetadata.isIncrementalIndexing();
       Date harvestDate = indexPluginMetadata.getHarvestDate();
@@ -241,7 +258,7 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
       List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
       boolean performRedirects = indexPluginMetadata.isPerformRedirects();
       String targetIndexingDatabase = ((IndexToPreviewPlugin) plugin).getTargetIndexingDatabase().name();
-      return createIndexParameters(datasetId, plugin.getStartedDate(), incrementalIndexing,
+      return createIndexParameters(plugin.getStartedDate(), incrementalIndexing,
           harvestDate, preserveTimestamps, datasetIdsToRedirectFrom, performRedirects, targetIndexingDatabase);
     } else {
       throw new IllegalStateException("Unexpected value: " + plugin);

@@ -144,6 +144,10 @@ public final class RecordIdUtils {
     return lastSegment;
   }
 
+  /**
+   * Represents a combination of a dataset ID and a record ID.
+   * Used to encapsulate and manage dataset and record identifiers together.
+   */
   public record DatasetIdAndRecordId(String datasetId, String recordId) {
 
   }

@@ -10,24 +10,33 @@ import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.AbstractEngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
-import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a task for the Mock processing engine that wraps and transforms task parameters for use in a DPS task.
+ */
 public class MockEngineTask extends AbstractEngineTask {
 
   private final DpsTask dpsTask = new DpsTask();
 
-  public MockEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, DataRevision outputDataRevision) {
+  public MockEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint,
+      DataRevision outputDataRevision) {
     super(parameters, inputDataEndpoint, outputDataRevision);
     setParameters();
     setInputDataLocation();
     setOutputRevision();
   }
 
+  /**
+   * Converts the current MockEngineTask instance into a DpsTask.
+   *
+   * @return The corresponding DpsTask representation of this MockEngineTask.
+   */
   public DpsTask toDpsTask() {
     return dpsTask;
   }
@@ -36,21 +45,17 @@ public class MockEngineTask extends AbstractEngineTask {
     parameters.forEach((key, value) -> dpsTask.addParameter(key.name(), value));
   }
 
-  private <T extends InputDataEndpoint> void setInputDataLocation() {
+  private void setInputDataLocation() {
     final InputDataType inputDataType = switch (inputDataEndpoint) {
       case InternalInputDataEndpoint ignored -> DATASET_URLS;
-      case HarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
+      case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
       case OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters -> {
         setOaiHarvestParameters(oaiHarvestInputDataParameters);
         yield REPOSITORY_URLS;
       }
-      default -> null;
     };
-
-    if (inputDataType != null) {
-      Map<InputDataType, List<String>> inputDataLocation = Map.of(inputDataType, List.of(inputDataEndpoint.url()));
-      dpsTask.setInputData(inputDataLocation);
-    }
+    Map<InputDataType, List<String>> inputDataLocation = Map.of(inputDataType, List.of(inputDataEndpoint.url()));
+    dpsTask.setInputData(inputDataLocation);
   }
 
   private void setOaiHarvestParameters(OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
@@ -63,7 +68,8 @@ public class MockEngineTask extends AbstractEngineTask {
   }
 
   private void setOutputRevision() {
-    final Revision revision = new Revision(outputDataRevision.name(), outputDataRevision.providerId(), outputDataRevision.creationTimeStamp(),
+    final Revision revision = new Revision(outputDataRevision.name(), outputDataRevision.providerId(),
+        outputDataRevision.creationTimeStamp(),
         outputDataRevision.deleted());
     dpsTask.setOutputRevision(revision);
   }

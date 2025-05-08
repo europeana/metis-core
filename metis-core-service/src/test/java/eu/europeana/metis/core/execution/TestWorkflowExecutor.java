@@ -245,7 +245,7 @@ class TestWorkflowExecutor {
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), anyLong()))
-        .thenThrow(new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error")));
+        .thenThrow(new ExternalTaskException("", new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 
     doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);

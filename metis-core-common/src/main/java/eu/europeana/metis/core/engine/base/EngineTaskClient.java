@@ -21,8 +21,21 @@ public interface EngineTaskClient<S extends AbstractEngineTaskSettings, T extend
     EngineRecordClient,
     AutoCloseable {
 
+  /**
+   * Retrieves the current engine task settings.
+   *
+   * @return an instance of the engine task settings.
+   */
   S getEngineTaskSettings();
 
+  /**
+   * Creates a new engine task with the specified parameters, input data endpoint, and output data revision.
+   *
+   * @param parameters a map of {@link EngineTaskKey} keys and their corresponding values used to configure the engine task
+   * @param inputDataEndpoint the input data source for the engine task
+   * @param outputDataRevision the data revision to be produced by this engine task
+   * @return a new instance of the engine task
+   */
   T createEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, DataRevision outputDataRevision);
 
 }

@@ -50,8 +50,8 @@ import org.slf4j.LoggerFactory;
  * When the WorkflowExecution is received there is a chance that the execution is already being handled from another
  * WorkflowExecutor in another instance and if that is the case the WorkflowExecution will be dropped.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-29
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 public class WorkflowExecutor<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask>
     implements Callable<Pair<WorkflowExecution, Boolean>> {
@@ -395,17 +395,19 @@ public class WorkflowExecutor<S extends AbstractEngineTaskSettings, T extends Ab
             workflowExecution.getId(), plugin.getPluginType()), e);
         currentThread().interrupt();
         return;
-      } catch (UnrecoverableExternalTaskException e) {
-        LOGGER.warn(String
-            .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
-                + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
-        // Set plugin to FAILED and return immediately
-        plugin.setFinishedDate(null);
-        plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-        plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX,
-            ExceptionUtils.getStackTrace(e)));
-        return;
       } catch (ExternalTaskException | RuntimeException e) {
+        if (e.getCause() instanceof UnrecoverableExternalTaskException) {
+          LOGGER.warn(String
+              .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
+                  + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
+          // Set plugin to FAILED and return immediately
+          plugin.setFinishedDate(null);
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+          plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX,
+              ExceptionUtils.getStackTrace(e)));
+          return;
+        }
+
         LOGGER.warn(String
             .format("workflowExecutionId: %s, pluginType: %s - ExternalTaskException occurred.",
                 workflowExecution.getId(), plugin.getPluginType()), e);
@@ -535,7 +537,8 @@ public class WorkflowExecutor<S extends AbstractEngineTaskSettings, T extends Ab
         plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
       }
       case DROPPED -> {
-        if (!workflowExecutionDao.isCancelling(workflowExecution.getId())) {
+        boolean isNotCancelling = !workflowExecutionDao.isCancelling(workflowExecution.getId());
+        if (isNotCancelling) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
           String engineTaskStateInfo = engineTaskProgress.getEngineTaskStateInfo();
           String message = StringUtils.isBlank(engineTaskStateInfo)

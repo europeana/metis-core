@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
  * consuming of items from the queue, through the implemented {@link #handleDelivery(String,
  * Envelope, BasicProperties, byte[])} method.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-13
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 public class QueueConsumer<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> extends DefaultConsumer {
 

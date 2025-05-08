@@ -40,6 +40,9 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * RabbitMQ configuration class.
+ *
+ * @param <S> The type representing the settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Configuration
 @EnableConfigurationProperties({RabbitmqConfigurationProperties.class, TruststoreConfigurationProperties.class})
@@ -71,8 +74,7 @@ public class QueueConfig<S extends AbstractEngineTaskSettings, T extends Abstrac
       if (rabbitmqConfigurationProperties.isEnableCustomTruststore()) {
         // Load the ssl context with the provided truststore
         final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        // This file is determined in the config files, it does not pose a risk.
-        @SuppressWarnings("findsecbugs:PATH_TRAVERSAL_IN")
+        @SuppressWarnings("findsecbugs:PATH_TRAVERSAL_IN") // This file is determined in the config files, it does not pose a risk.
         final Path trustStoreFile = Paths.get(
             truststoreConfigurationProperties.getPath());
         try (final InputStream inputStream = Files.newInputStream(trustStoreFile)) {
@@ -121,6 +123,16 @@ public class QueueConfig<S extends AbstractEngineTaskSettings, T extends Abstrac
     channel.queueDeclare(rabbitmqConfigurationProperties.getQueueName(), true, false, false, args);
   }
 
+  /**
+   * Creates and returns a QueueConsumer instance for message consumption.
+   *
+   * @param rabbitmqConfigurationProperties RabbitMQ configuration properties.
+   * @param workflowExecutionManager Workflow execution manager to manage the workflow execution.
+   * @param workflowExecutionMonitor Workflow execution monitor for monitoring execution progress.
+   * @param rabbitmqConsumerChannel RabbitMQ consumer channel for consuming messages.
+   * @return An instance of QueueConsumer configured with the provided parameters.
+   * @throws IOException If an I/O error occurs during the consumer setup.
+   */
   @Bean
   public QueueConsumer<S, T> getQueueConsumer(
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,

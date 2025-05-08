@@ -10,13 +10,17 @@ import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.AbstractEngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
-import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a task for the Ecloud processing engine that wraps and transforms
+ * task parameters for use in a DPS task.
+ */
 public class EcloudEngineTask extends AbstractEngineTask {
 
   private final DpsTask dpsTask = new DpsTask();
@@ -29,6 +33,11 @@ public class EcloudEngineTask extends AbstractEngineTask {
     setOutputRevision();
   }
 
+  /**
+   * Converts the current EcloudEngineTask instance into a DpsTask.
+   *
+   * @return The corresponding DpsTask representation of this EcloudEngineTask.
+   */
   public DpsTask toDpsTask() {
     return dpsTask;
   }
@@ -40,7 +49,7 @@ public class EcloudEngineTask extends AbstractEngineTask {
   private void setInputDataLocation() {
     final InputDataType inputDataType = switch (inputDataEndpoint) {
       case InternalInputDataEndpoint ignored -> DATASET_URLS;
-      case HarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
+      case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
       case OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters -> {
         setOaiHarvestParameters(oaiHarvestInputDataParameters);
         yield REPOSITORY_URLS;

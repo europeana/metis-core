@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This denotes a plugin type that is executable (i.e. can be run by Metis). This is a subset of the
- * list in {@link PluginType}, which contains all plugin types.
+ * This denotes a plugin type that is executable (i.e. can be run by Metis). This is a subset of the list in {@link PluginType},
+ * which contains all plugin types.
  */
 public enum ExecutablePluginType {
 
@@ -49,8 +49,7 @@ public enum ExecutablePluginType {
   }
 
   /**
-   * Get the corresponding {@link ExecutablePluginType} by providing a {@link PluginType} or null if
-   * no match found
+   * Get the corresponding {@link ExecutablePluginType} by providing a {@link PluginType} or null if no match found
    *
    * @param pluginType the provided plugin type
    * @return the executable plugin type or null if no match found
@@ -65,12 +64,10 @@ public enum ExecutablePluginType {
   }
 
   /**
-   * Lookup of a {@link ExecutablePluginType} enum from a provided enum String representation of the
-   * enum value.
+   * Lookup of a {@link ExecutablePluginType} enum from a provided enum String representation of the enum value.
    *
    * @param enumName the String representation of an enum value
-   * @return the {@link ExecutablePluginType} that represents the provided value or null if not
-   * found
+   * @return the {@link ExecutablePluginType} that represents the provided value or null if not found
    */
   @JsonCreator
   public static ExecutablePluginType getPluginTypeFromEnumName(
@@ -87,7 +84,12 @@ public enum ExecutablePluginType {
     return executablePluginTypeGroup;
   }
 
-  public enum ExecutablePluginTypeGroup{
+  /**
+   * Enum representing groups of executable plugin types.
+   * <p>
+   * These groups categorize functionality types that can be executed as part of the workflow.
+   */
+  public enum ExecutablePluginTypeGroup {
     HARVEST, PROCESS, INDEX, DEPUBLISH
   }
 }
