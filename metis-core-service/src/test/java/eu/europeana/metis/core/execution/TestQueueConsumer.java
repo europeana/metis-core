@@ -24,8 +24,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.AbstractEngineTask;
-import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
@@ -60,7 +60,7 @@ class TestQueueConsumer {
 
   private static SemaphoresPerPluginManager semaphoresPerPluginManager;
   private static WorkflowExecutionDao workflowExecutionDao;
-  private static EngineTaskClient<AbstractEngineTaskSettings, AbstractEngineTask> engineTaskClient;
+  private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
   private static WorkflowPostProcessor workflowPostProcessor;
   private static RedissonClient redissonClient;
   private static Channel rabbitmqConsumerChannel;
@@ -98,11 +98,11 @@ class TestQueueConsumer {
     Mockito.reset(rabbitmqConsumerChannel);
     Mockito.reset(engineTaskClient);
 
-    AbstractEngineTask abstractEngineTask = mock(AbstractEngineTask.class);
+    EngineTask engineTask = mock(EngineTask.class);
     when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
-        .thenReturn(abstractEngineTask);
-    AbstractEngineTaskSettings abstractEngineTaskSettings = mock(AbstractEngineTaskSettings.class);
-    when(engineTaskClient.getEngineTaskSettings()).thenReturn(abstractEngineTaskSettings);
+        .thenReturn(engineTask);
+    EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
+    when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
 
   @Test

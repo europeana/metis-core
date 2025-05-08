@@ -8,7 +8,7 @@ import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.InputDataType;
 import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
-import eu.europeana.metis.core.engine.base.AbstractEngineTask;
+import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Represents a task for the Mock processing engine that wraps and transforms task parameters for use in a DPS task.
  */
-public class MockEngineTask extends AbstractEngineTask {
+public class MockEngineTask extends EngineTask {
 
   private final DpsTask dpsTask = new DpsTask();
 

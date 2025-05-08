@@ -4,9 +4,9 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.AbstractEngineTask;
+import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
-public class WorkflowExecutorManager<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
+public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final WorkflowExecutorManagerSettings workflowExecutorManagerSettings;

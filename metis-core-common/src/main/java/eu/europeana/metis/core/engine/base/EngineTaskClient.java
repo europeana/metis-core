@@ -14,7 +14,7 @@ import java.util.Map;
  * @param <S> The type representing the settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
-public interface EngineTaskClient<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> extends
+public interface EngineTaskClient<S extends EngineTaskSettings, T extends EngineTask> extends
     EngineTaskSubmissionClient<T>,
     EngineTaskMonitoringClient,
     EngineTaskStatisticsClient,

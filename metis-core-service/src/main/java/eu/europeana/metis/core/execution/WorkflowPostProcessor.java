@@ -12,9 +12,9 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
-import eu.europeana.metis.core.engine.base.AbstractEngineTask;
+import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
@@ -62,7 +62,7 @@ public class WorkflowPostProcessor {
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetDao datasetDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final EngineTaskClient<? extends AbstractEngineTaskSettings, ? extends AbstractEngineTask> engineTaskClient;
+  private final EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
@@ -75,7 +75,7 @@ public class WorkflowPostProcessor {
    */
   public WorkflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
       DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
-      EngineTaskClient<? extends AbstractEngineTaskSettings, ? extends AbstractEngineTask> engineTaskClient) {
+      EngineTaskClient<? extends EngineTaskSettings, ? extends EngineTask> engineTaskClient) {
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.datasetDao = datasetDao;
     this.workflowExecutionDao = workflowExecutionDao;

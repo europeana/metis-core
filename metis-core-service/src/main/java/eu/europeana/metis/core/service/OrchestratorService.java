@@ -14,8 +14,8 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation.PublicationStatus;
-import eu.europeana.metis.core.engine.base.AbstractEngineTask;
-import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
@@ -83,7 +83,7 @@ import org.springframework.stereotype.Service;
  * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Service
-public class OrchestratorService<S extends AbstractEngineTaskSettings, T extends AbstractEngineTask> {
+public class OrchestratorService<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   //Use with String.format to suffix the datasetId

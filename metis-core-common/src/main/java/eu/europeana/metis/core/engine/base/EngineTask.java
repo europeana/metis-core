@@ -7,12 +7,12 @@ import java.util.Objects;
 /**
  * Represents a task that can be submitted to a processing engine.
  */
-public abstract class AbstractEngineTask {
+public class EngineTask {
   protected final Map<EngineTaskKey, String> parameters;
   protected final InputDataEndpoint inputDataEndpoint;
   protected final DataRevision outputDataRevision;
 
-  protected AbstractEngineTask(
+  protected EngineTask(
       Map<EngineTaskKey, String> parameters,
       InputDataEndpoint inputDataEndpoint,
       DataRevision outputDataRevision) {

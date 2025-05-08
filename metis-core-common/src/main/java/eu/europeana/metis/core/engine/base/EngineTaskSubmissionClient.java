@@ -5,9 +5,9 @@ import eu.europeana.metis.exception.ExternalTaskException;
 /**
  * Interface for submitting and managing tasks to be executed within a processing engine.
  *
- * @param <T> The type of task extending {@link AbstractEngineTask} to be submitted and managed.
+ * @param <T> The type of task extending {@link EngineTask} to be submitted and managed.
  */
-public interface EngineTaskSubmissionClient<T extends AbstractEngineTask> {
+public interface EngineTaskSubmissionClient<T extends EngineTask> {
 
   /**
    * Submits a task to the processing engine for execution.
