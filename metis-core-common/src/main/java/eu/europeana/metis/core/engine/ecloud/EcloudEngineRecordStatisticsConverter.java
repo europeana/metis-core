@@ -37,7 +37,7 @@ public final class EcloudEngineRecordStatisticsConverter {
     final List<NodePathStatisticsDTO> nodePathStatisticsDTOList =
         nodesByXPath.entrySet().stream().map(EcloudEngineRecordStatisticsConverter::compileNodePathStatistics)
                     .sorted(Comparator.comparing(NodePathStatisticsDTO::xPath)).toList();
-    return new RecordStatisticsDTO(report.getTaskId(), nodePathStatisticsDTOList);
+    return new RecordStatisticsDTO(Long.toString(report.getTaskId()), nodePathStatisticsDTOList);
   }
 
   /**

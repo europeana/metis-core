@@ -88,8 +88,8 @@ public class PluginExecutor<S extends AbstractEngineTaskSettings, T extends Abst
 
     LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", plugin.getPluginType(), datasetId);
     try {
-      long taskId = engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
-      plugin.setExternalTaskId(String.valueOf(taskId));
+      String taskId = engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
+      plugin.setExternalTaskId(taskId);
       plugin.setDataStatus(DataStatus.VALID);
     } catch (ExternalTaskException | RuntimeException e) {
       throw new ExternalTaskException(

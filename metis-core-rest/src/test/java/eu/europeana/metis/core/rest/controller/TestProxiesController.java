@@ -4,6 +4,7 @@ import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
 import static eu.europeana.metis.security.test.JwtUtils.BEARER;
 import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
 import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
+import static java.lang.Long.parseLong;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

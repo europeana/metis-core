@@ -8,7 +8,7 @@ import java.util.List;
  * @param taskId The ID of the task.
  * @param nodePathStatistics A list of node path statistics, stored as an immutable list.
  */
-public record RecordStatisticsDTO(long taskId, List<NodePathStatisticsDTO> nodePathStatistics) {
+public record RecordStatisticsDTO(String taskId, List<NodePathStatisticsDTO> nodePathStatistics) {
 
   /**
    * Constructs a {@code RecordStatistics} instance.

@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,10 +24,10 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.AbstractEngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.AbstractEngineTaskSettings;
+import eu.europeana.metis.core.engine.base.DataRevision;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
@@ -260,10 +259,10 @@ class TestQueueConsumer {
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
     EngineTaskProgress processedProgress = new EngineTaskProgress();
     processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin1.getTopologyName()), anyLong()))
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin1.getTopologyName()), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin2.getTopologyName()), anyLong()))
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin2.getTopologyName()), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 

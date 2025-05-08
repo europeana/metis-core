@@ -51,7 +51,7 @@ public class TestObjectFactory {
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
   public static final String TOPOLOGY_NAME = "topology_name";
-  public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
+  public static final String EXTERNAL_TASK_ID = "2070373127078497810";
   private static final int OCCURRENCES = 2;
 
   private TestObjectFactory() {
@@ -277,7 +277,7 @@ public class TestObjectFactory {
       taskErrorInfo.setErrorDetails(errorDetails);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(Long.parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
   }
 
   public static EngineTaskErrors createExternalTaskErrorsListWithIdentifiers(int numberOfErrorTypes) {
@@ -294,7 +294,7 @@ public class TestObjectFactory {
           taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
     }).collect(Collectors.toList());
 
-    return new EngineTaskErrors(taskErrorsInfo.getId(), engineTaskErrorInfoList);
+    return new EngineTaskErrors(Long.toString(taskErrorsInfo.getId()), engineTaskErrorInfoList);
   }
 
   /**

@@ -750,13 +750,13 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * @param externalTaskId The external task ID that is to be queried.
    * @return The workflow execution.
    */
-  public WorkflowExecution getByExternalTaskId(long externalTaskId) {
+  public WorkflowExecution getByExternalTaskId(String externalTaskId) {
     // TODO JV Validation is disabled because otherwise it complains that the subquery is looking in a
     // list of AbstractMetisPlugin objects that don't have the "externalTaskId" property being queried.
     final Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                                    .find(WorkflowExecution.class).disableValidation();
     query.filter(Filters.elemMatch(METIS_PLUGINS.getFieldName(),
-        Filters.eq("externalTaskId", Long.toString(externalTaskId))));
+        Filters.eq("externalTaskId", externalTaskId)));
     return retryableExternalRequestForNetworkExceptions(query::first);
   }
 

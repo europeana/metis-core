@@ -17,7 +17,7 @@ public interface EngineTaskStatisticsClient {
    * @return An instance of {@code RecordStatisticsDTO} containing statistical data about the task.
    * @throws ExternalTaskException If an error occurs while accessing the task statistics.
    */
-  RecordStatisticsDTO getEngineTaskContentRecordStatistics(String topologyName, long taskId) throws ExternalTaskException;
+  RecordStatisticsDTO getEngineTaskContentRecordStatistics(String topologyName, String taskId) throws ExternalTaskException;
 
   /**
    * Retrieves the statistics for records of a specific node path in a specific task.
@@ -28,7 +28,7 @@ public interface EngineTaskStatisticsClient {
    * @return NodePathStatisticsDTO containing the statistics of the specified node path.
    * @throws ExternalTaskException If there is an error retrieving the statistics.
    */
-  NodePathStatisticsDTO getEngineTaskContentNodePathStatistics(String topologyName, long taskId, String nodePath)
+  NodePathStatisticsDTO getEngineTaskContentNodePathStatistics(String topologyName, String taskId, String nodePath)
       throws ExternalTaskException;
 
 }

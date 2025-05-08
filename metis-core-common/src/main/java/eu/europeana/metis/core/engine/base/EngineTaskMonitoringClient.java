@@ -20,7 +20,7 @@ public interface EngineTaskMonitoringClient {
    * @return An instance of {@link EngineTaskProgress} containing details about the task's progress.
    * @throws ExternalTaskException If an error occurs while accessing the external resource.
    */
-  EngineTaskProgress getEngineTaskProgress(String topologyName, long taskId) throws ExternalTaskException;
+  EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId) throws ExternalTaskException;
 
   /**
    * Retrieves a list of data item statuses based on the specified parameters.
@@ -32,7 +32,7 @@ public interface EngineTaskMonitoringClient {
    * @return A list of DataItemStatus objects representing the statuses of the data items.
    * @throws ExternalTaskException If an error occurs while retrieving the data item statuses.
    */
-  List<DataItemStatus> getDataItemStatuses(String topologyName, long taskId, int from, int to) throws ExternalTaskException;
+  List<DataItemStatus> getDataItemStatuses(String topologyName, String taskId, int from, int to) throws ExternalTaskException;
 
   /**
    * Checks if there is an error report for the specified engine task.
@@ -42,7 +42,7 @@ public interface EngineTaskMonitoringClient {
    * @return True if an error report exists for the task, false otherwise.
    * @throws ExternalTaskException If there is an error accessing the task information.
    */
-  boolean hasEngineTaskErrorReport(String topologyName, long taskId) throws ExternalTaskException;
+  boolean hasEngineTaskErrorReport(String topologyName, String taskId) throws ExternalTaskException;
 
   /**
    * Retrieves a list of errors reported for a specific task in the processing engine.
@@ -53,6 +53,6 @@ public interface EngineTaskMonitoringClient {
    * @return An instance of EngineTaskErrors containing details of the task errors.
    * @throws ExternalTaskException If an error occurs while accessing the external resource.
    */
-  EngineTaskErrors getEngineTaskErrors(String topologyName, long taskId, int maxEntries) throws ExternalTaskException;
+  EngineTaskErrors getEngineTaskErrors(String topologyName, String taskId, int maxEntries) throws ExternalTaskException;
 
 }

@@ -9,7 +9,7 @@ import java.util.List;
  * @param errors List of error information associated with the task.
  */
 public record EngineTaskErrors(
-    long id,
+    String id,
     List<EngineTaskErrorInfo> errors) {
 
 }

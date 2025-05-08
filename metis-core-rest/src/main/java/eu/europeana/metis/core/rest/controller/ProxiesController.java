@@ -73,7 +73,7 @@ public class ProxiesController {
   @ResponseStatus(HttpStatus.OK)
   public List<DataItemStatus> getExternalTaskLogs(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId,
+      @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam(value = "from") int from,
       @RequestParam(value = "to") int to) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
@@ -103,7 +103,7 @@ public class ProxiesController {
   @ResponseStatus(HttpStatus.OK)
   public Map<String, Boolean> existsExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId) throws GenericMetisException {
+      @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info(
@@ -135,7 +135,7 @@ public class ProxiesController {
   @ResponseStatus(HttpStatus.OK)
   public EngineTaskErrors getExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId,
+      @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {
@@ -163,7 +163,7 @@ public class ProxiesController {
   @ResponseStatus(HttpStatus.OK)
   public RecordStatisticsDTO getExternalTaskStatistics(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId) throws GenericMetisException {
+      @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}", topologyName, externalTaskId);
@@ -192,7 +192,7 @@ public class ProxiesController {
   @ResponseStatus(HttpStatus.OK)
   public NodePathStatisticsDTO getAdditionalNodeStatistics(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId,
+      @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("nodePath") String nodePath) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {

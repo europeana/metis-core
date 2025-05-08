@@ -17,7 +17,7 @@ public interface EngineTaskSubmissionClient<T extends AbstractEngineTask> {
    * @return A unique identifier for the submitted task.
    * @throws ExternalTaskException If the submission fails due to an error with the external resource.
    */
-  long submitEngineTask(T engineTask, String topologyName) throws ExternalTaskException;
+  String submitEngineTask(T engineTask, String topologyName) throws ExternalTaskException;
 
   /**
    * Cancels the specified engine task with the provided details.
@@ -27,5 +27,5 @@ public interface EngineTaskSubmissionClient<T extends AbstractEngineTask> {
    * @param message Reason or message indicating why the task is being canceled.
    * @throws ExternalTaskException If an error occurs during task cancellation.
    */
-  void cancelEngineTask(String topologyName, long taskId, String message) throws ExternalTaskException;
+  void cancelEngineTask(String topologyName, String taskId, String message) throws ExternalTaskException;
 }

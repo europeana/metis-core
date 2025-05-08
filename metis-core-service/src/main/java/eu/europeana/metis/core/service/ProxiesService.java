@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.service;
 
+import static java.lang.String.format;
+
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
@@ -80,7 +82,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public List<DataItemStatus> getExternalTaskLogs(String topologyName, long externalTaskId, int from, int to)
+  public List<DataItemStatus> getExternalTaskLogs(String topologyName, String externalTaskId, int from, int to)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.getDataItemStatuses(topologyName, externalTaskId, from, to);
@@ -99,7 +101,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
    * <li>{@link ExternalTaskException} containing {@link DpsException} if an error occurred while checking if the error report exists</li>
    * </ul>
    */
-  public boolean existsExternalTaskReport(String topologyName, long externalTaskId) throws GenericMetisException {
+  public boolean existsExternalTaskReport(String topologyName, String externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.hasEngineTaskErrorReport(topologyName, externalTaskId);
   }
@@ -120,7 +122,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public EngineTaskErrors getExternalTaskReport(String topologyName, long externalTaskId, int idsPerError)
+  public EngineTaskErrors getExternalTaskReport(String topologyName, String externalTaskId, int idsPerError)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.getEngineTaskErrors(topologyName, externalTaskId, idsPerError);
@@ -140,14 +142,14 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public RecordStatisticsDTO getExternalTaskStatistics(String topologyName, long externalTaskId) throws GenericMetisException {
+  public RecordStatisticsDTO getExternalTaskStatistics(String topologyName, String externalTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.getEngineTaskContentRecordStatistics(topologyName, externalTaskId);
   }
 
   /**
    * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by
-   * {@link #getExternalTaskStatistics(String, long)}.
+   * {@link #getExternalTaskStatistics(String, String)}.
    *
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
@@ -161,18 +163,18 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  public NodePathStatisticsDTO getAdditionalNodeStatistics(String topologyName, long externalTaskId, String nodePath)
+  public NodePathStatisticsDTO getAdditionalNodeStatistics(String topologyName, String externalTaskId, String nodePath)
       throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
     return engineTaskClient.getEngineTaskContentNodePathStatistics(topologyName, externalTaskId, nodePath);
   }
 
-  private String getDatasetIdFromExternalTaskId(long externalTaskId)
+  private String getDatasetIdFromExternalTaskId(String externalTaskId)
       throws NoWorkflowExecutionFoundException {
     final WorkflowExecution workflowExecution = this.workflowExecutionDao.getByExternalTaskId(externalTaskId);
     if (workflowExecution == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No workflow execution found for externalTaskId: %d, in METIS", externalTaskId));
+      throw new NoWorkflowExecutionFoundException(
+          format("No workflow execution found for externalTaskId: %s, in METIS", externalTaskId));
     }
     return workflowExecution.getDatasetId();
   }
@@ -249,8 +251,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
   private static void existsOrThrowNoWorkflowExecutionFoundException(String workflowExecutionId, ExecutablePluginType pluginType,
       Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin) throws NoWorkflowExecutionFoundException {
     if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No executable plugin of type %s found for workflowExecution with id: %s",
+      throw new NoWorkflowExecutionFoundException(format("No executable plugin of type %s found for workflowExecution with id: %s",
               pluginType.name(), workflowExecutionId));
     }
   }
@@ -282,8 +283,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
         dataEvolutionUtils.getPreviousExecutionAndPlugin(executionAndPlugin.getRight(),
             executionAndPlugin.getLeft().getDatasetId());
     if (predecessorPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(String
-          .format("No predecessor for executable plugin of type %s found for workflowExecution with id: %s",
+      throw new NoWorkflowExecutionFoundException(format("No predecessor for executable plugin of type %s found for workflowExecution with id: %s",
               pluginType.name(), workflowExecutionId));
     }
 
@@ -329,7 +329,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
         normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
                                           .map(id -> RecordIdUtils.composeFullRecordId(datasetId, id)).orElse(null);
       } catch (BadContentException e) {
-        LOGGER.info(String.format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
+        LOGGER.info(format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
       record = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
     }
@@ -343,7 +343,7 @@ public class ProxiesService<S extends AbstractEngineTaskSettings, T extends Abst
     final WorkflowExecution workflowExecution = workflowExecutionDao.getById(workflowExecutionId);
     if (workflowExecution == null) {
       throw new NoWorkflowExecutionFoundException(
-          String.format("No workflow execution found for workflowExecutionId: %s, in METIS",
+          format("No workflow execution found for workflowExecutionId: %s, in METIS",
               workflowExecutionId));
     }
     datasetDao.getDatasetOrThrow(workflowExecution.getDatasetId());

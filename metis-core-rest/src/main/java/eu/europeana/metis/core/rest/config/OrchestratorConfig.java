@@ -173,7 +173,6 @@ public class OrchestratorConfig<S extends AbstractEngineTaskSettings, T extends 
    * @param workflowExecutionDao the data access object for workflow execution.
    * @param engineTaskClient the client for Data Processing Services.
    * @param datasetDao the data access object for datasets.
-   * @param ecloudConfigurationProperties the configuration properties for eCloud integration.
    * @return an initialized instance of SecuredProxiesService.
    */
   @Bean

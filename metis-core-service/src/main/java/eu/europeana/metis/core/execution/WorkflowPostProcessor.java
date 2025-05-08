@@ -166,7 +166,7 @@ public class WorkflowPostProcessor {
       throws ExternalTaskException {
 
     // Retrieve the successfully depublished records.
-    final long externalTaskId = Long.parseLong(depublishPlugin.getExternalTaskId());
+    final String externalTaskId = depublishPlugin.getExternalTaskId();
     final List<DataItemStatus> dataItemStatuses = new ArrayList<>();
     List<DataItemStatus> dataItemStatusesPage;
     do {
