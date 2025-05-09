@@ -10,8 +10,6 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineDatasetRecordClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskSettings;
-import eu.europeana.metis.core.engine.mock.MockEngineTaskClient;
-import eu.europeana.metis.core.engine.mock.MockEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties.EngineType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
@@ -58,8 +56,7 @@ public class EngineClientConfig {
       LOGGER.info("Initializing DPS Engine Task Client");
       return ecloudEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
     } else {
-      LOGGER.info("Initializing Mock Engine Task Client");
-      return mockEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
+      throw new IllegalArgumentException("Invalid engine type: " + metisCoreConfigurationProperties.engineType());
     }
   }
 
@@ -83,29 +80,6 @@ public class EngineClientConfig {
         dataSetServiceClient,
         recordServiceClient, fileServiceClient, uisClient);
     return new EcloudEngineTaskClient(dpsClient, ecloudEngineTaskSettings, ecloudEngineDatasetRecordClient);
-  }
-
-  //todo not really a mock yet
-  private EngineTaskClient<?, ?> mockEngineTaskClient(
-      MetisCoreConfigurationProperties metisCoreConfigurationProperties,
-      EcloudConfigurationProperties ecloudConfigurationProperties,
-      ThrottlingValues throttlingValues) {
-
-    dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    dataSetServiceClient = dataSetServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    recordServiceClient = recordServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    fileServiceClient = fileServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    uisClient = uisClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    MockEngineTaskSettings mockEngineTaskSettings = new MockEngineTaskSettings(
-        ecloudConfigurationProperties.getBaseUrl(),
-        ecloudConfigurationProperties.getProvider(),
-        metisCoreConfigurationProperties.baseUrl(),
-        throttlingValues
-    );
-    final EcloudEngineDatasetRecordClient ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(
-        dataSetServiceClient,
-        recordServiceClient, fileServiceClient, uisClient);
-    return new MockEngineTaskClient(dpsClient, mockEngineTaskSettings, ecloudEngineDatasetRecordClient);
   }
 
   private DpsClient dpsClient(
