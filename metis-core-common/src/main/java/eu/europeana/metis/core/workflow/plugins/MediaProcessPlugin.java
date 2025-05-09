@@ -14,7 +14,7 @@ public class MediaProcessPlugin extends AbstractExecutablePlugin<MediaProcessPlu
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  MediaProcessPlugin() {
+  public MediaProcessPlugin() {
     //Required for json serialization
     super(PluginType.MEDIA_PROCESS);
   }

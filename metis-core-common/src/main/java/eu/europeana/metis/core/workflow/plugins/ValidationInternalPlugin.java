@@ -14,7 +14,7 @@ public class ValidationInternalPlugin extends AbstractExecutablePlugin<Validatio
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  ValidationInternalPlugin() {
+  public ValidationInternalPlugin() {
     //Required for json serialization
     super(PluginType.VALIDATION_INTERNAL);
   }

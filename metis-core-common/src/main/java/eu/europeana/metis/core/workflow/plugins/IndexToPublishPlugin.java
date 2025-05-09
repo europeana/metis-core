@@ -14,7 +14,7 @@ public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublis
   /**
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the plugin.
    */
-  IndexToPublishPlugin() {
+  public IndexToPublishPlugin() {
     //Required for json serialization
     this(null);
   }

@@ -11,7 +11,7 @@ public class HTTPHarvestPlugin extends AbstractExecutablePlugin<HTTPHarvestPlugi
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  HTTPHarvestPlugin() {
+  public HTTPHarvestPlugin() {
     // Required for json serialization
     super(PluginType.HTTP_HARVEST);
   }

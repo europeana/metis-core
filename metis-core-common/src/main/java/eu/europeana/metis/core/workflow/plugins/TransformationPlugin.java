@@ -14,7 +14,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  TransformationPlugin() {
+  public TransformationPlugin() {
     //Required for json serialization
     super(PluginType.TRANSFORMATION);
   }

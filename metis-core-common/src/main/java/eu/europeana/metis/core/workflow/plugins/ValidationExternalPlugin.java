@@ -14,7 +14,7 @@ public class ValidationExternalPlugin extends AbstractExecutablePlugin<Validatio
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  ValidationExternalPlugin() {
+  public ValidationExternalPlugin() {
     //Required for json serialization
     super(PluginType.VALIDATION_EXTERNAL);
 

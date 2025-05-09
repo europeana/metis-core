@@ -14,7 +14,7 @@ public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginM
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  EnrichmentPlugin() {
+  public EnrichmentPlugin() {
     //Required for json serialization
     super(PluginType.ENRICHMENT);
   }

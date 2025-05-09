@@ -14,7 +14,7 @@ public class LinkCheckingPlugin extends AbstractExecutablePlugin<LinkCheckingPlu
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  LinkCheckingPlugin() {
+  public LinkCheckingPlugin() {
     //Required for json serialization
     super(PluginType.LINK_CHECKING);
   }

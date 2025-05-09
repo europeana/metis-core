@@ -14,7 +14,7 @@ public class IndexToPreviewPlugin extends AbstractExecutablePlugin<IndexToPrevie
   /**
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the plugin.
    */
-  IndexToPreviewPlugin() {
+  public IndexToPreviewPlugin() {
     //Required for json serialization
     this(null);
   }

@@ -31,6 +31,7 @@ import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.ExecutablePluginTypeGroup;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
+import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.MediaProcessPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.NormalizationPluginMetadata;
@@ -43,6 +44,7 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.utils.CommonStringValues;
+import eu.europeana.metis.utils.DepublicationReason;
 import java.lang.invoke.MethodHandles;
 import java.util.Date;
 import java.util.EnumMap;
@@ -103,27 +105,24 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     PluginHarvestParameters pluginHarvestParameters;
     ExecutablePluginTypeGroup executablePluginTypeGroup = plugin.getPluginMetadata().getExecutablePluginType()
                                                                 .getExecutablePluginTypeGroup();
-    final T engineTask;
-    switch (executablePluginTypeGroup) {
+    return switch (executablePluginTypeGroup) {
       case HARVEST -> {
         pluginHarvestParameters = getPluginHarvestParameters();
-        engineTask = createHarvestEngineTask(datasetId, pluginHarvestParameters);
+        yield createHarvestEngineTask(datasetId, pluginHarvestParameters);
       }
       case PROCESS -> {
         pluginParameters = getProcessPluginParameters();
-        engineTask = createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
+        yield createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
       }
       case INDEX -> {
         pluginParameters = getIndexPluginParameters();
-        engineTask = createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
+        yield createProcessEngineTask(datasetId, previousTaskId, pluginParameters);
       }
       case DEPUBLISH -> {
         pluginParameters = getDepublishPluginParameters(datasetId);
-        engineTask = createDepublishEngineTask(pluginParameters);
+        yield createDepublishEngineTask(pluginParameters);
       }
-      default -> throw new IllegalStateException("Unexpected value: " + executablePluginTypeGroup);
-    }
-    return engineTask;
+    };
   }
 
   private @NotNull T createHarvestEngineTask(String datasetId, PluginHarvestParameters pluginHarvestParameters) {
@@ -174,9 +173,9 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
 
   private @NotNull String getDataLocation(String datasetId) {
     return format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE,
-            engineTaskClient.getEngineTaskSettings().getBaseUrl(),
-            engineTaskClient.getEngineTaskSettings().getProvider(),
-            datasetId);
+        engineTaskClient.getEngineTaskSettings().getBaseUrl(),
+        engineTaskClient.getEngineTaskSettings().getProvider(),
+        datasetId);
   }
 
   @NotNull
@@ -242,7 +241,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
         yield createMediaParameters(maximumParallelization);
       }
       case LinkCheckingPluginMetadata linkCheckingPluginMetadata -> {
-        Boolean performSampling = linkCheckingPluginMetadata.getPerformSampling();
+        boolean performSampling = linkCheckingPluginMetadata.getPerformSampling();
         Integer sampleSize = linkCheckingPluginMetadata.getSampleSize();
         yield createLinkCheckingParameters(performSampling, sampleSize);
       }
@@ -257,7 +256,12 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       boolean preserveTimestamps = indexPluginMetadata.isPreserveTimestamps();
       List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
       boolean performRedirects = indexPluginMetadata.isPerformRedirects();
-      String targetIndexingDatabase = ((IndexToPreviewPlugin) plugin).getTargetIndexingDatabase().name();
+      final String targetIndexingDatabase;
+      if (plugin instanceof IndexToPreviewPlugin indexToPreviewPlugin) {
+        targetIndexingDatabase = indexToPreviewPlugin.getTargetIndexingDatabase().name();
+      } else {
+        targetIndexingDatabase = ((IndexToPublishPlugin) plugin).getTargetIndexingDatabase().name();
+      }
       return createIndexParameters(plugin.getStartedDate(), incrementalIndexing,
           harvestDate, preserveTimestamps, datasetIdsToRedirectFrom, performRedirects, targetIndexingDatabase);
     } else {
@@ -269,7 +273,8 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     if (plugin.getPluginMetadata() instanceof DepublishPluginMetadata depublishPluginMetadata) {
       boolean datasetDepublish = depublishPluginMetadata.isDatasetDepublish();
       Set<String> recordIdsToDepublish = depublishPluginMetadata.getRecordIdsToDepublish();
-      String depublicationReason = depublishPluginMetadata.getDepublicationReason().name();
+      String depublicationReason = depublishPluginMetadata.getDepublicationReason() == null ? DepublicationReason.GENERIC.name()
+          : depublishPluginMetadata.getDepublicationReason().name();
       return createDepublishParameters(datasetId, datasetDepublish, recordIdsToDepublish,
           depublicationReason);
     } else {

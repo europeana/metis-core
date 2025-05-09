@@ -14,7 +14,7 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  DepublishPlugin() {
+  public DepublishPlugin() {
     //Required for json serialization
     this(null);
   }

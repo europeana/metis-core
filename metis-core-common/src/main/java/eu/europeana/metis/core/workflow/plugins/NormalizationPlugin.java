@@ -14,7 +14,7 @@ public class NormalizationPlugin extends AbstractExecutablePlugin<NormalizationP
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  NormalizationPlugin() {
+  public NormalizationPlugin() {
     //Required for json serialization
     super(PluginType.NORMALIZATION);
   }
