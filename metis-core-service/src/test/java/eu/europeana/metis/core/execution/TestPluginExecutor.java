@@ -7,9 +7,9 @@ import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.HTTP
 import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.PREVIEW;
 import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.VALIDATION_EXTERNAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -21,11 +21,14 @@ import static org.mockito.Mockito.when;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
+import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
+import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.DepublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
@@ -59,15 +62,19 @@ import eu.europeana.metis.utils.DepublicationReason;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class TestPluginExecutor {
+class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends AbstractExecutablePluginMetadata> {
 
   @Mock
   private EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
@@ -77,6 +84,7 @@ class TestPluginExecutor {
 
   @Mock
   private EngineTaskSettings engineTaskSettings;
+  private  static final String HARVEST_URL = "http://harvest.url";
 
   @BeforeEach
   void setUp() {
@@ -86,52 +94,25 @@ class TestPluginExecutor {
     lenient().when(engineTaskSettings.getThrottlingValues()).thenReturn(new ThrottlingValues(1, 2, 3));
   }
 
-  @Test
-  void testSubmit_OaipmhHarvestPlugin() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = new OaipmhHarvestPlugin();
-    OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
-    oaipmhHarvestPluginMetadata.setUrl("http://harvest.url");
-    oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(oaipmhHarvestPlugin, engineTaskClient);
+  @ParameterizedTest
+  @MethodSource("pluginArguments")
+  void testSubmit_InternalPlugins(T plugin, M metadata, PluginType previousPlugin, ThrottlingLevel throttlingLevel)
+      throws ExternalTaskException {
+    setupPlugin(plugin, metadata, previousPlugin, throttlingLevel);
 
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
+    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(plugin, engineTaskClient);
 
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), any(DataRevision.class)))
-        .thenReturn(engineTask);
+    ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor = ArgumentCaptor.forClass(Map.class);
+    ArgumentCaptor<InputDataEndpoint> inputDataCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
+    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
 
+    when(engineTaskClient.createEngineTask(propertiesCaptor.capture(), inputDataCaptor.capture(),
+        dataRevisionCaptor.capture())).thenReturn(engineTask);
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
+
     pluginExecutor.submit("datasetId", "previousTaskId");
 
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(OaiHarvestInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(oaipmhHarvestPluginMetadata.getUrl(), inputDataEndpoint.url());
-    assertEquals("taskId", oaipmhHarvestPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, oaipmhHarvestPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_HttpHarvestPlugin() throws ExternalTaskException {
-    HTTPHarvestPlugin httpHarvestPlugin = new HTTPHarvestPlugin();
-    HTTPHarvestPluginMetadata httpHarvestPluginMetadata = new HTTPHarvestPluginMetadata();
-    httpHarvestPluginMetadata.setUrl("http://harvest.url");
-    httpHarvestPlugin.setPluginMetadata(httpHarvestPluginMetadata);
-    httpHarvestPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(httpHarvestPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), any(DataRevision.class)))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(HttpHarvestInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(httpHarvestPluginMetadata.getUrl(), inputDataEndpoint.url());
-    assertEquals("taskId", httpHarvestPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, httpHarvestPlugin.getDataStatus());
+    assertTaskSubmission(plugin, propertiesCaptor, inputDataCaptor, dataRevisionCaptor, "taskId", throttlingLevel);
   }
 
   @Test
@@ -148,237 +129,6 @@ class TestPluginExecutor {
   }
 
   @Test
-  void testSubmit_ValidationExternalPlugin() throws ExternalTaskException {
-    ValidationExternalPlugin validationExternalPlugin = new ValidationExternalPlugin();
-    ValidationExternalPluginMetadata validationExternalPluginMetadata = new ValidationExternalPluginMetadata();
-    validationExternalPluginMetadata.setRevisionNamePreviousPlugin(PluginType.OAIPMH_HARVEST.name());
-    validationExternalPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    validationExternalPlugin.setPluginMetadata(validationExternalPluginMetadata);
-    validationExternalPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(validationExternalPlugin,
-        engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(validationExternalPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(validationExternalPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", validationExternalPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, validationExternalPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_TransformationPlugin() throws ExternalTaskException {
-    TransformationPlugin transformationPlugin = new TransformationPlugin();
-    TransformationPluginMetadata transformationPluginMetadata = new TransformationPluginMetadata();
-    transformationPluginMetadata.setRevisionNamePreviousPlugin(PluginType.VALIDATION_EXTERNAL.name());
-    transformationPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    transformationPlugin.setPluginMetadata(transformationPluginMetadata);
-    transformationPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(transformationPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(transformationPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(transformationPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", transformationPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, transformationPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_ValidationInternalPlugin() throws ExternalTaskException {
-    ValidationInternalPlugin validationInternalPlugin = new ValidationInternalPlugin();
-    ValidationInternalPluginMetadata validationInternalPluginMetadata = new ValidationInternalPluginMetadata();
-    validationInternalPluginMetadata.setRevisionNamePreviousPlugin(PluginType.TRANSFORMATION.name());
-    validationInternalPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    validationInternalPlugin.setPluginMetadata(validationInternalPluginMetadata);
-    validationInternalPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(validationInternalPlugin,
-        engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(validationInternalPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(validationInternalPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", validationInternalPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, validationInternalPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_NormalizationPlugin() throws ExternalTaskException {
-    NormalizationPlugin normalizationPlugin = new NormalizationPlugin();
-    NormalizationPluginMetadata normalizationPluginMetadata = new NormalizationPluginMetadata();
-    normalizationPluginMetadata.setRevisionNamePreviousPlugin(PluginType.VALIDATION_INTERNAL.name());
-    normalizationPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    normalizationPlugin.setPluginMetadata(normalizationPluginMetadata);
-    normalizationPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(normalizationPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(normalizationPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(normalizationPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", normalizationPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, normalizationPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_EnrichmentPlugin() throws ExternalTaskException {
-    EnrichmentPlugin enrichmentPlugin = new EnrichmentPlugin();
-    EnrichmentPluginMetadata enrichmentPluginMetadata = new EnrichmentPluginMetadata();
-    enrichmentPluginMetadata.setRevisionNamePreviousPlugin(PluginType.NORMALIZATION.name());
-    enrichmentPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    enrichmentPlugin.setPluginMetadata(enrichmentPluginMetadata);
-    enrichmentPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(enrichmentPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(enrichmentPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(enrichmentPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", enrichmentPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, enrichmentPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_MediaPlugin() throws ExternalTaskException {
-    MediaProcessPlugin mediaProcessPlugin = new MediaProcessPlugin();
-    MediaProcessPluginMetadata mediaProcessPluginMetadata = new MediaProcessPluginMetadata();
-    mediaProcessPluginMetadata.setRevisionNamePreviousPlugin(PluginType.ENRICHMENT.name());
-    mediaProcessPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    mediaProcessPlugin.setPluginMetadata(mediaProcessPluginMetadata);
-    mediaProcessPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(mediaProcessPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(mediaProcessPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(mediaProcessPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", mediaProcessPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, mediaProcessPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_MediaPlugin_WithThrottling() throws ExternalTaskException {
-    MediaProcessPlugin mediaProcessPlugin = new MediaProcessPlugin();
-    MediaProcessPluginMetadata mediaProcessPluginMetadata = new MediaProcessPluginMetadata();
-    mediaProcessPluginMetadata.setRevisionNamePreviousPlugin(PluginType.ENRICHMENT.name());
-    mediaProcessPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    mediaProcessPluginMetadata.setThrottlingLevel(ThrottlingLevel.STRONG);
-    mediaProcessPlugin.setPluginMetadata(mediaProcessPluginMetadata);
-    mediaProcessPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(mediaProcessPlugin, engineTaskClient);
-
-    ArgumentCaptor<Map> properties = ArgumentCaptor.forClass(Map.class);
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(properties.capture(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(mediaProcessPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(mediaProcessPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    String maximumParallelization = String.valueOf(
-        engineTaskSettings.getThrottlingValues().getThreadNumberFromThrottlingLevel(ThrottlingLevel.STRONG));
-    assertEquals(maximumParallelization, properties.getValue().get(MAXIMUM_PARALLELIZATION));
-    assertEquals("taskId", mediaProcessPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, mediaProcessPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_LinkCheckingPlugin() throws ExternalTaskException {
-    LinkCheckingPlugin linkCheckingPlugin = new LinkCheckingPlugin();
-    LinkCheckingPluginMetadata linkCheckingPluginMetadata = new LinkCheckingPluginMetadata();
-    linkCheckingPluginMetadata.setRevisionNamePreviousPlugin(PluginType.MEDIA_PROCESS.name());
-    linkCheckingPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    linkCheckingPlugin.setPluginMetadata(linkCheckingPluginMetadata);
-    linkCheckingPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(linkCheckingPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(linkCheckingPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(linkCheckingPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", linkCheckingPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, linkCheckingPlugin.getDataStatus());
-  }
-
-  @Test
   void testSubmit_InvalidProcessPlugin() {
     IndexToPreviewPlugin indexToPreviewPlugin = new IndexToPreviewPlugin();
     IndexToPreviewPluginMetadata indexToPreviewPluginMetadata = spy(IndexToPreviewPluginMetadata.class);
@@ -391,64 +141,6 @@ class TestPluginExecutor {
   }
 
   @Test
-  void testSubmit_IndexToPreviewPlugin() throws ExternalTaskException {
-    IndexToPreviewPlugin indexToPreviewPlugin = new IndexToPreviewPlugin();
-    IndexToPreviewPluginMetadata indexToPreviewPluginMetadata = new IndexToPreviewPluginMetadata();
-    indexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(PluginType.MEDIA_PROCESS.name());
-    indexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    indexToPreviewPluginMetadata.setHarvestDate(new Date());
-    indexToPreviewPlugin.setPluginMetadata(indexToPreviewPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(indexToPreviewPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(indexToPreviewPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", indexToPreviewPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, indexToPreviewPlugin.getDataStatus());
-  }
-
-  @Test
-  void testSubmit_IndexToPublishPlugin() throws ExternalTaskException {
-    IndexToPublishPlugin indexToPublishPlugin = new IndexToPublishPlugin();
-    IndexToPublishPluginMetadata indexToPublishPluginMetadata = new IndexToPublishPluginMetadata();
-    indexToPublishPluginMetadata.setRevisionNamePreviousPlugin(PluginType.MEDIA_PROCESS.name());
-    indexToPublishPluginMetadata.setRevisionTimestampPreviousPlugin(new Date());
-    indexToPublishPluginMetadata.setHarvestDate(new Date());
-    indexToPublishPlugin.setPluginMetadata(indexToPublishPluginMetadata);
-    indexToPublishPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPublishPlugin, engineTaskClient);
-
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
-    ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
-
-    when(engineTaskClient.createEngineTask(anyMap(), inputDataEndpointCaptor.capture(), dataRevisionCaptor.capture()))
-        .thenReturn(engineTask);
-
-    when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn("taskId");
-    pluginExecutor.submit("datasetId", "previousTaskId");
-
-    InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertInstanceOf(InternalInputDataEndpoint.class, inputDataEndpoint);
-    assertEquals(indexToPublishPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
-    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
-    assertEquals(indexToPublishPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
-    assertEquals("taskId", indexToPublishPlugin.getExternalTaskId());
-    assertEquals(DataStatus.VALID, indexToPublishPlugin.getDataStatus());
-  }
-
-  @Test
   void testSubmit_InvalidIndexPlugin() {
     OaipmhHarvestPlugin indexToPreviewPlugin = new OaipmhHarvestPlugin();
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = spy(OaipmhHarvestPluginMetadata.class);
@@ -458,6 +150,68 @@ class TestPluginExecutor {
 
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
     assertThrows(IllegalStateException.class, () -> pluginExecutor.submit("datasetId", "previousTaskId"));
+  }
+
+  private static Stream<Arguments> pluginArguments() {
+    return Stream.of(
+        arguments(new OaipmhHarvestPlugin(), new OaipmhHarvestPluginMetadata(), null),
+        arguments(new HTTPHarvestPlugin(), new HTTPHarvestPluginMetadata(), null),
+        arguments(new ValidationExternalPlugin(), new ValidationExternalPluginMetadata(), PluginType.OAIPMH_HARVEST),
+        arguments(new TransformationPlugin(), new TransformationPluginMetadata(), PluginType.VALIDATION_EXTERNAL),
+        arguments(new ValidationInternalPlugin(), new ValidationInternalPluginMetadata(), PluginType.TRANSFORMATION),
+        arguments(new NormalizationPlugin(), new NormalizationPluginMetadata(), PluginType.VALIDATION_INTERNAL),
+        arguments(new EnrichmentPlugin(), new EnrichmentPluginMetadata(), PluginType.NORMALIZATION),
+        of(new MediaProcessPlugin(), new MediaProcessPluginMetadata(), PluginType.ENRICHMENT, ThrottlingLevel.STRONG),
+        arguments(new LinkCheckingPlugin(), new LinkCheckingPluginMetadata(), PluginType.MEDIA_PROCESS),
+        arguments(new IndexToPreviewPlugin(), new IndexToPreviewPluginMetadata(), PluginType.MEDIA_PROCESS),
+        arguments(new IndexToPublishPlugin(), new IndexToPublishPluginMetadata(), PluginType.MEDIA_PROCESS)
+    );
+  }
+
+  private T setupPlugin(T plugin, M metadata, PluginType previousType, ThrottlingLevel throttlingLevel) {
+    if (metadata instanceof OaipmhHarvestPluginMetadata pluginMetadata) {
+      pluginMetadata.setUrl(HARVEST_URL);
+    } else if (metadata instanceof HTTPHarvestPluginMetadata pluginMetadata) {
+      pluginMetadata.setUrl(HARVEST_URL);
+    } else if (metadata instanceof MediaProcessPluginMetadata mediaProcessPluginMetadata) {
+      mediaProcessPluginMetadata.setThrottlingLevel(throttlingLevel);
+    } else if (metadata instanceof IndexToPreviewPluginMetadata pluginMetadata) {
+      pluginMetadata.setHarvestDate(new Date());
+    } else if (metadata instanceof IndexToPublishPluginMetadata pluginMetadata) {
+      pluginMetadata.setHarvestDate(new Date());
+    }
+
+    if (!(metadata instanceof AbstractHarvestPluginMetadata)) {
+      metadata.setRevisionNamePreviousPlugin(previousType.name());
+      metadata.setRevisionTimestampPreviousPlugin(new Date());
+    }
+    plugin.setPluginMetadata(metadata);
+    plugin.setStartedDate(new Date());
+    return plugin;
+  }
+
+  private void assertTaskSubmission(T plugin, ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor,
+      ArgumentCaptor<InputDataEndpoint> inputDataCaptor,
+      ArgumentCaptor<DataRevision> dataRevisionCaptor, String expectedTaskId, ThrottlingLevel throttlingLevel) {
+    assertEquals(plugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
+    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
+    assertEquals(plugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
+
+    if (inputDataCaptor.getValue() instanceof HttpHarvestInputDataEndpoint ||
+        inputDataCaptor.getValue() instanceof OaiHarvestInputDataEndpoint) {
+      assertEquals(HARVEST_URL, inputDataCaptor.getValue().url());
+    }
+    assertEquals(expectedTaskId, plugin.getExternalTaskId());
+    assertEquals(DataStatus.VALID, plugin.getDataStatus());
+    if (throttlingLevel != null) {
+      String expectedParallelization = String.valueOf(
+          engineTaskSettings.getThrottlingValues().getThreadNumberFromThrottlingLevel(throttlingLevel));
+      assertEquals(expectedParallelization, propertiesCaptor.getValue().get(MAXIMUM_PARALLELIZATION));
+    }
+  }
+
+  private static Arguments arguments(Object plugin, Object metadata, PluginType type) {
+    return of(plugin, metadata, type, null);
   }
 
   @Test
@@ -567,7 +321,7 @@ class TestPluginExecutor {
   void testSubmit_Fail() throws ExternalTaskException {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = new OaipmhHarvestPlugin();
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
-    oaipmhHarvestPluginMetadata.setUrl("http://harvest.url");
+    oaipmhHarvestPluginMetadata.setUrl(HARVEST_URL);
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     oaipmhHarvestPlugin.setStartedDate(new Date());
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(oaipmhHarvestPlugin, engineTaskClient);
