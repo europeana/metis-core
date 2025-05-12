@@ -150,7 +150,6 @@ class TestEcloudEngineTaskClient {
   @Test
   void getEngineTaskProgress_throwsRuntimeException() throws DpsException {
     when(dpsClient.getTaskProgress("topologyName", 1L)).thenThrow(new RuntimeException(""));
-    ;
     assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.getEngineTaskProgress("topologyName", "1"));
   }
 
@@ -305,7 +304,7 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void cancelEngineTask_throwsRuntimeException() throws DpsException {
-    when(dpsClient.killTask("topologyName", 1L, "")).thenThrow(new DpsException(""));
+    when(dpsClient.killTask("topologyName", 1L, "")).thenThrow(new RuntimeException(""));
     assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask("topologyName", "1", ""));
   }
 
