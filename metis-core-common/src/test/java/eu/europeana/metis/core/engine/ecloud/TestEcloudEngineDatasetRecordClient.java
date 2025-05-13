@@ -187,15 +187,13 @@ class TestEcloudEngineDatasetRecordClient {
         .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
             Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
 
+    Date now = new Date();
     assertThrows(IllegalStateException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
     assertThrows(IllegalStateException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
   }
 
   @Test
