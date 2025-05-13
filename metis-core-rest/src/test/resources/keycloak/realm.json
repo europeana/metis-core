@@ -4,10 +4,13 @@
   "clients": [
     {
       "clientId": "metis-core-local",
+      "secret": "local",
       "enabled": true,
-      "publicClient": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
       "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     },
     {
       "clientId": "metis-ui-local",
