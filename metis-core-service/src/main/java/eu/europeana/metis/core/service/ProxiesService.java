@@ -324,8 +324,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
 
     //Check engine record id and then europeana record id.
-    Record record = engineTaskClient.getRecord(idToSearch, revisionName, executionAndPlugin.getRight().getStartedDate());
-    if (record == null) {
+    Record recordData = engineTaskClient.getRecord(idToSearch, revisionName, executionAndPlugin.getRight().getStartedDate());
+    if (recordData == null) {
       String normalizedRecordId = idToSearch;
       try {
         normalizedRecordId = RecordIdUtils.checkAndNormalizeRecordId(datasetId, idToSearch)
@@ -333,9 +333,9 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       } catch (BadContentException e) {
         LOGGER.info(format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
-      record = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
+      recordData = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
     }
-    return record;
+    return recordData;
   }
 
   Pair<WorkflowExecution, ExecutablePlugin> getExecutionAndPlugin(String workflowExecutionId, ExecutablePluginType pluginType)
