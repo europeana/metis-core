@@ -45,7 +45,8 @@ public final class EcloudEngineRecordStatisticsConverter {
    *
    * @param nodePath The XPath expression representing the node.
    * @param nodeReports The list of node reports containing statistical data.
-   * @return A NodePath*/
+   * @return A NodePath
+   */
   public static NodePathStatisticsDTO compileNodePathStatistics(String nodePath, List<NodeReport> nodeReports) {
     return compileNodePathStatistics(nodePath, nodeReports,
         EcloudEngineRecordStatisticsConverter::compileNodeValueStatistics);

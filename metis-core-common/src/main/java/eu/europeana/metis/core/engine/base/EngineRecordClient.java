@@ -21,7 +21,7 @@ public interface EngineRecordClient {
    * @return a list of {@link java.lang.Record} objects from the specified dataset and revision
    * @throws ExternalTaskException if an error occurs while retrieving the records
    */
-  List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
+  List<Record> getRecords(final String datasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException;
 
   /**

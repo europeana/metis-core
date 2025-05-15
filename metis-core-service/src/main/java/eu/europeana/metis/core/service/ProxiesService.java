@@ -251,7 +251,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
   private static void existsOrThrowNoWorkflowExecutionFoundException(String workflowExecutionId, ExecutablePluginType pluginType,
       Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin) throws NoWorkflowExecutionFoundException {
     if (executionAndPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(format("No executable plugin of type %s found for workflowExecution with id: %s",
+      throw new NoWorkflowExecutionFoundException(
+          format("No executable plugin of type %s found for workflowExecution with id: %s",
               pluginType.name(), workflowExecutionId));
     }
   }
@@ -283,7 +284,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
         dataEvolutionUtils.getPreviousExecutionAndPlugin(executionAndPlugin.getRight(),
             executionAndPlugin.getLeft().getDatasetId());
     if (predecessorPlugin == null) {
-      throw new NoWorkflowExecutionFoundException(format("No predecessor for executable plugin of type %s found for workflowExecution with id: %s",
+      throw new NoWorkflowExecutionFoundException(
+          format("No predecessor for executable plugin of type %s found for workflowExecution with id: %s",
               pluginType.name(), workflowExecutionId));
     }
 

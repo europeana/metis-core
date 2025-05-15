@@ -143,9 +143,6 @@ public class EngineClientConfig {
    */
   @PreDestroy
   public void close() {
-    if (dpsClient != null) {
-      dpsClient.close();
-    }
     if (dataSetServiceClient != null) {
       dataSetServiceClient.close();
     }
@@ -154,6 +151,9 @@ public class EngineClientConfig {
     }
     if (fileServiceClient != null) {
       fileServiceClient.close();
+    }
+    if (dpsClient != null) {
+      dpsClient.close();
     }
     if (uisClient != null) {
       uisClient.close();
