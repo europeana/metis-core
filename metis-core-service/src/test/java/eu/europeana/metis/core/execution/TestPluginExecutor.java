@@ -87,6 +87,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
   private EngineTaskSettings engineTaskSettings;
   private static final String TASK_ID = "taskId";
   private static final String DATASET_ID = "datasetId";
+  private static final String ENGINE_DATASET_ID = "engineDatasetId";
   private static final String PREVIOUS_TASK_ID = "previousTaskId";
   private static final String HARVEST_URL = "http://harvest.url";
 
@@ -114,7 +115,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         dataRevisionCaptor.capture())).thenReturn(engineTask);
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
 
-    pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID);
+    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     assertTaskSubmission(plugin, propertiesCaptor, inputDataCaptor, dataRevisionCaptor, throttlingLevel);
   }
@@ -129,7 +130,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
 
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(validationExternalPlugin,
         engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID));
+    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   @Test
@@ -141,7 +142,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     when(indexToPreviewPluginMetadata.getExecutablePluginType()).thenReturn(VALIDATION_EXTERNAL);
 
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID));
+    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   @Test
@@ -153,7 +154,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     when(oaipmhHarvestPluginMetadata.getExecutablePluginType()).thenReturn(PREVIEW);
 
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID));
+    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   private static Stream<Arguments> pluginArguments() {
@@ -235,7 +236,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
-    pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID);
+    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
     assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
@@ -264,7 +265,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
-    pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID);
+    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     assertEquals(depublishPluginMetadata.getDepublicationReason().name(), properties.getValue().get(DEPUBLICATION_REASON));
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
@@ -293,7 +294,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
-    pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID);
+    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
     assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
@@ -312,7 +313,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
     depublishPlugin.setStartedDate(new Date());
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(depublishPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID),
+    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID),
         "Requested record depublication but there are no records ids for depublication in the db");
   }
 
@@ -325,7 +326,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     when(oaipmhHarvestPluginMetadata.getExecutablePluginType()).thenReturn(DEPUBLISH);
 
     PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID));
+    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   @Test
@@ -341,7 +342,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenThrow(new ExternalTaskException(""));
-    assertThrows(ExternalTaskException.class, () -> pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID));
+    assertThrows(ExternalTaskException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
 }

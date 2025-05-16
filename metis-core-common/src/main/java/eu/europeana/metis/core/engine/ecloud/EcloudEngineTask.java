@@ -63,10 +63,12 @@ public class EcloudEngineTask extends EngineTask {
       }
       case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
       case InternalInputDataEndpoint ignored -> DATASET_URLS;
-      case DepublishInputDataEndpoint ignored -> DATASET_URLS;
+      case DepublishInputDataEndpoint ignored -> null;
     };
-    Map<InputDataType, List<String>> inputDataLocation = Map.of(inputDataType, List.of(inputDataEndpoint.url()));
-    dpsTask.setInputData(inputDataLocation);
+    if (inputDataType != null) {
+      Map<InputDataType, List<String>> inputDataLocation = Map.of(inputDataType, List.of(inputDataEndpoint.url()));
+      dpsTask.setInputData(inputDataLocation);
+    }
   }
 
   private void setOaiHarvestParameters(OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
