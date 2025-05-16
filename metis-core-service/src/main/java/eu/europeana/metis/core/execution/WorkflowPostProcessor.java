@@ -181,7 +181,7 @@ public class WorkflowPostProcessor {
     final Map<String, Set<String>> successfulRecords = new HashMap<>();
     for (DataItemStatus dataItemStatus : dataItemStatuses) {
       if (dataItemStatus.dataItemState().equals(DataItemState.SUCCESS)) {
-        String europeanaId = dataItemStatus.europeanaId();
+        String europeanaId = dataItemStatus.resource();
         DatasetIdAndRecordId datasetIdAndRecordId = RecordIdUtils.decomposeFullRecordId(europeanaId);
         if (datasetIdAndRecordId != null) {
           successfulRecords.computeIfAbsent(datasetIdAndRecordId.datasetId(), k -> new HashSet<>())
