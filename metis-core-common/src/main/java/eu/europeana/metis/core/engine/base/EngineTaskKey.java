@@ -13,7 +13,7 @@ public enum EngineTaskKey {
    */
   PREVIOUS_TASK_ID,
   /**
-   * Unique identifier of the External dataset id.(Note: it is NOT the internal metis-core dataset id)
+   * Unique identifier of the External dataset id.
    */
   METIS_DATASET_ID,
   /**

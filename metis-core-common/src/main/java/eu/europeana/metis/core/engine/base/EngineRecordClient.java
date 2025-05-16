@@ -13,7 +13,7 @@ public interface EngineRecordClient {
   /**
    * Retrieves a list of records from a specified dataset in the processing engine.
    *
-   * @param datasetId the identifier of the dataset to retrieve records from
+   * @param engineDatasetId the identifier of the dataset to retrieve records from
    * @param representationName the name of the representation to retrieve records for
    * @param revisionName the name of the revision to retrieve records for
    * @param revisionTimestamp the timestamp of the revision to retrieve records for
@@ -21,7 +21,7 @@ public interface EngineRecordClient {
    * @return a list of {@link java.lang.Record} objects from the specified dataset and revision
    * @throws ExternalTaskException if an error occurs while retrieving the records
    */
-  List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
+  List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException;
 
   /**
@@ -69,10 +69,10 @@ public interface EngineRecordClient {
   /**
    * Creates a dataset identifier for use within the processing engine.
    *
-   * @param datasetId the identifier of the dataset to be created
+   * @param engineDatasetId the identifier of the dataset to be created
    * @return true if the dataset identifier was successfully created, false otherwise
    * @throws ExternalTaskException if an error occurs while creating the dataset identifier
    */
-  boolean createEngineDatasetId(String datasetId) throws ExternalTaskException;
+  boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException;
 
 }

@@ -174,11 +174,11 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     return engineTaskClient.createEngineTask(allParameters, internalInputDataEndpoint, outputDataRevision);
   }
 
-  private @NotNull String getDataLocation(String datasetId) {
+  private @NotNull String getDataLocation(String engineDatasetId) {
     return format(CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE,
         engineTaskClient.getEngineTaskSettings().getBaseUrl(),
         engineTaskClient.getEngineTaskSettings().getProvider(),
-        datasetId);
+        engineDatasetId);
   }
 
   @NotNull

@@ -231,14 +231,14 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public boolean createEngineDatasetId(String datasetId) throws ExternalTaskException {
-    return ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), datasetId);
+  public boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException {
+    return ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), engineDatasetId);
   }
 
   @Override
-  public List<Record> getRecords(String datasetId, String representationName, String revisionName, Date revisionTimestamp,
+  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Date revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
-    return ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), datasetId, representationName,
+    return ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), engineDatasetId, representationName,
         revisionName, revisionTimestamp, numberOfRecords);
   }
 

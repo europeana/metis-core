@@ -64,13 +64,13 @@ public class EcloudEngineDatasetRecordClient {
    * Creates a dataset ID for the engine using the provided dataset and provider IDs.
    *
    * @param providerId The unique identifier for the dataset provider.
-   * @param datasetId The unique identifier for the dataset.
+   * @param engineDatasetId The unique identifier for the dataset.
    * @return True if the dataset ID is created successfully.
    * @throws ExternalTaskException If an error occurs during the dataset creation process.
    */
-  public boolean createEngineDatasetId(String providerId, String datasetId) throws ExternalTaskException {
+  public boolean createEngineDatasetId(String providerId, String engineDatasetId) throws ExternalTaskException {
     try {
-      dataSetServiceClient.createDataSet(providerId, datasetId, "Metis generated dataset id");
+      dataSetServiceClient.createDataSet(providerId, engineDatasetId, "Metis generated dataset id");
     } catch (MCSException e) {
       throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
     }
@@ -81,7 +81,7 @@ public class EcloudEngineDatasetRecordClient {
    * Retrieves a list of records for a dataset.
    *
    * @param providerId The ID of the provider requesting the records.
-   * @param datasetId The ID of the dataset containing the records.
+   * @param engineDatasetId The ID of the dataset containing the records.
    * @param representationName The name of the representation associated with the records.
    * @param revisionName The name of the revision to filter the records by.
    * @param revisionTimestamp The timestamp of the revision to filter the records by.
@@ -89,17 +89,17 @@ public class EcloudEngineDatasetRecordClient {
    * @return A list of retrieved records based on the specified parameters.
    * @throws ExternalTaskException If an issue occurs while fetching the records from external services.
    */
-  public List<Record> getRecords(String providerId, String datasetId, String representationName, String revisionName,
+  public List<Record> getRecords(String providerId, String engineDatasetId, String representationName, String revisionName,
       Date revisionTimestamp, int numberOfRecords) throws ExternalTaskException {
     final List<CloudTagsResponse> cloudIdsWithDeletedFlagSetToFalse;
     try {
       cloudIdsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-          providerId, datasetId, representationName, revisionName,
+          providerId, engineDatasetId, representationName, revisionName,
           providerId, pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(format(
-          "Getting record list with file content failed. datasetId: %s, representationName: %s, revisionName: %s, revisionTimestamp: %s",
-          datasetId, representationName, revisionName, revisionTimestamp),
+          "Getting record list with file content failed. engineDatasetId: %s, representationName: %s, revisionName: %s, revisionTimestamp: %s",
+          engineDatasetId, representationName, revisionName, revisionTimestamp),
           e);
     }
 

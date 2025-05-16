@@ -208,11 +208,11 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     }
 
     // Get the list of records.
-    final String datasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
+    final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
     final String representationName = MetisPlugin.getRepresentationName();
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
 
-    List<Record> records = engineTaskClient.getRecords(datasetId, representationName, revisionName,
+    List<Record> records = engineTaskClient.getRecords(engineDatasetId, representationName, revisionName,
         executionAndPlugin.getRight().getStartedDate(), numberOfRecords);
 
     return new PaginatedRecordsResponse(records, null);
