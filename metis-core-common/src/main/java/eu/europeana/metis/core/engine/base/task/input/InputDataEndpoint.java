@@ -6,7 +6,7 @@ package eu.europeana.metis.core.engine.base.task.input;
 //False positive: Check https://community.sonarsource.com/t/s7027-prevents-from-using-sealed-classes/133423/5
 @SuppressWarnings("javaarchitecture:S7027")
 public sealed interface InputDataEndpoint
-    permits HttpHarvestInputDataEndpoint, OaiHarvestInputDataEndpoint, InternalInputDataEndpoint {
+    permits HttpHarvestInputDataEndpoint, OaiHarvestInputDataEndpoint, InternalInputDataEndpoint, DepublishInputDataEndpoint {
 
   /**
    * Retrieves the URL associated with the input data endpoint.

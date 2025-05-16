@@ -92,6 +92,16 @@ class TestEcloudEngineTaskClient {
   }
 
   @Test
+  void createEngineTask_throws() {
+    Map<EngineTaskKey, String> parameters = Map.of();
+    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url",
+        new DataRevision("name", "provider", new Date(), false));
+    DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
+    assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
+    assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint, null));
+  }
+
+  @Test
   void submitEngineTask() throws Exception {
     EcloudEngineTask ecloudEngineTask = mock(EcloudEngineTask.class);
     when(ecloudEngineTask.toDpsTask()).thenReturn(new DpsTask());

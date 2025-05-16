@@ -7,7 +7,7 @@ import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.HTTP
 import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.PREVIEW;
 import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.VALIDATION_EXTERNAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,6 +23,7 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
@@ -237,8 +238,10 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID);
 
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertNull(inputDataEndpoint);
-    assertNull(dataRevisionCaptor.getValue());
+    assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
+    assertEquals(depublishPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
+    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
+    assertEquals(depublishPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
     assertEquals(TASK_ID, depublishPlugin.getExternalTaskId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());
   }
@@ -265,8 +268,10 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
 
     assertEquals(depublishPluginMetadata.getDepublicationReason().name(), properties.getValue().get(DEPUBLICATION_REASON));
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertNull(inputDataEndpoint);
-    assertNull(dataRevisionCaptor.getValue());
+    assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
+    assertEquals(depublishPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
+    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
+    assertEquals(depublishPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
     assertEquals(TASK_ID, depublishPlugin.getExternalTaskId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());
   }
@@ -291,8 +296,10 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     pluginExecutor.submit(DATASET_ID, PREVIOUS_TASK_ID);
 
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
-    assertNull(inputDataEndpoint);
-    assertNull(dataRevisionCaptor.getValue());
+    assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
+    assertEquals(depublishPlugin.getPluginType().name(), dataRevisionCaptor.getValue().name());
+    assertEquals(engineTaskSettings.getProvider(), dataRevisionCaptor.getValue().providerId());
+    assertEquals(depublishPlugin.getStartedDate(), dataRevisionCaptor.getValue().creationTimeStamp());
     assertEquals(TASK_ID, depublishPlugin.getExternalTaskId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());
   }

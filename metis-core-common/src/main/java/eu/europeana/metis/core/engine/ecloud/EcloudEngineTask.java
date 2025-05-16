@@ -10,6 +10,7 @@ import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
+import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
@@ -56,12 +57,13 @@ public class EcloudEngineTask extends EngineTask {
 
   private void setInputDataLocation() {
     final InputDataType inputDataType = switch (this.inputDataEndpoint) {
-      case InternalInputDataEndpoint ignored -> DATASET_URLS;
-      case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
       case OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters -> {
         setOaiHarvestParameters(oaiHarvestInputDataParameters);
         yield REPOSITORY_URLS;
       }
+      case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
+      case InternalInputDataEndpoint ignored -> DATASET_URLS;
+      case DepublishInputDataEndpoint ignored -> DATASET_URLS;
     };
     Map<InputDataType, List<String>> inputDataLocation = Map.of(inputDataType, List.of(inputDataEndpoint.url()));
     dpsTask.setInputData(inputDataLocation);

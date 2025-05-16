@@ -19,6 +19,7 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
@@ -120,7 +121,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       }
       case DEPUBLISH -> {
         pluginParameters = getDepublishPluginParameters(datasetId);
-        yield createDepublishEngineTask(pluginParameters);
+        yield createDepublishEngineTask(datasetId, pluginParameters);
       }
     };
   }
@@ -179,8 +180,12 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   }
 
   @NotNull
-  private T createDepublishEngineTask(Map<EngineTaskKey, String> pluginParameters) {
-    return engineTaskClient.createEngineTask(pluginParameters, null, null);
+  private T createDepublishEngineTask(String datasetId, Map<EngineTaskKey, String> pluginParameters) {
+    final String dataLocation = getDataLocation(datasetId);
+    final DepublishInputDataEndpoint internalInputDataEndpoint = new DepublishInputDataEndpoint(dataLocation);
+    final DataRevision outputDataRevision = createDataRevision(
+        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
+    return engineTaskClient.createEngineTask(pluginParameters, internalInputDataEndpoint, outputDataRevision);
   }
 
   private @NotNull PluginHarvestParameters getPluginHarvestParameters() {
