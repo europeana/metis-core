@@ -3,9 +3,10 @@ package eu.europeana.metis.core.execution;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
@@ -16,42 +17,47 @@ import org.slf4j.LoggerFactory;
 /**
  * Manager class for adding executions in the distributed queue.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-30
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
-public class WorkflowExecutorManager extends PersistenceProvider implements
-    WorkflowExecutionSettings {
+public class WorkflowExecutorManager<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS = 5;
-  private static final int DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES = 30;
-
-  private int dpsMonitorCheckIntervalInSecs = DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS; //Use setter otherwise default
-  private int periodOfNoProcessedRecordsChangeInMinutes = DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES; //Use setter otherwise default
-
-  private String rabbitmqQueueName; //Initialize with setter
-  private String ecloudBaseUrl; //Initialize with setter
-  private String ecloudProvider; //Initialize with setter
-  private String metisCoreBaseUrl; //Initialize with setter
-  private ThrottlingValues throttlingValues; //Initialize with setter
+  private final WorkflowExecutorManagerSettings workflowExecutorManagerSettings;
+  private final Channel rabbitmqPublisherChannel;
+  private final Channel rabbitmqConsumerChannel;
+  private final SemaphoresPerPluginManager semaphoresPerPluginManager;
+  private final WorkflowExecutionDao workflowExecutionDao;
+  private final WorkflowPostProcessor workflowPostProcessor;
+  private final RedissonClient redissonClient;
+  private final EngineTaskClient<S, T> engineTaskClient;
 
   /**
-   * Autowired constructor.
+   * Constructor for WorkflowExecutorManager that initializes various dependencies for managing
+   * workflow execution and processing.
    *
-   * @param semaphoresPerPluginManager the semaphores per plugin manager
-   * @param workflowExecutionDao the DAO for accessing WorkflowExecutions
-   * @param workflowPostProcessor the workflow post processor
-   * @param rabbitmqPublisherChannel the channel for publishing to RabbitMQ
-   * @param rabbitmqConsumerChannel the channel for consuming from RabbitMQ
-   * @param redissonClient the redisson client for distributed locks
-   * @param dpsClient the Data Processing Service client from ECloud
+   * @param workflowExecutorManagerSettings Settings related to workflow execution.
+   * @param semaphoresPerPluginManager Manager handling semaphores for different plugin types.
+   * @param workflowExecutionDao Data access object for workflow execution data.
+   * @param workflowPostProcessor Processor for post-workflow execution tasks.
+   * @param rabbitmqPublisherChannel RabbitMQ channel used for publishing messages.
+   * @param rabbitmqConsumerChannel RabbitMQ channel used for consuming messages.
+   * @param redissonClient Redisson client used for distributed operations.
+   * @param engineTaskClient Client for executing engine tasks.
    */
-  public WorkflowExecutorManager(SemaphoresPerPluginManager semaphoresPerPluginManager,
+  public WorkflowExecutorManager(
+      WorkflowExecutorManagerSettings workflowExecutorManagerSettings, SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
       Channel rabbitmqPublisherChannel, Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, DpsClient dpsClient) {
-    super(rabbitmqPublisherChannel, rabbitmqConsumerChannel, semaphoresPerPluginManager,
-        workflowExecutionDao, workflowPostProcessor, redissonClient, dpsClient);
+      RedissonClient redissonClient, EngineTaskClient<S, T> engineTaskClient) {
+    this.workflowExecutorManagerSettings = workflowExecutorManagerSettings;
+    this.rabbitmqPublisherChannel = rabbitmqPublisherChannel;
+    this.rabbitmqConsumerChannel = rabbitmqConsumerChannel;
+    this.semaphoresPerPluginManager = semaphoresPerPluginManager;
+    this.workflowExecutionDao = workflowExecutionDao;
+    this.workflowPostProcessor = workflowPostProcessor;
+    this.redissonClient = redissonClient;
+    this.engineTaskClient = engineTaskClient;
   }
 
   /**
@@ -65,7 +71,7 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
       BasicProperties basicProperties = MessageProperties.PERSISTENT_TEXT_PLAIN.builder().build();
       try {
         //First parameter is the ExchangeName which is not used
-        getRabbitmqPublisherChannel().basicPublish("", rabbitmqQueueName, basicProperties,
+        getRabbitmqPublisherChannel().basicPublish("", workflowExecutorManagerSettings.getRabbitmqQueueName(), basicProperties,
             userWorkflowExecutionObjectId.getBytes(StandardCharsets.UTF_8));
       } catch (IOException e) {
         LOGGER.error("WorkflowExecution with objectId: {} not added in queue..",
@@ -74,62 +80,35 @@ public class WorkflowExecutorManager extends PersistenceProvider implements
     }
   }
 
-  public void setRabbitmqQueueName(String rabbitmqQueueName) {
-    this.rabbitmqQueueName = rabbitmqQueueName;
+  public WorkflowExecutorManagerSettings getWorkflowExecutionSettings() {
+    return workflowExecutorManagerSettings;
   }
 
-  public void setEcloudBaseUrl(String ecloudBaseUrl) {
-    this.ecloudBaseUrl = ecloudBaseUrl;
+  public Channel getRabbitmqPublisherChannel() {
+    return rabbitmqPublisherChannel;
   }
 
-  public void setEcloudProvider(String ecloudProvider) {
-    this.ecloudProvider = ecloudProvider;
+  public Channel getRabbitmqConsumerChannel() {
+    return rabbitmqConsumerChannel;
   }
 
-  public void setMetisCoreBaseUrl(String metisCoreBaseUrl) {
-    this.metisCoreBaseUrl = metisCoreBaseUrl;
+  public SemaphoresPerPluginManager getSemaphoresPerPluginManager() {
+    return semaphoresPerPluginManager;
   }
 
-  public void setThrottlingValues(ThrottlingValues throttlingValues){
-    this.throttlingValues = throttlingValues;
+  public WorkflowExecutionDao getWorkflowExecutionDao() {
+    return workflowExecutionDao;
   }
 
-  public void setDpsMonitorCheckIntervalInSecs(int dpsMonitorCheckIntervalInSecs) {
-    this.dpsMonitorCheckIntervalInSecs = dpsMonitorCheckIntervalInSecs;
+  public WorkflowPostProcessor getWorkflowPostProcessor() {
+    return workflowPostProcessor;
   }
 
-  public void setPeriodOfNoProcessedRecordsChangeInMinutes(
-      int periodOfNoProcessedRecordsChangeInMinutes) {
-    this.periodOfNoProcessedRecordsChangeInMinutes = periodOfNoProcessedRecordsChangeInMinutes;
+  public RedissonClient getRedissonClient() {
+    return redissonClient;
   }
 
-  @Override
-  public int getDpsMonitorCheckIntervalInSecs() {
-    return dpsMonitorCheckIntervalInSecs;
-  }
-
-  @Override
-  public int getPeriodOfNoProcessedRecordsChangeInMinutes() {
-    return periodOfNoProcessedRecordsChangeInMinutes;
-  }
-
-  @Override
-  public String getEcloudBaseUrl() {
-    return ecloudBaseUrl;
-  }
-
-  @Override
-  public String getEcloudProvider() {
-    return ecloudProvider;
-  }
-
-  @Override
-  public String getMetisCoreBaseUrl() {
-    return metisCoreBaseUrl;
-  }
-
-  @Override
-  public ThrottlingValues getThrottlingValues() {
-    return throttlingValues;
+  public EngineTaskClient<S, T> getEngineTaskClient() {
+    return engineTaskClient;
   }
 }

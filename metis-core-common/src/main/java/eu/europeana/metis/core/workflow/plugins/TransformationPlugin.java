@@ -1,12 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
-import eu.europeana.cloud.service.dps.PluginParameterKeys;
-import eu.europeana.metis.utils.RestEndpoints;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Transformation Plugin.
  *
@@ -21,7 +14,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  TransformationPlugin() {
+  public TransformationPlugin() {
     //Required for json serialization
     super(PluginType.TRANSFORMATION);
   }
@@ -44,23 +37,5 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
   @Override
   public String getTopologyName() {
     return topologyName;
-  }
-
-  @Override
-  public DpsTask prepareDpsTask(String datasetId,
-      DpsTaskSettings dpsTaskSettings) {
-    Map<String, String> extraParameters = new HashMap<>();
-    extraParameters.put(PluginParameterKeys.XSLT_URL,
-            dpsTaskSettings.metisCoreBaseUrl() + RestEndpoints
-                    .resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
-                            Collections.singletonList(getPluginMetadata().getXsltId())));
-    extraParameters.put(PluginParameterKeys.METIS_DATASET_ID, datasetId);
-    extraParameters
-            .put(PluginParameterKeys.METIS_DATASET_NAME, getPluginMetadata().getDatasetName());
-    extraParameters
-            .put(PluginParameterKeys.METIS_DATASET_COUNTRY, getPluginMetadata().getCountry());
-    extraParameters
-            .put(PluginParameterKeys.METIS_DATASET_LANGUAGE, getPluginMetadata().getLanguage());
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
   }
 }

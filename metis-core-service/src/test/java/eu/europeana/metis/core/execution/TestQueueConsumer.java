@@ -7,11 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,15 +23,18 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.DataRevision;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin.MonitorResult;
-import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import java.io.IOException;
@@ -41,8 +45,8 @@ import java.util.ArrayList;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.awaitility.Awaitility;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -56,6 +60,7 @@ class TestQueueConsumer {
 
   private static SemaphoresPerPluginManager semaphoresPerPluginManager;
   private static WorkflowExecutionDao workflowExecutionDao;
+  private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
   private static WorkflowPostProcessor workflowPostProcessor;
   private static RedissonClient redissonClient;
   private static Channel rabbitmqConsumerChannel;
@@ -72,17 +77,18 @@ class TestQueueConsumer {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    DpsClient dpsClient = Mockito.mock(DpsClient.class);
-    workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
+    engineTaskClient = mock(EngineTaskClient.class);
+
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
+    workflowExecutorManagerSettings.setRabbitmqQueueName("ExampleQueueName");
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(1);
+
+    workflowExecutorManager = new WorkflowExecutorManager(workflowExecutorManagerSettings, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
-        rabbitmqConsumerChannel, redissonClient, dpsClient);
-    workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
-    workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(1);
-    workflowExecutorManager.setEcloudBaseUrl("http://universe.space");
-    workflowExecutorManager.setEcloudProvider("providerExample");
+        rabbitmqConsumerChannel, redissonClient, engineTaskClient);
   }
 
-  @AfterEach
+  @BeforeEach
   void cleanUp() {
     Mockito.reset(workflowExecutionDao);
     Mockito.reset(workflowPostProcessor);
@@ -90,13 +96,19 @@ class TestQueueConsumer {
     Mockito.reset(redissonClient);
     Mockito.reset(rabbitmqPublisherChannel);
     Mockito.reset(rabbitmqConsumerChannel);
+    Mockito.reset(engineTaskClient);
+
+    EngineTask engineTask = mock(EngineTask.class);
+    when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
+        .thenReturn(engineTask);
+    EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
+    when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
 
   @Test
   void initiateConsumer() throws Exception {
     final String rabbitmqQueueName = "testname";
-    new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager,
-        workflowExecutorManager, workflowExecutionMonitor);
+    new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager, workflowExecutionMonitor);
     ArgumentCaptor<Integer> basicQos = ArgumentCaptor.forClass(Integer.class);
     verify(rabbitmqConsumerChannel, times(1)).basicQos(basicQos.capture());
     assertEquals(Integer.valueOf(1), basicQos.getValue());
@@ -113,8 +125,7 @@ class TestQueueConsumer {
         .basicConsume(eq(rabbitmqQueueName), anyBoolean(), any(QueueConsumer.class)))
         .thenThrow(new IOException("Some Error"));
     assertThrows(IOException.class,
-        () -> new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager,
-            workflowExecutorManager, workflowExecutionMonitor));
+        () -> new QueueConsumer(rabbitmqConsumerChannel, rabbitmqQueueName, workflowExecutorManager, workflowExecutionMonitor));
     ArgumentCaptor<Integer> basicQos = ArgumentCaptor.forClass(Integer.class);
     verify(rabbitmqConsumerChannel, times(1)).basicQos(basicQos.capture());
     verify(rabbitmqConsumerChannel, times(1)).basicConsume(eq(rabbitmqQueueName), eq(false), any());
@@ -134,7 +145,7 @@ class TestQueueConsumer {
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
     QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null,
-        workflowExecutorManager, workflowExecutorManager, workflowExecutionMonitor);
+        workflowExecutorManager, workflowExecutionMonitor);
     assertDoesNotThrow(
         () -> queueConsumer.handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8)));
   }
@@ -151,8 +162,8 @@ class TestQueueConsumer {
         .thenReturn(new ImmutablePair<>(workflowExecution, false));
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
-    QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null,
-        workflowExecutorManager, workflowExecutorManager, workflowExecutionMonitor);
+    QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager,
+        workflowExecutionMonitor);
     queueConsumer
         .handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8));
 
@@ -173,7 +184,7 @@ class TestQueueConsumer {
     doNothing().when(rabbitmqConsumerChannel).basicAck(envelope.getDeliveryTag(), false);
 
     QueueConsumer queueConsumer = new QueueConsumer(rabbitmqConsumerChannel, null,
-        workflowExecutorManager, workflowExecutorManager, workflowExecutionMonitor);
+        workflowExecutorManager, workflowExecutionMonitor);
     queueConsumer
         .handleDelivery("1", envelope, basicProperties, objectId.getBytes(StandardCharsets.UTF_8));
 
@@ -182,12 +193,6 @@ class TestQueueConsumer {
 
   @Test
   void handleDeliveryInterruptWhilePolling() throws Exception {
-
-    ExecutionProgress currentlyProcessingExecutionProgress = new ExecutionProgress();
-    currentlyProcessingExecutionProgress.setStatus(TaskState.CURRENTLY_PROCESSING);
-    ExecutionProgress processedExecutionProgress = new ExecutionProgress();
-    processedExecutionProgress.setStatus(TaskState.PROCESSED);
-
     OaipmhHarvestPlugin oaipmhHarvestPlugin1 = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata1 = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin1.setPluginMetadata(oaipmhHarvestPluginMetadata1);
@@ -249,18 +254,23 @@ class TestQueueConsumer {
         .thenReturn(new ImmutablePair<>(workflowExecution3, false));
     doNothing().when(workflowExecutionDao).updateMonitorInformation(any(WorkflowExecution.class));
     when(workflowExecutionDao.isCancelling(any(ObjectId.class))).thenReturn(false);
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin1).monitor(any(DpsClient.class));
-    doReturn(new MonitorResult(currentlyProcessingExecutionProgress.getStatus(), null))
-        .doReturn(new MonitorResult(processedExecutionProgress.getStatus(), null))
-        .when(oaipmhHarvestPlugin2).monitor(any(DpsClient.class));
+
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    EngineTaskProgress processedProgress = new EngineTaskProgress();
+    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin1.getTopologyName()), any()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
+    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin2.getTopologyName()), any()))
+        .thenReturn(currentlyProcessingProgress)
+        .thenReturn(processedProgress);
+
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(any(WorkflowExecution.class));
     when(workflowExecutionDao.update(any(WorkflowExecution.class))).thenReturn(anyString());
 
     QueueConsumer queueConsumer = spy(
-        new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager,
-            workflowExecutorManager, workflowExecutionMonitor));
+        new QueueConsumer(rabbitmqConsumerChannel, null, workflowExecutorManager, workflowExecutionMonitor));
     doThrow(InterruptedException.class).doCallRealMethod().when(queueConsumer)
                                        .checkAndCleanCompletionService();
 

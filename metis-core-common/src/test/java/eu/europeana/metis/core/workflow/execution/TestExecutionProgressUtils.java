@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.workflow.execution;
 
-import eu.europeana.cloud.common.model.dps.TaskState;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 
 public class TestExecutionProgressUtils {
@@ -20,7 +20,7 @@ public class TestExecutionProgressUtils {
   public static final int IGNORED_RECORDS_VALUE = 0;
   public static final int DELETED_RECORDS_VALUE = 0;
   public static final int ERRORS_VALUE = 0;
-  public static final TaskState STATUS_VALUE = TaskState.PROCESSED;
+  public static final String STATUS_VALUE = EngineTaskState.PROCESSED.name();
   public static final int TOTAL_DATABASE_RECORDS_VALUE = 100;
 
   static ExecutionProgressDTO getExecutionProgressDTOUsingSetters() {

@@ -2,13 +2,16 @@ package eu.europeana.metis.core.execution;
 
 import static java.lang.Thread.currentThread;
 
-import eu.europeana.cloud.client.dps.rest.DpsClient;
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.ExecutedMetisPluginId;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.exceptions.InvalidIndexPluginException;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
@@ -18,13 +21,10 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.DpsTaskSettings;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin.MonitorResult;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
-import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
@@ -45,17 +45,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that
- * WorkflowExecution given to it and will continue monitoring and updating its progress until it
- * ends either by user interaction or by the end of the Workflow. When the WorkflowExecution is
- * received there is a chance that the execution is already being handled from another
- * WorkflowExecutor in another instance and if that is the case the WorkflowExecution will be
- * dropped.
+ * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that WorkflowExecution given to it
+ * and will continue monitoring and updating its progress until it ends either by user interaction or by the end of the Workflow.
+ * When the WorkflowExecution is received there is a chance that the execution is already being handled from another
+ * WorkflowExecutor in another instance and if that is the case the WorkflowExecution will be dropped.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-29
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
-public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolean>> {
+public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask>
+    implements Callable<Pair<WorkflowExecution, Boolean>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
@@ -71,28 +70,19 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   private final WorkflowPostProcessor workflowPostProcessor;
   private final int monitorCheckIntervalInSecs;
   private final long periodOfNoProcessedRecordsChangeInSeconds;
-  private final DpsClient dpsClient;
-  private final String ecloudBaseUrl;
-  private final String ecloudProvider;
-  private final String metisCoreBaseUrl;
-  private final ThrottlingValues throttlingValues;
+  private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
 
-  WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager workflowExecutorManager,
-      WorkflowExecutionSettings workflowExecutionSettings) {
+  WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager<S, T> workflowExecutorManager) {
     this.workflowExecution = workflowExecution;
     this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
     this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
     this.workflowPostProcessor = workflowExecutorManager.getWorkflowPostProcessor();
-    this.dpsClient = workflowExecutorManager.getDpsClient();
-    this.monitorCheckIntervalInSecs = workflowExecutionSettings.getDpsMonitorCheckIntervalInSecs();
+    this.engineTaskClient = workflowExecutorManager.getEngineTaskClient();
+    this.monitorCheckIntervalInSecs = workflowExecutorManager.getWorkflowExecutionSettings().getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
-        .toSeconds(workflowExecutionSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
-    this.ecloudBaseUrl = workflowExecutionSettings.getEcloudBaseUrl();
-    this.ecloudProvider = workflowExecutionSettings.getEcloudProvider();
-    this.metisCoreBaseUrl = workflowExecutionSettings.getMetisCoreBaseUrl();
-    this.throttlingValues = workflowExecutionSettings.getThrottlingValues();
+        .toSeconds(workflowExecutorManager.getWorkflowExecutionSettings().getPeriodOfNoProcessedRecordsChangeInMinutes());
   }
 
   @Override
@@ -111,7 +101,7 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
         // Make sure the cancelledBy information is not lost
         String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString())
-            .getCancelledBy();
+                                                 .getCancelledBy();
         workflowExecution.setCancelledBy(cancelledBy);
         LOGGER.info("workflowExecutionId: {} - Cancelled running workflow execution",
             workflowExecution.getId());
@@ -137,8 +127,8 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   }
 
   /**
-   * Will determine from which plugin of the workflow to start execution from and will iterate
-   * through the plugins of the workflow and run them one by one.
+   * Will determine from which plugin of the workflow to start execution from and will iterate through the plugins of the workflow
+   * and run them one by one.
    * <p>It returns a {@link Pair} of a finished {@link Date} and a {@link Boolean} flag.
    * <ul>
    *   <li>
@@ -254,16 +244,15 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   }
 
   /**
-   * It will prepare the plugin, request the external execution and will periodically monitor,
-   * update the plugin's progress and at the end finalize the plugin's status and finished date.
+   * It will prepare the plugin, request the external execution and will periodically monitor, update the plugin's progress and at
+   * the end finalize the plugin's status and finished date.
    *
    * @param plugin the plugin to run
-   * @param startDateToUse The date that should be used as start date (if the plugin is not already
-   * running).
+   * @param startDateToUse The date that should be used as start date (if the plugin is not already running).
    * @param datasetId The dataset ID.
    */
-  private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse,
-      String datasetId) {
+  private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, String datasetId) {
+    final PluginExecutor<S, T> pluginExecutor = new PluginExecutor<>(plugin, engineTaskClient);
     try {
       // Compute previous plugin revision information. Only need to look within the workflow: when
       // scheduling the workflow, the previous plugin information is set for the first plugin.
@@ -283,10 +272,10 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
       // Compute base harvesting plugin information. We can't do this when creating the workflow
       // execution: the harvest might be part of this very workflow.
       if (DataEvolutionUtils.getIndexPluginGroup()
-              .contains(plugin.getPluginMetadata().getExecutablePluginType())) {
+                            .contains(plugin.getPluginMetadata().getExecutablePluginType())) {
         final PluginWithExecutionId<ExecutablePlugin> rootAncestor = new DataEvolutionUtils(
-                workflowExecutionDao).getRootAncestor(
-                new PluginWithExecutionId<>(workflowExecution, plugin));
+            workflowExecutionDao).getRootAncestor(
+            new PluginWithExecutionId<>(workflowExecution, plugin));
         setHarvestParametersToIndexingPlugin(plugin, rootAncestor.getPlugin());
       }
 
@@ -295,11 +284,9 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
           plugin.setStartedDate(startDateToUse);
         }
-        final DpsTaskSettings dpsTaskSettings = new DpsTaskSettings(
-            ecloudBaseUrl, ecloudProvider, workflowExecution.getEcloudDatasetId(),
-            getExternalTaskIdOfPreviousPlugin(metadata), metisCoreBaseUrl, throttlingValues);
-        plugin
-            .execute(workflowExecution.getDatasetId(), dpsClient, dpsTaskSettings);
+
+        pluginExecutor.submit(workflowExecution.getEcloudDatasetId(), getExternalTaskIdOfPreviousPlugin(metadata)
+        );
       }
     } catch (ExternalTaskException | RuntimeException e) {
       LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
@@ -319,14 +306,14 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   }
 
   private void setHarvestParametersToIndexingPlugin(ExecutablePlugin indexingPlugin,
-          ExecutablePlugin harvestPlugin) {
+      ExecutablePlugin harvestPlugin) {
 
     // Check the harvesting types
     if (!DataEvolutionUtils.getHarvestPluginGroup()
-            .contains(harvestPlugin.getPluginMetadata().getExecutablePluginType())) {
+                           .contains(harvestPlugin.getPluginMetadata().getExecutablePluginType())) {
       throw new IllegalStateException(String.format(
-              "workflowExecutionId: %s, pluginId: %s - Found plugin root that is not a harvesting plugin.",
-              workflowExecution.getId(), indexingPlugin.getId()));
+          "workflowExecutionId: %s, pluginId: %s - Found plugin root that is not a harvesting plugin.",
+          workflowExecution.getId(), indexingPlugin.getId()));
     }
 
     // get the information from the harvesting plugin.
@@ -354,9 +341,10 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     final WorkflowExecution previousExecution = workflowExecutionDao
         .getByTaskExecution(predecessorPlugin, workflowExecution.getDatasetId());
     return Optional.ofNullable(previousExecution)
-        .flatMap(execution -> workflowExecutionHelper.getMetisPluginWithType(execution, predecessorPlugin.getPluginType()))
-        .map(this::expectExecutablePlugin).map(AbstractExecutablePlugin::getExternalTaskId)
-        .orElse(null);
+                   .flatMap(
+                       execution -> workflowExecutionHelper.getMetisPluginWithType(execution, predecessorPlugin.getPluginType()))
+                   .map(this::expectExecutablePlugin).map(AbstractExecutablePlugin::getExternalTaskId)
+                   .orElse(null);
   }
 
   private AbstractExecutablePlugin<?> expectExecutablePlugin(AbstractMetisPlugin<?> plugin) {
@@ -372,9 +360,9 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         workflowExecution.getId(), plugin.getId()));
   }
 
-  private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin,
-      String datasetId) {
-    MonitorResult monitorResult = null;
+  private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
+    final PluginMonitor<S, T> pluginMonitor = new PluginMonitor<>(plugin, engineTaskClient);
+    EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
     AtomicInteger previousProcessedRecords = new AtomicInteger(0);
@@ -384,16 +372,17 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
       try {
         Thread.sleep(sleepTime);
         // Check if the task is cancelling and send the external cancelling call if needed
-        sendExternalCancelCallIfNeeded(externalCancelCallSent, plugin, previousProcessedRecords,
+        sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin, previousProcessedRecords,
             checkPointDateOfProcessedRecordsPeriodInMillis);
-        monitorResult = plugin.monitor(dpsClient);
+        engineTaskProgress = pluginMonitor.monitor();
         consecutiveCancelOrMonitorFailures = 0;
 
-        if (monitorResult.taskState() == TaskState.REMOVING_FROM_SOLR_AND_MONGO ||
-            isIndexingInPostProcessing(monitorResult, plugin)) {
+        EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
+        if (engineTaskState == EngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
+            isIndexingInPostProcessing(engineTaskState, plugin)) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
 
-        } else if (isHarvestingInPostProcessing(monitorResult, plugin)) {
+        } else if (isHarvestingInPostProcessing(engineTaskState, plugin)) {
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.IDENTIFYING_DELETED_RECORDS);
 
         } else {
@@ -406,17 +395,19 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
             workflowExecution.getId(), plugin.getPluginType()), e);
         currentThread().interrupt();
         return;
-      } catch (UnrecoverableExternalTaskException e) {
-        LOGGER.warn(String
-            .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
-                + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
-        // Set plugin to FAILED and return immediately
-        plugin.setFinishedDate(null);
-        plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-        plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX,
-            ExceptionUtils.getStackTrace(e)));
-        return;
       } catch (ExternalTaskException | RuntimeException e) {
+        if (e.getCause() instanceof UnrecoverableExternalTaskException) {
+          LOGGER.warn(String
+              .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
+                  + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
+          // Set plugin to FAILED and return immediately
+          plugin.setFinishedDate(null);
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+          plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX,
+              ExceptionUtils.getStackTrace(e)));
+          return;
+        }
+
         LOGGER.warn(String
             .format("workflowExecutionId: %s, pluginType: %s - ExternalTaskException occurred.",
                 workflowExecution.getId(), plugin.getPluginType()), e);
@@ -436,49 +427,52 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
         workflowExecution.setUpdatedDate(updatedDate);
         workflowExecutionDao.updateMonitorInformation(workflowExecution);
       }
-    } while (isContinueMonitor(monitorResult));
+    } while (isContinueMonitor(engineTaskProgress));
 
     // Perform post-processing if needed.
-    if (!applyPostProcessing(monitorResult, plugin, datasetId)) {
+    if (!applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
       return;
     }
 
     // Set the status of the task.
-    preparePluginStateAndFinishedDate(plugin, monitorResult);
+    preparePluginStateAndFinishedDate(plugin, engineTaskProgress);
   }
 
-  private boolean isIndexingInPostProcessing(MonitorResult monitor,
+  private boolean isIndexingInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
-    return monitor.taskState() == TaskState.IN_POST_PROCESSING &&
+    return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.REINDEX_TO_PREVIEW ||
             plugin.getPluginType() == PluginType.REINDEX_TO_PUBLISH);
   }
 
-  private boolean isHarvestingInPostProcessing(MonitorResult monitor, AbstractExecutablePlugin<?> plugin) {
-    return monitor.taskState() == TaskState.IN_POST_PROCESSING &&
+  private boolean isHarvestingInPostProcessing(EngineTaskState engineTaskState,
+      AbstractExecutablePlugin<?> plugin) {
+    return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
         (plugin.getPluginType() == PluginType.HTTP_HARVEST ||
             plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
-      AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
+      PluginMonitor<S, T> pluginMonitor, AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
       AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, previousProcessedRecords,
         checkPointDateOfProcessedRecordsPeriodInMillis)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
-      plugin.cancel(dpsClient, workflowExecution.getCancelledBy());
+
+      pluginMonitor.cancel(workflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }
 
-  private boolean applyPostProcessing(MonitorResult monitorResult, AbstractExecutablePlugin<?> plugin,
+  private boolean applyPostProcessing(EngineTaskProgress engineTaskProgress,
+      AbstractExecutablePlugin<?> plugin,
       String datasetId) {
     boolean processingAppliedOrNotRequired = true;
-    if (monitorResult.taskState() == TaskState.PROCESSED) {
+    if (engineTaskProgress.getEngineTaskState() == EngineTaskState.PROCESSED) {
       try {
         this.workflowPostProcessor.performPluginPostProcessing(plugin, datasetId);
-      } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException e) {
+      } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException | ExternalTaskException e) {
         processingAppliedOrNotRequired = false;
         LOGGER.warn("Problem occurred during Metis post-processing.", e);
         plugin.setFinishedDate(null);
@@ -490,9 +484,10 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
     return processingAppliedOrNotRequired;
   }
 
-  private boolean isContinueMonitor(MonitorResult monitorResult) {
-    return monitorResult == null || (monitorResult.taskState() != TaskState.DROPPED
-        && monitorResult.taskState() != TaskState.PROCESSED);
+  private boolean isContinueMonitor(EngineTaskProgress engineTaskProgress) {
+    return engineTaskProgress == null ||
+        (engineTaskProgress.getEngineTaskState() != EngineTaskState.DROPPED
+            && engineTaskProgress.getEngineTaskState() != EngineTaskState.PROCESSED);
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
@@ -534,17 +529,25 @@ public class WorkflowExecutor implements Callable<Pair<WorkflowExecution, Boolea
   }
 
   private void preparePluginStateAndFinishedDate(AbstractExecutablePlugin<?> plugin,
-      MonitorResult monitorResult) {
-    if (monitorResult.taskState() == TaskState.PROCESSED) {
-      plugin.setFinishedDate(new Date());
-      plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
-    } else if (monitorResult.taskState() == TaskState.DROPPED && !workflowExecutionDao
-        .isCancelling(workflowExecution.getId())) {
-      plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-      final String failMessage =
-          StringUtils.isBlank(monitorResult.taskInfo()) ? "No further information received."
-              : monitorResult.taskInfo();
-      plugin.setFailMessage(EXECUTION_ERROR_PREFIX + failMessage);
+      EngineTaskProgress engineTaskProgress) {
+    EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
+    switch (engineTaskState) {
+      case PROCESSED -> {
+        plugin.setFinishedDate(new Date());
+        plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
+      }
+      case DROPPED -> {
+        boolean isNotCancelling = !workflowExecutionDao.isCancelling(workflowExecution.getId());
+        if (isNotCancelling) {
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+          String engineTaskStateInfo = engineTaskProgress.getEngineTaskStateInfo();
+          String message = StringUtils.isBlank(engineTaskStateInfo)
+              ? "No further information received."
+              : engineTaskStateInfo;
+          plugin.setFailMessage(EXECUTION_ERROR_PREFIX + message);
+        }
+      }
+      default -> LOGGER.debug("No action for other states");
     }
     workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
   }

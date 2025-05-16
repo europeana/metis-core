@@ -9,7 +9,7 @@ import java.util.List;
  * @param occurrences The number of times this value appears.
  * @param attributeStatistics A list of attribute statistics, stored as an immutable list.
  */
-public record NodeValueStatistics(String value, long occurrences, List<AttributeStatistics> attributeStatistics) {
+public record NodeValueStatisticsDTO(String value, long occurrences, List<AttributeStatisticsDTO> attributeStatistics) {
 
   /**
    * Constructs a {@code NodeValueStatistics} instance.
@@ -21,7 +21,7 @@ public record NodeValueStatistics(String value, long occurrences, List<Attribute
    * @param attributeStatistics The list of attribute statistics. Must not be {@code null}.
    * @throws NullPointerException if {@code attributeStatistics} is {@code null}.
    */
-  public NodeValueStatistics {
+  public NodeValueStatisticsDTO {
     attributeStatistics = List.copyOf(attributeStatistics); // Ensures immutability
   }
 }

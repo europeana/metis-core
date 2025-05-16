@@ -17,21 +17,16 @@ import dev.morphia.query.filters.Filters;
 import dev.morphia.query.updates.UpdateOperator;
 import dev.morphia.query.updates.UpdateOperators;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.service.mcs.exception.DataSetAlreadyExistsException;
-import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
-import eu.europeana.metis.exception.ExternalTaskException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.regex.Pattern;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -50,22 +45,15 @@ public class DatasetDao implements MetisDao<Dataset, String> {
   private int datasetsPerRequest = RequestLimits.DATASETS_PER_REQUEST.getLimit();
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
-  private final DataSetServiceClient ecloudDataSetServiceClient;
-  private String ecloudProvider; // Use getter and setter for this field!
 
   /**
-   * Constructs the DAO
-   * <p>Initialize {@link #ecloudProvider} using the setter class.
-   * Use setter for {@link #setDatasetsPerRequest(int)} to overwrite the default value</p>
+   * Constructs the DAO.
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider} used to access Mongo
-   * @param ecloudDataSetServiceClient {@link DataSetServiceClient} to access the ecloud dataset functionality
    */
   @Autowired
-  public DatasetDao(MorphiaDatastoreProvider morphiaDatastoreProvider,
-      DataSetServiceClient ecloudDataSetServiceClient) {
+  public DatasetDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     this.morphiaDatastoreProvider = morphiaDatastoreProvider;
-    this.ecloudDataSetServiceClient = ecloudDataSetServiceClient;
   }
 
   /**
@@ -281,38 +269,6 @@ public class DatasetDao implements MetisDao<Dataset, String> {
   }
 
   /**
-   * Checks if the ecloud dataset identifier already exists in ECloud and if it does not, it will try to create a new one and add
-   * the identifier inside the metis Dataset object and store.
-   * <p>This is an exception method that uses the {@link DataSetServiceClient} to communicate with
-   * the external dataset resource in ECloud</p>
-   *
-   * @param dataset the Dataset object to check
-   * @return the ECloud dataset identifier
-   * @throws ExternalTaskException if an error occurred during the creation of the dataset identifier on ECloud
-   */
-  public String checkAndCreateDatasetInEcloud(Dataset dataset) throws ExternalTaskException {
-    if (StringUtils.isEmpty(dataset.getEcloudDatasetId()) || dataset.getEcloudDatasetId()
-                                                                    .startsWith("NOT_CREATED_YET")) {
-      final String uuid = UUID.randomUUID().toString();
-      try {
-        ecloudDataSetServiceClient
-            .createDataSet(getEcloudProvider(), uuid, "Metis generated dataset");
-        dataset.setEcloudDatasetId(uuid);
-        update(dataset);
-      } catch (DataSetAlreadyExistsException e) {
-        throw new ExternalTaskException("Dataset already exist, not recreating", e);
-      } catch (MCSException e) {
-        throw new ExternalTaskException("An error has occurred during ecloud dataset creation.", e);
-      }
-    } else {
-      LOGGER
-          .info("Dataset with datasetId {} already has a dataset initialized in Ecloud with id {}",
-              dataset.getDatasetId(), dataset.getEcloudDatasetId());
-    }
-    return dataset.getEcloudDatasetId();
-  }
-
-  /**
    * Get the list of of matching DatasetSearch using dataset
    *
    * @param datasetIdWords a list of words to be used for datasetId search, that field is searched as a "starts with" operation
@@ -391,17 +347,5 @@ public class DatasetDao implements MetisDao<Dataset, String> {
         () -> morphiaDatastoreProvider.getDatastore().find(Dataset.class)
                                       .filter(Filters.eq(DATASET_NAME.getFieldName(), datasetName))
                                       .first(new FindOptions().projection().include(ID.getFieldName()))) != null;
-  }
-
-  public void setEcloudProvider(String ecloudProvider) {
-    synchronized (this) {
-      this.ecloudProvider = ecloudProvider;
-    }
-  }
-
-  private String getEcloudProvider() {
-    synchronized (this) {
-      return this.ecloudProvider;
-    }
   }
 }

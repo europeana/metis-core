@@ -11,6 +11,11 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetConverter;
 import eu.europeana.metis.core.dataset.DatasetDTO;
+import eu.europeana.metis.core.engine.base.item.report.DataItemState;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
@@ -36,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 
 public class TestObjectFactory {
@@ -45,7 +51,7 @@ public class TestObjectFactory {
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
   public static final String TOPOLOGY_NAME = "topology_name";
-  public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
+  public static final String EXTERNAL_TASK_ID = "2070373127078497810";
   private static final int OCCURRENCES = 2;
 
   private TestObjectFactory() {
@@ -236,6 +242,23 @@ public class TestObjectFactory {
     return subTaskInfos;
   }
 
+  public static List<DataItemStatus> createExternalRecordStatusList() {
+    List<SubTaskInfo> listOfSubTaskInfo = createListOfSubTaskInfo();
+    List<DataItemStatus> dataItemStatuses = new ArrayList<>();
+    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
+      DataItemStatus dataItemStatus = new DataItemStatus(
+          subTaskInfo.getResourceNum(),
+          subTaskInfo.getResource(),
+          DataItemState.valueOf(subTaskInfo.getRecordState().name()),
+          subTaskInfo.getInfo(),
+          subTaskInfo.getEuropeanaId(),
+          subTaskInfo.getProcessingTime(),
+          subTaskInfo.getResultResource());
+      dataItemStatuses.add(dataItemStatus);
+    }
+    return dataItemStatuses;
+  }
+
   /**
    * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These will also contain a list of
    * {@link ErrorDetails} that in turn contain dummy identifiers.
@@ -254,7 +277,24 @@ public class TestObjectFactory {
       taskErrorInfo.setErrorDetails(errorDetails);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(Long.parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
+  }
+
+  public static EngineTaskErrors createExternalTaskErrorsListWithIdentifiers(int numberOfErrorTypes) {
+    TaskErrorsInfo taskErrorsInfo = createTaskErrorsInfoListWithIdentifiers(numberOfErrorTypes);
+
+    List<EngineTaskErrorInfo> engineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
+      List<EngineTaskErrorDetails> engineTaskErrorDetailsList = new ArrayList<>();
+      for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
+        EngineTaskErrorDetails engineTaskErrorDetails = new EngineTaskErrorDetails(errorDetail.getIdentifier(),
+            errorDetail.getAdditionalInfo());
+        engineTaskErrorDetailsList.add(engineTaskErrorDetails);
+      }
+      return new EngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
+          taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
+    }).collect(Collectors.toList());
+
+    return new EngineTaskErrors(Long.toString(taskErrorsInfo.getId()), engineTaskErrorInfoList);
   }
 
   /**

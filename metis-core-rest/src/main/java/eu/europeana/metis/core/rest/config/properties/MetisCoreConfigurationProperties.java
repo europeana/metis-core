@@ -4,10 +4,14 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Class using {@link ConfigurationProperties} loading.
+ * Configuration properties for Metis Core.
+ * <p>
+ * This record encapsulates application-level configuration settings for the Metis Core service, which can be configured using
+ * properties prefixed with "metis-core".
  */
 @ConfigurationProperties(prefix = "metis-core")
 public record MetisCoreConfigurationProperties(
+    EngineType engineType,
     int maxConcurrentThreads,
     int dpsMonitorCheckIntervalInSeconds,
     int dpsConnectTimeoutInMilliseconds,
@@ -27,4 +31,13 @@ public record MetisCoreConfigurationProperties(
     int linkCheckingDefaultSamplingSize,
     int solrCommitPeriodInMinutes,
     List<String> allowedCorsHosts
-) {}
+) {
+
+  /**
+   * Enum representing types of engines available for configuration.
+   */
+  public enum EngineType {
+    ECLOUD,
+    MOCK;
+  }
+}

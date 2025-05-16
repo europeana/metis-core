@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
+import eu.europeana.metis.core.common.RecordIdUtils.DatasetIdAndRecordId;
 import eu.europeana.metis.exception.BadContentException;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,10 +19,10 @@ class TestRecordIdUtils {
   @ParameterizedTest
   @MethodSource
   void testDecomposeFullRecordIdValidInput(String input, String expectedDatasetId, String expectedRecordId) {
-    Pair<String, String> result = RecordIdUtils.decomposeFullRecordId(input);
+    DatasetIdAndRecordId result = RecordIdUtils.decomposeFullRecordId(input);
     assertNotNull(result);
-    assertEquals(expectedDatasetId, result.getLeft());
-    assertEquals(expectedRecordId, result.getRight());
+    assertEquals(expectedDatasetId, result.datasetId());
+    assertEquals(expectedRecordId, result.recordId());
   }
 
   @ParameterizedTest

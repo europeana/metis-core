@@ -1,13 +1,13 @@
 package eu.europeana.metis.core.rest.controller;
 
-import eu.europeana.cloud.common.model.dps.SubTaskInfo;
-import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
-import eu.europeana.metis.core.rest.stats.NodePathStatistics;
-import eu.europeana.metis.core.rest.stats.RecordStatistics;
+import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
+import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -71,9 +71,9 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public List<SubTaskInfo> getExternalTaskLogs(
+  public List<DataItemStatus> getExternalTaskLogs(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId,
+      @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam(value = "from") int from,
       @RequestParam(value = "to") int to) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
@@ -103,8 +103,9 @@ public class ProxiesController {
   @ResponseStatus(HttpStatus.OK)
   public Map<String, Boolean> existsExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId) throws GenericMetisException {
+      @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
+    externalTaskId = StringEscapeUtils.escapeJava(externalTaskId);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info(
           "Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
@@ -133,9 +134,9 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT, produces = {
       MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public TaskErrorsInfo getExternalTaskReport(
+  public EngineTaskErrors getExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId,
+      @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {
@@ -161,9 +162,9 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public RecordStatistics getExternalTaskStatistics(
+  public RecordStatisticsDTO getExternalTaskStatistics(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId) throws GenericMetisException {
+      @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}", topologyName, externalTaskId);
@@ -173,7 +174,7 @@ public class ProxiesController {
 
   /**
    * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by
-   * {@link #getExternalTaskStatistics(String, long)}.
+   * {@link #getExternalTaskStatistics(String, String)}.
    *
    * @param topologyName the topology name of the task
    * @param externalTaskId the task identifier
@@ -190,17 +191,16 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
       produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public NodePathStatistics getAdditionalNodeStatistics(
+  public NodePathStatisticsDTO getAdditionalNodeStatistics(
       @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") long externalTaskId,
+      @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("nodePath") String nodePath) throws GenericMetisException {
     topologyName = StringEscapeUtils.escapeJava(topologyName);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
           topologyName, externalTaskId);
     }
-    return proxiesService
-        .getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
+    return proxiesService.getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
 
   /**

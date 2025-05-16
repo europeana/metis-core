@@ -1,20 +1,18 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3.9.12-management-alpine
     container_name: metis-core-rabbitmq
     environment:
       - RABBIT_DEFAULT_VHOST=/
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=local
+      - RABBITMQ_DEFAULT_PASS=local
     ports:
       - '5672:5672'
       - '15672:15672'
   redis:
     image: redis:6.0.16-alpine
     container_name: metis-core-redis
-    command: redis-server --requirepass guest
+    command: redis-server --requirepass local
     ports:
       - '6379:6379'
   mongo:
@@ -22,8 +20,8 @@ services:
     container_name: metis-core-mongo
     environment:
       MONGO_INITDB_DATABASE: metis-core
-      MONGO_INITDB_ROOT_USERNAME: guest
-      MONGO_INITDB_ROOT_PASSWORD: guest
+      MONGO_INITDB_ROOT_USERNAME: local
+      MONGO_INITDB_ROOT_PASSWORD: local
     ports:
       - '27017:27017'
   oauth2:

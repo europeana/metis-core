@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
-import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.engine.base.IndexDatabase;
 
 /**
  * Index to Publish Plugin.
@@ -15,7 +14,7 @@ public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublis
   /**
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the plugin.
    */
-  IndexToPublishPlugin() {
+  public IndexToPublishPlugin() {
     //Required for json serialization
     this(null);
   }
@@ -31,11 +30,6 @@ public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublis
   }
 
   @Override
-  public DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-    return createDpsTaskForIndexPlugin(dpsTaskSettings, datasetId, getPluginMetadata(), getTargetIndexingDatabase().name());
-  }
-
-  @Override
   public String getTopologyName() {
     return topologyName;
   }
@@ -45,7 +39,7 @@ public class IndexToPublishPlugin extends AbstractExecutablePlugin<IndexToPublis
    *
    * @return the target indexing database
    */
-  public TargetIndexingDatabase getTargetIndexingDatabase() {
-    return TargetIndexingDatabase.PUBLISH;
+  public IndexDatabase getTargetIndexingDatabase() {
+    return IndexDatabase.PUBLISH;
   }
 }

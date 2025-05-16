@@ -14,6 +14,8 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation.PublicationStatus;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
@@ -60,6 +62,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
@@ -75,9 +78,12 @@ import org.springframework.stereotype.Service;
 
 /**
  * Service class that controls the communication between the different DAOs of the system.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Service
-public class OrchestratorService {
+public class OrchestratorService<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   //Use with String.format to suffix the datasetId
@@ -101,7 +107,7 @@ public class OrchestratorService {
   private final DataEvolutionUtils dataEvolutionUtils;
   private final WorkflowDao workflowDao;
   private final DatasetDao datasetDao;
-  private final WorkflowExecutorManager workflowExecutorManager;
+  private final WorkflowExecutorManager<S, T> workflowExecutorManager;
   private final RedissonClient redissonClient;
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
@@ -127,7 +133,7 @@ public class OrchestratorService {
   public OrchestratorService(WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       WorkflowValidationUtils workflowValidationUtils, DataEvolutionUtils dataEvolutionUtils,
-      DatasetDao datasetDao, WorkflowExecutorManager workflowExecutorManager,
+      DatasetDao datasetDao, WorkflowExecutorManager<S, T> workflowExecutorManager,
       RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao, UserService userService) {
     this.workflowExecutionFactory = workflowExecutionFactory;
     this.workflowDao = workflowDao;
@@ -378,7 +384,7 @@ public class OrchestratorService {
         .validateWorkflowPlugins(workflow, enforcedPredecessorType);
 
     // Make sure that eCloud knows the dataset (needs to happen before we create the workflow).
-    datasetDao.checkAndCreateDatasetInEcloud(dataset);
+    createEngineDatasetId(dataset);
 
     // Create the workflow execution (without adding it to the database).
     final WorkflowExecution workflowExecution = workflowExecutionFactory
@@ -417,6 +423,24 @@ public class OrchestratorService {
 
     // Done. Get a fresh copy of the workflow execution to return.
     return workflowExecutionDao.getById(objectId);
+  }
+
+  private String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
+    if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
+        || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
+      final String datasetUuid = UUID.randomUUID().toString();
+      boolean isEngineDatasetIdCreated = workflowExecutorManager.getEngineTaskClient().createEngineDatasetId(datasetUuid);
+      if (!isEngineDatasetIdCreated) {
+        throw new ExternalTaskException(
+            String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
+      }
+      dataset.setEcloudDatasetId(datasetUuid);
+      datasetDao.update(dataset);
+    } else {
+      LOGGER.info("Dataset with datasetId {} already has a dataset initialized in Ecloud with id {}",
+              dataset.getDatasetId(), dataset.getEcloudDatasetId());
+    }
+    return dataset.getEcloudDatasetId();
   }
 
   /**
@@ -839,10 +863,11 @@ public class OrchestratorService {
 
     List<WorkflowExecutionDTO> workflowExecutionDTOList =
         allExecutions.results().stream()
-                     .map(workflowExecution ->{
+                     .map(workflowExecution -> {
                        User startedUser = userService.getUserFromCache(workflowExecution.getStartedBy());
                        User cancelledUser = userService.getUserFromCache(workflowExecution.getCancelledBy());
-                       return WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser, cancelledUser);
+                       return WorkflowExecutionConverter.toDTO(workflowExecution, isIncremental(workflowExecution), startedUser,
+                           cancelledUser);
                      })
                      .toList();
 
@@ -892,7 +917,8 @@ public class OrchestratorService {
 
     // Compile the result.
     final List<PluginWithDataAvailability> plugins = workflowExecutionDTO.getMetisPlugins().stream()
-                                                                         .filter(MetisPluginDTO::isCanDisplayRawXml).map(OrchestratorService::convert).toList();
+                                                                         .filter(MetisPluginDTO::isCanDisplayRawXml)
+                                                                         .map(OrchestratorService::convert).toList();
     final PluginsWithDataAvailability result = new PluginsWithDataAvailability();
     result.setPlugins(plugins);
 

@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * This class contains functionality concerning the parsing and composing of depublish record IDs.
@@ -54,12 +52,12 @@ public final class RecordIdUtils {
    * @param fullRecordId The full record ID.
    * @return A String pair containing first the dataset ID, and second the simple record ID.
    */
-  public static Pair<String, String> decomposeFullRecordId(String fullRecordId) {
+  public static DatasetIdAndRecordId decomposeFullRecordId(String fullRecordId) {
     final Matcher matcher = FULL_RECORD_ID_PATTERN.matcher(fullRecordId);
     if (!matcher.find()) {
       return null;
     }
-    return new ImmutablePair<>(matcher.group(1), matcher.group(2));
+    return new DatasetIdAndRecordId(matcher.group(1), matcher.group(2));
   }
 
   /**
@@ -144,5 +142,13 @@ public final class RecordIdUtils {
 
     // Return the last segment (the record ID without the dataset ID).
     return lastSegment;
+  }
+
+  /**
+   * Represents a combination of a dataset ID and a record ID.
+   * Used to encapsulate and manage dataset and record identifiers together.
+   */
+  public record DatasetIdAndRecordId(String datasetId, String recordId) {
+
   }
 }

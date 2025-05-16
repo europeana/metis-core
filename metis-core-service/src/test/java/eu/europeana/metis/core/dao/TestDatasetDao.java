@@ -3,24 +3,17 @@ package eu.europeana.metis.core.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import dev.morphia.Datastore;
 import dev.morphia.DeleteOptions;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.service.mcs.exception.DataSetAlreadyExistsException;
-import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.utils.TestObjectFactory;
-import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,15 +21,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class TestDatasetDao {
 
   private static DatasetDao datasetDao;
   private static Dataset dataset;
   private static EmbeddedLocalhostMongo embeddedLocalhostMongo;
-  private static MorphiaDatastoreProviderImpl provider;
-  private static DataSetServiceClient ecloudDataSetServiceClient;
+  private static MorphiaDatastoreProviderImpl morphiaDatastoreProvider;
 
   @BeforeAll
   static void prepare() {
@@ -44,14 +35,11 @@ class TestDatasetDao {
     embeddedLocalhostMongo.start();
     String mongoHost = embeddedLocalhostMongo.getMongoHost();
     int mongoPort = embeddedLocalhostMongo.getMongoPort();
-    MongoClient mongoClient = MongoClients
-        .create(String.format("mongodb://%s:%s", mongoHost, mongoPort));
-    provider = new MorphiaDatastoreProviderImpl(mongoClient, "test");
-    ecloudDataSetServiceClient = Mockito.mock(DataSetServiceClient.class);
+    MongoClient mongoClient = MongoClients.create(String.format("mongodb://%s:%s", mongoHost, mongoPort));
+    morphiaDatastoreProvider = new MorphiaDatastoreProviderImpl(mongoClient, "test");
 
-    datasetDao = new DatasetDao(provider, ecloudDataSetServiceClient);
+    datasetDao = new DatasetDao(morphiaDatastoreProvider);
     datasetDao.setDatasetsPerRequest(1);
-    datasetDao.setEcloudProvider("ecloudProvider");
 
     dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
   }
@@ -63,10 +51,9 @@ class TestDatasetDao {
 
   @AfterEach
   void cleanUp() {
-    Datastore datastore = provider.getDatastore();
+    Datastore datastore = morphiaDatastoreProvider.getDatastore();
     datastore.find(Dataset.class).delete(new DeleteOptions().multi(true));
     datastore.find(DatasetIdSequence.class).delete();
-    Mockito.reset(ecloudDataSetServiceClient);
   }
 
   @Test
@@ -264,7 +251,7 @@ class TestDatasetDao {
   @Test
   void testFindNextInSequenceDatasetId() {
     DatasetIdSequence datasetIdSequence = new DatasetIdSequence(0);
-    provider.getDatastore().save(datasetIdSequence);
+    morphiaDatastoreProvider.getDatastore().save(datasetIdSequence);
 
     int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
     assertEquals(1, nextInSequenceDatasetId);
@@ -274,43 +261,6 @@ class TestDatasetDao {
 
     nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
     assertEquals(3, nextInSequenceDatasetId);
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud() throws Exception {
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any())).thenReturn(null);
-
-    datasetDao.checkAndCreateDatasetInEcloud(dataset);
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud_FieldWithEcloudIdIsAlreadyPresent() throws Exception {
-    dataset.setEcloudDatasetId("f525f64c-fea0-44bf-8c56-88f30962734c");
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any())).thenReturn(null);
-
-    datasetDao.checkAndCreateDatasetInEcloud(dataset);
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud_DataSetAlreadyExistsException() throws Exception {
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any()))
-        .thenThrow(new DataSetAlreadyExistsException("Dataset already exist, not recreating"));
-
-    assertThrows(ExternalTaskException.class,
-        () -> datasetDao.checkAndCreateDatasetInEcloud(dataset));
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud_MCSException() throws Exception {
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any()))
-        .thenThrow(new MCSException("An error has occurred during ecloud dataset creation."));
-
-    assertThrows(ExternalTaskException.class,
-        () -> datasetDao.checkAndCreateDatasetInEcloud(dataset));
   }
 
   @Test

@@ -8,7 +8,7 @@ import java.util.List;
  * @param taskId The ID of the task.
  * @param nodePathStatistics A list of node path statistics, stored as an immutable list.
  */
-public record RecordStatistics(long taskId, List<NodePathStatistics> nodePathStatistics) {
+public record RecordStatisticsDTO(String taskId, List<NodePathStatisticsDTO> nodePathStatistics) {
 
   /**
    * Constructs a {@code RecordStatistics} instance.
@@ -19,7 +19,7 @@ public record RecordStatistics(long taskId, List<NodePathStatistics> nodePathSta
    * @param nodePathStatistics The list of node path statistics. Must not be {@code null}.
    * @throws NullPointerException if {@code nodePathStatistics} is {@code null}.
    */
-  public RecordStatistics {
+  public RecordStatisticsDTO {
     nodePathStatistics = List.copyOf(nodePathStatistics); // Ensures immutability
   }
 }

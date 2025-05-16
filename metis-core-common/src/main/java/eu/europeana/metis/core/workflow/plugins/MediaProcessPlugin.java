@@ -1,10 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
-import eu.europeana.cloud.service.dps.PluginParameterKeys;
-
-import java.util.Map;
-
 /**
  * Media Process Plugin.
  *
@@ -19,7 +14,7 @@ public class MediaProcessPlugin extends AbstractExecutablePlugin<MediaProcessPlu
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  MediaProcessPlugin() {
+  public MediaProcessPlugin() {
     //Required for json serialization
     super(PluginType.MEDIA_PROCESS);
   }
@@ -38,15 +33,4 @@ public class MediaProcessPlugin extends AbstractExecutablePlugin<MediaProcessPlu
   public String getTopologyName() {
     return topologyName;
   }
-
-  @Override
-  DpsTask prepareDpsTask(String datasetId,
-      DpsTaskSettings dpsTaskSettings) {
-    ThrottlingLevel throttlingLevel = getPluginMetadata().getThrottlingLevel() == null ?
-            ThrottlingLevel.WEAK : getPluginMetadata().getThrottlingLevel();
-
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, Map.of(PluginParameterKeys.MAXIMUM_PARALLELIZATION,
-            String.valueOf(dpsTaskSettings.throttlingValues().getThreadNumberFromThrottlingLevel(throttlingLevel))));
-  }
-
 }

@@ -1,11 +1,11 @@
 package eu.europeana.metis.core.rest.config;
 
 import com.rabbitmq.client.Channel;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
-import eu.europeana.cloud.client.uis.rest.UISClient;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.mcs.driver.FileServiceClient;
-import eu.europeana.cloud.mcs.driver.RecordServiceClient;
+import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
+import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
+import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
+import eu.europeana.metis.common.config.properties.redis.RedisConfigurationProperties;
+import eu.europeana.metis.common.config.properties.validation.ValidationConfigurationProperties;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -13,9 +13,13 @@ import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
+import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
@@ -25,25 +29,25 @@ import eu.europeana.metis.core.service.ProxiesService;
 import eu.europeana.metis.core.service.RedirectionInferrer;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
-import eu.europeana.metis.core.util.EcloudClients;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import java.time.Duration;
-import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
-import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
-import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
-import eu.europeana.metis.common.config.properties.redis.RedisConfigurationProperties;
-import eu.europeana.metis.common.config.properties.validation.ValidationConfigurationProperties;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Orchestrator configuration class.
+ * Configuration class for setting up beans and managing the dependencies required by the orchestrator services in the
+ * application.
+ * <p>
+ * This class initializes and wires components such as services, DAOs, utilities, and configuration properties to enable workflow
+ * orchestration and execution.
+ *
+ * @param <S> The type representing the settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Configuration
 @EnableConfigurationProperties({
@@ -51,7 +55,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
     RedisConfigurationProperties.class, MetisCoreConfigurationProperties.class,
     EcloudConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-public class OrchestratorConfig implements WebMvcConfigurer {
+public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -74,14 +78,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @return a configured instance of {@link OrchestratorService}
    */
   @Bean
-  public OrchestratorService getOrchestratorService(WorkflowDao workflowDao,
+  public OrchestratorService<S, T> getOrchestratorService(WorkflowDao workflowDao,
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
       DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
       WorkflowExecutionFactory workflowExecutionFactory,
-      WorkflowExecutorManager workflowExecutorManager,
+      WorkflowExecutorManager<S, T> workflowExecutorManager,
       DepublishRecordIdDao depublishRecordIdDao,
       RedissonClient redissonClient, UserService userService, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    OrchestratorService orchestratorService = new OrchestratorService(workflowExecutionFactory,
+    OrchestratorService<S, T> orchestratorService = new OrchestratorService<>(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
         workflowExecutorManager, redissonClient, depublishRecordIdDao, userService);
     orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.solrCommitPeriodInMinutes());
@@ -141,17 +145,22 @@ public class OrchestratorConfig implements WebMvcConfigurer {
       RedirectionInferrer redirectionInferrer,
       DatasetXsltDao datasetXsltDao, DepublishRecordIdDao depublishRecordIdDao,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    WorkflowExecutionFactory workflowExecutionFactory = new WorkflowExecutionFactory(datasetXsltDao,
-        depublishRecordIdDao, redirectionInferrer);
-    workflowExecutionFactory
-        .setValidationExternalProperties(validationExternalProperties);
-    workflowExecutionFactory
-        .setValidationInternalProperties(validationInternalProperties);
+    WorkflowExecutionFactory workflowExecutionFactory =
+        new WorkflowExecutionFactory(datasetXsltDao, depublishRecordIdDao, redirectionInferrer);
+    workflowExecutionFactory.setValidationExternalProperties(validationExternalProperties);
+    workflowExecutionFactory.setValidationInternalProperties(validationInternalProperties);
     workflowExecutionFactory.setDefaultSamplingSizeForLinkChecking(
         metisCoreConfigurationProperties.linkCheckingDefaultSamplingSize());
     return workflowExecutionFactory;
   }
 
+  /**
+   * Provides an instance of RedirectionInferrer configured with the required dependencies.
+   *
+   * @param workflowExecutionDao WorkflowExecutionDao instance to manage workflow execution data.
+   * @param dataEvolutionUtils DataEvolutionUtils instance to assist with data transformations.
+   * @return A configured RedirectionInferrer object.
+   */
   @Bean
   public RedirectionInferrer getRedirectionInferrer(WorkflowExecutionDao workflowExecutionDao,
       DataEvolutionUtils dataEvolutionUtils) {
@@ -162,25 +171,14 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * Creates and returns an instance of SecuredProxiesService with the provided dependencies.
    *
    * @param workflowExecutionDao the data access object for workflow execution.
-   * @param ecloudDataSetServiceClient the client service for eCloud datasets.
-   * @param recordServiceClient the client for interacting with record services.
-   * @param fileServiceClient the client for managing file services.
-   * @param dpsClient the client for Data Processing Services.
-   * @param uisClient the client for Unified Information Services.
+   * @param engineTaskClient the client for Data Processing Services.
    * @param datasetDao the data access object for datasets.
-   * @param ecloudConfigurationProperties the configuration properties for eCloud integration.
    * @return an initialized instance of SecuredProxiesService.
    */
   @Bean
-  public ProxiesService getProxiesService(
-      WorkflowExecutionDao workflowExecutionDao, DataSetServiceClient ecloudDataSetServiceClient,
-      RecordServiceClient recordServiceClient, FileServiceClient fileServiceClient,
-      DpsClient dpsClient, UISClient uisClient, DatasetDao datasetDao,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
-    final EcloudClients ecloudClients = new EcloudClients(ecloudDataSetServiceClient, recordServiceClient, fileServiceClient,
-        dpsClient, uisClient);
-
-    return new ProxiesService(ecloudClients, ecloudConfigurationProperties.getProvider(), workflowExecutionDao, datasetDao);
+  public ProxiesService<S, T> getProxiesService(
+      WorkflowExecutionDao workflowExecutionDao, EngineTaskClient<S, T> engineTaskClient, DatasetDao datasetDao) {
+    return new ProxiesService<>(engineTaskClient, workflowExecutionDao, datasetDao);
   }
 
   /**
@@ -189,14 +187,15 @@ public class OrchestratorConfig implements WebMvcConfigurer {
    * @param depublishRecordIdDao the depublish record id dao
    * @param datasetDao the dataset dao
    * @param workflowExecutionDao the workflow execution dao
-   * @param dpsClient the dps client
+   * @param engineTaskClient the dps client
    * @return the workflow post processor
    */
   @Bean
-  public WorkflowPostProcessor workflowPostProcessor(DepublishRecordIdDao depublishRecordIdDao,
-      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao, DpsClient dpsClient) {
-    return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao,
-        dpsClient);
+  public WorkflowPostProcessor workflowPostProcessor(
+      DepublishRecordIdDao depublishRecordIdDao,
+      DatasetDao datasetDao, WorkflowExecutionDao workflowExecutionDao,
+      EngineTaskClient<S, T> engineTaskClient) {
+    return new WorkflowPostProcessor(depublishRecordIdDao, datasetDao, workflowExecutionDao, engineTaskClient);
   }
 
   /**
@@ -211,31 +210,50 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new SemaphoresPerPluginManager(metisCoreConfigurationProperties.maxConcurrentThreads());
   }
 
+  /**
+   * Creates and configures a WorkflowExecutorManager bean for handling workflow execution operations.
+   *
+   * @param semaphoresPerPluginManager Manages semaphores for controlling access to plugins.
+   * @param workflowExecutionDao Data access object for managing workflow executions.
+   * @param workflowPostProcessor Post-processor for workflow execution-related actions.
+   * @param rabbitmqPublisherChannel RabbitMQ channel used for publishing messages.
+   * @param rabbitmqConsumerChannel RabbitMQ channel used for consuming messages.
+   * @param redissonClient Redisson client for distributed locking and caching.
+   * @param engineTaskClient Client for interactions with data processing services.
+   * @param rabbitmqConfigurationProperties Configuration properties for RabbitMQ setup.
+   * @param metisCoreConfigurationProperties Core configuration properties for the system.
+   * @return A configured instance of WorkflowExecutorManager.
+   */
   @Bean
-  public WorkflowExecutorManager getWorkflowExecutorManager(
+  public WorkflowExecutorManager<S, T> getWorkflowExecutorManager(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
-      WorkflowExecutionDao workflowExecutionDao, WorkflowPostProcessor workflowPostProcessor,
+      WorkflowExecutionDao workflowExecutionDao,
+      WorkflowPostProcessor workflowPostProcessor,
       @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
-      RedissonClient redissonClient, DpsClient dpsClient,
+      RedissonClient redissonClient,
+      EngineTaskClient<S, T> engineTaskClient,
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
-      MetisCoreConfigurationProperties metisCoreConfigurationProperties,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
-    WorkflowExecutorManager workflowExecutorManager = new WorkflowExecutorManager(
-        semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
-        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, dpsClient);
-    workflowExecutorManager.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
-    workflowExecutorManager
-        .setDpsMonitorCheckIntervalInSecs(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
-    workflowExecutorManager.setPeriodOfNoProcessedRecordsChangeInMinutes(
+      MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
+    workflowExecutorManagerSettings.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(
+        metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
+    workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
-    workflowExecutorManager.setEcloudBaseUrl(ecloudConfigurationProperties.getBaseUrl());
-    workflowExecutorManager.setEcloudProvider(ecloudConfigurationProperties.getProvider());
-    workflowExecutorManager.setMetisCoreBaseUrl(metisCoreConfigurationProperties.baseUrl());
-    workflowExecutorManager.setThrottlingValues(getThrottlingValues(metisCoreConfigurationProperties));
-    return workflowExecutorManager;
+
+    return new WorkflowExecutorManager<>(
+        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
+        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
   }
 
+  /**
+   * Provides an instance of WorkflowExecutionDao configured with datastore provider and properties.
+   *
+   * @param morphiaDatastoreProvider MorphiaDatastoreProvider instance to interact with the datastore.
+   * @param metisCoreConfigurationProperties Configuration properties for Metis Core settings.
+   * @return Configured instance of WorkflowExecutionDao.
+   */
   @Bean
   public WorkflowExecutionDao getWorkflowExecutionDao(
       MorphiaDatastoreProvider morphiaDatastoreProvider,
@@ -259,18 +277,33 @@ public class OrchestratorConfig implements WebMvcConfigurer {
     return new WorkflowValidationUtils(depublishRecordIdDao, dataEvolutionUtils);
   }
 
+  /**
+   * Provides an instance of WorkflowDao initialized with the provided MorphiaDatastoreProvider.
+   *
+   * @param morphiaDatastoreProvider MorphiaDatastoreProvider used to initialize the WorkflowDao.
+   * @return An instance of WorkflowDao.
+   */
   @Bean
   public WorkflowDao getWorkflowDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     return new WorkflowDao(morphiaDatastoreProvider);
   }
 
+  /**
+   * Creates and configures a WorkflowExecutionMonitor bean for monitoring the execution of workflows.
+   *
+   * @param workflowExecutorManager WorkflowExecutorManager instance responsible for managing workflow executions.
+   * @param workflowExecutionDao WorkflowExecutionDao instance used for accessing and managing workflow execution data.
+   * @param redissonClient RedissonClient instance for distributed caching and locking mechanisms.
+   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core system.
+   * @return A configured WorkflowExecutionMonitor instance.
+   */
   @Bean
   public WorkflowExecutionMonitor getWorkflowExecutionMonitor(
-      WorkflowExecutorManager workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
+      WorkflowExecutorManager<S, T> workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
       RedissonClient redissonClient, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
 
-    // Computes the leniency for the failsafe action: how long ago (worst case) can the last update
-    // time have been set before we assume the execution hangs.
+    /*Computes the leniency for the failsafe action: how long ago (the worst case)
+     did the last update action take place before we assume the execution hangs.*/
     final Duration failsafeLeniency = Duration.ZERO
         .plusMillis(metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds())
         .plusMillis(metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds())
@@ -281,6 +314,12 @@ public class OrchestratorConfig implements WebMvcConfigurer {
         workflowExecutionDao, redissonClient, failsafeLeniency);
   }
 
+  /**
+   * Retrieves the throttling values based on the provided configuration properties.
+   *
+   * @param metisCoreConfigurationProperties Configuration properties containing the throttling level settings.
+   * @return An instance of ThrottlingValues initialized with the provided configuration properties.
+   */
   @Bean
   public ThrottlingValues getThrottlingValues(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     return new ThrottlingValues(metisCoreConfigurationProperties.threadLimitThrottlingLevelWeak(),

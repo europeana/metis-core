@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -36,6 +37,7 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
@@ -55,6 +57,7 @@ import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.MetisPluginDTO;
 import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
@@ -76,6 +79,7 @@ import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.exception.BadContentException;
+import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.DateUtils;
 import java.util.ArrayList;
@@ -86,8 +90,8 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -95,8 +99,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -148,8 +152,8 @@ class TestOrchestratorService {
     orchestratorService.setSolrCommitPeriodInMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES);
   }
 
-  @AfterEach
-  void cleanUp() {
+  @BeforeEach
+  void cleanUp() throws ExternalTaskException {
     Mockito.reset(workflowExecutionDao);
     Mockito.reset(validationUtils);
     Mockito.reset(workflowDao);
@@ -158,6 +162,12 @@ class TestOrchestratorService {
     Mockito.reset(redissonClient);
     Mockito.reset(workflowExecutionFactory);
     Mockito.reset(orchestratorService);
+
+    //Stub for engine task dataset id creation
+    EngineTaskClient<?, ?> mockEngineTaskClient = mock(EngineTaskClient.class);
+    when(mockEngineTaskClient.createEngineDatasetId(anyString())).thenReturn(true);
+    when(workflowExecutorManager.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
+    when(datasetDao.update(any(Dataset.class))).thenReturn("");
   }
 
   @Test
@@ -338,28 +348,48 @@ class TestOrchestratorService {
       throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    workflow.getMetisPluginsMetadata().forEach(abstractMetisPluginMetadata -> {
-      if (abstractMetisPluginMetadata instanceof TransformationPluginMetadata) {
-        ((TransformationPluginMetadata) abstractMetisPluginMetadata).setCustomXslt(true);
-      }
-    });
+    List<AbstractExecutablePluginMetadata> updatedMetadata =
+        workflow.getMetisPluginsMetadata().stream()
+                .peek(metadata -> {
+                  if (metadata instanceof TransformationPluginMetadata transformationMetadata) {
+                    transformationMetadata.setCustomXslt(true);
+                  }
+                }).toList();
+    workflow.setMetisPluginsMetadata(updatedMetadata);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(anyString())).thenReturn(rlock);
     doNothing().when(rlock).lock();
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
-    ObjectId objectId = new ObjectId();
     DatasetXslt datasetXslt = TestObjectFactory.createXslt(dataset);
     datasetXslt.setId(TestObjectFactory.DATASET_XSLT.getId());
     dataset.setXsltId(datasetXslt.getId());
-    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
-    workflowExecutionTest.setId(objectId);
     when(datasetXsltDao.getById(dataset.getXsltId().toString())).thenReturn(datasetXslt);
-    when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
+
+    ObjectId objectId = new ObjectId();
+
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    when(workflowExecutionDao.create(workflowExecutionArgumentCaptor.capture()))
+        .thenAnswer(invocation -> {
+          WorkflowExecution argument = invocation.getArgument(0);
+          argument.setId(objectId);
+          return argument;
+        });
+    doAnswer(invocation -> workflowExecutionArgumentCaptor.getValue())
+        .when(workflowExecutionDao).getById(objectId.toString());
     doNothing().when(rlock).unlock();
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString());
-    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, TestObjectFactory.USER_ID);
+    WorkflowExecutionDTO workflowExecutionDTO = orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(),
+        null, null, TestObjectFactory.USER_ID);
+    Optional<TransformationPluginMetadata> transformationPluginMetadata = workflowExecutionDTO
+        .getMetisPlugins().stream()
+        .map(MetisPluginDTO::getPluginMetadata)
+        .filter(TransformationPluginMetadata.class::isInstance)
+        .map(TransformationPluginMetadata.class::cast)
+        .findFirst();
+    assertTrue(transformationPluginMetadata.isPresent());
+    assertTrue(transformationPluginMetadata.get().isCustomXslt());
   }
 
   @Test
@@ -370,24 +400,37 @@ class TestOrchestratorService {
     HTTPHarvestPluginMetadata httpHarvestPluginMetadata = new HTTPHarvestPluginMetadata();
     httpHarvestPluginMetadata.setUrl("http://harvest.url.org");
     httpHarvestPluginMetadata.setEnabled(true);
-    workflow.getMetisPluginsMetadata().set(0, httpHarvestPluginMetadata);
+    List<AbstractExecutablePluginMetadata> metisPluginsMetadata = workflow.getMetisPluginsMetadata();
+    metisPluginsMetadata.set(0, httpHarvestPluginMetadata);
+    workflow.setMetisPluginsMetadata(metisPluginsMetadata);
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
-    workflowExecutionTest.setId(objectId);
-    when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
+
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    when(workflowExecutionDao.create(workflowExecutionArgumentCaptor.capture()))
+        .thenAnswer(invocation -> {
+          WorkflowExecution argument = invocation.getArgument(0);
+          argument.setId(objectId);
+          return argument;
+        });
+    doAnswer(invocation -> workflowExecutionArgumentCaptor.getValue())
+        .when(workflowExecutionDao).getById(objectId.toString());
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString());
-    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, TestObjectFactory.USER_ID);
+    WorkflowExecutionDTO workflowExecutionDTO = orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(),
+        null, null, TestObjectFactory.USER_ID);
+    assertEquals(httpHarvestPluginMetadata.getUrl(),
+        ((HTTPHarvestPluginMetadata) workflowExecutionDTO.getMetisPlugins().getFirst()
+                                                         .getPluginMetadata()).getUrl());
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoHarvestPlugin() throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    workflow.getMetisPluginsMetadata().remove(0);
+    workflow.getMetisPluginsMetadata().removeFirst();
 
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
@@ -443,28 +486,7 @@ class TestOrchestratorService {
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString());
     orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, TestObjectFactory.USER_ID);
-  }
-
-  @Test
-  void addWorkflowInQueueOfWorkflowExecutions_DatasetAlreadyExistsInEcloud()
-      throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
-    when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
-    when(datasetDao.checkAndCreateDatasetInEcloud(any(Dataset.class)))
-        .thenReturn(UUID.randomUUID().toString());
-    RLock rlock = mock(RLock.class);
-    when(redissonClient.getFairLock(anyString())).thenReturn(rlock);
-    doNothing().when(rlock).lock();
-    when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
-    ObjectId objectId = new ObjectId();
-    WorkflowExecution workflowExecutionTest = TestObjectFactory.createWorkflowExecutionObject(dataset);
-    workflowExecutionTest.setId(objectId);
-    when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
-    doNothing().when(rlock).unlock();
-    doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString());
-    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, TestObjectFactory.USER_ID);
+    verify(datasetDao, times(0)).update(any(Dataset.class));
   }
 
   @Test
@@ -474,7 +496,6 @@ class TestOrchestratorService {
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);
-    when(datasetDao.checkAndCreateDatasetInEcloud(any(Dataset.class))).thenReturn(UUID.randomUUID().toString());
     when(redissonClient.getFairLock(anyString())).thenReturn(Mockito.mock(RLock.class));
     when(workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId())).thenReturn(null);
     ObjectId objectId = new ObjectId();
@@ -482,7 +503,13 @@ class TestOrchestratorService {
     workflowExecutionTest.setId(objectId);
     when(workflowExecutionDao.create(any(WorkflowExecution.class))).thenReturn(workflowExecutionTest);
     doNothing().when(workflowExecutorManager).addWorkflowExecutionToQueue(objectId.toString());
-    orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, TestObjectFactory.USER_ID);
+
+    EngineTaskClient<?, ?> mockEngineTaskClient = mock(EngineTaskClient.class);
+    when(mockEngineTaskClient.createEngineDatasetId(anyString())).thenReturn(false);
+    when(workflowExecutorManager.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
+    assertThrows(ExternalTaskException.class, () ->
+        orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null,
+            TestObjectFactory.USER_ID));
   }
 
   @Test
@@ -579,7 +606,8 @@ class TestOrchestratorService {
   }
 
   @Test
-  void getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution_PluginExecutionNotAllowed() throws PluginExecutionNotAllowed {
+  void getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution_PluginExecutionNotAllowed()
+      throws PluginExecutionNotAllowed {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
 
     when(dataEvolutionUtils.computePredecessorPlugin(ExecutablePluginType.VALIDATION_EXTERNAL, null,

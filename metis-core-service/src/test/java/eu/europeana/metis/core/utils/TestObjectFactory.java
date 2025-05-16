@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.utils;
 
+import static java.lang.Long.parseLong;
+
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.NodeStatistics;
 import eu.europeana.cloud.common.model.dps.RecordState;
@@ -13,6 +15,11 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.engine.base.item.report.DataItemState;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.user.User.UserBuilder;
@@ -37,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 
 public class TestObjectFactory {
@@ -46,7 +54,7 @@ public class TestObjectFactory {
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
   public static final String USER_ID = "userId";
-  public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
+  public static final String EXTERNAL_TASK_ID = "2070373127078497810";
   private static final int OCCURRENCES = 2;
 
   static {
@@ -298,6 +306,25 @@ public class TestObjectFactory {
     return subTaskInfos;
   }
 
+  public static List<DataItemStatus> createExternalRecordStatusList() {
+    List<SubTaskInfo> listOfSubTaskInfo = createListOfSubTaskInfo();
+
+    List<DataItemStatus> dataItemStatusList = new ArrayList<>();
+    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
+      DataItemStatus dataItemStatus = new DataItemStatus(
+          subTaskInfo.getResourceNum(),
+          subTaskInfo.getResource(),
+          DataItemState.valueOf(subTaskInfo.getRecordState().name()),
+          subTaskInfo.getInfo(),
+          subTaskInfo.getEuropeanaId(),
+          subTaskInfo.getProcessingTime(),
+          subTaskInfo.getResultResource());
+      dataItemStatusList.add(dataItemStatus);
+    }
+    return dataItemStatusList;
+
+  }
+
   /**
    * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects.
    *
@@ -311,7 +338,7 @@ public class TestObjectFactory {
           String.format("Error%s", i), OCCURRENCES);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
   }
 
   /**
@@ -332,7 +359,7 @@ public class TestObjectFactory {
       taskErrorInfo.setErrorDetails(errorDetails);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
   }
 
   /**
@@ -353,7 +380,23 @@ public class TestObjectFactory {
     ArrayList<TaskErrorInfo> taskErrorInfos = new ArrayList<>();
     taskErrorInfos.add(taskErrorInfo1);
 
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
+  }
+
+  public static EngineTaskErrors createTaskErrorsInfoWithIdentifiersExternal(String errorType, String message) {
+    TaskErrorsInfo taskErrorsInfo = createTaskErrorsInfoWithIdentifiers(errorType, message);
+
+    List<EngineTaskErrorInfo> engineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
+      List<EngineTaskErrorDetails> engineTaskErrorDetailsList = new ArrayList<>();
+      for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
+        EngineTaskErrorDetails engineTaskErrorDetails = new EngineTaskErrorDetails(errorDetail.getIdentifier(),
+            errorDetail.getAdditionalInfo());
+        engineTaskErrorDetailsList.add(engineTaskErrorDetails);
+      }
+      return new EngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
+          taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
+    }).collect(Collectors.toList());
+    return new EngineTaskErrors(Long.toString(taskErrorsInfo.getId()), engineTaskErrorInfoList);
   }
 
   /**
@@ -365,7 +408,7 @@ public class TestObjectFactory {
     List<NodeStatistics> nodeStatistics = new ArrayList<>();
     nodeStatistics.add(new NodeStatistics("parentpath1", "path1", "value1", 1));
     nodeStatistics.add(new NodeStatistics("parentpath2", "path2", "value2", OCCURRENCES));
-    return new StatisticsReport(EXTERNAL_TASK_ID, nodeStatistics);
+    return new StatisticsReport(parseLong(EXTERNAL_TASK_ID), nodeStatistics);
   }
 
   /**
