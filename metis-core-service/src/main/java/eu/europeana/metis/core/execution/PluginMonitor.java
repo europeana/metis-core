@@ -70,7 +70,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
         expectedRecordCount = engineTaskProgress.getExpectedRecords();
         processedRecordCount =
             engineTaskProgress.getProcessedRecords() + engineTaskProgress.getIgnoredRecords();
-        deletedRecordCount = engineTaskProgress.getDeletedRecords();
+        deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount();
       }
       case AbstractHarvestPluginMetadata ignored -> {
         //Full Harvest
@@ -87,13 +87,12 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
         //The deletedRecordsCount is always 0
         expectedRecordCount = engineTaskProgress.getExpectedRecords();
         processedRecordCount = engineTaskProgress.getProcessedRecords();
-        deletedRecordCount = engineTaskProgress.getDeletedRecords();
+        deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount();
       }
       case null, default -> {
         //Other plugins including incremental indexing
         //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-        expectedRecordCount =
-            engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
+        expectedRecordCount = engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
         processedRecordCount = engineTaskProgress.getProcessedRecords();
         deletedRecordCount = engineTaskProgress.getDeletedRecords();
       }
