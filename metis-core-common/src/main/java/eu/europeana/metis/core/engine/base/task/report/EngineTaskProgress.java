@@ -17,6 +17,9 @@ public class EngineTaskProgress {
   // The number of deleted records processed so far.
   private int deletedRecords = 0;
 
+  // The number of post processed records.
+  private int postProcessedRecordsCount = 0;
+
   // The number of errors encountered so far.
   private int processedErrors;
 
@@ -89,5 +92,13 @@ public class EngineTaskProgress {
 
   public void setEngineTaskStateInfo(String engineTaskStateInfo) {
     this.engineTaskStateInfo = engineTaskStateInfo;
+  }
+
+  public int getPostProcessedRecordsCount() {
+    return postProcessedRecordsCount;
+  }
+
+  public void setPostProcessedRecordsCount(int postProcessedRecordsCount) {
+    this.postProcessedRecordsCount = postProcessedRecordsCount;
   }
 }

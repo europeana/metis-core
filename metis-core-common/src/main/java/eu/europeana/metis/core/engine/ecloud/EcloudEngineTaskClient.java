@@ -100,6 +100,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     engineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
     engineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
     engineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
+    engineTaskProgress.setPostProcessedRecordsCount(taskInfo.getPostProcessedRecordsCount());
     engineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
     EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
     engineTaskProgress.setEngineTaskState(engineTaskState);
