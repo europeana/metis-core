@@ -85,7 +85,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
         //ignoredRecordsCount never used
         //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
         //The deletedRecordsCount is always 0
-        expectedRecordCount = engineTaskProgress.getExpectedRecords();
+        expectedRecordCount = engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
         processedRecordCount = engineTaskProgress.getProcessedRecords();
         deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount();
       }
