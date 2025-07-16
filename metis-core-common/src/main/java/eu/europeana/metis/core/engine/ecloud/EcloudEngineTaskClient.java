@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Client for managing and interacting with tasks in the Ecloud processing engine. Handles task creation, submission, monitoring,
@@ -40,6 +42,7 @@ import java.util.Map;
  */
 public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTaskSettings, EcloudEngineTask> {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(EcloudEngineTaskClient.class);
   private final DpsClient dpsClient;
   private final EcloudEngineTaskSettings ecloudEngineTaskSettings;
   private final EcloudEngineDatasetRecordClient ecloudEngineDatasetRecordClient;
@@ -56,6 +59,21 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     this.dpsClient = dpsClient;
     this.ecloudEngineTaskSettings = ecloudEngineTaskSettings;
     this.ecloudEngineDatasetRecordClient = ecloudEngineDatasetRecordClient;
+  }
+
+  private static EngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
+    EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
+    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
+    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
+    engineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
+    engineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
+    engineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
+    engineTaskProgress.setPostProcessedRecordsCount(taskInfo.getPostProcessedRecordsCount());
+    engineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
+    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
+    engineTaskProgress.setEngineTaskState(engineTaskState);
+    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getStateDescription());
+    return engineTaskProgress;
   }
 
   @Override
@@ -84,6 +102,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       throws ExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));
+      LOGGER.info("Getting task progress for task id '{}'\r\n{}==>\r\n{}", taskId, topologyName, taskInfo);
       return convertToProcessingEngineTaskProgress(taskInfo);
     } catch (DpsException e) {
       throw new ExternalTaskException("Fetching task progress failed",
@@ -91,21 +110,6 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     } catch (RuntimeException e) {
       throw new ExternalTaskException("Fetching task progress failed", e);
     }
-  }
-
-  private static EngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
-    EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
-    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
-    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
-    engineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
-    engineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
-    engineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
-    engineTaskProgress.setPostProcessedRecordsCount(taskInfo.getPostProcessedRecordsCount());
-    engineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
-    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
-    engineTaskProgress.setEngineTaskState(engineTaskState);
-    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getStateDescription());
-    return engineTaskProgress;
   }
 
   @Override
