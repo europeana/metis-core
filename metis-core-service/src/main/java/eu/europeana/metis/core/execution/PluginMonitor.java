@@ -87,7 +87,7 @@ public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
         //The deletedRecordsCount is always 0
         expectedRecordCount = engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
         processedRecordCount = engineTaskProgress.getProcessedRecords();
-        deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount();
+        deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount() + engineTaskProgress.getDeletedRecords();
       }
       case null, default -> {
         //Other plugins including incremental indexing
