@@ -102,7 +102,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       throws ExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));
-      LOGGER.info("Getting task progress for task id '{}'\r\n{}==>\r\n{}", taskId, topologyName, taskInfo);
+      LOGGER.info("Getting task progress for task id '{}'::{}::=>{}", taskId, topologyName, taskInfo);
       return convertToProcessingEngineTaskProgress(taskInfo);
     } catch (DpsException e) {
       throw new ExternalTaskException("Fetching task progress failed",
