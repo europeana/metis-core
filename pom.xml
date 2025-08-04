@@ -31,10 +31,10 @@
     <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
 
     <!--Internal-->
-    <version.ecloud>14-SNAPSHOT</version.ecloud>
-    <version.metis-common>16-SNAPSHOT</version.metis-common>
-    <version.metis-framework>15-SNAPSHOT</version.metis-framework>
-    <version.metis-schema>11-SNAPSHOT</version.metis-schema>
+    <version.ecloud>14</version.ecloud>
+    <version.metis-common>16</version.metis-common>
+    <version.metis-framework>15</version.metis-framework>
+    <version.metis-schema>11</version.metis-schema>
     <version.corelib>2.17.5-SNAPSHOT</version.corelib>
 
     <!--External-->
