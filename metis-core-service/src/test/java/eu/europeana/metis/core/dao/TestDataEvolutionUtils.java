@@ -1,23 +1,5 @@
 package eu.europeana.metis.core.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.Pagination;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
@@ -61,7 +43,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -72,10 +53,24 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-02-01
- */
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 class TestDataEvolutionUtils {
 
   private static final String DATASET_ID = Integer.toString(TestObjectFactory.DATASETID);
@@ -95,11 +90,9 @@ class TestDataEvolutionUtils {
 
   @Test
   void testComputePredecessorPlugin_HarvestPlugin() throws PluginExecutionNotAllowed {
-    assertNull(
-        dataEvolutionUtils
+    assertNull(dataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.OAIPMH_HARVEST, null, DATASET_ID));
-    assertNull(
-        dataEvolutionUtils
+    assertNull(dataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.HTTP_HARVEST, null, DATASET_ID));
     assertNull(dataEvolutionUtils.computePredecessorPlugin(ExecutablePluginType.OAIPMH_HARVEST,
         ExecutablePluginType.TRANSFORMATION, DATASET_ID));
@@ -360,10 +353,9 @@ class TestDataEvolutionUtils {
         .thenReturn(previousExecution);
 
     // Test the absence of the plugin despite the presence of the pointers.
-    when(previousExecution.getMetisPluginWithType(previousPluginType)).thenReturn(
-        Optional.empty());
+    when(previousExecution.getMetisPlugins()).thenReturn(Collections.emptyList());
     assertNull(dataEvolutionUtils.getPreviousExecutionAndPlugin(plugin, datasetId));
-    when(previousExecution.getMetisPluginWithType(previousPluginType)).thenReturn(Optional.of(previousPlugin));
+    when(previousExecution.getMetisPlugins()).thenReturn(List.of(previousPlugin));
 
     // Test the happy flow
     final Pair<MetisPlugin, WorkflowExecution> result = dataEvolutionUtils
@@ -468,8 +460,7 @@ class TestDataEvolutionUtils {
     assertListSameItems(expected, actual, item -> item);
   }
 
-  private <T, S> void assertListSameItems(List<T> expected, List<S> actual,
-          Function<S, T> extractor) {
+  private <T, S> void assertListSameItems(List<T> expected, List<S> actual, Function<S, T> extractor) {
     assertNotNull(expected);
     assertEquals(expected.size(), actual.size());
     for (int i = 0; i < expected.size(); i++) {
@@ -514,7 +505,7 @@ class TestDataEvolutionUtils {
     final var indexPluginB2 = createIndexToPublish(new Date(3), null).getPlugin();
     final var executionA = createWorkflowExecution(DATASET_ID, otherPluginA, indexPluginA);
     final var executionB = createWorkflowExecution(DATASET_ID, indexPluginB1, indexPluginB2);
-    final var pagination = mock(Pagination.class);
+    final var pagination = new Pagination(0, 10, false);
 
     // Test happy flow
     final var input = new ResultList<>(List.of(new ExecutionDatasetPair(new Dataset(), executionA),

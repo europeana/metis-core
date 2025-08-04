@@ -1,8 +1,9 @@
 package eu.europeana.metis.core.service;
 
+import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.TransformationParameters;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
@@ -11,12 +12,15 @@ import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
+import eu.europeana.metis.core.dataset.DatasetConverter;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.exceptions.XsltSetupException;
+import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
@@ -24,7 +28,6 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.exception.UserUnauthorizedException;
 import eu.europeana.metis.transformation.service.EuropeanaGeneratedIdsMap;
 import eu.europeana.metis.transformation.service.EuropeanaIdCreator;
 import eu.europeana.metis.transformation.service.EuropeanaIdException;
@@ -32,6 +35,7 @@ import eu.europeana.metis.transformation.service.TransformationException;
 import eu.europeana.metis.transformation.service.XsltTransformer;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,18 +61,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class DatasetService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatasetService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String DATASET_CREATION_LOCK = "datasetCreationLock";
   private static final int MINIMUM_WORD_LENGTH = 3;
 
-  private final Authorizer authorizer;
   private final DatasetDao datasetDao;
   private final DatasetXsltDao datasetXsltDao;
   private final WorkflowDao workflowDao;
   private final WorkflowExecutionDao workflowExecutionDao;
   private final ScheduledWorkflowDao scheduledWorkflowDao;
   private final RedissonClient redissonClient;
+  private final UserService userService;
   private String metisCoreUrl; //Initialize with setter
+
 
   /**
    * Constructs the service.
@@ -79,149 +84,128 @@ public class DatasetService {
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
    * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient the redisson client used for distributed locks
-   * @param authorizer the authorizer for this service
+   * @param userService the user service
    */
   @Autowired
   public DatasetService(DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
-      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient,
-      Authorizer authorizer) {
+      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient, UserService userService) {
     this.datasetDao = datasetDao;
     this.datasetXsltDao = datasetXsltDao;
     this.workflowDao = workflowDao;
     this.workflowExecutionDao = workflowExecutionDao;
     this.scheduledWorkflowDao = scheduledWorkflowDao;
     this.redissonClient = redissonClient;
-    this.authorizer = authorizer;
+    this.userService = userService;
   }
 
   /**
-   * Creates a dataset for a specific {@link MetisUserView}
+   * Creates a dataset.
    *
-   * @param metisUserView the user used to create the dataset
-   * @param dataset the dataset to be created
-   * @return the created {@link Dataset} including the extra fields generated from the system
+   * @param userId the userId of the user
+   * @param datasetDTO the dataset to be created
+   * @return the created {@link DatasetDTO} including the extra fields generated from the system
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link DatasetAlreadyExistsException} if the dataset for the same organizationId and datasetName already exists in the system.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
+   * <li>{@link DatasetAlreadyExistsException} if the dataset for the datasetName already exists in the system.</li>
    * <li>{@link BadContentException} if some contents were invalid</li>
    * </ul>
    */
-  public Dataset createDataset(MetisUserView metisUserView, Dataset dataset)
-      throws GenericMetisException {
-    authorizer.authorizeWriteNewDataset(metisUserView);
-
-    dataset.setOrganizationId(metisUserView.getOrganizationId());
-    dataset.setOrganizationName(metisUserView.getOrganizationName());
-
+  public DatasetDTO createDataset(String userId, DatasetDTO datasetDTO) throws GenericMetisException {
     //Lock required for find in the next empty datasetId
     RLock lock = redissonClient.getFairLock(DATASET_CREATION_LOCK);
     lock.lock();
 
-    Dataset datasetObjectId;
+    Dataset createdDataset;
     try {
-      Dataset storedDataset = datasetDao
-          .getDatasetByOrganizationIdAndDatasetName(dataset.getOrganizationId(),
-              dataset.getDatasetName());
+      Dataset storedDataset = datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName());
       if (storedDataset != null) {
         lock.unlock();
-        throw new DatasetAlreadyExistsException(String
-            .format("Dataset with organizationId: %s and datasetName: %s already exists..",
-                dataset.getOrganizationId(), dataset.getDatasetName()));
+        throw new DatasetAlreadyExistsException(
+            format("Dataset with datasetName: %s already exists..", datasetDTO.getDatasetName()));
       }
 
-      dataset.setCreatedByUserId(metisUserView.getUserId());
-      dataset.setId(null);
-      dataset.setUpdatedDate(null);
-
-      dataset.setCreatedDate(new Date());
+      datasetDTO.setCreatedByUserId(userId);
+      datasetDTO.setId(null);
+      datasetDTO.setUpdatedDate(null);
+      datasetDTO.setCreatedDate(new Date());
       //Add fake ecloudDatasetId to avoid null errors in the database
-      dataset.setEcloudDatasetId(String.format("NOT_CREATED_YET-%s", UUID.randomUUID()));
+      datasetDTO.setEcloudDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
       int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
-      dataset.setDatasetId(Integer.toString(nextInSequenceDatasetId));
-      verifyReferencesToOldDatasetIds(dataset);
-      datasetObjectId = datasetDao.create(dataset);
+      datasetDTO.setDatasetId(Integer.toString(nextInSequenceDatasetId));
+      verifyReferencesToOldDatasetIds(datasetDTO);
+      createdDataset = datasetDao.create(DatasetConverter.fromDTO(datasetDTO));
     } finally {
       lock.unlock();
     }
-    return datasetObjectId;
+    return DatasetConverter.toDTO(createdDataset, userService.getUserFromCache(userId));
   }
 
   /**
    * Update an already existent dataset.
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
-   * @param dataset the provided dataset with the changes and the datasetId included in the {@link Dataset}
+   * @param datasetDTO the provided dataset with the changes and the datasetId included in the {@link Dataset}
    * @param xsltString the text of the String representation
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
    * <li>{@link BadContentException} if the dataset has an execution running, contents are invalid.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
-   * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists for organizationId of metisUser.</li>
+   * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists.</li>
    * </ul>
    */
-  public void updateDataset(MetisUserView metisUserView, Dataset dataset, String xsltString)
+  public void updateDataset(DatasetDTO datasetDTO, String xsltString)
       throws GenericMetisException {
 
     // Find existing dataset and check authentication.
-    Dataset storedDataset = authorizer
-        .authorizeWriteExistingDatasetById(metisUserView, dataset.getDatasetId());
+    final Dataset storedDataset = datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId());
 
     // Check that the new dataset name does not already exist.
-    final String newDatasetName = dataset.getDatasetName();
+    final String newDatasetName = datasetDTO.getDatasetName();
     if (!storedDataset.getDatasetName().equals(newDatasetName)
-        && datasetDao.getDatasetByOrganizationIdAndDatasetName(metisUserView.getOrganizationId(),
-        newDatasetName) != null) {
-      throw new DatasetAlreadyExistsException(String.format(
-          "Trying to change dataset with datasetName: %s but dataset with organizationId: %s and datasetName: %s already exists",
-          storedDataset.getDatasetName(), metisUserView.getOrganizationId(), newDatasetName));
+        && datasetDao.getDatasetByDatasetName(newDatasetName) != null) {
+      throw new DatasetAlreadyExistsException(format(
+          "Trying to change dataset with datasetName: %s but dataset with datasetName: %s already exists",
+          storedDataset.getDatasetName(), newDatasetName));
     }
 
     // Check that there is no workflow execution pending for the given dataset.
-    if (workflowExecutionDao.existsAndNotCompleted(dataset.getDatasetId()) != null) {
-      throw new BadContentException(
-          String.format("Workflow execution is active for datasetId %s", dataset.getDatasetId()));
+    if (workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId()) != null) {
+      throw new BadContentException(format("Workflow execution is active for datasetId %s", datasetDTO.getDatasetId()));
     }
 
     // Set/overwrite dataset properties that the user may not determine.
-    dataset.setOrganizationId(metisUserView.getOrganizationId());
-    dataset.setOrganizationName(metisUserView.getOrganizationName());
-    dataset.setCreatedByUserId(storedDataset.getCreatedByUserId());
-    dataset.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
-    dataset.setCreatedDate(storedDataset.getCreatedDate());
-    dataset.setOrganizationId(storedDataset.getOrganizationId());
-    dataset.setOrganizationName(storedDataset.getOrganizationName());
-    dataset.setCreatedByUserId(storedDataset.getCreatedByUserId());
-    dataset.setId(storedDataset.getId());
+    datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
+    datasetDTO.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
+    datasetDTO.setCreatedDate(storedDataset.getCreatedDate());
+    datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
+    datasetDTO.setId(storedDataset.getId().toString());
 
-    verifyReferencesToOldDatasetIds(dataset);
+    verifyReferencesToOldDatasetIds(datasetDTO);
 
     if (xsltString == null) {
-      dataset.setXsltId(storedDataset.getXsltId());
+      datasetDTO.setXsltId(ofNullable(storedDataset.getXsltId()).map(ObjectId::toString).orElse(null));
     } else {
       cleanDatasetXslt(storedDataset.getXsltId());
-      dataset.setXsltId(
-          datasetXsltDao.create(new DatasetXslt(dataset.getDatasetId(), xsltString)).getId());
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), xsltString)).getId();
+      datasetDTO.setXsltId(xsltId.toString());
     }
 
     // Update the dataset
-    dataset.setUpdatedDate(new Date());
-    datasetDao.update(dataset);
+    datasetDTO.setUpdatedDate(new Date());
+    datasetDao.update(DatasetConverter.fromDTO(datasetDTO));
   }
 
-  private void verifyReferencesToOldDatasetIds(Dataset dataset) throws BadContentException {
-    if (dataset.getDatasetIdsToRedirectFrom() != null) {
-      for (String datasetId : dataset.getDatasetIdsToRedirectFrom()) {
+  private void verifyReferencesToOldDatasetIds(DatasetDTO datasetDTO) throws BadContentException {
+    if (datasetDTO.getDatasetIdsToRedirectFrom() != null) {
+      for (String datasetId : datasetDTO.getDatasetIdsToRedirectFrom()) {
         if (datasetDao.getDatasetByDatasetId(datasetId) == null) {
           throw new BadContentException(
-              String.format("Old datasetId for redirection %s doesn't exist", datasetId));
+              format("Old datasetId for redirection %s doesn't exist", datasetId));
         }
-        if (dataset.getDatasetId().equals(datasetId)) {
+        if (datasetDTO.getDatasetId().equals(datasetId)) {
           throw new BadContentException(
-              String.format("datasetId for redirection %s cannot be the same as the current datasetId", datasetId));
+              format("datasetId for redirection %s cannot be the same as the current datasetId", datasetId));
         }
       }
     }
@@ -245,25 +229,21 @@ public class DatasetService {
   /**
    * Delete a dataset from the system
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param datasetId the identifier to find the dataset with
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link BadContentException} if the dataset is has an execution running.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
+   * <li>{@link BadContentException} if the dataset has an execution running.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * </ul>
    */
-  public void deleteDatasetByDatasetId(MetisUserView metisUserView, String datasetId)
+  public void deleteDatasetByDatasetId(String datasetId)
       throws GenericMetisException {
-
-    // Find existing dataset and check authentication.
-    authorizer.authorizeWriteExistingDatasetById(metisUserView, datasetId);
+    datasetDao.getDatasetOrThrow(datasetId);
 
     // Check that there is no workflow execution pending for the given dataset.
     if (workflowExecutionDao.existsAndNotCompleted(datasetId) != null) {
       throw new BadContentException(
-          String.format("Workflow execution is active for datasteId %s", datasetId));
+          format("Workflow execution is active for datasteId %s", datasetId));
     }
 
     //Are there datasets that have a reference to the datasetId that is to be removed
@@ -288,56 +268,55 @@ public class DatasetService {
   /**
    * Get a dataset from the system using a datasetName
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param datasetName the string used to find the dataset with
    * @return {@link Dataset}
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset is not found in the system.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
-  public Dataset getDatasetByDatasetName(MetisUserView metisUserView, String datasetName)
+  public DatasetDTO getDatasetByDatasetName(String datasetName)
       throws GenericMetisException {
-    return authorizer.authorizeReadExistingDatasetByName(metisUserView, datasetName);
+    final Dataset dataset = datasetDao.getDatasetByDatasetName(datasetName);
+    if (dataset == null) {
+      throw new NoDatasetFoundException(
+          format("No dataset found with datasetName: '%s' in METIS", datasetName));
+    }
+    return DatasetConverter.toDTO(dataset, userService.getUserFromCache(dataset.getCreatedByUserId()));
   }
 
   /**
    * Get a dataset from the system using a datasetId.
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param datasetId the identifier to find the dataset with
    * @return {@link Dataset}
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
-  public Dataset getDatasetByDatasetId(MetisUserView metisUserView, String datasetId)
+  public DatasetDTO getDatasetByDatasetId(String datasetId)
       throws GenericMetisException {
-    return authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId);
+    Dataset storedDataset = datasetDao.getDatasetOrThrow(datasetId);
+    return DatasetConverter.toDTO(storedDataset, userService.getUserFromCache(storedDataset.getCreatedByUserId()));
   }
 
   /**
    * Get the xslt object containing the escaped xslt string using a dataset identifier.
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param datasetId the identifier to find the xslt with
    * @return the {@link DatasetXslt} object containing the xslt as an escaped string
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoXsltFoundException} if the xslt was not found.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
-  public DatasetXslt getDatasetXsltByDatasetId(MetisUserView metisUserView,
-      String datasetId) throws GenericMetisException {
-    Dataset dataset = authorizer.authorizeReadExistingDatasetById(metisUserView, datasetId);
+  public DatasetXslt getDatasetXsltByDatasetId(String datasetId) throws GenericMetisException {
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     DatasetXslt datasetXslt = datasetXsltDao.getById(dataset.getXsltId() == null ? null : dataset.getXsltId().toString());
     if (datasetXslt == null) {
-      throw new NoXsltFoundException(String.format(
+      throw new NoXsltFoundException(format(
           "No datasetXslt found for dataset with datasetId: '%s' and xsltId: '%s' in METIS",
           datasetId, dataset.getXsltId()));
     }
@@ -360,7 +339,7 @@ public class DatasetService {
   public DatasetXslt getDatasetXsltByXsltId(String xsltId) throws GenericMetisException {
     DatasetXslt datasetXslt = datasetXsltDao.getById(xsltId);
     if (datasetXslt == null) {
-      throw new NoXsltFoundException(String.format("No datasetXslt found with xsltId: '%s' in METIS", xsltId));
+      throw new NoXsltFoundException(format("No datasetXslt found with xsltId: '%s' in METIS", xsltId));
     }
     return datasetXslt;
   }
@@ -373,17 +352,10 @@ public class DatasetService {
    * {@link DatasetXslt#getDatasetId()} equal to -1 to indicate that it is not related to a specific dataset.
    * </p>
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param xsltString the text of the String representation non escaped
    * @return the created {@link DatasetXslt}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
-   * </ul>
    */
-  public DatasetXslt createDefaultXslt(MetisUserView metisUserView, String xsltString)
-      throws GenericMetisException {
-    authorizer.authorizeWriteDefaultXslt(metisUserView);
+  public DatasetXslt createDefaultXslt(String xsltString) {
     DatasetXslt datasetXslt = null;
     if (xsltString != null) {
       final DatasetXslt latestDefaultXslt = datasetXsltDao.getLatestDefaultXslt();
@@ -420,27 +392,23 @@ public class DatasetService {
    * Transform a list of xmls using the latest default xslt stored.
    * <p>
    * This method can be used, for example, after a response from
-   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(MetisUserView, String, ExecutablePluginType, String, int)} to
-   * try a transformation on a list of xmls just after validation external to preview an example result.
+   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
+   * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
    * @param records the list of {@link Record} for which {@link Record#getXmlRecord()} returns a non-null value
    * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if the authorization header is un-parsable or the
-   * user cannot be authorized.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * <li>{@link NoXsltFoundException} if there is no xslt found</li>
    * <li>{@link XsltSetupException} if the XSL transform could not be set up</li>
    * </ul>
    */
-  public List<Record> transformRecordsUsingLatestDefaultXslt(MetisUserView metisUserView, String datasetId,
+  public List<Record> transformRecordsUsingLatestDefaultXslt(String datasetId,
       List<Record> records) throws GenericMetisException {
-    //Used for authentication and dataset existence
-    Dataset dataset = authorizer.authorizeWriteExistingDatasetById(metisUserView, datasetId);
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     //Using default dataset identifier
     DatasetXslt datasetXslt = datasetXsltDao.getLatestDefaultXslt();
     if (datasetXslt == null) {
@@ -458,30 +426,27 @@ public class DatasetService {
    * Transform a list of xmls using the latest dataset xslt stored.
    * <p>
    * This method can be used, for example, after a response from
-   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(MetisUserView, String, ExecutablePluginType, String, int)} to
-   * try a transformation on a list of xmls just after validation external to preview an example result.
+   * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, String, int)} to try a
+   * transformation on a list of xmls just after validation external to preview an example result.
    * </p>
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
    * @param records the list of {@link Record} for which {@link Record#getXmlRecord()} returns a non-null value
    * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
-   * <li>{@link UserUnauthorizedException} if the authorization header is un-parsable or the
-   * user cannot be authorized.</li>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * <li>{@link NoXsltFoundException} if there is no xslt found</li>
    * <li>{@link XsltSetupException} if the XSL transform could not be set up</li>
    * </ul>
    */
-  public List<Record> transformRecordsUsingLatestDatasetXslt(MetisUserView metisUserView, String datasetId,
+  public List<Record> transformRecordsUsingLatestDatasetXslt(String datasetId,
       List<Record> records) throws GenericMetisException {
     //Used for authentication and dataset existence
-    Dataset dataset = authorizer.authorizeWriteExistingDatasetById(metisUserView, datasetId);
+    final Dataset dataset = datasetDao.getDatasetOrThrow(datasetId);
     if (dataset.getXsltId() == null) {
       throw new NoXsltFoundException(
-          String.format("Could not find xslt for datasetId %s", datasetId));
+          format("Could not find xslt for datasetId %s", datasetId));
     }
     DatasetXslt datasetXslt = datasetXsltDao.getById(dataset.getXsltId().toString());
 
@@ -505,18 +470,19 @@ public class DatasetService {
       europeanIdCreator = new EuropeanaIdCreator();
 
       // Transform the records.
-      return records.stream().map(record -> {
+      return records.stream().map(ecloudIdXmlRecord -> {
         try {
           EuropeanaGeneratedIdsMap europeanaGeneratedIdsMap = europeanIdCreator
-              .constructEuropeanaId(record.getXmlRecord(), dataset.getDatasetId());
-          return new Record(record.getEcloudId(),
-              transformer.transform(record.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap).toString());
+              .constructEuropeanaId(ecloudIdXmlRecord.getXmlRecord(), dataset.getDatasetId());
+          return new Record(ecloudIdXmlRecord.getEcloudId(),
+              transformer.transform(ecloudIdXmlRecord.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap)
+                         .toString());
         } catch (TransformationException e) {
           LOGGER.info("Record from list failed transformation", e);
-          return new Record(record.getEcloudId(), e.getMessage());
+          return new Record(ecloudIdXmlRecord.getEcloudId(), e.getMessage());
         } catch (EuropeanaIdException e) {
           LOGGER.info(CommonStringValues.EUROPEANA_ID_CREATOR_INITIALIZATION_FAILED, e);
-          return new Record(record.getEcloudId(), e.getMessage());
+          return new Record(ecloudIdXmlRecord.getEcloudId(), e.getMessage());
         }
       }).toList();
     } catch (TransformationException e) {
@@ -530,102 +496,51 @@ public class DatasetService {
   /**
    * Get all datasets using the provider field.
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param provider the provider string used to find the datasets
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByProvider(
-      MetisUserView metisUserView, String provider, int nextPage)
-      throws GenericMetisException {
-    authorizer.authorizeReadAllDatasets(metisUserView);
-    return datasetDao.getAllDatasetsByProvider(provider, nextPage);
+  public List<DatasetDTO> getAllDatasetsByProvider(String provider, int nextPage) {
+    List<Dataset> allDatasetsByProvider = datasetDao.getAllDatasetsByProvider(provider, nextPage);
+    return allDatasetsByProvider.stream()
+                         .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                             userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                         .toList();
   }
 
   /**
    * Get all datasets using the intermediateProvider field.
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param intermediateProvider the intermediateProvider string used to find the datasets
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByIntermediateProvider(
-      MetisUserView metisUserView, String intermediateProvider,
-      int nextPage) throws GenericMetisException {
-    authorizer.authorizeReadAllDatasets(metisUserView);
-    return datasetDao.getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage);
+  public List<DatasetDTO> getAllDatasetsByIntermediateProvider(String intermediateProvider, int nextPage) {
+    List<Dataset> allDatasetsByIntermediateProvider = datasetDao.getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage);
+    return allDatasetsByIntermediateProvider.stream()
+                                .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                                    userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                                .toList();
   }
 
   /**
    * Get all datasets using the dataProvider field.
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param dataProvider the dataProvider string used to find the datasets
    * @param nextPage the nextPage token or -1
    * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
    */
-  public List<Dataset> getAllDatasetsByDataProvider(
-      MetisUserView metisUserView, String dataProvider,
-      int nextPage) throws GenericMetisException {
-    authorizer.authorizeReadAllDatasets(metisUserView);
-    return datasetDao.getAllDatasetsByDataProvider(dataProvider, nextPage);
-  }
-
-  /**
-   * Get all datasets using the organizationId field.
-   *
-   * @param metisUserView the {@link MetisUserView} to authorize with
-   * @param organizationId the organizationId string used to find the datasets
-   * @param nextPage the nextPage number or -1
-   * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
-   */
-  public List<Dataset> getAllDatasetsByOrganizationId(
-      MetisUserView metisUserView, String organizationId, int nextPage)
-      throws GenericMetisException {
-    authorizer.authorizeReadAllDatasets(metisUserView);
-    return datasetDao.getAllDatasetsByOrganizationId(organizationId, nextPage);
-  }
-
-  /**
-   * Get all datasets using the organizationName field.
-   *
-   * @param metisUserView the {@link MetisUserView} to authorize with
-   * @param organizationName the organizationName string used to find the datasets
-   * @param nextPage the nextPage number or -1
-   * @return {@link List} of {@link Dataset}
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link UserUnauthorizedException} if the user is unauthorized</li>
-   * </ul>
-   */
-  public List<Dataset> getAllDatasetsByOrganizationName(
-      MetisUserView metisUserView, String organizationName, int nextPage)
-      throws GenericMetisException {
-    authorizer.authorizeReadAllDatasets(metisUserView);
-    return datasetDao.getAllDatasetsByOrganizationName(organizationName, nextPage);
+  public List<DatasetDTO> getAllDatasetsByDataProvider(String dataProvider, int nextPage) {
+    List<Dataset> allDatasetsByDataProvider = datasetDao.getAllDatasetsByDataProvider(dataProvider, nextPage);
+    return allDatasetsByDataProvider.stream()
+                                            .map(storedDataset -> DatasetConverter.toDTO(storedDataset,
+                                                userService.getUserFromCache(storedDataset.getCreatedByUserId())))
+                                            .toList();
   }
 
   /**
    * Get the list of of matching DatasetSearch using dataset
    *
-   * @param metisUserView the {@link MetisUserView} to authorize with
    * @param searchString a string that may contain multiple words separated by spaces.
    * <p>The search will be performed on the fields datasetId, datasetName, provider, dataProvider.
    * The words that start with a numeric character will be considered as part of the datasetId search and that field is searched
@@ -636,13 +551,10 @@ public class DatasetService {
    * @throws GenericMetisException which can be one of:
    * <ul>
    *   <li>{@link BadContentException} if the parameters provided are invalid.</li>
-   *   <li>{@link UserUnauthorizedException} if the user is unauthorized.</li>
    * </ul>
    */
-  public List<DatasetSearchView> searchDatasetsBasedOnSearchString(MetisUserView metisUserView,
-      String searchString,
+  public List<DatasetSearchView> searchDatasetsBasedOnSearchString(String searchString,
       int nextPage) throws GenericMetisException {
-    authorizer.authorizeReadAllDatasets(metisUserView);
     if (StringUtils.isBlank(searchString)) {
       throw new BadContentException("Parameter searchString cannot be blank");
     }

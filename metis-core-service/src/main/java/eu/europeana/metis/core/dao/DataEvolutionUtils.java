@@ -5,6 +5,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao.Pagination;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
@@ -52,6 +53,7 @@ public class DataEvolutionUtils {
       EnumSet.complementOf(EnumSet.of(ExecutablePluginType.LINK_CHECKING)));
 
   private final WorkflowExecutionDao workflowExecutionDao;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
   /**
    * Constructor.
@@ -304,7 +306,7 @@ public class DataEvolutionUtils {
     // Obtain the previous execution and plugin.
     final WorkflowExecution previousExecution = workflowExecutionDao.getByTaskExecution(previousPluginId, datasetId);
     final AbstractMetisPlugin<?> previousPlugin = previousExecution == null ? null
-        : previousExecution.getMetisPluginWithType(previousPluginId.getPluginType()).orElse(null);
+        : workflowExecutionHelper.getMetisPluginWithType(previousExecution, previousPluginId.getPluginType()).orElse(null);
     if (previousExecution == null || previousPlugin == null) {
       return null;
     }
@@ -322,7 +324,7 @@ public class DataEvolutionUtils {
 
     // Extract all (finished) publish plugins inversely sorted by started date (most recent first).
     final List<PluginWithExecutionId<IndexToPublishPlugin>> publishOperations = new ArrayList<>();
-    executionsWithPublishOperations.getResults().stream().map(ExecutionDatasetPair::getExecution).forEach(
+    executionsWithPublishOperations.results().stream().map(ExecutionDatasetPair::getExecution).forEach(
         execution -> execution.getMetisPlugins().stream().filter(IndexToPublishPlugin.class::isInstance)
                               .map(IndexToPublishPlugin.class::cast)
                               .map(plugin -> new PluginWithExecutionId<>(execution.getId().toString(), plugin))
@@ -348,7 +350,7 @@ public class DataEvolutionUtils {
    *
    * @param datasetId The dataset ID for which to obtain the chain.
    * @return The chain, in the form of plugin-execution pairs that are ordered chronologically. Is never null, but can be empty if
-   * no such chain exists (i.e. the dataset does not have a published harvest or we find an index after the last full harvest that
+   * no such chain exists (i.e. the dataset does not have a published harvest, or we find an index after the last full harvest that
    * is invalid or did somehow not originate from a harvest).
    */
   public List<PluginWithExecutionId<ExecutablePlugin>> getPublishedHarvestIncrements(String datasetId) {
@@ -360,7 +362,7 @@ public class DataEvolutionUtils {
     // Note: we assume that workflows don't cross each other (i.e. an earlier publish cannot have a
     // later harvest). We stop when we find a full harvest (the latest full harvest).
     boolean fullHarvestFound = false;
-    final Map<ExecutedMetisPluginId, PluginWithExecutionId<ExecutablePlugin>> resultHarvests = new LinkedHashMap<>(
+    final Map<ExecutedMetisPluginId, PluginWithExecutionId<ExecutablePlugin>> resultHarvests = LinkedHashMap.newLinkedHashMap(
         allPublishOperations.size());
     for (PluginWithExecutionId<IndexToPublishPlugin> publishOperation : allPublishOperations) {
 

@@ -6,6 +6,7 @@ import eu.europeana.metis.core.service.ScheduleWorkflowService;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.exception.GenericMetisException;
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -19,18 +20,15 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Class that is responsible for scheduling executions.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-09-27
  */
 public class SchedulerExecutor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerExecutor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String SCHEDULER_LOCK = "schedulerLock";
 
   private final OrchestratorService orchestratorService;
   private final ScheduleWorkflowService scheduleWorkflowService;
   private final RedissonClient redissonClient;
-  private static final String SCHEDULER_LOCK = "schedulerLock";
   private LocalDateTime lastExecutionTime = LocalDateTime.now();
 
   /**
@@ -48,18 +46,17 @@ public class SchedulerExecutor {
   }
 
   /**
-   * Makes a run to check if there are executions scheduled in a range of dates and if some are
-   * found it will send them in the distributed queue. It is meant that this method is ran
-   * periodically.
+   * Makes a run to check if there are executions scheduled in a range of dates and if some are found it will send them in the
+   * distributed queue. It is meant that this method is ran periodically.
    */
-  @SuppressWarnings("squid:S2222") //There is a lock.unlock() code within the `finally` code block, which will be run if an exception is thrown or not
+  @SuppressWarnings("squid:S2222")
+  //There is a lock.unlock() code within the `finally` code block, which will be run if an exception is thrown or not
   public void performScheduling() {
     RLock lock = redissonClient.getFairLock(SCHEDULER_LOCK);
     try {
       lock.lock();
       final LocalDateTime thisExecutionTime = LocalDateTime.now();
-      LOGGER.info("Date range checking lowerbound: {}, upperBound:{}", this.lastExecutionTime,
-          thisExecutionTime);
+      LOGGER.info("Date range checking lowerbound: {}, upperBound:{}", this.lastExecutionTime, thisExecutionTime);
       List<ScheduledWorkflow> allCleanedScheduledWorkflows =
           getCleanedScheduledUserWorkflows(lastExecutionTime, thisExecutionTime);
 
@@ -102,8 +99,8 @@ public class SchedulerExecutor {
     do {
       scheduledUserWorkflowResponseListWrapper.clear();
       scheduledUserWorkflowResponseListWrapper
-          .setResultsAndLastPage(scheduleWorkflowService
-                  .getAllScheduledWorkflowsByDateRangeONCE(lowerBound, upperBound, nextPage),
+          .setResultsAndLastPage(
+              scheduleWorkflowService.getAllScheduledWorkflowsByDateRange(lowerBound, upperBound, nextPage),
               scheduleWorkflowService.getScheduledWorkflowsPerRequest(), nextPage);
       scheduledWorkflows
           .addAll(scheduledUserWorkflowResponseListWrapper.getResults());
@@ -123,9 +120,9 @@ public class SchedulerExecutor {
       LocalDateTime pointerDate = LocalDateTime
           .ofInstant(scheduledWorkflow.getPointerDate().toInstant(), ZoneId.systemDefault());
       LocalDateTime localDateToCheck = lowerBound.withYear(lowerBound.getYear())
-          .withMonth(lowerBound.getMonthValue()).withHour(pointerDate.getHour())
-          .withMinute(pointerDate.getMinute()).withSecond(pointerDate.getSecond())
-          .withNano(pointerDate.getNano());
+                                                 .withMonth(lowerBound.getMonthValue()).withHour(pointerDate.getHour())
+                                                 .withMinute(pointerDate.getMinute()).withSecond(pointerDate.getSecond())
+                                                 .withNano(pointerDate.getNano());
 
       if (localDateToCheck.isBefore(lowerBound) || localDateToCheck.isEqual(upperBound)
           || localDateToCheck.isAfter(upperBound)) {
@@ -182,10 +179,10 @@ public class SchedulerExecutor {
     LocalDateTime pointerDate = LocalDateTime
         .ofInstant(scheduledWorkflow.getPointerDate().toInstant(), ZoneId.systemDefault());
     return lowerBound.withYear(lowerBound.getYear())
-        .withMonth(pointerDate.getMonthValue()).withDayOfMonth(pointerDate.getDayOfMonth())
-        .withHour(pointerDate.getHour())
-        .withMinute(pointerDate.getMinute()).withSecond(pointerDate.getSecond())
-        .withNano(pointerDate.getNano());
+                     .withMonth(pointerDate.getMonthValue()).withDayOfMonth(pointerDate.getDayOfMonth())
+                     .withHour(pointerDate.getHour())
+                     .withMinute(pointerDate.getMinute()).withSecond(pointerDate.getSecond())
+                     .withNano(pointerDate.getNano());
   }
 
   private List<ScheduledWorkflow> getScheduledUserWorkflows(
@@ -196,8 +193,7 @@ public class SchedulerExecutor {
     do {
       scheduledUserWorkflowResponseListWrapper.clear();
       scheduledUserWorkflowResponseListWrapper
-          .setResultsAndLastPage(scheduleWorkflowService
-                  .getAllScheduledWorkflowsWithoutAuthorization(scheduleFrequence, nextPage),
+          .setResultsAndLastPage(scheduleWorkflowService.getAllScheduledWorkflows(scheduleFrequence, nextPage),
               scheduleWorkflowService.getScheduledWorkflowsPerRequest(), nextPage);
       scheduledWorkflows
           .addAll(scheduledUserWorkflowResponseListWrapper.getResults());
@@ -210,7 +206,7 @@ public class SchedulerExecutor {
       ScheduledWorkflow scheduledWorkflow) {
     try {
       orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(
-          scheduledWorkflow.getDatasetId(), null, null, scheduledWorkflow.getWorkflowPriority());
+          scheduledWorkflow.getDatasetId(), null, null);
     } catch (GenericMetisException e) {
       LOGGER.warn("Scheduled execution was not added to queue", e);
     }

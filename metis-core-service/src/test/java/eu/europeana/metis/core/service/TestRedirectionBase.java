@@ -1,10 +1,9 @@
 package eu.europeana.metis.core.service;
 
-import eu.europeana.cloud.common.model.dps.TaskState;
-import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -30,6 +29,7 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingLevel;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.utils.Country;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -186,11 +186,9 @@ public class TestRedirectionBase {
     dataset.setCountry(Country.GERMANY);
     dataset.setDatasetName("dataset test name");
     dataset.setDescription("");
-    dataset.setOrganizationId("1482250000001617026");
     dataset.setCreatedByUserId("1482250000016772002");
     dataset.setLanguage(Language.MUL);
     dataset.setDatasetIdsToRedirectFrom(List.of());
-    dataset.setOrganizationName("Europeana Foundation");
     dataset.setCreatedByUserId("userId");
     dataset.setCreatedDate(Date.from(Instant.now().minus(120, ChronoUnit.MINUTES)));
     dataset.setUpdatedDate(Date.from(Instant.now()));
@@ -207,7 +205,7 @@ public class TestRedirectionBase {
   @NotNull
   static ExecutionProgress getExecutionProgress() {
     final ExecutionProgress executionProgress = new ExecutionProgress();
-    executionProgress.setStatus(TaskState.PROCESSED);
+    executionProgress.setStatus(EngineTaskState.PROCESSED.name());
     executionProgress.setExpectedRecords(1);
     executionProgress.setProcessedRecords(1);
     executionProgress.setProgressPercentage(100);
@@ -265,7 +263,6 @@ public class TestRedirectionBase {
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     Date templateDate = Date.from(Instant.now());
 
@@ -370,7 +367,6 @@ public class TestRedirectionBase {
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     Date templateDate = Date.from(Instant.now());
 
@@ -411,7 +407,6 @@ public class TestRedirectionBase {
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
-    workflowExecution.setWorkflowPriority(0);
     workflowExecution.setCancelling(false);
     Date templateDate = Date.from(Instant.now());
 

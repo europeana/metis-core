@@ -7,9 +7,9 @@ import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
-import eu.europeana.metis.utils.CommonStringValues;
-import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
+import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
+import eu.europeana.metis.utils.CommonStringValues;
 import java.util.Date;
 import org.bson.types.ObjectId;
 
@@ -33,7 +33,6 @@ public class ScheduledWorkflow implements HasMongoObjectId {
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT_FOR_SCHEDULING)
   private Date pointerDate;
   private ScheduleFrequence scheduleFrequence;
-  private int workflowPriority;
 
   public ScheduledWorkflow() {
     //Required for json serialization
@@ -45,14 +44,11 @@ public class ScheduledWorkflow implements HasMongoObjectId {
    * @param pointerDate the {@link Date} that will be used as a pointer Date
    * @param datasetId identifier of the dataset for the scheduled workflow
    * @param scheduleFrequence the {@link ScheduleFrequence} for the workflow
-   * @param workflowPriority the priority of the workflow when it is run
    */
-  public ScheduledWorkflow(Date pointerDate, String datasetId, ScheduleFrequence scheduleFrequence,
-      int workflowPriority) {
+  public ScheduledWorkflow(Date pointerDate, String datasetId, ScheduleFrequence scheduleFrequence) {
     this.pointerDate = pointerDate == null ? null : new Date(pointerDate.getTime());
     this.datasetId = datasetId;
     this.scheduleFrequence = scheduleFrequence;
-    this.workflowPriority = workflowPriority;
   }
 
   @Override
@@ -87,13 +83,5 @@ public class ScheduledWorkflow implements HasMongoObjectId {
 
   public void setScheduleFrequence(ScheduleFrequence scheduleFrequence) {
     this.scheduleFrequence = scheduleFrequence;
-  }
-
-  public int getWorkflowPriority() {
-    return workflowPriority;
-  }
-
-  public void setWorkflowPriority(int workflowPriority) {
-    this.workflowPriority = workflowPriority;
   }
 }

@@ -2,17 +2,17 @@ package eu.europeana.metis.core.execution;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import eu.europeana.cloud.client.dps.rest.DpsClient;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.bson.types.ObjectId;
@@ -45,15 +45,15 @@ class TestWorkflowExecutorManager {
     redissonClient = Mockito.mock(RedissonClient.class);
     rabbitmqPublisherChannel = Mockito.mock(Channel.class);
     rabbitmqConsumerChannel = Mockito.mock(Channel.class);
-    DpsClient dpsClient = Mockito.mock(DpsClient.class);
-    workflowExecutorManager = new WorkflowExecutorManager(semaphoresPerPluginManager,
+    EngineTaskClient<?, ?> engineTaskClient = mock(EngineTaskClient.class);
+
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
+    workflowExecutorManagerSettings.setRabbitmqQueueName("ExampleQueueName");
+    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(5);
+
+    workflowExecutorManager = new WorkflowExecutorManager(workflowExecutorManagerSettings, semaphoresPerPluginManager,
         workflowExecutionDao, workflowPostProcessor, rabbitmqPublisherChannel,
-        rabbitmqConsumerChannel, redissonClient, dpsClient);
-    workflowExecutorManager.setRabbitmqQueueName("ExampleQueueName");
-    workflowExecutorManager.setDpsMonitorCheckIntervalInSecs(5);
-    workflowExecutorManager.setEcloudBaseUrl("http://universe.space");
-    workflowExecutorManager.setEcloudProvider("providerExample");
-    assertEquals(5, workflowExecutorManager.getDpsMonitorCheckIntervalInSecs());
+        rabbitmqConsumerChannel, redissonClient, engineTaskClient);
   }
 
   @AfterEach
@@ -68,8 +68,7 @@ class TestWorkflowExecutorManager {
   @Test
   void addUserWorkflowExecutionToQueue() throws Exception {
     String objectId = new ObjectId().toString();
-    int priority = 0;
-    workflowExecutorManager.addWorkflowExecutionToQueue(objectId, priority);
+    workflowExecutorManager.addWorkflowExecutionToQueue(objectId);
     ArgumentCaptor<byte[]> byteArrayArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
     verify(rabbitmqPublisherChannel, times(1))
         .basicPublish(anyString(), anyString(), any(AMQP.BasicProperties.class),
@@ -81,10 +80,9 @@ class TestWorkflowExecutorManager {
   @Test
   void addUserWorkflowExecutionToQueueThrowsIOException() throws Exception {
     String objectId = new ObjectId().toString();
-    int priority = 0;
     doThrow(new IOException("Some Error")).when(rabbitmqPublisherChannel)
                                           .basicPublish(anyString(), anyString(), any(AMQP.BasicProperties.class),
                                               any(byte[].class));
-    assertDoesNotThrow(() -> workflowExecutorManager.addWorkflowExecutionToQueue(objectId, priority));
+    assertDoesNotThrow(() -> workflowExecutorManager.addWorkflowExecutionToQueue(objectId));
   }
 }

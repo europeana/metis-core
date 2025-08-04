@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
-
 /**
  * Enrichment Plugin.
  *
@@ -16,7 +14,7 @@ public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginM
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  EnrichmentPlugin() {
+  public EnrichmentPlugin() {
     //Required for json serialization
     super(PluginType.ENRICHMENT);
   }
@@ -34,10 +32,5 @@ public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginM
   @Override
   public String getTopologyName() {
     return topologyName;
-  }
-
-  @Override
-  DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, null);
   }
 }

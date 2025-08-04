@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.utils;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
+import static java.lang.Long.parseLong;
 
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.NodeStatistics;
@@ -10,15 +9,20 @@ import eu.europeana.cloud.common.model.dps.StatisticsReport;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
-import eu.europeana.metis.authentication.user.AccountRole;
-import eu.europeana.metis.authentication.user.MetisUserView;
-import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.engine.base.item.report.DataItemState;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.user.User;
+import eu.europeana.metis.core.user.User.UserBuilder;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
@@ -34,26 +38,23 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2019-03-15
- */
 public class TestObjectFactory {
 
   public static final int DATASETID = 100;
   public static final DatasetXslt DATASET_XSLT = new DatasetXslt();
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
-  public static final String EMAIL = "user.metis@europeana.eu";
-  public static final String AUTHORIZATION_HEADER = "Bearer 1234567890qwertyuiopasdfghjklQWE";
-  public static final String TOPOLOGY_NAME = "topology_name";
-  public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
+  public static final String USER_ID = "userId";
+  public static final String EXTERNAL_TASK_ID = "2070373127078497810";
   private static final int OCCURRENCES = 2;
 
   static {
@@ -116,7 +117,10 @@ public class TestObjectFactory {
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, abstractMetisPlugins, 0);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
@@ -124,8 +128,11 @@ public class TestObjectFactory {
     return workflowExecution;
   }
 
-  private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+  public static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
 
@@ -172,7 +179,6 @@ public class TestObjectFactory {
     scheduledWorkflow.setDatasetId(Integer.toString(DATASETID));
     scheduledWorkflow.setPointerDate(new Date());
     scheduledWorkflow.setScheduleFrequence(ScheduleFrequence.ONCE);
-    scheduledWorkflow.setWorkflowPriority(0);
     return scheduledWorkflow;
   }
 
@@ -197,8 +203,8 @@ public class TestObjectFactory {
    * Create a list of dummy scheduled workflows with pointer date and frequency. The dataset name will have a suffix number for
    * each dataset.
    *
-   * @param size              the number of dummy scheduled workflows to create
-   * @param date              the pointer date
+   * @param size the number of dummy scheduled workflows to create
+   * @param date the pointer date
    * @param scheduleFrequence the schedule frequence
    * @return the created list
    */
@@ -222,17 +228,15 @@ public class TestObjectFactory {
    * @param datasetName the dataset name to be used
    * @return the created dataset
    */
-  public static Dataset createDataset(String datasetName) {
-    Dataset ds = new Dataset();
+  public static DatasetDTO createDatasetDTO(String datasetName) {
+    DatasetDTO ds = new DatasetDTO();
     ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
-    final String organizationId = "1234567890";
-    ds.setOrganizationId(organizationId);
-    ds.setOrganizationName("OrganizationName");
-    ds.setProvider(organizationId);
-    ds.setIntermediateProvider(organizationId);
-    ds.setDataProvider(organizationId);
+    final String providerId = "1234567890";
+    ds.setProvider(providerId);
+    ds.setIntermediateProvider(providerId);
+    ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
     ds.setCreatedDate(new Date());
     ds.setUpdatedDate(new Date());
@@ -247,22 +251,43 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a dummy metis user
+   * Create a dummy dataset
    *
-   * @param email the email for the dummy user
-   * @return the created metis user
+   * @param datasetName the dataset name to be used
+   * @return the created dataset
    */
-  public static MetisUserView createMetisUser(String email) {
-    MetisUserView metisUserView = spy(new MetisUserView());
-    doReturn(email).when(metisUserView).getEmail();
-    doReturn(AccountRole.EUROPEANA_DATA_OFFICER).when(metisUserView).getAccountRole();
-    doReturn("Organization_12345").when(metisUserView).getOrganizationId();
-    doReturn("OrganizationName").when(metisUserView).getOrganizationName();
-    doReturn(true).when(metisUserView).isMetisUserFlag();
-    doReturn("FirstName").when(metisUserView).getFirstName();
-    doReturn("LastName").when(metisUserView).getLastName();
-    doReturn("User_12345").when(metisUserView).getUserId();
-    return metisUserView;
+  public static Dataset createDataset(String datasetName) {
+    Dataset ds = new Dataset();
+    ds.setId(new ObjectId());
+    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setDatasetId(Integer.toString(DATASETID));
+    ds.setDatasetName(datasetName);
+    final String providerId = "1234567890";
+    ds.setProvider(providerId);
+    ds.setIntermediateProvider(providerId);
+    ds.setDataProvider(providerId);
+    ds.setCreatedByUserId("userId");
+    ds.setCreatedDate(new Date());
+    ds.setUpdatedDate(new Date());
+    ds.setReplacedBy("replacedBy");
+    ds.setReplaces("12345");
+    ds.setCountry(Country.GREECE);
+    ds.setLanguage(Language.AR);
+    ds.setDescription("description");
+    ds.setPublicationFitness(PublicationFitness.PARTIALLY_FIT);
+    ds.setNotes("Notes");
+    return ds;
+  }
+
+  public static User createUser(String userId) {
+    return new UserBuilder()
+        .userId(userId)
+        .userName("userName")
+        .firstName("firstName")
+        .lastName("lastName")
+        .issuedAt(Instant.now())
+        .build();
+
   }
 
   /**
@@ -281,6 +306,25 @@ public class TestObjectFactory {
     return subTaskInfos;
   }
 
+  public static List<DataItemStatus> createExternalRecordStatusList() {
+    List<SubTaskInfo> listOfSubTaskInfo = createListOfSubTaskInfo();
+
+    List<DataItemStatus> dataItemStatusList = new ArrayList<>();
+    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
+      DataItemStatus dataItemStatus = new DataItemStatus(
+          subTaskInfo.getResourceNum(),
+          subTaskInfo.getResource(),
+          DataItemState.valueOf(subTaskInfo.getRecordState().name()),
+          subTaskInfo.getInfo(),
+          subTaskInfo.getEuropeanaId(),
+          subTaskInfo.getProcessingTime(),
+          subTaskInfo.getResultResource());
+      dataItemStatusList.add(dataItemStatus);
+    }
+    return dataItemStatusList;
+
+  }
+
   /**
    * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects.
    *
@@ -294,7 +338,7 @@ public class TestObjectFactory {
           String.format("Error%s", i), OCCURRENCES);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
   }
 
   /**
@@ -315,7 +359,7 @@ public class TestObjectFactory {
       taskErrorInfo.setErrorDetails(errorDetails);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
   }
 
   /**
@@ -323,7 +367,7 @@ public class TestObjectFactory {
    * {@link ErrorDetails} that in turn contain dummy identifiers.
    *
    * @param errorType the error type to be used for the internal {@link TaskErrorInfo}
-   * @param message   the message type to be used for the internal {@link TaskErrorInfo}
+   * @param message the message type to be used for the internal {@link TaskErrorInfo}
    * @return the created task errors info
    */
   public static TaskErrorsInfo createTaskErrorsInfoWithIdentifiers(String errorType,
@@ -336,7 +380,23 @@ public class TestObjectFactory {
     ArrayList<TaskErrorInfo> taskErrorInfos = new ArrayList<>();
     taskErrorInfos.add(taskErrorInfo1);
 
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
+  }
+
+  public static EngineTaskErrors createTaskErrorsInfoWithIdentifiersExternal(String errorType, String message) {
+    TaskErrorsInfo taskErrorsInfo = createTaskErrorsInfoWithIdentifiers(errorType, message);
+
+    List<EngineTaskErrorInfo> engineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
+      List<EngineTaskErrorDetails> engineTaskErrorDetailsList = new ArrayList<>();
+      for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
+        EngineTaskErrorDetails engineTaskErrorDetails = new EngineTaskErrorDetails(errorDetail.getIdentifier(),
+            errorDetail.getAdditionalInfo());
+        engineTaskErrorDetailsList.add(engineTaskErrorDetails);
+      }
+      return new EngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
+          taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
+    }).collect(Collectors.toList());
+    return new EngineTaskErrors(Long.toString(taskErrorsInfo.getId()), engineTaskErrorInfoList);
   }
 
   /**
@@ -348,7 +408,7 @@ public class TestObjectFactory {
     List<NodeStatistics> nodeStatistics = new ArrayList<>();
     nodeStatistics.add(new NodeStatistics("parentpath1", "path1", "value1", 1));
     nodeStatistics.add(new NodeStatistics("parentpath2", "path2", "value2", OCCURRENCES));
-    return new StatisticsReport(EXTERNAL_TASK_ID, nodeStatistics);
+    return new StatisticsReport(parseLong(EXTERNAL_TASK_ID), nodeStatistics);
   }
 
   /**
@@ -359,13 +419,14 @@ public class TestObjectFactory {
    */
   public static DatasetXslt createXslt(Dataset dataset) {
     DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(),
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<xsl:stylesheet version=\"2.0\"\n"
-            + "xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n"
-            + "<xsl:template match=\"/\">\n"
-            + "<xsl:copy-of select=\"node()\"/>\n"
-            + "</xsl:template>\n"
-            + "</xsl:stylesheet>");
+        """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <xsl:stylesheet version="2.0"
+            xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            <xsl:template match="/">
+            <xsl:copy-of select="node()"/>
+            </xsl:template>
+            </xsl:stylesheet>""");
     datasetXslt.setId(new ObjectId());
     return datasetXslt;
   }

@@ -7,5 +7,5 @@ package eu.europeana.metis.core.workflow;
  * @since 2017-05-26
  */
 public enum WorkflowStatus {
-  INQUEUE, RUNNING, FINISHED, FAILED, CANCELLED
+  INQUEUE, RUNNING, FINISHED, CANCELLED, FAILED
 }

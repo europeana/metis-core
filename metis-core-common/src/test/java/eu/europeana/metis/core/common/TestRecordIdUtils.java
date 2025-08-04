@@ -1,96 +1,109 @@
 package eu.europeana.metis.core.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.of;
 
+import eu.europeana.metis.core.common.RecordIdUtils.DatasetIdAndRecordId;
 import eu.europeana.metis.exception.BadContentException;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class TestRecordIdUtils {
 
-  @Test
-  void testDecomposeFullRecordId() {
-
-    // Good input
-    assertEquals(new ImmutablePair<>("1", "A"),
-            RecordIdUtils.decomposeFullRecordId("/1/A"));
-    assertEquals(new ImmutablePair<>("123", "ABC"),
-            RecordIdUtils.decomposeFullRecordId("/123/ABC"));
-
-    // Bad input
-    assertNull(RecordIdUtils.decomposeFullRecordId("//"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("/1/"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("//A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("//1/A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("/1//A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("1/A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("1A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId(" /1/A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("/1/A "));
-    assertNull(RecordIdUtils.decomposeFullRecordId("/ 1/A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("/1 /A"));
-    assertNull(RecordIdUtils.decomposeFullRecordId("/1/ A"));
+  @ParameterizedTest
+  @MethodSource
+  void testDecomposeFullRecordIdValidInput(String input, String expectedDatasetId, String expectedRecordId) {
+    DatasetIdAndRecordId result = RecordIdUtils.decomposeFullRecordId(input);
+    assertNotNull(result);
+    assertEquals(expectedDatasetId, result.datasetId());
+    assertEquals(expectedRecordId, result.recordId());
   }
 
-  @Test
-  void testCheckAndNormalizeRecordId() throws BadContentException {
+  @ParameterizedTest
+  @MethodSource
+  void testDecomposeFullRecordIdInvalidInput(String input) {
+    assertNull(RecordIdUtils.decomposeFullRecordId(input));
+  }
 
-    // Empty record IDs
-    assertFalse(RecordIdUtils.checkAndNormalizeRecordId("dataset1", "").isPresent());
-    assertFalse(RecordIdUtils.checkAndNormalizeRecordId("dataset1", " ").isPresent());
+  private static Stream<Arguments> testDecomposeFullRecordIdValidInput() {
+    return Stream.of(
+        of("/1/A", "1", "A"),
+        of("/123/ABC", "123", "ABC")
+    );
+  }
 
-    // Simple IDs with and without spaces
-    assertEquals(Optional.of("id1"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "id1"));
-    assertEquals(Optional.of("id2"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", " id2"));
-    assertEquals(Optional.of("id3"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "id3 "));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "id1/"));
+  private static Stream<Arguments> testDecomposeFullRecordIdInvalidInput() {
+    return Stream.of(
+        of("//"),
+        of("/1/"),
+        of("//A"),
+        of("//1/A"),
+        of("/1//A"),
+        of("1/A"),
+        of("1A"),
+        of(" /1/A"),
+        of("/1/A "),
+        of("/ 1/A"),
+        of("/1 /A"),
+        of("/1/ A")
+    );
+  }
 
-    // IDs with dataset prefix
-    assertEquals(Optional.of("id1"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "/id1"));
-    assertEquals(Optional.of("id2"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset1/id2"));
-    assertEquals(Optional.of("id3"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "/dataset1/id3"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "/dataset1/id1/"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "/dataset1//id2"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset2/id3"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "/dataset2/id1"));
+  @ParameterizedTest
+  @MethodSource
+  void testNormalizeRecordIdWithValidInput(String datasetId, String recordId, String expectedNormalizedRecordId)
+      throws BadContentException {
+    assertEquals(Optional.ofNullable(expectedNormalizedRecordId), RecordIdUtils.checkAndNormalizeRecordId(datasetId, recordId));
+  }
 
-    // IDs with prefixes
-    assertEquals(Optional.of("id1"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "a/dataset1/id1"));
-    assertEquals(Optional.of("id2"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "http://a/dataset1/id2"));
-    assertEquals(Optional.of("id3"), RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "file://a/dataset1/id3"));
+  @ParameterizedTest
+  @MethodSource
+  void testNormalizeRecordIdWithInvalidInput(
+      String datasetId, String recordId, Class<? extends Throwable> expectedExceptionType) {
+    assertThrows(expectedExceptionType, () -> RecordIdUtils.checkAndNormalizeRecordId(datasetId, recordId));
+  }
 
-    // IDs with invalid characters
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset1/ id1"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset1 /id2"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset 1/id3"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "test 1/dataset1/id1"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset1/id-2"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "dataset1/i?d3"));
-    assertThrows(BadContentException.class, ()-> RecordIdUtils
-            .checkAndNormalizeRecordId("dataset1", "(dataset1)/id1"));
+  private static Stream<Arguments> testNormalizeRecordIdWithValidInput() {
+    return Stream.of(
+        //Empty recordIds
+        of("dataset1", "", null),
+        of("dataset1", " ", null),
+
+        //Spaced recordIds
+        of("dataset1", "id1", "id1"),
+        of("dataset1", " id2", "id2"),
+        of("dataset1", "id3 ", "id3"),
+
+        //Prefixed recordIds
+        of("dataset1", "/id1", "id1"),
+        of("dataset1", "dataset1/id2", "id2"),
+        of("dataset1", "/dataset1/id3", "id3"),
+        of("dataset1", "a/dataset1/id1", "id1"),
+        of("dataset1", "http://a/dataset1/id2", "id2"),
+        of("dataset1", "file://a/dataset1/id3", "id3")
+    );
+  }
+
+  private static Stream<Arguments> testNormalizeRecordIdWithInvalidInput() {
+    return Stream.of(
+        of("dataset1", "id1/", BadContentException.class),
+        of("dataset1", "/dataset1/id1/", BadContentException.class),
+        of("dataset1", "/dataset1//id2", BadContentException.class),
+        of("dataset1", "dataset2/id3", BadContentException.class),
+        of("dataset1", "/dataset2/id1", BadContentException.class),
+        of("dataset1", "dataset1/ id1", BadContentException.class),
+        of("dataset1", "dataset1 /id2", BadContentException.class),
+        of("dataset1", "dataset 1/id3", BadContentException.class),
+        of("dataset1", "test 1/dataset1/id1", BadContentException.class),
+        of("dataset1", "dataset1/id-2", BadContentException.class),
+        of("dataset1", "dataset1/i?d3", BadContentException.class),
+        of("dataset1", "(dataset1)/id1", BadContentException.class)
+    );
   }
 }

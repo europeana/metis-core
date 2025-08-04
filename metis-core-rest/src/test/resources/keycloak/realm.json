@@ -1,0 +1,101 @@
+{
+  "realm": "europeana",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "metis-core-local",
+      "secret": "local",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "metis-ui-local",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["+"],
+      "publicClient": true
+    }
+  ],
+  "roles": {
+    "client": {
+      "metis-core-local": [
+        {
+          "name": "data-officer",
+          "description": "Data Officer Role"
+        },
+        {
+          "name": "admin",
+          "description": "Administrator Role",
+          "composite": true,
+          "composites": {
+            "client": {
+              "metis-core-local": ["data-officer"]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "users": [
+    {
+      "username": "admin.metis@europeana.eu",
+      "enabled": true,
+      "email": "admin.metis@europeana.eu",
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "Metis",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "metis-core-local": ["admin", "data-officer"]
+      }
+    },
+    {
+      "username": "user1.metis@europeana.eu",
+      "enabled": true,
+      "email": "user1.metis@europeana.eu",
+      "emailVerified": true,
+      "firstName": "User1",
+      "lastName": "Metis",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user1",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "metis-core-local": ["data-officer"]
+      }
+    },
+    {
+      "username": "user2.metis@europeana.eu",
+      "enabled": true,
+      "email": "user2.metis@europeana.eu",
+      "emailVerified": true,
+      "firstName": "User2",
+      "lastName": "Metis",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user2",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "metis-core-local": ["data-officer"]
+      }
+    }
+  ]
+}

@@ -4,39 +4,41 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This denotes a plugin type that is executable (i.e. can be run by Metis). This is a subset of the
- * list in {@link PluginType}, which contains all plugin types.
+ * This denotes a plugin type that is executable (i.e. can be run by Metis). This is a subset of the list in {@link PluginType},
+ * which contains all plugin types.
  */
 public enum ExecutablePluginType {
 
-  HTTP_HARVEST(PluginType.HTTP_HARVEST),
+  HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
 
-  OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST),
+  OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST, ExecutablePluginTypeGroup.HARVEST),
 
-  ENRICHMENT(PluginType.ENRICHMENT),
+  ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.PROCESS),
 
-  MEDIA_PROCESS(PluginType.MEDIA_PROCESS),
+  MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.PROCESS),
 
-  LINK_CHECKING(PluginType.LINK_CHECKING),
+  LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.PROCESS),
 
-  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL),
+  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.PROCESS),
 
-  TRANSFORMATION(PluginType.TRANSFORMATION),
+  TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.PROCESS),
 
-  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL),
+  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL, ExecutablePluginTypeGroup.PROCESS),
 
-  NORMALIZATION(PluginType.NORMALIZATION),
+  NORMALIZATION(PluginType.NORMALIZATION, ExecutablePluginTypeGroup.PROCESS),
 
-  PREVIEW(PluginType.PREVIEW),
+  PREVIEW(PluginType.PREVIEW, ExecutablePluginTypeGroup.INDEX),
 
-  PUBLISH(PluginType.PUBLISH),
+  PUBLISH(PluginType.PUBLISH, ExecutablePluginTypeGroup.INDEX),
 
-  DEPUBLISH(PluginType.DEPUBLISH);
+  DEPUBLISH(PluginType.DEPUBLISH, ExecutablePluginTypeGroup.DEPUBLISH);
 
   private final PluginType pluginType;
+  private final ExecutablePluginTypeGroup executablePluginTypeGroup;
 
-  ExecutablePluginType(PluginType pluginType) {
+  ExecutablePluginType(PluginType pluginType, ExecutablePluginTypeGroup executablePluginTypeGroup) {
     this.pluginType = pluginType;
+    this.executablePluginTypeGroup = executablePluginTypeGroup;
   }
 
   /**
@@ -47,8 +49,7 @@ public enum ExecutablePluginType {
   }
 
   /**
-   * Get the corresponding {@link ExecutablePluginType} by providing a {@link PluginType} or null if
-   * no match found
+   * Get the corresponding {@link ExecutablePluginType} by providing a {@link PluginType} or null if no match found
    *
    * @param pluginType the provided plugin type
    * @return the executable plugin type or null if no match found
@@ -63,12 +64,10 @@ public enum ExecutablePluginType {
   }
 
   /**
-   * Lookup of a {@link ExecutablePluginType} enum from a provided enum String representation of the
-   * enum value.
+   * Lookup of a {@link ExecutablePluginType} enum from a provided enum String representation of the enum value.
    *
    * @param enumName the String representation of an enum value
-   * @return the {@link ExecutablePluginType} that represents the provided value or null if not
-   * found
+   * @return the {@link ExecutablePluginType} that represents the provided value or null if not found
    */
   @JsonCreator
   public static ExecutablePluginType getPluginTypeFromEnumName(
@@ -79,5 +78,18 @@ public enum ExecutablePluginType {
       }
     }
     return null;
+  }
+
+  public ExecutablePluginTypeGroup getExecutablePluginTypeGroup() {
+    return executablePluginTypeGroup;
+  }
+
+  /**
+   * Enum representing groups of executable plugin types.
+   * <p>
+   * These groups categorize functionality types that can be executed as part of the workflow.
+   */
+  public enum ExecutablePluginTypeGroup {
+    HARVEST, PROCESS, INDEX, DEPUBLISH
   }
 }

@@ -1,20 +1,18 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3.9.12-management-alpine
     container_name: metis-core-rabbitmq
     environment:
       - RABBIT_DEFAULT_VHOST=/
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=local
+      - RABBITMQ_DEFAULT_PASS=local
     ports:
       - '5672:5672'
       - '15672:15672'
   redis:
     image: redis:6.0.16-alpine
     container_name: metis-core-redis
-    command: redis-server --requirepass guest
+    command: redis-server --requirepass local
     ports:
       - '6379:6379'
   mongo:
@@ -22,10 +20,25 @@ services:
     container_name: metis-core-mongo
     environment:
       MONGO_INITDB_DATABASE: metis-core
-      MONGO_INITDB_ROOT_USERNAME: guest
-      MONGO_INITDB_ROOT_PASSWORD: guest
+      MONGO_INITDB_ROOT_USERNAME: local
+      MONGO_INITDB_ROOT_PASSWORD: local
     ports:
       - '27017:27017'
+  oauth2:
+    image: quay.io/keycloak/keycloak:26.0.8
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 7080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_LOG_LEVEL: info
+    command: [ "start-dev", "--http-port", "7080", "--https-port", "7443", "--import-realm" ]
+    volumes:
+      - ./src/test/resources/keycloak/realm.json:/opt/keycloak/data/import/realm.json
+    ports:
+      - "7080:7080"
+      - "7443:7443"
   metis-core-local:
     image: europeana/metis-core:develop
     container_name: metis-core-local
@@ -43,6 +56,7 @@ services:
       - /data/metis-configuration/metis-framework/metis-core/metis-core-rest/k8s/overlays/local/resources/application.properties:/application.properties
       - /data/metis-configuration/metis-framework/metis-core/metis-core-rest/k8s/overlays/local/resources/log4j2.xml:/data/logging/log4j2.xml
     depends_on:
+      - oauth2
       - rabbitmq
       - mongo
       - redis

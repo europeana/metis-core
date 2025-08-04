@@ -1,18 +1,5 @@
 package eu.europeana.metis.core.dao;
 
-import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
-import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.FINISHED_DATE;
-import static eu.europeana.metis.core.common.DaoFieldNames.ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.METIS_PLUGINS;
-import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_METADATA;
-import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_STATUS;
-import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_TYPE;
-import static eu.europeana.metis.core.common.DaoFieldNames.STARTED_DATE;
-import static eu.europeana.metis.core.common.DaoFieldNames.WORKFLOW_STATUS;
-import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_ID;
-import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
-
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import dev.morphia.DeleteOptions;
@@ -25,23 +12,24 @@ import dev.morphia.aggregation.expressions.Expressions;
 import dev.morphia.aggregation.expressions.MathExpressions;
 import dev.morphia.aggregation.expressions.impls.Expression;
 import dev.morphia.aggregation.expressions.impls.MathExpression;
+import dev.morphia.aggregation.stages.Group;
 import dev.morphia.aggregation.stages.Lookup;
 import dev.morphia.aggregation.stages.Projection;
 import dev.morphia.aggregation.stages.Sort;
 import dev.morphia.aggregation.stages.Unwind;
 import dev.morphia.annotations.Entity;
 import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaCursor;
 import dev.morphia.query.Query;
 import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
 import dev.morphia.query.updates.UpdateOperator;
 import dev.morphia.query.updates.UpdateOperators;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
-import eu.europeana.metis.core.workflow.SystemId;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
@@ -51,15 +39,18 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,24 +58,38 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
+import static dev.morphia.aggregation.expressions.AccumulatorExpressions.addToSet;
+import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
+import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.FINISHED_DATE;
+import static eu.europeana.metis.core.common.DaoFieldNames.ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.METIS_PLUGINS;
+import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_METADATA;
+import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_STATUS;
+import static eu.europeana.metis.core.common.DaoFieldNames.PLUGIN_TYPE;
+import static eu.europeana.metis.core.common.DaoFieldNames.STARTED_DATE;
+import static eu.europeana.metis.core.common.DaoFieldNames.WORKFLOW_STATUS;
+import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_ID;
+import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * Data Access Object for workflow executions using mongo.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-26
  */
 @Repository
 public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowExecutionDao.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private static final int INQUEUE_POSITION_IN_OVERVIEW = 1;
   private static final int RUNNING_POSITION_IN_OVERVIEW = 2;
   private static final int DEFAULT_POSITION_IN_OVERVIEW = 3;
+  private static final String CANCELLING = "cancelling";
+  private static final String CANCELLED_BY = "cancelledBy";
+  private static final String STARTED_BY = "startedBy";
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
-  private int workflowExecutionsPerRequest =
-      RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
+  private int workflowExecutionsPerRequest = RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
   private int maxServedExecutionListLength = Integer.MAX_VALUE;
 
   /**
@@ -173,26 +178,34 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   }
 
   /**
-   * Set the cancelling field in the database.
-   * <p>Also adds information of the user identifier that cancelled the execution or if it was by a
-   * system operation, using {@link SystemId} values as identifiers. For historical executions the value of the
-   * <code>cancelledBy</code> field will remain <code>null</code></p>
+   * Sets the cancelling state of the given workflow execution in the system with a specific identifier.
    *
-   * @param workflowExecution the workflowExecution to be cancelled
-   * @param metisUserView the user that triggered the cancellation or null if it was the system
+   * @param workflowExecution the workflow execution instance whose cancelling state needs to be set
    */
-  public void setCancellingState(WorkflowExecution workflowExecution, MetisUserView metisUserView) {
+  public void setCancellingStateSystem(WorkflowExecution workflowExecution) {
+    setCancellingState(workflowExecution, SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
+  }
+
+
+  /**
+   * Sets the cancelling state of the specified workflow execution and records the user initiating the cancellation. This method
+   * updates the database to mark the workflow as cancelling and sets the canceling user's identifier.
+   *
+   * @param workflowExecution the WorkflowExecution object representing the workflow to be updated
+   * @param userId the identifier of the user requesting the cancellation; must not be null or blank
+   * @throws IllegalArgumentException if the userId is null or blank
+   */
+  public void setCancellingState(WorkflowExecution workflowExecution, String userId) {
+    if (isBlank(userId)) {
+      throw new IllegalArgumentException("The user identifier cannot be null or blank");
+    }
+
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)
                                                              .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()));
-    String cancelledBy;
-    if (metisUserView == null || metisUserView.getUserId() == null) {
-      cancelledBy = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    } else {
-      cancelledBy = metisUserView.getUserId();
-    }
-    final UpdateOperator setCancellingOperator = UpdateOperators.set("cancelling", Boolean.TRUE);
-    final UpdateOperator setCancelledByOperator = UpdateOperators.set("cancelledBy", cancelledBy);
+
+    final UpdateOperator setCancellingOperator = UpdateOperators.set(CANCELLING, Boolean.TRUE);
+    final UpdateOperator setCancelledByOperator = UpdateOperators.set(CANCELLED_BY, userId);
 
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), setCancellingOperator, setCancelledByOperator));
@@ -416,7 +429,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
 
     // Prepare pagination and check that there is something to query
     final Pagination pagination = createPagination(nextPage, pageCount, ignoreMaxServedExecutionsLimit);
-    if (pagination.getLimit() < 1) {
+    if (pagination.limit() < 1) {
       return createResultList(Collections.emptyList(), pagination);
     }
 
@@ -433,8 +446,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     }
 
     // Execute query with correct pagination
-    final FindOptions findOptions = new FindOptions().skip(pagination.getSkip())
-                                                     .limit(pagination.getLimit());
+    final FindOptions findOptions = new FindOptions().skip(pagination.skip()).limit(pagination.limit());
 
     // Set ordering
     if (orderField != null) {
@@ -483,7 +495,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     return retryableExternalRequestForNetworkExceptions(() -> {
 
       // Prepare pagination and check that there is something to query
-      if (pagination.getLimit() < 1) {
+      if (pagination.limit() < 1) {
         return createResultList(Collections.emptyList(), pagination);
       }
 
@@ -503,7 +515,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
           .sort(Sort.sort().ascending(statusIndexField).descending(CREATED_DATE.getFieldName()));
 
       // Step 4: Apply pagination
-      aggregation.skip(pagination.getSkip()).limit(pagination.getLimit());
+      aggregation.skip(pagination.skip()).limit(pagination.limit());
 
       // Step 5: Create join of dataset and execution to combine the data information
       joinDatasetAndWorkflowExecution(aggregation);
@@ -712,7 +724,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     WorkflowExecution workflowExecution = retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class)
                                       .filter(Filters.eq(ID.getFieldName(), id))
-                                      .first(new FindOptions().projection().include("cancelling")));
+                                      .first(new FindOptions().projection().include(CANCELLING)));
     return workflowExecution != null && workflowExecution.isCancelling();
   }
 
@@ -738,13 +750,13 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * @param externalTaskId The external task ID that is to be queried.
    * @return The workflow execution.
    */
-  public WorkflowExecution getByExternalTaskId(long externalTaskId) {
+  public WorkflowExecution getByExternalTaskId(String externalTaskId) {
     // TODO JV Validation is disabled because otherwise it complains that the subquery is looking in a
     // list of AbstractMetisPlugin objects that don't have the "externalTaskId" property being queried.
     final Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                                    .find(WorkflowExecution.class).disableValidation();
     query.filter(Filters.elemMatch(METIS_PLUGINS.getFieldName(),
-        Filters.eq("externalTaskId", Long.toString(externalTaskId))));
+        Filters.eq("externalTaskId", externalTaskId)));
     return retryableExternalRequestForNetworkExceptions(query::first);
   }
 
@@ -787,8 +799,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     return retryableExternalRequestForNetworkExceptions(query::first);
   }
 
-  Pagination createPagination(int firstPage, Integer pageCount,
-      boolean ignoreMaxServedExecutionsLimit) {
+  Pagination createPagination(int firstPage, Integer pageCount, boolean ignoreMaxServedExecutionsLimit) {
 
     // Compute the total number (including skipped pages)
     final int pageSize = getWorkflowExecutionsPerRequest();
@@ -806,27 +817,15 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     return new Pagination(skip, limit, maxRequested);
   }
 
-  static class Pagination {
+  record Pagination(int skip, int limit, boolean maxRequested) {
 
-    private final int skip;
-    private final int limit;
-    private final boolean maxRequested;
-
-    private Pagination(int skip, int limit, boolean maxRequested) {
-      this.skip = skip;
-      this.limit = limit;
-      this.maxRequested = maxRequested;
-    }
-
-    int getSkip() {
-      return skip;
-    }
-
-    int getLimit() {
-      return limit;
-    }
-
-    boolean isMaxReached(int resultSize) {
+    /**
+     * Checks if the maximum number of results has been reached.
+     *
+     * @param resultSize The size of the retrieved results.
+     * @return {@code true} if the maximum requested results were reached, otherwise {@code false}.
+     */
+    public boolean isMaxReached(int resultSize) {
       return maxRequested && resultSize == limit;
     }
   }
@@ -840,29 +839,45 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    *
    * @param <T> The type of the result objects.
    */
-  public static class ResultList<T> {
-
-    private final List<T> results;
-    private final boolean maxResultCountReached;
+  public record ResultList<T>(List<T> results, boolean maxResultCountReached) {
 
     /**
-     * Constructor.
+     * Constructs a {@code ResultList} with the given results and maximum result count status.
      *
-     * @param results The results.
-     * @param maxResultCountReached Whether the maximum result count has been reached (indicating whether next pages will be
-     * served).
+     * <p>The provided list of results is copied to ensure immutability.</p>
+     *
+     * @param results The results list. Must not be {@code null}.
+     * @param maxResultCountReached {@code true} if the maximum result count has been reached, otherwise {@code false}.
+     * @throws NullPointerException if {@code results} is {@code null}.
      */
-    public ResultList(List<T> results, boolean maxResultCountReached) {
-      this.results = new ArrayList<>(results);
-      this.maxResultCountReached = maxResultCountReached;
+    public ResultList {
+      results = List.copyOf(results); // Ensures immutability
     }
+  }
 
-    public List<T> getResults() {
-      return Collections.unmodifiableList(results);
-    }
+  /**
+   * Returns a set of all distinct user identifiers found in the startedBy and cancelledBy fields of all WorkflowExecutions.
+   *
+   * @return A set of distinct user identifiers, or an empty set if none were found.
+   */
+  public Set<String> getDistinctUserIdentifiers() {
+    Aggregation<WorkflowExecution> aggregation =
+        morphiaDatastoreProvider.getDatastore()
+                                .aggregate(WorkflowExecution.class)
+                                .project(Projection.project().suppressId().include(STARTED_BY).include(CANCELLED_BY))
+                                .group(Group.group()
+                                            .field("distinctStartedBy", addToSet(Expressions.field(STARTED_BY)))
+                                            .field("distinctCancelledBy", addToSet(Expressions.field(CANCELLED_BY)))
+                                );
 
-    public boolean isMaxResultCountReached() {
-      return maxResultCountReached;
+    try (MorphiaCursor<Document> cursor = aggregation.execute(Document.class)) {
+      Document document = cursor.tryNext();
+      Set<String> result = new HashSet<>();
+      if (cursor.hasNext()) {
+        result.addAll(document.getList("distinctStartedBy", String.class));
+        result.addAll(document.getList("distinctCancelledBy", String.class));
+      }
+      return result.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
   }
 }

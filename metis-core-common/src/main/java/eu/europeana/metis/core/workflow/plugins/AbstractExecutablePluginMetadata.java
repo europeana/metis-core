@@ -9,7 +9,7 @@ public abstract class AbstractExecutablePluginMetadata extends AbstractMetisPlug
 
   private boolean enabled;
 
-  public AbstractExecutablePluginMetadata() {
+  protected AbstractExecutablePluginMetadata() {
   }
 
   @Override

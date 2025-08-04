@@ -13,7 +13,18 @@ spring.autoconfigure.exclude=\
 truststore.path=
 truststore.password=
 
+#OAuth
+keycloak.authServerUrl=https://localhost:7080/auth
+keycloak.clientId=metis-core-local
+keycloak.clientSecret=clientSecret
+keycloak.realm=europeana
+spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:7080/realms/europeana/protocol/openid-connect/certs
+spring.security.oauth2.client.provider.external.issuer-uri=http://localhost:7080/realms/europeana
+#Custom property for resource names
+security.oauth2.resourceNames=metis-core-local
+
 #Orchestration
+metis-core.engineType=ECLOUD
 metis-core.maxConcurrentThreads=1
 metis-core.dpsMonitorCheckIntervalInSeconds=5
 metis-core.dpsConnectTimeoutInMilliseconds=10000
@@ -22,6 +33,7 @@ metis-core.failsafeMarginOfInactivityInSeconds=5
 metis-core.periodicFailsafeCheckInMilliseconds=60000
 metis-core.periodicSchedulerCheckInMilliseconds=90000
 metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds=10000
+metis-core.userCacheClearIntervalInMinutes=1440
 #If a task passed this cap the task will be cancelled
 metis-core.periodOfNoProcessedRecordsChangeInMinutes=30
 metis-core.threadLimitThrottlingLevelWeak=16
@@ -37,8 +49,6 @@ metis-core.maxDepublishRecordIdsPerDataset=1000
 metis-core.linkCheckingDefaultSamplingSize=1000
 #Solr
 metis-core.solrCommitPeriodInMinutes=15
-# Authentication
-metis-core.authenticationBaseUrl=
 # CORS
 metis-core.allowedCorsHosts=
 
@@ -49,7 +59,6 @@ rabbitmq.username=
 rabbitmq.password=
 rabbitmq.virtualHost=/
 rabbitmq.queueName=UserWorkflowExecution
-rabbitmq.highestPriority=10
 rabbitmq.enableSsl=
 rabbitmq.enableCustomTruststore=
 

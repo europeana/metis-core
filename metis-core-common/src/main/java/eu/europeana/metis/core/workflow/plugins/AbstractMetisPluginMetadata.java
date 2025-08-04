@@ -36,7 +36,7 @@ public abstract class AbstractMetisPluginMetadata implements MetisPluginMetadata
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date revisionTimestampPreviousPlugin;
 
-  public AbstractMetisPluginMetadata() {
+  protected AbstractMetisPluginMetadata() {
   }
 
   @Override

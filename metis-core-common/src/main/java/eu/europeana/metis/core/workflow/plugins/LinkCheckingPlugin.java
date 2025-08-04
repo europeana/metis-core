@@ -1,10 +1,5 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import eu.europeana.cloud.service.dps.DpsTask;
-import eu.europeana.cloud.service.dps.PluginParameterKeys;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Link Checking Plugin.
  *
@@ -19,7 +14,7 @@ public class LinkCheckingPlugin extends AbstractExecutablePlugin<LinkCheckingPlu
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  LinkCheckingPlugin() {
+  public LinkCheckingPlugin() {
     //Required for json serialization
     super(PluginType.LINK_CHECKING);
   }
@@ -37,16 +32,5 @@ public class LinkCheckingPlugin extends AbstractExecutablePlugin<LinkCheckingPlu
   @Override
   public String getTopologyName() {
     return topologyName;
-  }
-
-  @Override
-  DpsTask prepareDpsTask(String datasetId, DpsTaskSettings dpsTaskSettings) {
-    final Map<String, String> extraParameters = new HashMap<>();
-    if (Boolean.TRUE.equals(getPluginMetadata().getPerformSampling())
-        && getPluginMetadata().getSampleSize() != null) {
-      extraParameters
-              .put(PluginParameterKeys.SAMPLE_SIZE, getPluginMetadata().getSampleSize().toString());
-    }
-    return createDpsTaskForProcessPlugin(dpsTaskSettings, extraParameters);
   }
 }

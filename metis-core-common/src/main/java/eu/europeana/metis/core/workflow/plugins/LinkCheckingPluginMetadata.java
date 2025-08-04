@@ -10,7 +10,7 @@ public class LinkCheckingPluginMetadata extends AbstractExecutablePluginMetadata
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.LINK_CHECKING;
 
-  private Boolean performSampling;
+  private boolean performSampling;
   private Integer sampleSize;
 
   public LinkCheckingPluginMetadata() {
@@ -34,7 +34,7 @@ public class LinkCheckingPluginMetadata extends AbstractExecutablePluginMetadata
     this.sampleSize = sampleSize;
   }
 
-  public Boolean getPerformSampling() {
+  public boolean getPerformSampling() {
     return performSampling;
   }
 }

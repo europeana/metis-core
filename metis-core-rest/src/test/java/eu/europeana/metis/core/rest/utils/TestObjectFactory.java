@@ -1,28 +1,31 @@
 package eu.europeana.metis.core.rest.utils;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-
 import eu.europeana.cloud.common.model.dps.ErrorDetails;
 import eu.europeana.cloud.common.model.dps.RecordState;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
-import eu.europeana.metis.authentication.user.AccountRole;
-import eu.europeana.metis.authentication.user.MetisUserView;
-import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
+import eu.europeana.metis.core.dataset.DatasetConverter;
+import eu.europeana.metis.core.dataset.DatasetDTO;
+import eu.europeana.metis.core.engine.base.item.report.DataItemState;
+import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
+import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.core.workflow.ScheduleFrequence;
 import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.MetisPluginConverter;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
@@ -33,28 +36,23 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.utils.Country;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2019-03-15
- */
 public class TestObjectFactory {
 
   public static final int DATASETID = 100;
   public static final String XSLTID = "5a9821af34f04b794dcf63df";
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
-  public static final String EMAIL = "user.metis@europeana.eu";
-  public static final String AUTHORIZATION_HEADER = "Bearer 1234567890qwertyuiopasdfghjklQWE";
   public static final String TOPOLOGY_NAME = "topology_name";
-  public static final long EXTERNAL_TASK_ID = 2_070_373_127_078_497_810L;
+  public static final String EXTERNAL_TASK_ID = "2070373127078497810";
   private static final int OCCURRENCES = 2;
-
 
   private TestObjectFactory() {
   }
@@ -96,13 +94,8 @@ public class TestObjectFactory {
     return workflow;
   }
 
-  /**
-   * Create dummy workflow execution
-   *
-   * @return the created workflow execution
-   */
-  public static WorkflowExecution createWorkflowExecutionObject() {
-    Dataset dataset = createDataset(DATASETNAME);
+  public static WorkflowExecutionDTO createWorkflowExecutionDTOObject() {
+    Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(DATASETNAME));
     ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
     AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
@@ -111,15 +104,24 @@ public class TestObjectFactory {
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, abstractMetisPlugins, 0);
-    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
+    WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
+    workflowExecutionDTO.setDatasetId(dataset.getDatasetId());
+    workflowExecutionDTO.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
+                                                             .map(plugin -> MetisPluginConverter.toDTO(plugin,
+                                                                 WorkflowExecutionConverter.canDisplayRawXml(plugin)))
+                                                             .toList());
+    workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecutionDTO.setCreatedDate(new Date());
 
-    return workflowExecution;
+    return workflowExecutionDTO;
   }
 
   private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
-    WorkflowExecution workflowExecution = new WorkflowExecution(dataset, new ArrayList<>(), 0);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(new Date());
 
@@ -127,35 +129,35 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a list of dummy workflow executions. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy workflow executions. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy workflow executions to create
    * @return the created list
    */
-  public static List<WorkflowExecutionView> createListOfWorkflowExecutions(int size) {
+  public static List<WorkflowExecutionDTO> createListOfWorkflowExecutions(int size) {
     return createExecutionsWithDatasets(size).stream().map(ExecutionDatasetPair::getExecution)
-            .map(execution -> new WorkflowExecutionView(execution, false, plugin -> true))
+                                             .map(execution ->
+                                                 WorkflowExecutionConverter.toDTO(execution, false,
+                                                     null, null))
                                              .toList();
   }
 
   /**
-   * Create a list of dummy execution overviews. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy execution overviews. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy execution overviews to create
    * @return the created list
    */
   public static List<ExecutionAndDatasetView> createListOfExecutionOverviews(int size) {
     return createExecutionsWithDatasets(size).stream()
-        .map(pair -> new ExecutionAndDatasetView(pair.getExecution(), pair.getDataset()))
+                                             .map(pair -> new ExecutionAndDatasetView(pair.getExecution(), pair.getDataset()))
                                              .toList();
   }
 
   private static List<ExecutionDatasetPair> createExecutionsWithDatasets(int size) {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      Dataset dataset = createDataset(String.format("%s%s", DATASETNAME, i));
+      Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(String.format("%s%s", DATASETNAME, i)));
       dataset.setId(new ObjectId(new Date(i)));
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
@@ -175,13 +177,11 @@ public class TestObjectFactory {
     scheduledWorkflow.setDatasetId(Integer.toString(DATASETID));
     scheduledWorkflow.setPointerDate(new Date());
     scheduledWorkflow.setScheduleFrequence(ScheduleFrequence.ONCE);
-    scheduledWorkflow.setWorkflowPriority(0);
     return scheduledWorkflow;
   }
 
   /**
-   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each
-   * dataset.
+   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each dataset.
    *
    * @param size the number of dummy scheduled workflows to create
    * @return the created list
@@ -198,22 +198,20 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a dummy dataset
+   * Create a dummy datasetDTO
    *
    * @param datasetName the dataset name to be used
    * @return the created dataset
    */
-  public static Dataset createDataset(String datasetName) {
-    Dataset ds = new Dataset();
+  public static DatasetDTO createDatasetDTO(String datasetName) {
+    DatasetDTO ds = new DatasetDTO();
     ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
-    final String organizationId = "1234567890";
-    ds.setOrganizationId(organizationId);
-    ds.setOrganizationName("OrganizationName");
-    ds.setProvider(organizationId);
-    ds.setIntermediateProvider(organizationId);
-    ds.setDataProvider(organizationId);
+    final String providerId = "1234567890";
+    ds.setProvider(providerId);
+    ds.setIntermediateProvider(providerId);
+    ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
     ds.setCreatedDate(new Date());
     ds.setUpdatedDate(new Date());
@@ -228,28 +226,9 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create a dummy metis user
+   * Create a dummy subtask info
    *
-   * @param email the email for the dummy user
-   * @return the created metis user
-   */
-  public static MetisUserView createMetisUser(String email) {
-    MetisUserView metisUserView = spy(new MetisUserView());
-    doReturn(email).when(metisUserView).getEmail();
-    doReturn(AccountRole.EUROPEANA_DATA_OFFICER).when(metisUserView).getAccountRole();
-    doReturn("Organization_12345").when(metisUserView).getOrganizationId();
-    doReturn("OrganizationName").when(metisUserView).getOrganizationName();
-    doReturn(true).when(metisUserView).isMetisUserFlag();
-    doReturn("FirstName").when(metisUserView).getFirstName();
-    doReturn("LastName").when(metisUserView).getLastName();
-    doReturn("User_12345").when(metisUserView).getUserId();
-    return metisUserView;
-  }
-
-  /**
-   * Create a dummy sub task info
-   *
-   * @return the created sub task info
+   * @return the created subtask info
    */
   public static List<SubTaskInfo> createListOfSubTaskInfo() {
 
@@ -263,9 +242,26 @@ public class TestObjectFactory {
     return subTaskInfos;
   }
 
+  public static List<DataItemStatus> createExternalRecordStatusList() {
+    List<SubTaskInfo> listOfSubTaskInfo = createListOfSubTaskInfo();
+    List<DataItemStatus> dataItemStatuses = new ArrayList<>();
+    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
+      DataItemStatus dataItemStatus = new DataItemStatus(
+          subTaskInfo.getResourceNum(),
+          subTaskInfo.getResource(),
+          DataItemState.valueOf(subTaskInfo.getRecordState().name()),
+          subTaskInfo.getInfo(),
+          subTaskInfo.getEuropeanaId(),
+          subTaskInfo.getProcessingTime(),
+          subTaskInfo.getResultResource());
+      dataItemStatuses.add(dataItemStatus);
+    }
+    return dataItemStatuses;
+  }
+
   /**
-   * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These
-   * will also contain a list of {@link ErrorDetails} that in turn contain dummy identifiers.
+   * Create a task errors info object, which contains a list of {@link TaskErrorInfo} objects. These will also contain a list of
+   * {@link ErrorDetails} that in turn contain dummy identifiers.
    *
    * @param numberOfErrorTypes the number of dummy error types
    * @return the created task errors info
@@ -281,7 +277,24 @@ public class TestObjectFactory {
       taskErrorInfo.setErrorDetails(errorDetails);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(EXTERNAL_TASK_ID, taskErrorInfos);
+    return new TaskErrorsInfo(Long.parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
+  }
+
+  public static EngineTaskErrors createExternalTaskErrorsListWithIdentifiers(int numberOfErrorTypes) {
+    TaskErrorsInfo taskErrorsInfo = createTaskErrorsInfoListWithIdentifiers(numberOfErrorTypes);
+
+    List<EngineTaskErrorInfo> engineTaskErrorInfoList = taskErrorsInfo.getErrors().stream().map(taskErrorInfo -> {
+      List<EngineTaskErrorDetails> engineTaskErrorDetailsList = new ArrayList<>();
+      for (ErrorDetails errorDetail : taskErrorInfo.getErrorDetails()) {
+        EngineTaskErrorDetails engineTaskErrorDetails = new EngineTaskErrorDetails(errorDetail.getIdentifier(),
+            errorDetail.getAdditionalInfo());
+        engineTaskErrorDetailsList.add(engineTaskErrorDetails);
+      }
+      return new EngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
+          taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
+    }).collect(Collectors.toList());
+
+    return new EngineTaskErrors(Long.toString(taskErrorsInfo.getId()), engineTaskErrorInfoList);
   }
 
   /**
@@ -304,5 +317,4 @@ public class TestObjectFactory {
     }
     return records;
   }
-
 }

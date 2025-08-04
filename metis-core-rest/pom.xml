@@ -4,7 +4,7 @@
   <parent>
     <artifactId>metis-core</artifactId>
     <groupId>eu.europeana.metis</groupId>
-    <version>14</version>
+    <version>15</version>
   </parent>
   <artifactId>metis-core-rest</artifactId>
   <dependencies>
@@ -18,13 +18,11 @@
     <!-- Owned -->
     <dependency>
       <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-authentication-rest-client</artifactId>
-      <version>${version.metis-framework}</version>
+      <artifactId>metis-common-spring-properties</artifactId>
     </dependency>
     <dependency>
       <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-common-spring-properties</artifactId>
-      <version>${version.metis-framework}</version>
+      <artifactId>metis-common-security</artifactId>
     </dependency>
     <dependency>
       <groupId>eu.europeana.cloud</groupId>
@@ -61,6 +59,14 @@
           <artifactId>spring-boot-starter-logging</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -122,6 +128,16 @@
 
     <!-- Test -->
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
     </dependency>
@@ -136,6 +152,10 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>

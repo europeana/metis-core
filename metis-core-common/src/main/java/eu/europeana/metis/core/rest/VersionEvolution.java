@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.rest;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +30,7 @@ public class VersionEvolution {
 
     private String workflowExecutionId;
     private ExecutablePluginType pluginType;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private Date finishedTime;
 
     public String getWorkflowExecutionId() {

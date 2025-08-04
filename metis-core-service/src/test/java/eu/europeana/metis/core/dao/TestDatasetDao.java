@@ -3,41 +3,31 @@ package eu.europeana.metis.core.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import dev.morphia.Datastore;
 import dev.morphia.DeleteOptions;
-import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
-import eu.europeana.cloud.service.mcs.exception.DataSetAlreadyExistsException;
-import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.utils.TestObjectFactory;
-import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class TestDatasetDao {
 
   private static DatasetDao datasetDao;
   private static Dataset dataset;
   private static EmbeddedLocalhostMongo embeddedLocalhostMongo;
-  private static MorphiaDatastoreProviderImpl provider;
-  private static DataSetServiceClient ecloudDataSetServiceClient;
+  private static MorphiaDatastoreProviderImpl morphiaDatastoreProvider;
 
   @BeforeAll
   static void prepare() {
@@ -45,16 +35,13 @@ class TestDatasetDao {
     embeddedLocalhostMongo.start();
     String mongoHost = embeddedLocalhostMongo.getMongoHost();
     int mongoPort = embeddedLocalhostMongo.getMongoPort();
-    MongoClient mongoClient = MongoClients
-        .create(String.format("mongodb://%s:%s", mongoHost, mongoPort));
-    provider = new MorphiaDatastoreProviderImpl(mongoClient, "test");
-    ecloudDataSetServiceClient = Mockito.mock(DataSetServiceClient.class);
+    MongoClient mongoClient = MongoClients.create(String.format("mongodb://%s:%s", mongoHost, mongoPort));
+    morphiaDatastoreProvider = new MorphiaDatastoreProviderImpl(mongoClient, "test");
 
-    datasetDao = new DatasetDao(provider, ecloudDataSetServiceClient);
+    datasetDao = new DatasetDao(morphiaDatastoreProvider);
     datasetDao.setDatasetsPerRequest(1);
-    datasetDao.setEcloudProvider("ecloudProvider");
 
-    dataset = TestObjectFactory.createDataset("testName");
+    dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
   }
 
   @AfterAll
@@ -64,10 +51,9 @@ class TestDatasetDao {
 
   @AfterEach
   void cleanUp() {
-    Datastore datastore = provider.getDatastore();
+    Datastore datastore = morphiaDatastoreProvider.getDatastore();
     datastore.find(Dataset.class).delete(new DeleteOptions().multi(true));
     datastore.find(DatasetIdSequence.class).delete();
-    Mockito.reset(ecloudDataSetServiceClient);
   }
 
   @Test
@@ -141,15 +127,6 @@ class TestDatasetDao {
     Dataset createdDataset = datasetDao.create(dataset);
     Dataset storedDataset = datasetDao.getDatasetByDatasetId(createdDataset.getDatasetId());
     assertEquals(createdDataset.getDatasetName(), storedDataset.getDatasetName());
-  }
-
-  @Test
-  void getDatasetByOrganizationIdAndDatasetName() {
-    Dataset createdDataset = datasetDao.create(dataset);
-    Dataset storedDataset = datasetDao
-        .getDatasetByOrganizationIdAndDatasetName(createdDataset.getOrganizationId(),
-            createdDataset.getDatasetName());
-    assertEquals(createdDataset.getDatasetId(), storedDataset.getDatasetId());
   }
 
   @Test
@@ -272,93 +249,13 @@ class TestDatasetDao {
   }
 
   @Test
-  void testGetAllDatasetByOrganizationId() {
-    Dataset ds1 = TestObjectFactory.createDataset("dataset1");
-    //add some required fields (indexed)
-    ds1.setOrganizationId("organizationId1");
-    ds1.setEcloudDatasetId("id1");
-    ds1.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 1));
-    datasetDao.create(ds1);
-
-    Dataset ds2 = TestObjectFactory.createDataset("dataset2");
-    //add some required fields (indexed)
-    ds2.setOrganizationId("organizationId1");
-    ds2.setEcloudDatasetId("id2");
-    ds2.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 2));
-    datasetDao.create(ds2);
-
-    Dataset ds3 = TestObjectFactory.createDataset("dataset3");
-    //add some required fields (indexed)
-    ds3.setOrganizationId("organizationId2");
-    ds3.setEcloudDatasetId("id3");
-    ds3.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 3));
-    datasetDao.create(ds3);
-
-    // Check with pagination
-    int nextPage = 0;
-    int allDatasetsCount = 0;
-    do {
-      ResponseListWrapper<Dataset> datasetResponseListWrapper = new ResponseListWrapper<>();
-      datasetResponseListWrapper.setResultsAndLastPage(
-          datasetDao.getAllDatasetsByOrganizationId("organizationId1", nextPage), datasetDao
-              .getDatasetsPerRequest(), nextPage);
-      allDatasetsCount += datasetResponseListWrapper.getListSize();
-      nextPage = datasetResponseListWrapper.getNextPage();
-    } while (nextPage != -1);
-    assertEquals(2, allDatasetsCount);
-
-    // Check without pagination
-    final List<Dataset> resultWithoutPagination =
-        datasetDao.getAllDatasetsByOrganizationId("organizationId1");
-    assertEquals(2, resultWithoutPagination.size());
-  }
-
-  @Test
-  void testGetAllDatasetByOrganizationName() {
-    Dataset ds1 = TestObjectFactory.createDataset("dataset1");
-    //add some required fields (indexed)
-    ds1.setOrganizationName("organizationName1");
-    ds1.setEcloudDatasetId("id1");
-    ds1.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 1));
-    datasetDao.create(ds1);
-
-    Dataset ds2 = TestObjectFactory.createDataset("dataset2");
-    //add some required fields (indexed)
-    ds2.setOrganizationName("organizationName1");
-    ds2.setEcloudDatasetId("id2");
-    ds2.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 2));
-    datasetDao.create(ds2);
-
-    Dataset ds3 = TestObjectFactory.createDataset("dataset3");
-    //add some required fields (indexed)
-    ds3.setOrganizationName("organizationName2");
-    ds3.setEcloudDatasetId("id3");
-    ds3.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 3));
-    datasetDao.create(ds3);
-
-    int nextPage = 0;
-    int allDatasetsCount = 0;
-    do {
-      ResponseListWrapper<Dataset> datasetResponseListWrapper = new ResponseListWrapper<>();
-      datasetResponseListWrapper.setResultsAndLastPage(
-          datasetDao.getAllDatasetsByOrganizationName("organizationName1", nextPage), datasetDao
-              .getDatasetsPerRequest(), nextPage);
-      allDatasetsCount += datasetResponseListWrapper.getListSize();
-      nextPage = datasetResponseListWrapper.getNextPage();
-    } while (nextPage != -1);
-
-    assertEquals(2, allDatasetsCount);
-  }
-
-  @Test
   void testFindNextInSequenceDatasetId() {
     DatasetIdSequence datasetIdSequence = new DatasetIdSequence(0);
-    provider.getDatastore().save(datasetIdSequence);
+    morphiaDatastoreProvider.getDatastore().save(datasetIdSequence);
 
     int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
     assertEquals(1, nextInSequenceDatasetId);
 
-    Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     dataset.setDatasetId("2");
     datasetDao.create(dataset);
 
@@ -367,65 +264,18 @@ class TestDatasetDao {
   }
 
   @Test
-  void testCheckAndCreateDatasetInEcloud() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any())).thenReturn(null);
-
-    datasetDao.checkAndCreateDatasetInEcloud(dataset);
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud_FieldWithEcloudIdIsAlreadyPresent() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
-    dataset.setEcloudDatasetId("f525f64c-fea0-44bf-8c56-88f30962734c");
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any())).thenReturn(null);
-
-    datasetDao.checkAndCreateDatasetInEcloud(dataset);
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud_DataSetAlreadyExistsException() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any()))
-        .thenThrow(new DataSetAlreadyExistsException("Dataset already exist, not recreating"));
-
-    assertThrows(ExternalTaskException.class,
-        () -> datasetDao.checkAndCreateDatasetInEcloud(dataset));
-  }
-
-  @Test
-  void testCheckAndCreateDatasetInEcloud_MCSException() throws Exception {
-    Dataset dataset = TestObjectFactory.createDataset("datasetName");
-    datasetDao.create(dataset);
-    when(ecloudDataSetServiceClient.createDataSet(any(), any(), any()))
-        .thenThrow(new MCSException("An error has occurred during ecloud dataset creation."));
-
-    assertThrows(ExternalTaskException.class,
-        () -> datasetDao.checkAndCreateDatasetInEcloud(dataset));
-  }
-
-  @Test
   void testSearchDatasetsBasedOnSearchString() {
     Dataset ds1 = TestObjectFactory.createDataset("dataset1");
-    //add some required fields (indexed)
-    ds1.setOrganizationName("organizationName1");
     ds1.setEcloudDatasetId("id1");
     ds1.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 1));
     datasetDao.create(ds1);
 
     Dataset ds2 = TestObjectFactory.createDataset("test_dataset_2");
-    //add some required fields (indexed)
-    ds2.setOrganizationName("organizationName1");
     ds2.setEcloudDatasetId("id2");
     ds2.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 2));
     datasetDao.create(ds2);
 
     Dataset ds3 = TestObjectFactory.createDataset("test_3");
-    //add some required fields (indexed)
-    ds3.setOrganizationName("organizationName2");
     ds3.setEcloudDatasetId("id3");
     ds3.setDatasetId(Integer.toString(TestObjectFactory.DATASETID + 3));
     datasetDao.create(ds3);

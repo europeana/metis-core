@@ -14,6 +14,7 @@ import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
@@ -60,11 +61,11 @@ public class WorkflowExecutionFactory {
   // Expect the dataset to be synced with eCloud.
   // Does not save the workflow execution.
   WorkflowExecution createWorkflowExecution(Workflow workflow, Dataset dataset,
-      PluginWithExecutionId<ExecutablePlugin> predecessor, int priority)
+      PluginWithExecutionId<ExecutablePlugin> predecessor)
       throws BadContentException {
 
     // Create the plugins
-    final List<AbstractExecutablePlugin<?>> workflowPlugins = new ArrayList<>();
+    final List<AbstractMetisPlugin<?>> workflowPlugins = new ArrayList<>();
     final List<ExecutablePluginType> typesInWorkflow = new ArrayList<>();
     for (AbstractExecutablePluginMetadata pluginMetadata : workflow.getMetisPluginsMetadata()) {
       if (pluginMetadata.isEnabled()) {
@@ -79,8 +80,11 @@ public class WorkflowExecutionFactory {
       workflowPlugins.getFirst().getPluginMetadata().setPreviousRevisionInformation(predecessor.getPlugin());
     }
 
-    // Done: create workflow with all the information.
-    return new WorkflowExecution(dataset, workflowPlugins, priority);
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setMetisPlugins(workflowPlugins.stream().map(AbstractMetisPlugin.class::cast).toList());
+    return workflowExecution;
   }
 
   private AbstractExecutablePlugin<?> createWorkflowExecutionPlugin(Dataset dataset,
@@ -117,16 +121,16 @@ public class WorkflowExecutionFactory {
 
   private void setupValidationExternalForPluginMetadata(ValidationExternalPluginMetadata metadata,
       ValidationProperties validationProperties) {
-    metadata.setUrlOfSchemasZip(validationProperties.getUrlOfSchemasZip());
-    metadata.setSchemaRootPath(validationProperties.getSchemaRootPath());
-    metadata.setSchematronRootPath(validationProperties.getSchematronRootPath());
+    metadata.setUrlOfSchemasZip(validationProperties.urlOfSchemasZip());
+    metadata.setSchemaRootPath(validationProperties.schemaRootPath());
+    metadata.setSchematronRootPath(validationProperties.schematronRootPath());
   }
 
   private void setupValidationInternalForPluginMetadata(ValidationInternalPluginMetadata metadata,
       ValidationProperties validationProperties) {
-    metadata.setUrlOfSchemasZip(validationProperties.getUrlOfSchemasZip());
-    metadata.setSchemaRootPath(validationProperties.getSchemaRootPath());
-    metadata.setSchematronRootPath(validationProperties.getSchematronRootPath());
+    metadata.setUrlOfSchemasZip(validationProperties.urlOfSchemasZip());
+    metadata.setSchemaRootPath(validationProperties.schemaRootPath());
+    metadata.setSchematronRootPath(validationProperties.schematronRootPath());
   }
 
   private void setupXsltIdForPluginMetadata(Dataset dataset,

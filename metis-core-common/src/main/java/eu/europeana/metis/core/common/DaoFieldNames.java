@@ -8,6 +8,7 @@ package eu.europeana.metis.core.common;
  */
 public enum DaoFieldNames {
   ID("_id"),
+  USER_ID("userId"),
   DATASET_ID("datasetId"),
   DATASET_NAME("datasetName"),
   PROVIDER("provider"),

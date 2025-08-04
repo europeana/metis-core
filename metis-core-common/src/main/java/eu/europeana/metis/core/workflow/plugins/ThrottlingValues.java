@@ -1,62 +1,39 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import java.util.Map;
+
 /**
- * Class encapsulating all possible throttling levels tuples
- *
- * @author Joana Sousa (joana.sousa@europeana.eu)
- * @since 2022-08-12
+ * Class encapsulating all possible throttling levels tuples.
  */
 public class ThrottlingValues {
 
-    private final int weak;
-    private final int medium;
-    private final int strong;
+  private final Map<ThrottlingLevel, Integer> throttlingMap;
 
-    /**
-     * Constructor
-     *
-     * @param weak The throttling details to represent level weak
-     * @param medium The throttling details to represent level medium
-     * @param strong The throttling details to represent level strong
-     */
-    public ThrottlingValues(int weak, int medium, int strong) {
-        this.weak = weak;
-        this.medium = medium;
-        this.strong = strong;
-    }
+  /**
+   * Constructor
+   *
+   * @param weak The throttling details to represent level weak
+   * @param medium The throttling details to represent level medium
+   * @param strong The throttling details to represent level strong
+   */
+  public ThrottlingValues(int weak, int medium, int strong) {
+    throttlingMap = Map.of(
+        ThrottlingLevel.WEAK, weak,
+        ThrottlingLevel.MEDIUM, medium,
+        ThrottlingLevel.STRONG, strong
+    );
+  }
 
-    /**
-     * Return the details related to weak throttling level
-     * @return The details about throttling level weak
-     */
-    public int getWeak() {
-        return weak;
-    }
-
-    /**
-     * Return the details related to medium throttling level
-     * @return The details about throttling level medium
-     */
-    public int getMedium() {
-        return medium;
-    }
-
-    /**
-     * Return the details related to strong throttling level
-     * @return The details about throttling level strong
-     */
-    public int getStrong() {
-        return strong;
-    }
-
-    public int getThreadNumberFromThrottlingLevel(ThrottlingLevel throttlingLevel){
-        int result;
-      switch (throttlingLevel) {
-        case MEDIUM -> result = medium;
-        case STRONG -> result = strong;
-        default -> result = weak;
-      }
-
-        return result;
-    }
+  /**
+   * Returns the number of threads associated with the given throttling level.
+   * If the given throttling level is not found in the map, it returns the number of threads
+   * associated with the weak throttling level.
+   *
+   * @param throttlingLevel The throttling level for which to get the number of threads.
+   * @return The number of threads associated with the given throttling level, or the number of threads
+   *         associated with the weak throttling level if the given throttling level is not found.
+   */
+  public int getThreadNumberFromThrottlingLevel(ThrottlingLevel throttlingLevel) {
+    return throttlingMap.getOrDefault(throttlingLevel, throttlingMap.get(ThrottlingLevel.WEAK));
+  }
 }

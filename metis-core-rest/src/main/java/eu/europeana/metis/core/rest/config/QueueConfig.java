@@ -4,12 +4,18 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.ForgivingExceptionHandler;
+import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
+import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.QueueConsumer;
 import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.exception.GenericMetisException;
+import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,11 +27,8 @@ import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
-import jakarta.annotation.PreDestroy;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import metis.common.config.properties.TruststoreConfigurationProperties;
-import metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +37,21 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * RabbitMQ configuration class.
+ *
+ * @param <S> The type representing the settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
+ */
 @Configuration
 @EnableConfigurationProperties({RabbitmqConfigurationProperties.class, TruststoreConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
-@EnableScheduling
-public class QueueConfig implements WebMvcConfigurer {
+public class QueueConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(QueueConfig.class);
-  private QueueConsumer queueConsumer;
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String X_QUEUE_TYPE = "quorum";
+  private QueueConsumer<S, T> queueConsumer;
 
   private Connection connection;
   private Channel publisherChannel;
@@ -68,8 +74,7 @@ public class QueueConfig implements WebMvcConfigurer {
       if (rabbitmqConfigurationProperties.isEnableCustomTruststore()) {
         // Load the ssl context with the provided truststore
         final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        // This file is determined in the config files, it does not pose a risk.
-        @SuppressWarnings("findsecbugs:PATH_TRAVERSAL_IN")
+        @SuppressWarnings("findsecbugs:PATH_TRAVERSAL_IN") // This file is determined in the config files, it does not pose a risk.
         final Path trustStoreFile = Paths.get(
             truststoreConfigurationProperties.getPath());
         try (final InputStream inputStream = Files.newInputStream(trustStoreFile)) {
@@ -114,31 +119,29 @@ public class QueueConfig implements WebMvcConfigurer {
   private void setupChannelProperties(Channel channel, RabbitmqConfigurationProperties rabbitmqConfigurationProperties)
       throws IOException {
     Map<String, Object> args = new ConcurrentHashMap<>();
-    args.put("x-max-priority",
-        rabbitmqConfigurationProperties.getHighestPriority());//Higher number means higher priority
-    //Second boolean durable to false
-    channel.queueDeclare(rabbitmqConfigurationProperties.getQueueName(), false, false, false, args);
+    args.put("x-queue-type", X_QUEUE_TYPE);
+    channel.queueDeclare(rabbitmqConfigurationProperties.getQueueName(), true, false, false, args);
   }
 
+  /**
+   * Creates and returns a QueueConsumer instance for message consumption.
+   *
+   * @param rabbitmqConfigurationProperties RabbitMQ configuration properties.
+   * @param workflowExecutionManager Workflow execution manager to manage the workflow execution.
+   * @param workflowExecutionMonitor Workflow execution monitor for monitoring execution progress.
+   * @param rabbitmqConsumerChannel RabbitMQ consumer channel for consuming messages.
+   * @return An instance of QueueConsumer configured with the provided parameters.
+   * @throws IOException If an I/O error occurs during the consumer setup.
+   */
   @Bean
-  public QueueConsumer getQueueConsumer(
+  public QueueConsumer<S, T> getQueueConsumer(
       RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
-      WorkflowExecutorManager workflowExecutionManager,
+      WorkflowExecutorManager<S, T> workflowExecutionManager,
       WorkflowExecutionMonitor workflowExecutionMonitor,
       @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel) throws IOException {
-    queueConsumer = new QueueConsumer(rabbitmqConsumerChannel,
-        rabbitmqConfigurationProperties.getQueueName(), workflowExecutionManager, workflowExecutionManager,
-        workflowExecutionMonitor);
+    queueConsumer = new QueueConsumer<>(rabbitmqConsumerChannel,
+        rabbitmqConfigurationProperties.getQueueName(), workflowExecutionManager, workflowExecutionMonitor);
     return queueConsumer;
-  }
-
-  // TODO: 24/08/2023 Is there a better way to load the configuration here?
-  @Scheduled(
-      fixedDelayString = "${metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds}",
-      initialDelayString = "${metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds}")
-  public void runQueueConsumerCleanup() throws InterruptedException {
-    this.queueConsumer.checkAndCleanCompletionService();
-    LOGGER.debug("Queue consumer cleanup finished.");
   }
 
   /**

@@ -5,8 +5,12 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -22,19 +26,19 @@ import org.slf4j.LoggerFactory;
  * consuming of items from the queue, through the implemented {@link #handleDelivery(String,
  * Envelope, BasicProperties, byte[])} method.
  *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-13
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
-public class QueueConsumer extends DefaultConsumer {
+public class QueueConsumer<S extends EngineTaskSettings, T extends EngineTask> extends DefaultConsumer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(QueueConsumer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  private final WorkflowExecutionSettings workflowExecutionSettings;
-  private final WorkflowExecutorManager workflowExecutorManager;
+  private final WorkflowExecutorManager<S, T> workflowExecutorManager;
   private final WorkflowExecutionMonitor workflowExecutionMonitor;
 
   private final ExecutorService threadPool;
   private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private int threadsCounter;
 
   /**
@@ -49,18 +53,15 @@ public class QueueConsumer extends DefaultConsumer {
    * @throws IOException if the consumer channel initialization fails
    */
   public QueueConsumer(Channel rabbitmqConsumerChannel, String rabbitmqQueueName,
-      WorkflowExecutionSettings workflowExecutionSettings,
-      WorkflowExecutorManager workflowExecutorManager,
+      WorkflowExecutorManager<S,T> workflowExecutorManager,
       WorkflowExecutionMonitor workflowExecutionMonitor) throws IOException {
     super(workflowExecutorManager.getRabbitmqConsumerChannel());
-    this.workflowExecutionSettings = workflowExecutionSettings;
     this.workflowExecutorManager = workflowExecutorManager;
     threadPool = Executors.newCachedThreadPool();
     completionService = new ExecutorCompletionService<>(threadPool);
     this.workflowExecutionMonitor = workflowExecutionMonitor;
 
-    // For correct priority. Keep in mind this pre-fetches a message before going into
-    // handleDelivery
+    // Keep in mind this pre-fetches a message before going into handleDelivery
     rabbitmqConsumerChannel.basicQos(1);
     // Auto acknowledge false(second parameter) because of Qos.
     rabbitmqConsumerChannel.basicConsume(rabbitmqQueueName, false, this);
@@ -125,7 +126,7 @@ public class QueueConsumer extends DefaultConsumer {
     try {
       if (workflowExecution.isCancelling()) {
         // Has been cancelled, do not execute
-        workflowExecution.setWorkflowAndAllQualifiedPluginsToCancelled();
+        workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
         workflowExecutorManager.getWorkflowExecutionDao().update(workflowExecution);
         LOGGER.info("workflowExecutionId: {} - Cancelled", workflowExecution.getId());
       } else {
@@ -139,8 +140,7 @@ public class QueueConsumer extends DefaultConsumer {
   }
 
   private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor workflowExecutor = new WorkflowExecutor(workflowExecution,
-        workflowExecutorManager, workflowExecutionSettings);
+    WorkflowExecutor<S, T> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
     completionService.submit(workflowExecutor);
     threadsCounter++;
   }
@@ -180,9 +180,7 @@ public class QueueConsumer extends DefaultConsumer {
    * Checks if the workflow execution was run as expected.
    * <p>
    * If one of the plugins was not allowed to run therefore the workflow execution did not complete
-   * as a whole then we are resending the execution identifier back to the queue. If this execution
-   * needs to be prioritized then the priority should be updated inside the {@link
-   * java.util.concurrent.Callable}
+   * as a whole then we are resending the execution identifier back to the queue.
    * </p>
    *
    * @param workflowExecutionRanFlagPair the workflow execution future
@@ -198,8 +196,8 @@ public class QueueConsumer extends DefaultConsumer {
       } else {
         LOGGER.info("workflowExecutionId: {} - Sent to queue because execution could "
             + "not be claimed or plugin could not run in this instance", workflowExecution.getId());
-        workflowExecutorManager.addWorkflowExecutionToQueue(workflowExecution.getId().toString(),
-            workflowExecution.getWorkflowPriority());
+        workflowExecutorManager.addWorkflowExecutionToQueue(workflowExecution.getId().toString()
+        );
       }
     }
   }

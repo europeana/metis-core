@@ -1,0 +1,38 @@
+{
+  "pluginType": "OAIPMH_HARVEST",
+  "id": "7e4d3bcfe12a9f34c9ad8e5b",
+  "pluginStatus": "RUNNING",
+  "dataStatus": "VALID",
+  "failMessage": "failMessage",
+  "startedDate": "2025-03-10T10:10:10.000Z",
+  "updatedDate": "2025-03-10T10:10:10.000Z",
+  "finishedDate": "2025-03-10T10:10:10.000Z",
+  "externalTaskId": "externalTaskId",
+  "executionProgress": {
+    "expectedRecords": 100,
+    "processedRecords": 100,
+    "progressPercentage": 100,
+    "ignoredRecords": 0,
+    "deletedRecords": 0,
+    "errors": 0,
+    "status": "PROCESSED",
+    "totalDatabaseRecords": 100
+  },
+  "topologyName": "topologyName",
+  "canDisplayRawXml": true,
+  "pluginMetadata": {
+    "revisionNamePreviousPlugin": null,
+    "revisionTimestampPreviousPlugin": null,
+    "enabled": false,
+    "useDefaultIdentifiers": false,
+    "url": null,
+    "metadataFormat": null,
+    "setSpec": null,
+    "incrementalHarvest": false,
+    "fromDate": null,
+    "untilDate": null,
+    "identifierPrefixRemoval": null,
+    "executablePluginType": "OAIPMH_HARVEST",
+    "pluginType": "OAIPMH_HARVEST"
+  }
+}

@@ -1,6 +1,10 @@
 package eu.europeana.metis.core.rest.controller;
 
-import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
+import static eu.europeana.metis.security.test.JwtUtils.BEARER;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
+import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
+import static eu.europeana.metis.utils.RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -10,8 +14,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,8 +27,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import eu.europeana.metis.authentication.rest.client.AuthenticationClient;
-import eu.europeana.metis.authentication.user.MetisUserView;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -39,46 +41,64 @@ import eu.europeana.metis.core.rest.PluginsWithDataAvailability.PluginWithDataAv
 import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
+import eu.europeana.metis.core.rest.config.SecurityConfig;
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
-import eu.europeana.metis.core.rest.execution.details.WorkflowExecutionView;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.OrchestratorService;
+import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.workflow.Workflow;
-import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.execution.WorkflowExecutionDTO;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
-import eu.europeana.metis.exception.UserUnauthorizedException;
-import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-06
- */
+@WebMvcTest(OrchestratorController.class)
+@ContextConfiguration(classes = {OrchestratorController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
 class TestOrchestratorController {
+
+  @MockBean
+  private OrchestratorService orchestratorService;
+
+  @MockBean
+  private JwtDecoder jwtDecoder;
+
+  @MockBean
+  private UserService userService;
+
+  private static MockMvc mockMvc;
+  private final JwtUtils jwtUtils;
+
+  @Autowired
+  public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties) {
+    jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
+  }
 
   private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
@@ -87,485 +107,367 @@ class TestOrchestratorController {
     simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
 
-  private static OrchestratorService orchestratorService;
-  private static MockMvc orchestratorControllerMock;
-  private static AuthenticationClient authenticationClient;
-
   @BeforeAll
-  static void setUp() {
-    orchestratorService = mock(OrchestratorService.class);
-    authenticationClient = mock(AuthenticationClient.class);
-    OrchestratorController orchestratorController =
-        new OrchestratorController(orchestratorService, authenticationClient);
-    orchestratorControllerMock = MockMvcBuilders
-        .standaloneSetup(orchestratorController)
-        .setControllerAdvice(new RestResponseExceptionHandler())
-        .setMessageConverters(new MappingJackson2HttpMessageConverter(),
-            new MappingJackson2XmlHttpMessageConverter(),
-            new StringHttpMessageConverter(StandardCharsets.UTF_8))
-        .build();
+  static void setup(WebApplicationContext context) {
+    mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                             .apply(SecurityMockMvcConfigurers.springSecurity())
+                             .defaultRequest(get("/"))
+                             .build();
   }
 
-  @AfterEach
+  @BeforeEach
   void cleanUp() {
-    Mockito.reset(orchestratorService, authenticationClient);
+    reset(orchestratorService);
+    reset(jwtDecoder);
+    reset(userService);
   }
 
   @Test
   void createWorkflow() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    orchestratorControllerMock.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(201))
-        .andExpect(content().string(""));
+    mockMvc.perform(post(ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isCreated())
+           .andExpect(content().string(""));
 
-    verify(orchestratorService, times(1))
-        .createWorkflow(eq(metisUserView), anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).createWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
   void createWorkflow_Unauthenticated() throws Exception {
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED));
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    orchestratorControllerMock.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    mockMvc.perform(post(ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isUnauthorized());
 
-    verify(orchestratorService, never())
-        .createWorkflow(any(), anyString(), any(Workflow.class), any());
+    verify(orchestratorService, never()).createWorkflow(anyString(), any(Workflow.class), any());
   }
 
   @Test
   void createWorkflow_Unauthorized() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
-        .when(orchestratorService).createWorkflow(eq(metisUserView), any(), any(), isNull());
-    orchestratorControllerMock.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    mockMvc.perform(post(ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isForbidden());
+
+    verify(orchestratorService, never()).createWorkflow(anyString(), any(Workflow.class), any());
   }
 
   @Test
   void createWorkflow_WorkflowAlreadyExistsException() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     doThrow(new WorkflowAlreadyExistsException("Some error")).when(orchestratorService)
-        .createWorkflow(any(MetisUserView.class), anyString(), any(Workflow.class), any());
-    orchestratorControllerMock.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(409))
-        .andExpect(content().string("{\"errorMessage\":\"Some error\"}"));
+                                                             .createWorkflow(anyString(), any(Workflow.class), any());
+    mockMvc.perform(post(ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isConflict())
+           .andExpect(jsonPath("$.errorMessage", is("Some error")));
 
-    verify(orchestratorService, times(1))
-        .createWorkflow(eq(metisUserView), anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).createWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
   void updateWorkflow() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    orchestratorControllerMock.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(204))
-        .andExpect(content().string(""));
+    mockMvc.perform(
+               put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isNoContent())
+           .andExpect(content().string(""));
 
-    verify(orchestratorService, times(1))
-        .updateWorkflow(eq(metisUserView), anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).updateWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
   void updateWorkflow_Unauthenticated() throws Exception {
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED));
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    orchestratorControllerMock.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
-
-    verify(orchestratorService, never())
-        .updateWorkflow(any(), anyString(), any(Workflow.class), any());
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isUnauthorized());
   }
 
   @Test
   void updateWorkflow_Unauthorized() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
-        .when(orchestratorService)
-        .updateWorkflow(eq(metisUserView), anyString(), any(Workflow.class), isNull());
-    orchestratorControllerMock.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
+               Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isForbidden());
   }
 
   @Test
   void updateWorkflow_NoWorkflowFoundException() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     doThrow(new NoWorkflowFoundException("Some error")).when(orchestratorService)
-        .updateWorkflow(eq(metisUserView), anyString(), any(Workflow.class), isNull());
-    orchestratorControllerMock.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(TestUtils.convertObjectToJsonBytes(workflow)))
-        .andExpect(status().is(404))
-        .andExpect(content().string("{\"errorMessage\":\"Some error\"}"));
+                                                       .updateWorkflow(anyString(), any(Workflow.class), isNull());
+    mockMvc.perform(put(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
+               Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(TestUtils.convertObjectToJsonBytes(workflow)))
+           .andExpect(status().isNotFound())
+           .andExpect(jsonPath("$.errorMessage", is("Some error")));
 
-    verify(orchestratorService, times(1))
-        .updateWorkflow(eq(metisUserView), anyString(), any(Workflow.class), isNull());
+    verify(orchestratorService, times(1)).updateWorkflow(anyString(), any(Workflow.class), isNull());
   }
 
   @Test
   void deleteWorkflow() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    orchestratorControllerMock.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(""))
-        .andExpect(status().is(204))
-        .andExpect(content().string(""));
-    verify(orchestratorService, times(1)).deleteWorkflow(eq(metisUserView), anyString());
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    mockMvc.perform(
+               delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isNoContent())
+           .andExpect(content().string(""));
+    verify(orchestratorService, times(1)).deleteWorkflow(anyString());
   }
 
   @Test
   void deleteWorkflow_Unauthenticated() throws Exception {
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED));
-    orchestratorControllerMock.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(""))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
-    verify(orchestratorService, never()).deleteWorkflow(any(), anyString());
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isUnauthorized());
   }
 
   @Test
   void deleteWorkflow_Unauthorized() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
-        .when(orchestratorService).deleteWorkflow(eq(metisUserView), any());
-    orchestratorControllerMock.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(""))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+    mockMvc.perform(
+               delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isForbidden());
   }
 
   @Test
   void getWorkflow() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     Workflow workflow = TestObjectFactory.createWorkflowObject();
-    when(orchestratorService.getWorkflow(eq(metisUserView), anyString())).thenReturn(workflow);
-    orchestratorControllerMock.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
-        Integer.toString(TestObjectFactory.DATASETID))
-        .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.datasetId", is(workflow.getDatasetId())));
+    when(orchestratorService.getWorkflow(anyString())).thenReturn(workflow);
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID,
+               Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.datasetId", is(workflow.getDatasetId())));
 
-    verify(orchestratorService, times(1)).getWorkflow(eq(metisUserView), anyString());
+    verify(orchestratorService, times(1)).getWorkflow(anyString());
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(eq(metisUserView), anyString(), isNull(), isNull(),
-            anyInt()))
-        .thenReturn(workflowExecution);
-    orchestratorControllerMock.perform(
-        post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(201))
-        .andExpect(jsonPath("$.workflowStatus", is(WorkflowStatus.INQUEUE.name())));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    WorkflowExecutionDTO workflowExecutionDTO = TestObjectFactory.createWorkflowExecutionDTOObject();
+    when(
+        orchestratorService.addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString()))
+        .thenReturn(workflowExecutionDTO);
+    mockMvc.perform(
+               post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isCreated())
+           .andExpect(jsonPath("$.workflowStatus", is(WorkflowStatus.INQUEUE.name())));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_Unauthenticated() throws Exception {
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED));
-    orchestratorControllerMock.perform(
-        post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE, Integer.toString(TestObjectFactory.DATASETID))
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isUnauthorized());
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_Unauthorized() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    when(orchestratorService
-        .addWorkflowInQueueOfWorkflowExecutions(eq(metisUserView), anyString(), isNull(), isNull(),
-            anyInt()))
-        .thenThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED));
-    orchestratorControllerMock.perform(
-        post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+    mockMvc.perform(
+               post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isForbidden());
   }
 
   @Test
-  void addWorkflowInQueueOfWorkflowExecutions_WorkflowExecutionAlreadyExistsException()
-      throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doThrow(new WorkflowExecutionAlreadyExistsException("Some error")).when(orchestratorService)
-        .addWorkflowInQueueOfWorkflowExecutions(eq(metisUserView), anyString(), isNull(), isNull(),
-            anyInt());
-    orchestratorControllerMock.perform(
-        post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(409))
-        .andExpect(content().string("{\"errorMessage\":\"Some error\"}"));
+  void addWorkflowInQueueOfWorkflowExecutions_WorkflowExecutionAlreadyExistsException() throws Exception {
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    doThrow(new WorkflowExecutionAlreadyExistsException("Some error"))
+        .when(orchestratorService)
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString());
+    mockMvc.perform(
+               post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isConflict())
+           .andExpect(jsonPath("$.errorMessage", is("Some error")));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoDatasetFoundException()
       throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doThrow(new NoDatasetFoundException("Some error")).when(orchestratorService)
-        .addWorkflowInQueueOfWorkflowExecutions(eq(metisUserView), anyString(), isNull(), isNull(),
-            anyInt());
-    orchestratorControllerMock.perform(
-        post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(404))
-        .andExpect(content().string("{\"errorMessage\":\"Some error\"}"));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    doThrow(new NoDatasetFoundException("Some error"))
+        .when(orchestratorService)
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString());
+    mockMvc.perform(
+               post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isNotFound())
+           .andExpect(jsonPath("$.errorMessage", is("Some error")));
   }
 
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_NoWorkflowFoundException()
       throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doThrow(new NoWorkflowFoundException("Some error")).when(orchestratorService)
-        .addWorkflowInQueueOfWorkflowExecutions(eq(metisUserView), anyString(), isNull(), isNull(),
-            anyInt());
-    orchestratorControllerMock.perform(
-        post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(404))
-        .andExpect(content().string("{\"errorMessage\":\"Some error\"}"));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    doThrow(new NoWorkflowFoundException("Some error"))
+        .when(orchestratorService)
+        .addWorkflowInQueueOfWorkflowExecutions(anyString(), isNull(), isNull(), anyString());
+    mockMvc.perform(
+               post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isNotFound())
+           .andExpect(jsonPath("$.errorMessage", is("Some error")));
   }
 
   @Test
   void cancelWorkflowExecution() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doNothing().when(orchestratorService).cancelWorkflowExecution(eq(metisUserView), anyString());
-    orchestratorControllerMock.perform(
-        delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
-            TestObjectFactory.EXECUTIONID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(204))
-        .andExpect(content().string(""));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    doNothing().when(orchestratorService).cancelWorkflowExecution(anyString(), anyString());
+    mockMvc.perform(
+               delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, TestObjectFactory.EXECUTIONID)
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(""))
+           .andExpect(status().isNoContent())
+           .andExpect(content().string(""));
   }
 
   @Test
   void cancelWorkflowExecution_Unauthenticated() throws Exception {
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED));
-    orchestratorControllerMock.perform(
-        delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
-            TestObjectFactory.EXECUTIONID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID, TestObjectFactory.EXECUTIONID)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isUnauthorized());
   }
 
   @Test
   void cancelWorkflowExecution_Unauthorized() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doThrow(new UserUnauthorizedException(CommonStringValues.UNAUTHORIZED))
-        .when(orchestratorService).cancelWorkflowExecution(eq(metisUserView), anyString());
-    orchestratorControllerMock.perform(
-        delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
-            TestObjectFactory.EXECUTIONID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(401))
-        .andExpect(jsonPath("$.errorMessage", is(CommonStringValues.UNAUTHORIZED)));
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_INVALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isForbidden());
   }
 
   @Test
   void cancelWorkflowExecution_NoWorkflowExecutionFoundException() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    doThrow(new NoWorkflowExecutionFoundException("Some error")).when(orchestratorService)
-        .cancelWorkflowExecution(eq(metisUserView), anyString());
-    orchestratorControllerMock.perform(
-        delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
-            TestObjectFactory.EXECUTIONID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(404))
-        .andExpect(content().string("{\"errorMessage\":\"Some error\"}"));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    doThrow(new NoWorkflowExecutionFoundException("Some error"))
+        .when(orchestratorService).cancelWorkflowExecution(anyString(), anyString());
+    mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isNotFound())
+           .andExpect(jsonPath("$.errorMessage", is("Some error")));
   }
 
   @Test
   void getWorkflowExecutionByExecutionId() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    WorkflowExecution workflowExecution = TestObjectFactory
-        .createWorkflowExecutionObject();
-    workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
-    when(orchestratorService.getWorkflowExecutionByExecutionId(eq(metisUserView), anyString()))
-        .thenReturn(workflowExecution);
-    orchestratorControllerMock.perform(
-        get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
-            TestObjectFactory.EXECUTIONID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.workflowStatus", is(WorkflowStatus.RUNNING.name())));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    WorkflowExecutionDTO workflowExecutionDTO = TestObjectFactory.createWorkflowExecutionDTOObject();
+    workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.RUNNING);
+    when(orchestratorService.getWorkflowExecutionDTOByExecutionId(anyString())).thenReturn(workflowExecutionDTO);
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.workflowStatus", is(WorkflowStatus.RUNNING.name())));
   }
 
   @Test
-  void getLatestFinishedPluginWorkflowExecutionByDatasetIdIfPluginTypeAllowedForExecution()
-      throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    AbstractExecutablePlugin plugin = ExecutablePluginFactory
-        .createPlugin(new ValidationExternalPluginMetadata());
+  void getLatestFinishedPluginWorkflowExecutionByDatasetIdIfPluginTypeAllowedForExecution() throws Exception {
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    AbstractExecutablePlugin plugin = ExecutablePluginFactory.createPlugin(new ValidationExternalPluginMetadata());
     plugin.setId("validation_external_id");
     when(orchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
-        metisUserView, Integer.toString(TestObjectFactory.DATASETID),
+        Integer.toString(TestObjectFactory.DATASETID),
         ExecutablePluginType.VALIDATION_EXTERNAL,
         null))
         .thenReturn(plugin);
 
-    orchestratorControllerMock.perform(
-        get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_ALLOWED_PLUGIN,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .param("pluginType", "VALIDATION_EXTERNAL")
-            .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.pluginType", is(PluginType.VALIDATION_EXTERNAL.name())));
+    mockMvc.perform(
+               get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_ALLOWED_PLUGIN,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .param("pluginType", "VALIDATION_EXTERNAL")
+                   .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.pluginType", is(PluginType.VALIDATION_EXTERNAL.name())));
   }
 
   @Test
   void getLatestFinishedPluginWorkflowExecutionByDatasetIdIfPluginTypeAllowedForExecution_HarvestingPlugin()
       throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    when(orchestratorService
-        .getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(metisUserView,
-            Integer.toString(TestObjectFactory.DATASETID), ExecutablePluginType.OAIPMH_HARVEST,
-            null))
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    when(orchestratorService.getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(
+        Integer.toString(TestObjectFactory.DATASETID), ExecutablePluginType.OAIPMH_HARVEST, null))
         .thenReturn(null);
 
-    orchestratorControllerMock.perform(
-        get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_ALLOWED_PLUGIN,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .param("pluginType", "OAIPMH_HARVEST")
-            .content(""))
-        .andExpect(status().is(200));
+    mockMvc.perform(
+               get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_ALLOWED_PLUGIN,
+                   Integer.toString(TestObjectFactory.DATASETID))
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .param("pluginType", "OAIPMH_HARVEST")
+                   .content(""))
+           .andExpect(status().isOk());
   }
 
   @Test
   void getDatasetExecutionInformation() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetExecutionInformation datasetExecutionInformation = new DatasetExecutionInformation();
     datasetExecutionInformation.setLastHarvestedDate(new Date(1000));
     datasetExecutionInformation.setLastHarvestedRecords(100);
@@ -573,195 +475,155 @@ class TestOrchestratorController {
     datasetExecutionInformation.setLastPublishedDate(new Date(3000));
     datasetExecutionInformation.setLastPublishedRecords(100);
     when(orchestratorService
-        .getDatasetExecutionInformation(metisUserView, Integer.toString(TestObjectFactory.DATASETID)))
+        .getDatasetExecutionInformation(Integer.toString(TestObjectFactory.DATASETID)))
         .thenReturn(datasetExecutionInformation);
 
-    orchestratorControllerMock.perform(
-        get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_INFORMATION,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.lastHarvestedDate",
-            is(simpleDateFormat.format(datasetExecutionInformation.getLastHarvestedDate()))))
-        .andExpect(jsonPath("$.lastHarvestedRecords",
-            is(datasetExecutionInformation.getLastHarvestedRecords())))
-        .andExpect(jsonPath("$.firstPublishedDate",
-            is(simpleDateFormat.format(datasetExecutionInformation.getFirstPublishedDate()))))
-        .andExpect(jsonPath("$.lastPublishedDate",
-            is(simpleDateFormat.format(datasetExecutionInformation.getLastPublishedDate()))))
-        .andExpect(jsonPath("$.lastPublishedRecords",
-            is(datasetExecutionInformation.getLastPublishedRecords())));
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_INFORMATION,
+               Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.lastHarvestedDate",
+               is(simpleDateFormat.format(datasetExecutionInformation.getLastHarvestedDate()))))
+           .andExpect(jsonPath("$.lastHarvestedRecords",
+               is(datasetExecutionInformation.getLastHarvestedRecords())))
+           .andExpect(jsonPath("$.firstPublishedDate",
+               is(simpleDateFormat.format(datasetExecutionInformation.getFirstPublishedDate()))))
+           .andExpect(jsonPath("$.lastPublishedDate",
+               is(simpleDateFormat.format(datasetExecutionInformation.getLastPublishedDate()))))
+           .andExpect(jsonPath("$.lastPublishedRecords",
+               is(datasetExecutionInformation.getLastPublishedRecords())));
   }
 
   @Test
   void getAllWorkflowExecutionsByDatasetId() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     int listSize = 2;
-    ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
+    ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
         orchestratorService.getWorkflowExecutionsPerRequest(), 0);
 
     when(orchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(listSize);
-    when(orchestratorService.getAllWorkflowExecutions(eq(metisUserView), anyString(),
+    when(orchestratorService.getAllWorkflowExecutions(anyString(),
         ArgumentMatchers.anySet(), any(DaoFieldNames.class), anyBoolean(), anyInt()))
         .thenReturn(listOfWorkflowExecutions);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("workflowStatus", WorkflowStatus.INQUEUE.name())
-            .param("nextPage", "")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.results", hasSize(listSize + 1)))
-        .andExpect(
-            jsonPath("$.results[0].datasetId", is(Integer.toString(TestObjectFactory.DATASETID))))
-        .andExpect(jsonPath("$.results[0].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
-        .andExpect(jsonPath("$.results[1].datasetId",
-            is(Integer.toString(TestObjectFactory.DATASETID + 1))))
-        .andExpect(jsonPath("$.results[1].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
-        .andExpect(jsonPath("$.nextPage").isNotEmpty());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID,
+               Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("workflowStatus", WorkflowStatus.INQUEUE.name())
+               .param("nextPage", "")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.results", hasSize(listSize + 1)))
+           .andExpect(jsonPath("$.results[0].datasetId", is(Integer.toString(TestObjectFactory.DATASETID))))
+           .andExpect(jsonPath("$.results[0].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
+           .andExpect(jsonPath("$.results[1].datasetId", is(Integer.toString(TestObjectFactory.DATASETID + 1))))
+           .andExpect(jsonPath("$.results[1].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
+           .andExpect(jsonPath("$.nextPage").isNotEmpty());
   }
 
   @Test
   void getAllWorkflowExecutionsByDatasetIdNegativeNextPage() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID,
-            Integer.toString(TestObjectFactory.DATASETID))
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("workflowStatus", WorkflowStatus.INQUEUE.name())
-            .param("nextPage", "-1")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(406));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID,
+               Integer.toString(TestObjectFactory.DATASETID))
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("workflowStatus", WorkflowStatus.INQUEUE.name())
+               .param("nextPage", "-1")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isNotAcceptable());
   }
 
   @Test
   void getAllWorkflowExecutions() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     int listSize = 2;
-    ResponseListWrapper<WorkflowExecutionView> listOfWorkflowExecutions = new ResponseListWrapper<>();
+    ResponseListWrapper<WorkflowExecutionDTO> listOfWorkflowExecutions = new ResponseListWrapper<>();
     listOfWorkflowExecutions.setResultsAndLastPage(
         TestObjectFactory.createListOfWorkflowExecutions(listSize + 1),
         orchestratorService.getWorkflowExecutionsPerRequest(), 0);
 
     when(orchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(listSize);
-    when(orchestratorService.getAllWorkflowExecutions(eq(metisUserView), isNull(),
+    when(orchestratorService.getAllWorkflowExecutions(isNull(),
         ArgumentMatchers.anySet(), any(DaoFieldNames.class), anyBoolean(), anyInt()))
         .thenReturn(listOfWorkflowExecutions);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("workflowStatus", WorkflowStatus.INQUEUE.name())
-            .param("nextPage", "")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.results", hasSize(listSize + 1)))
-        .andExpect(
-            jsonPath("$.results[0].datasetId", is(Integer.toString(TestObjectFactory.DATASETID))))
-        .andExpect(jsonPath("$.results[0].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
-        .andExpect(jsonPath("$.results[1].datasetId",
-            is(Integer.toString(TestObjectFactory.DATASETID + 1))))
-        .andExpect(jsonPath("$.results[1].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
-        .andExpect(jsonPath("$.nextPage").isNotEmpty());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("workflowStatus", WorkflowStatus.INQUEUE.name())
+               .param("nextPage", "")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.results", hasSize(listSize + 1)))
+           .andExpect(jsonPath("$.results[0].datasetId", is(Integer.toString(TestObjectFactory.DATASETID))))
+           .andExpect(jsonPath("$.results[0].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
+           .andExpect(jsonPath("$.results[1].datasetId", is(Integer.toString(TestObjectFactory.DATASETID + 1))))
+           .andExpect(jsonPath("$.results[1].workflowStatus", is(WorkflowStatus.INQUEUE.name())))
+           .andExpect(jsonPath("$.nextPage").isNotEmpty());
   }
 
   @Test
   void getAllWorkflowExecutionsNegativeNextPage() throws Exception {
-    MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("workflowStatus", WorkflowStatus.INQUEUE.name())
-            .param("nextPage", "-1")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(406));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("workflowStatus", WorkflowStatus.INQUEUE.name())
+               .param("nextPage", "-1")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isNotAcceptable());
   }
 
   @Test
   void getWorkflowExecutionsOverview() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     final int pageSize = 2;
     final int nextPage = 5;
     final int pageCount = 3;
-    final ResponseListWrapper<ExecutionAndDatasetView> listOfWorkflowExecutionAndDatasetViews =
-        new ResponseListWrapper<>();
+    final ResponseListWrapper<ExecutionAndDatasetView> listOfWorkflowExecutionAndDatasetViews = new ResponseListWrapper<>();
     listOfWorkflowExecutionAndDatasetViews.setResultsAndLastPage(
         TestObjectFactory.createListOfExecutionOverviews(pageSize * pageCount),
         orchestratorService.getWorkflowExecutionsPerRequest(), nextPage, pageCount);
 
     when(orchestratorService.getWorkflowExecutionsPerRequest()).thenReturn(pageSize);
     when(orchestratorService
-        .getWorkflowExecutionsOverview(eq(metisUserView), isNull(), isNull(), isNull(), isNull(),
+        .getWorkflowExecutionsOverview(isNull(), isNull(), isNull(), isNull(),
             eq(nextPage), eq(pageCount)))
         .thenReturn(listOfWorkflowExecutionAndDatasetViews);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("nextPage", "" + nextPage)
-            .param("pageCount", "" + pageCount)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.results", hasSize(pageSize * pageCount)))
-        .andExpect(
-            jsonPath("$.results[0].dataset.datasetId",
-                is(Integer.toString(TestObjectFactory.DATASETID))))
-        .andExpect(
-            jsonPath("$.results[0].execution.workflowStatus", is(WorkflowStatus.INQUEUE.name())))
-        .andExpect(jsonPath("$.results[1].dataset.datasetId",
-            is(Integer.toString(TestObjectFactory.DATASETID + 1))))
-        .andExpect(
-            jsonPath("$.results[1].execution.workflowStatus", is(WorkflowStatus.INQUEUE.name())))
-        .andExpect(jsonPath("$.nextPage", is(nextPage + pageCount)))
-        .andExpect(jsonPath("$.listSize", is(pageSize * pageCount)));
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("nextPage", "" + nextPage)
+               .param("pageCount", "" + pageCount)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.results", hasSize(pageSize * pageCount)))
+           .andExpect(jsonPath("$.results[0].dataset.datasetId", is(Integer.toString(TestObjectFactory.DATASETID))))
+           .andExpect(jsonPath("$.results[0].execution.workflowStatus", is(WorkflowStatus.INQUEUE.name())))
+           .andExpect(jsonPath("$.results[1].dataset.datasetId", is(Integer.toString(TestObjectFactory.DATASETID + 1))))
+           .andExpect(jsonPath("$.results[1].execution.workflowStatus", is(WorkflowStatus.INQUEUE.name())))
+           .andExpect(jsonPath("$.nextPage", is(nextPage + pageCount)))
+           .andExpect(jsonPath("$.listSize", is(pageSize * pageCount)));
   }
 
   @Test
   void getWorkflowExecutionsOverviewBadPaginationArguments() throws Exception {
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("nextPage", "-1")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(406));
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER)
-            .param("pageCount", "0")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(""))
-        .andExpect(status().is(406));
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_OVERVIEW)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
+               .param("nextPage", "-1")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
+           .andExpect(status().isNotAcceptable());
   }
 
   @Test
   void testGetDatasetExecutionHistory() throws Exception {
-
-    // Get the user
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
     // Create nonempty history
     final Execution execution1 = new Execution();
@@ -774,64 +636,46 @@ class TestOrchestratorController {
     resultNonEmpty.setExecutions(Arrays.asList(execution1, execution2));
 
     // Test happy flow with non-empty evolution
-    when(orchestratorService
-        .getDatasetExecutionHistory(metisUserView, "" + TestObjectFactory.DATASETID))
-        .thenReturn(resultNonEmpty);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY,
-            TestObjectFactory.DATASETID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.executions", hasSize(2)))
-        .andExpect(jsonPath("$.executions[0].workflowExecutionId",
-            is(execution1.getWorkflowExecutionId())))
-        .andExpect(jsonPath("$.executions[0].startedDate",
-            is(simpleDateFormat.format(execution1.getStartedDate()))))
-        .andExpect(jsonPath("$.executions[1].workflowExecutionId",
-            is(execution2.getWorkflowExecutionId())))
-        .andExpect(jsonPath("$.executions[1].startedDate",
-            is(simpleDateFormat.format(execution2.getStartedDate()))));
+    when(orchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenReturn(resultNonEmpty);
+    mockMvc.perform(
+               get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.executions", hasSize(2)))
+           .andExpect(jsonPath("$.executions[0].workflowExecutionId", is(execution1.getWorkflowExecutionId())))
+           .andExpect(jsonPath("$.executions[0].startedDate", is(simpleDateFormat.format(execution1.getStartedDate()))))
+           .andExpect(jsonPath("$.executions[1].workflowExecutionId", is(execution2.getWorkflowExecutionId())))
+           .andExpect(jsonPath("$.executions[1].startedDate", is(simpleDateFormat.format(execution2.getStartedDate()))));
 
     // Test happy flow with empty evolution
     final ExecutionHistory resultEmpty = new ExecutionHistory();
     resultEmpty.setExecutions(Collections.emptyList());
-    when(orchestratorService
-        .getDatasetExecutionHistory(metisUserView, "" + TestObjectFactory.DATASETID))
-        .thenReturn(resultEmpty);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY,
-            TestObjectFactory.DATASETID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.executions", hasSize(0)));
+    when(orchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenReturn(resultEmpty);
+    mockMvc.perform(
+               get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.executions", hasSize(0)));
 
     // Test for bad input
-    when(orchestratorService
-        .getDatasetExecutionHistory(metisUserView, "" + TestObjectFactory.DATASETID))
-        .thenThrow(new NoDatasetFoundException(""));
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY,
-            TestObjectFactory.DATASETID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(404));
+    when(orchestratorService.getDatasetExecutionHistory("" + TestObjectFactory.DATASETID)).thenThrow(
+        new NoDatasetFoundException(""));
+    mockMvc.perform(
+               get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
+                   .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isNotFound());
 
     // Test for unauthorized user
-    doThrow(new UserUnauthorizedException("")).when(orchestratorService)
-        .getDatasetExecutionHistory(metisUserView, "" + TestObjectFactory.DATASETID);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY,
-            TestObjectFactory.DATASETID)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(401));
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+    mockMvc.perform(
+               get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_DATASET_DATASETID_HISTORY, TestObjectFactory.DATASETID)
+                   .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
+           .andExpect(status().isForbidden());
   }
 
   @Test
   void testGetExecutablePluginsWithDataAvailability() throws Exception {
-
-    // Get the user
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
     // Create nonempty history
     final PluginWithDataAvailability plugin1 = new PluginWithDataAvailability();
@@ -845,132 +689,97 @@ class TestOrchestratorController {
 
     // Test happy flow with non-empty evolution
     when(orchestratorService
-        .getExecutablePluginsWithDataAvailability(metisUserView, TestObjectFactory.EXECUTIONID))
+        .getExecutablePluginsWithDataAvailability(TestObjectFactory.EXECUTIONID))
         .thenReturn(resultNonEmpty);
-    orchestratorControllerMock
-        .perform(
-            get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
-                TestObjectFactory.EXECUTIONID)
-                .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.plugins", hasSize(2)))
-        .andExpect(jsonPath("$.plugins[0].pluginType",
-            is(plugin1.getPluginType().name())))
-        .andExpect(jsonPath("$.plugins[0].canDisplayRawXml",
-            is(plugin1.isCanDisplayRawXml())))
-        .andExpect(jsonPath("$.plugins[1].pluginType",
-            is(plugin2.getPluginType().name())))
-        .andExpect(jsonPath("$.plugins[1].canDisplayRawXml",
-            is(plugin2.isCanDisplayRawXml())));
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.plugins", hasSize(2)))
+           .andExpect(jsonPath("$.plugins[0].pluginType", is(plugin1.getPluginType().name())))
+           .andExpect(jsonPath("$.plugins[0].canDisplayRawXml", is(plugin1.isCanDisplayRawXml())))
+           .andExpect(jsonPath("$.plugins[1].pluginType", is(plugin2.getPluginType().name())))
+           .andExpect(jsonPath("$.plugins[1].canDisplayRawXml", is(plugin2.isCanDisplayRawXml())));
 
     // Test happy flow with empty evolution
     final PluginsWithDataAvailability resultEmpty = new PluginsWithDataAvailability();
     resultEmpty.setPlugins(Collections.emptyList());
     when(orchestratorService
-        .getExecutablePluginsWithDataAvailability(metisUserView, TestObjectFactory.EXECUTIONID))
+        .getExecutablePluginsWithDataAvailability(TestObjectFactory.EXECUTIONID))
         .thenReturn(resultEmpty);
-    orchestratorControllerMock
-        .perform(
-            get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
-                TestObjectFactory.EXECUTIONID)
-                .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.plugins", hasSize(0)));
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.plugins", hasSize(0)));
 
     // Test for bad input
     when(orchestratorService
-        .getExecutablePluginsWithDataAvailability(metisUserView, TestObjectFactory.EXECUTIONID))
+        .getExecutablePluginsWithDataAvailability(TestObjectFactory.EXECUTIONID))
         .thenThrow(new NoWorkflowExecutionFoundException(""));
-    orchestratorControllerMock
-        .perform(
-            get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
-                TestObjectFactory.EXECUTIONID)
-                .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(404));
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isNotFound());
 
     // Test for unauthorized user
-    doThrow(new UserUnauthorizedException("")).when(orchestratorService)
-        .getExecutablePluginsWithDataAvailability(metisUserView, TestObjectFactory.EXECUTIONID);
-    orchestratorControllerMock
-        .perform(
-            get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
-                TestObjectFactory.EXECUTIONID)
-                .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(401));
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EXECUTIONS_EXECUTIONID_PLUGINS_DATA_AVAILABILITY,
+               TestObjectFactory.EXECUTIONID)
+               .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
+           .andExpect(status().isForbidden());
   }
 
-  @Test
-  void testGetRecordEvolutionForVersion() throws Exception {
+    @Test
+    void testGetRecordEvolutionForVersion() throws Exception {
+      when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
-    // Get the user
-    final MetisUserView metisUserView = TestObjectFactory.createMetisUser(TestObjectFactory.EMAIL);
-    when(authenticationClient.getUserByAccessTokenInHeader(TestObjectFactory.AUTHORIZATION_HEADER))
-        .thenReturn(metisUserView);
+      // Create nonempty evolution step
+      final VersionEvolutionStep step1 = new VersionEvolutionStep();
+      step1.setFinishedTime(new Date(1));
+      step1.setPluginType(ExecutablePluginType.OAIPMH_HARVEST);
+      step1.setWorkflowExecutionId("execution 1");
+      final VersionEvolutionStep step2 = new VersionEvolutionStep();
+      step2.setFinishedTime(new Date(2));
+      step2.setPluginType(ExecutablePluginType.TRANSFORMATION);
+      step2.setWorkflowExecutionId("execution 2");
+      final VersionEvolution resultNonEmpty = new VersionEvolution();
+      resultNonEmpty.setEvolutionSteps(Arrays.asList(step1, step2));
 
-    // Create nonempty evolution step
-    final VersionEvolutionStep step1 = new VersionEvolutionStep();
-    step1.setFinishedTime(new Date(1));
-    step1.setPluginType(ExecutablePluginType.OAIPMH_HARVEST);
-    step1.setWorkflowExecutionId("execution 1");
-    final VersionEvolutionStep step2 = new VersionEvolutionStep();
-    step2.setFinishedTime(new Date(2));
-    step2.setPluginType(ExecutablePluginType.TRANSFORMATION);
-    step2.setWorkflowExecutionId("execution 2");
-    final VersionEvolution resultNonEmpty = new VersionEvolution();
-    resultNonEmpty.setEvolutionSteps(Arrays.asList(step1, step2));
+      // Test happy flow with non-empty evolution
+      final PluginType pluginType = PluginType.MEDIA_PROCESS;
+      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultNonEmpty);
+      mockMvc
+          .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+              .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.evolutionSteps", hasSize(2)))
+          .andExpect(jsonPath("$.evolutionSteps[0].workflowExecutionId", is(step1.getWorkflowExecutionId())))
+          .andExpect(jsonPath("$.evolutionSteps[0].pluginType", is(step1.getPluginType().name())))
+          .andExpect(jsonPath("$.evolutionSteps[0].finishedTime", is(simpleDateFormat.format(step1.getFinishedTime().getTime()))))
+          .andExpect(jsonPath("$.evolutionSteps[1].workflowExecutionId", is(step2.getWorkflowExecutionId())))
+          .andExpect(jsonPath("$.evolutionSteps[1].pluginType", is(step2.getPluginType().name())))
+          .andExpect(jsonPath("$.evolutionSteps[1].finishedTime", is(simpleDateFormat.format(step2.getFinishedTime().getTime()))));
 
-    // Test happy flow with non-empty evolution
-    final PluginType pluginType = PluginType.MEDIA_PROCESS;
-    when(orchestratorService
-        .getRecordEvolutionForVersion(metisUserView, TestObjectFactory.EXECUTIONID, pluginType))
-        .thenReturn(resultNonEmpty);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID,
-            pluginType)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.evolutionSteps", hasSize(2)))
-        .andExpect(
-            jsonPath("$.evolutionSteps[0].workflowExecutionId", is(step1.getWorkflowExecutionId())))
-        .andExpect(jsonPath("$.evolutionSteps[0].pluginType", is(step1.getPluginType().name())))
-        .andExpect(jsonPath("$.evolutionSteps[0].finishedTime",
-            is((int) step1.getFinishedTime().getTime())))
-        .andExpect(
-            jsonPath("$.evolutionSteps[1].workflowExecutionId", is(step2.getWorkflowExecutionId())))
-        .andExpect(jsonPath("$.evolutionSteps[1].pluginType", is(step2.getPluginType().name())))
-        .andExpect(jsonPath("$.evolutionSteps[1].finishedTime",
-            is((int) step2.getFinishedTime().getTime())));
+      // Test happy flow with empty evolution
+      final VersionEvolution resultEmpty = new VersionEvolution();
+      resultEmpty.setEvolutionSteps(Collections.emptyList());
+      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultEmpty);
+      mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+              .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.evolutionSteps", hasSize(0)));
 
-    // Test happy flow with empty evolution
-    final VersionEvolution resultEmpty = new VersionEvolution();
-    resultEmpty.setEvolutionSteps(Collections.emptyList());
-    when(orchestratorService
-        .getRecordEvolutionForVersion(metisUserView, TestObjectFactory.EXECUTIONID, pluginType))
-        .thenReturn(resultEmpty);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID,
-            pluginType)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(200))
-        .andExpect(jsonPath("$.evolutionSteps", hasSize(0)));
+      // Test for bad input
+      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenThrow(new NoWorkflowExecutionFoundException(""));
+      mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+              .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+          .andExpect(status().isNotFound());
 
-    // Test for bad input
-    when(orchestratorService
-        .getRecordEvolutionForVersion(metisUserView, TestObjectFactory.EXECUTIONID, pluginType))
-        .thenThrow(new NoWorkflowExecutionFoundException(""));
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID,
-            pluginType)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(404));
-
-    // Test for unauthorized user
-    doThrow(new UserUnauthorizedException("")).when(orchestratorService)
-        .getRecordEvolutionForVersion(metisUserView, TestObjectFactory.EXECUTIONID, pluginType);
-    orchestratorControllerMock
-        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID,
-            pluginType)
-            .header("Authorization", TestObjectFactory.AUTHORIZATION_HEADER))
-        .andExpect(status().is(401));
-  }
+      // Test for unauthorized user
+      when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+      mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+              .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
+          .andExpect(status().isForbidden());
+    }
 }
