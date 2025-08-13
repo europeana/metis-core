@@ -52,9 +52,9 @@ services:
       MONGO_HOSTS: metis-core-mongo
       REDIS_HOST: metis-core-redis
     volumes:
-      - /data/metis-configuration/metis-framework/metis-core/metis-core-rest/k8s/overlays/local/resources/custom-truststore.jks:/data/certificates/custom-truststore.jks
-      - /data/metis-configuration/metis-framework/metis-core/metis-core-rest/k8s/overlays/local/resources/application.properties:/application.properties
-      - /data/metis-configuration/metis-framework/metis-core/metis-core-rest/k8s/overlays/local/resources/log4j2.xml:/data/logging/log4j2.xml
+      - /data/metis-configuration/metis-core/metis-core-rest/k8s/overlays/local/resources/custom-truststore.jks:/data/certificates/custom-truststore.jks
+      - /data/metis-configuration/metis-core/metis-core-rest/k8s/overlays/local/resources/application.properties:/application.properties
+      - /data/metis-configuration/metis-core/metis-core-rest/k8s/overlays/local/resources/log4j2.xml:/data/logging/log4j2.xml
     depends_on:
       - oauth2
       - rabbitmq
