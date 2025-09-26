@@ -360,20 +360,28 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         workflowExecution.getId(), plugin.getId()));
   }
 
+  record PreviousRecordCounter(AtomicInteger expected, AtomicInteger processed,
+                               AtomicInteger deleted, AtomicInteger ignored,
+                               AtomicInteger errors, AtomicInteger total) {
+  }
   private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
     final PluginMonitor<S, T> pluginMonitor = new PluginMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
-    AtomicInteger previousProcessedRecords = new AtomicInteger(0);
+    PreviousRecordCounter previousRecordCounter = new PreviousRecordCounter(
+        new AtomicInteger(0), new AtomicInteger(0),
+        new AtomicInteger(0), new AtomicInteger(0),
+        new AtomicInteger(0), new AtomicInteger(0));
+
     AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis = new AtomicLong(
         System.currentTimeMillis());
     do {
       try {
         Thread.sleep(sleepTime);
         // Check if the task is cancelling and send the external cancelling call if needed
-        sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin, previousProcessedRecords,
-            checkPointDateOfProcessedRecordsPeriodInMillis);
+        sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin,
+            checkPointDateOfProcessedRecordsPeriodInMillis, previousRecordCounter);
         engineTaskProgress = pluginMonitor.monitor();
         consecutiveCancelOrMonitorFailures = 0;
 
@@ -453,10 +461,10 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
-      PluginMonitor<S, T> pluginMonitor, AbstractExecutablePlugin<?> plugin, AtomicInteger previousProcessedRecords,
-      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) throws ExternalTaskException {
-    if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, previousProcessedRecords,
-        checkPointDateOfProcessedRecordsPeriodInMillis)) {
+      PluginMonitor<S, T> pluginMonitor, AbstractExecutablePlugin<?> plugin,
+      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis, PreviousRecordCounter previousRecordCounter) throws ExternalTaskException {
+    if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin,
+        checkPointDateOfProcessedRecordsPeriodInMillis, previousRecordCounter)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
 
@@ -491,8 +499,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
-      AtomicInteger previousProcessedRecords,
-      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) {
+      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis,
+      PreviousRecordCounter previousRecordCounter) {
     // A plugin with CLEANING state is NOT cancellable, it will be when the state is updated
     final boolean notCleaningAndCancelling =
         plugin.getPluginStatus() != PluginStatus.CLEANING && workflowExecutionDao
@@ -501,21 +509,36 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     final boolean notCleaningOrPending = plugin.getPluginStatus() != PluginStatus.CLEANING
         && plugin.getPluginStatus() != PluginStatus.PENDING;
     final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin,
-        previousProcessedRecords, checkPointDateOfProcessedRecordsPeriodInMillis);
+         checkPointDateOfProcessedRecordsPeriodInMillis,  previousRecordCounter);
     return (notCleaningAndCancelling || (notCleaningOrPending && isMinuteCapExceeded));
   }
 
   private boolean isMinuteCapOverWithoutChangeInProcessedRecords(AbstractExecutablePlugin<?> plugin,
-      AtomicInteger previousProcessedRecords,
-      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis) {
+      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis,
+      PreviousRecordCounter previousRecordCounter) {
     final int processedRecords = plugin.getExecutionProgress().getProcessedRecords();
+    final int deletedRecords = plugin.getExecutionProgress().getDeletedRecords();
+    final int expectedRecords = plugin.getExecutionProgress().getExpectedRecords();
+    final int ignoredRecords = plugin.getExecutionProgress().getIgnoredRecords();
+    final int errors = plugin.getExecutionProgress().getErrors();
+    final int totalRecords = plugin.getExecutionProgress().getTotalDatabaseRecords();
+
     //If CLEANING is in progress then just reset the values to be sure and return false
     //Or if we have progress
     if (plugin.getPluginStatus() == PluginStatus.CLEANING
         || plugin.getPluginStatus() == PluginStatus.PENDING
-        || previousProcessedRecords.get() != processedRecords) {
+        || previousRecordCounter.deleted().get() != deletedRecords
+        || previousRecordCounter.processed().get() != processedRecords
+        || previousRecordCounter.ignored().get() != ignoredRecords
+        || previousRecordCounter.errors().get() != errors
+        || previousRecordCounter.total().get() != totalRecords
+        || previousRecordCounter.expected().get() != expectedRecords) {
       checkPointDateOfProcessedRecordsPeriodInMillis.set(System.currentTimeMillis());
-      previousProcessedRecords.set(processedRecords);
+      previousRecordCounter.processed().set(processedRecords);
+      previousRecordCounter.deleted().set(deletedRecords);
+      previousRecordCounter.ignored().set(ignoredRecords);
+      previousRecordCounter.errors().set(errors);
+      previousRecordCounter.total().set(totalRecords);
       return false;
     }
 
