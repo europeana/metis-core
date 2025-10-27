@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class UserService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String UNKNOWN_USER_NAME = "Unknown user";
   private static final ConcurrentHashMap<String, User> USER_CACHE = new ConcurrentHashMap<>();
   private final Keycloak keycloak;
   private final String realm;
@@ -91,7 +92,7 @@ public class UserService {
 
     if (userRepresentation.isEmpty()) {
       userBuilder.userId(userId)
-                 .userName(userId)
+                 .userName(UNKNOWN_USER_NAME)
                  .issuedAt(Instant.now());
     } else {
       userBuilder.userId(userRepresentation.get().getId())
