@@ -17,7 +17,7 @@
       "enabled": true,
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
-      "redirectUris" : [ "http://localhost:4200/*" ],
+      "redirectUris" : [ "*", "http://localhost:4200/*" ],
       "webOrigins": ["+"],
       "publicClient": true
     }
