@@ -24,8 +24,8 @@ public class UserService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String UNKNOWN_USER_NAME = "Unknown user";
-  private static final String SYSTEM_MINUTE_CAP_EXPIRE_NAME = "Metis system initiated expiration";
-  private static final String STARTED_BY_SYSTEM_NAME = "Metis system initiated";
+  private static final String SYSTEM_MINUTE_CAP_EXPIRE_NAME = "Metis timeout checker";
+  private static final String STARTED_BY_SYSTEM_NAME = "Metis system";
   private static final ConcurrentHashMap<String, User> USER_CACHE = new ConcurrentHashMap<>();
   private final Keycloak keycloak;
   private final String realm;
