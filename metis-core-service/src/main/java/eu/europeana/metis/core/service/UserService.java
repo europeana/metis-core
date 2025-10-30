@@ -2,6 +2,7 @@ package eu.europeana.metis.core.service;
 
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.user.User.UserBuilder;
+import eu.europeana.metis.core.workflow.execution.SystemId;
 import jakarta.ws.rs.NotFoundException;
 import java.lang.invoke.MethodHandles;
 import java.time.Instant;
@@ -22,6 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class UserService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String UNKNOWN_USER_NAME = "Unknown user";
+  private static final String SYSTEM_MINUTE_CAP_EXPIRE_NAME = "Metis timeout checker";
+  private static final String STARTED_BY_SYSTEM_NAME = "Metis system";
   private static final ConcurrentHashMap<String, User> USER_CACHE = new ConcurrentHashMap<>();
   private final Keycloak keycloak;
   private final String realm;
@@ -90,8 +94,16 @@ public class UserService {
     UserBuilder userBuilder = new UserBuilder();
 
     if (userRepresentation.isEmpty()) {
+      String userName;
+      if (userId.equals(SystemId.STARTED_BY_SYSTEM.name())) {
+        userName = STARTED_BY_SYSTEM_NAME;
+      } else if (userId.equals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name())) {
+        userName = SYSTEM_MINUTE_CAP_EXPIRE_NAME;
+      } else {
+        userName = UNKNOWN_USER_NAME;
+      }
       userBuilder.userId(userId)
-                 .userName(userId)
+                 .userName(userName)
                  .issuedAt(Instant.now());
     } else {
       userBuilder.userId(userRepresentation.get().getId())

@@ -17,7 +17,7 @@
       "enabled": true,
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
-      "redirectUris": ["*"],
+      "redirectUris" : [ "*", "http://localhost:4200/*" ],
       "webOrigins": ["+"],
       "publicClient": true
     }
@@ -95,6 +95,15 @@
       ],
       "clientRoles": {
         "metis-core-local": ["data-officer"]
+      }
+    },
+    {
+      "username" : "service-account-metis-core-local",
+      "serviceAccountClientId" : "metis-core-local",
+      "enabled" : true,
+      "realmRoles" : [ "default-roles-europeana" ],
+      "clientRoles" : {
+        "realm-management" : [ "view-users" ]
       }
     }
   ]
