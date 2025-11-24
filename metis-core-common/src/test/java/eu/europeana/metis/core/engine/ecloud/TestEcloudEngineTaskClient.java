@@ -23,6 +23,7 @@ import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.model.dps.TaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.DpsTask;
+import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
 import eu.europeana.metis.core.engine.base.DataRevision;
@@ -153,14 +154,23 @@ class TestEcloudEngineTaskClient {
   }
 
   @Test
-  void getEngineTaskProgress_throws() throws Exception {
-    when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new DpsException(""));
+  void getEngineTaskProgress_throwsAccessDeniedOrObjectDoesNotExistException() throws Exception {
+    when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new AccessDeniedOrObjectDoesNotExistException());
+
     ExternalTaskException externalTaskException = assertThrows(ExternalTaskException.class,
         () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
 
     Throwable cause = externalTaskException.getCause();
     assertNotNull(cause);
     assertInstanceOf(UnrecoverableExternalTaskException.class, cause);
+  }
+
+  @Test
+  void getEngineTaskProgress_throwsDpsException() throws Exception {
+    when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new DpsException(""));
+
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+
   }
 
   @Test
