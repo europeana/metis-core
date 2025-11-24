@@ -5,6 +5,9 @@ import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.exception.StructuredExceptionWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import java.lang.invoke.MethodHandles;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +30,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class RestResponseExceptionHandler {
 
   private static final String AUTHORIZATION_HEADER = "Authorization";
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   /**
    * Handle metis {@link GenericMetisException} which is one of the many metis exceptions.
@@ -41,6 +45,7 @@ public class RestResponseExceptionHandler {
   @ResponseBody
   public StructuredExceptionWrapper handleException(Exception exception,
       HttpServletResponse response) {
+    logException(exception);
     final ResponseStatus annotationResponseStatus = AnnotationUtils
         .findAnnotation(exception.getClass(), ResponseStatus.class);
     HttpStatus status = annotationResponseStatus == null ? HttpStatus.INTERNAL_SERVER_ERROR
@@ -62,6 +67,7 @@ public class RestResponseExceptionHandler {
   public StructuredExceptionWrapper handleMessageNotReadable(
       HttpMessageNotReadableException exception,
       HttpServletResponse response) {
+    logException(exception);
     response.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
     return new StructuredExceptionWrapper(
         "Message body not readable. It is missing or malformed\n" + exception.getMessage());
@@ -80,6 +86,7 @@ public class RestResponseExceptionHandler {
   public StructuredExceptionWrapper handleMissingParams(
       MissingServletRequestParameterException exception,
       HttpServletResponse response) {
+    logException(exception);
     response.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
     return new StructuredExceptionWrapper(exception.getParameterName() + " parameter is missing");
   }
@@ -97,6 +104,7 @@ public class RestResponseExceptionHandler {
   public StructuredExceptionWrapper handleMissingParams(
       HttpRequestMethodNotSupportedException exception,
       HttpServletResponse response) {
+    logException(exception);
     response.setStatus(HttpStatus.METHOD_NOT_ALLOWED.value());
     return new StructuredExceptionWrapper("Method not allowed: " + exception.getMessage());
   }
@@ -114,6 +122,7 @@ public class RestResponseExceptionHandler {
   @ResponseBody
   public StructuredExceptionWrapper handleMessageNotReadable(Exception exception,
       HttpServletResponse response) {
+    logException(exception);
     response.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
     return new StructuredExceptionWrapper(
         "Request not readable.\n" + exception.getMessage());
@@ -132,7 +141,7 @@ public class RestResponseExceptionHandler {
   public StructuredExceptionWrapper handleMissingRequestHeaderException(
       MissingRequestHeaderException exception,
       HttpServletResponse response) {
-
+    logException(exception);
     final StructuredExceptionWrapper output;
 
     if (AUTHORIZATION_HEADER.equalsIgnoreCase(exception.getHeaderName())) {
@@ -145,5 +154,9 @@ public class RestResponseExceptionHandler {
     }
 
     return output;
+  }
+
+  private void logException(Exception e) {
+    LOGGER.warn("Exception during REST request execution!", e);
   }
 }
