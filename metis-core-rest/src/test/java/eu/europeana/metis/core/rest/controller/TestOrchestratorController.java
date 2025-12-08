@@ -43,7 +43,7 @@ import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.controller.advice.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
 import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;

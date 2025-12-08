@@ -1,4 +1,4 @@
-package eu.europeana.metis.core.rest.exception;
+package eu.europeana.metis.core.rest.controller.advice;
 
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -22,9 +22,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 /**
  * {@link ControllerAdvice} class that handles exceptions through spring.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-10
  */
 @ControllerAdvice
 public class RestResponseExceptionHandler {
@@ -37,9 +34,8 @@ public class RestResponseExceptionHandler {
    * <p>Some examples e.g. {@link NoDatasetFoundException}, {@link NoWorkflowFoundException}...</p>
    *
    * @param exception the exception thrown
-   * @param response  the response that should be updated
-   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error
-   * message for the client
+   * @param response the response that should be updated
+   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error message for the client
    */
   @ExceptionHandler(value = {GenericMetisException.class})
   @ResponseBody
@@ -58,9 +54,8 @@ public class RestResponseExceptionHandler {
    * Handler for specific classes to overwrite behaviour
    *
    * @param exception the exception thrown
-   * @param response  the response that should be updated
-   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error
-   * message for the client
+   * @param response the response that should be updated
+   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error message for the client
    */
   @ExceptionHandler(HttpMessageNotReadableException.class)
   @ResponseBody
@@ -77,9 +72,8 @@ public class RestResponseExceptionHandler {
    * Handler for specific classes to overwrite behaviour
    *
    * @param exception the exception thrown
-   * @param response  the response that should be updated
-   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error
-   * message for the client
+   * @param response the response that should be updated
+   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error message for the client
    */
   @ExceptionHandler(MissingServletRequestParameterException.class)
   @ResponseBody
@@ -95,9 +89,8 @@ public class RestResponseExceptionHandler {
    * Handler for specific classes to overwrite behaviour
    *
    * @param exception the exception thrown
-   * @param response  the response that should be updated
-   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error
-   * message for the client
+   * @param response the response that should be updated
+   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error message for the client
    */
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
   @ResponseBody
@@ -113,9 +106,8 @@ public class RestResponseExceptionHandler {
    * Handler for specific classes to overwrite behaviour
    *
    * @param exception the exception thrown
-   * @param response  the response that should be updated
-   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error
-   * message for the client
+   * @param response the response that should be updated
+   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error message for the client
    */
   @ExceptionHandler(value = {IllegalStateException.class,
       MethodArgumentTypeMismatchException.class, IllegalArgumentException.class})
@@ -132,9 +124,8 @@ public class RestResponseExceptionHandler {
    * Handler for specific classes to overwrite behaviour
    *
    * @param exception the exception thrown
-   * @param response  the response that should be updated
-   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error
-   * message for the client
+   * @param response the response that should be updated
+   * @return {@link StructuredExceptionWrapper} a json friendly class that contains the error message for the client
    */
   @ExceptionHandler(value = MissingRequestHeaderException.class)
   @ResponseBody

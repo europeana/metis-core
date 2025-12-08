@@ -28,7 +28,7 @@ import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.controller.advice.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.stats.AttributeStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.NodeValueStatisticsDTO;
