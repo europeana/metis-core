@@ -31,7 +31,7 @@
     <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
 
     <!--Internal-->
-    <version.ecloud>15-SNAPSHOT</version.ecloud>
+    <version.ecloud>15</version.ecloud>
     <version.metis-common>18</version.metis-common>
     <version.metis-framework>16</version.metis-framework>
     <version.metis-schema>13</version.metis-schema>
