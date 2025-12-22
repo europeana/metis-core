@@ -5,7 +5,7 @@
   <groupId>eu.europeana.metis</groupId>
   <artifactId>metis-core</artifactId>
   <packaging>pom</packaging>
-  <version>15</version>
+  <version>16</version>
 
   <modules>
     <module>metis-core-common</module>
@@ -31,11 +31,11 @@
     <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
 
     <!--Internal-->
-    <version.ecloud>14</version.ecloud>
-    <version.metis-common>16</version.metis-common>
-    <version.metis-framework>15</version.metis-framework>
-    <version.metis-schema>11</version.metis-schema>
-    <version.corelib>2.17.5-SNAPSHOT</version.corelib>
+    <version.ecloud>15</version.ecloud>
+    <version.metis-common>18</version.metis-common>
+    <version.metis-framework>16</version.metis-framework>
+    <version.metis-schema>13</version.metis-schema>
+    <version.corelib>2.17.6</version.corelib>
 
     <!--External-->
     <version.javax.annotation>2.1.1</version.javax.annotation>
@@ -50,7 +50,7 @@
     <version.keycloak-admin-client>26.0.4</version.keycloak-admin-client>
     <version.rabbitmq>5.12.0</version.rabbitmq>
     <version.commons.io>2.18.0</version.commons.io>
-    <version.commons.lang3>3.17.0</version.commons.lang3>
+    <version.commons.lang3>3.18.0</version.commons.lang3>
     <version.commons.text>1.13.0</version.commons.text>
     <version.jackson>2.16.1</version.jackson>
     <version.jaxb.runtime>4.0.4</version.jaxb.runtime>
@@ -544,7 +544,7 @@
     <repository>
       <id>libs-snapshot</id>
       <name>libs-snapshot</name>
-      <url>https://artifactory.eanadev.org/artifactory/libs-snapshot</url>
+      <url>https://artifactory-prod.eanadev.org/artifactory/libs-snapshot</url>
       <releases>
         <enabled>false</enabled>
       </releases>
@@ -556,14 +556,14 @@
 
   <distributionManagement>
     <repository>
-      <id>artifactory.eanadev.org</id>
-      <name>artifactory.eanadev.org-releases</name>
-      <url>https://artifactory.eanadev.org/artifactory/libs-release-local</url>
+      <id>artifactory-prod.eanadev.org</id>
+      <name>artifactory-prod.eanadev.org-releases</name>
+      <url>https://artifactory-prod.eanadev.org/artifactory/libs-release-local</url>
     </repository>
     <snapshotRepository>
-      <id>artifactory.eanadev.org</id>
-      <name>artifactory.eanadev.org-snapshots</name>
-      <url>https://artifactory.eanadev.org/artifactory/libs-snapshot-local</url>
+      <id>artifactory-prod.eanadev.org</id>
+      <name>artifactory-prod.eanadev.org-snapshots</name>
+      <url>https://artifactory-prod.eanadev.org/artifactory/libs-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
 

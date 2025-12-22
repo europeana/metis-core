@@ -6,7 +6,7 @@ import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.ScheduledWorkflowAlreadyExistsException;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
 import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
-import eu.europeana.metis.core.rest.exception.RestResponseExceptionHandler;
+import eu.europeana.metis.core.rest.controller.advice.RestResponseExceptionHandler;
 import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.ScheduleWorkflowService;

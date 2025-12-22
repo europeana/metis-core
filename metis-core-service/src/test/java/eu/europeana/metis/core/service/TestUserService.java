@@ -43,6 +43,7 @@ class TestUserService {
 
   private static final String REALM = "realm";
   private static final String USER_ID = "userId";
+  private static final String UNKNOWN_USER = "Unknown user";
   private static final String USERNAME = "userName";
   private static final String FIRST_NAME = "fistName";
   private static final String LAST_NAME = "lastName";
@@ -84,7 +85,7 @@ class TestUserService {
     verifyNoMoreInteractions(keycloak);
     assertNotNull(userFromCache);
     assertEquals(USER_ID, userFromCache.getUserId());
-    assertEquals(USER_ID, userFromCache.getUserName());
+    assertEquals(UNKNOWN_USER, userFromCache.getUserName());
     assertNotNull(userFromCache.getIssuedAt());
   }
 

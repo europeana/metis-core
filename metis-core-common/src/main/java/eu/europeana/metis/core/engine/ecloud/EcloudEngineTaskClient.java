@@ -10,6 +10,7 @@ import eu.europeana.cloud.common.model.dps.StatisticsReport;
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.model.dps.TaskInfo;
+import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
 import eu.europeana.metis.core.engine.base.DataRevision;
@@ -104,10 +105,10 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));
       LOGGER.info("Getting task progress for task id '{}'::{}::=>{}", taskId, topologyName, taskInfo);
       return convertToProcessingEngineTaskProgress(taskInfo);
-    } catch (DpsException e) {
+    } catch (AccessDeniedOrObjectDoesNotExistException e) {
       throw new ExternalTaskException("Fetching task progress failed",
-          new UnrecoverableExternalTaskException("Fetching task progress failed", e));
-    } catch (RuntimeException e) {
+          new UnrecoverableExternalTaskException("Access denied or task does not exists!", e));
+    } catch (DpsException | RuntimeException e) {
       throw new ExternalTaskException("Fetching task progress failed", e);
     }
   }

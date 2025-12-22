@@ -25,8 +25,6 @@ import eu.europeana.metis.utils.CustomTruststoreAppender;
 import eu.europeana.metis.utils.CustomTruststoreAppender.TrustStoreConfigurationException;
 import eu.europeana.metis.utils.apm.ElasticAPMConfiguration;
 import jakarta.annotation.PreDestroy;
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -41,6 +39,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+
 /**
  * Entry class with configuration fields and beans initialization for the application.
  */
@@ -54,6 +55,9 @@ public class ApplicationConfiguration {
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final MongoClient mongoClient;
 
+  /**
+   * The default transformation xslt which is expected in the class path provided by a library (e.g. metis-transformation)
+   */
   @Value(value = "classpath:default_transformation.xslt")
   private Resource defaultTransformation;
 
