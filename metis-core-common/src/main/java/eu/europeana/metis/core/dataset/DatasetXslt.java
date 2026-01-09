@@ -1,21 +1,19 @@
 package eu.europeana.metis.core.dataset;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
-import java.util.Date;
 import org.bson.types.ObjectId;
+import tools.jackson.databind.annotation.JsonSerialize;
+
+import java.util.Date;
 
 /**
  * A wrapper class with metadata about an xslt and the xslt as a string field.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-02-27
  */
 //@formatter:off
 @Entity

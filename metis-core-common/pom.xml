@@ -69,6 +69,10 @@
 
     <!-- Compile -->
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-jackson</artifactId>
+    </dependency>
+    <dependency>
       <groupId>dev.morphia.morphia</groupId>
       <artifactId>morphia-core</artifactId>
       <version>${version.morphia.core}</version>

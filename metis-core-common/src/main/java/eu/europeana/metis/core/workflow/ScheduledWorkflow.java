@@ -1,7 +1,6 @@
 package eu.europeana.metis.core.workflow;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
@@ -10,15 +9,14 @@ import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.utils.CommonStringValues;
-import java.util.Date;
 import org.bson.types.ObjectId;
+import tools.jackson.databind.annotation.JsonSerialize;
+
+import java.util.Date;
 
 /**
  * Class to represent a scheduled workflow.
  * The {@link ScheduleFrequence} {@link #scheduleFrequence} will be used in conjunction with the {@link #pointerDate} to determine when a scheduled execution is ready to be ran.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-09-25
  */
 @Entity
 @Indexes({

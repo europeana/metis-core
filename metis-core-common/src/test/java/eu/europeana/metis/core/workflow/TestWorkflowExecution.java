@@ -32,13 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class TestWorkflowExecution {
 
@@ -59,14 +59,15 @@ class TestWorkflowExecution {
   }
 
   @Test
-  void testDeserialization() throws IOException {
-    ObjectMapper objectMapper = new ObjectMapper();
+  void testDeserialization() {
     //TODO: 2025-03-11 - MET-6427 - This is configured because some fields that can be serialized cannot be deserialized(see field
     // "executablePluginType" in the json file example) with the current implementation. This is not a functionality needed at
     // the moment since we do not deserialize a WorkflowExecutionDTO received from the controller.
     // To fix this, some refactoring is required and it needs to be carefully performed so that the morphia/mongo communication
     // won't start failing. There needs to be abstraction of the two entity model and DTO.
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    ObjectMapper objectMapper = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
     URL resource = getClass().getClassLoader().getResource("workflowExecution.json");
     Objects.requireNonNull(resource);
     File jsonFile = new File(resource.getFile());
@@ -77,7 +78,7 @@ class TestWorkflowExecution {
   }
 
   @Test
-  void testSerialization() throws IOException {
+  void testSerialization() {
     WorkflowExecution workflowExecution = getWorkflowExecutionUsingSetters();
 
     ObjectMapper objectMapper = new ObjectMapper();

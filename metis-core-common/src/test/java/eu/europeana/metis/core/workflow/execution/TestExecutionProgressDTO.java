@@ -20,13 +20,14 @@ import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUt
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.TestSerializationUtils;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class TestExecutionProgressDTO {
 
@@ -37,17 +38,19 @@ class TestExecutionProgressDTO {
   }
 
   @Test
-  void testSerialization() throws IOException {
+  void testSerialization() {
     ExecutionProgressDTO executionProgressDTO = getExecutionProgressDTOUsingSetters();
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = JsonMapper.builder()
+                                          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                          .build();
     String jsonOutput = objectMapper.writeValueAsString(executionProgressDTO);
 
     assertExecutionProgressDTO(jsonOutput);
   }
 
   @Test
-  void testDeserialization() throws IOException {
+  void testDeserialization() {
     ObjectMapper objectMapper = new ObjectMapper();
     URL resource = getClass().getClassLoader().getResource("executionProgressDTO.json");
     Objects.requireNonNull(resource);

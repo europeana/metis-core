@@ -1,50 +1,20 @@
 package eu.europeana.metis.core.dataset;
 
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.COUNTRY_ENUM;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_BY_USER_ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.CREATED_DATE_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_IDS_TO_REDIRECT_FROM;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_NAME;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATA_PROVIDER;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.DESCRIPTION;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ECLOUD_DATASET_ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.INTERMEDIATE_PROVIDER;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE_ENUM;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.NOTES;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.PROVIDER;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.PUBLICATION_FITNESS;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_1_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.REDIRECT_ID_2_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.REPLACED_BY;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.REPLACES;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.UPDATED_DATE_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_ID;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.XSLT_OBJECT_ID_VALUE;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDataset;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.getDatasetUsingSettersWithNullValues;
-import static io.smallrye.common.constraint.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.common.TestSerializationUtils;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
-import org.junit.jupiter.api.Test;
+
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.*;
+import static io.smallrye.common.constraint.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TestDataset {
 
@@ -63,7 +33,7 @@ class TestDataset {
   }
 
   @Test
-  void testDeserialization() throws IOException {
+  void testDeserialization() {
     ObjectMapper objectMapper = new ObjectMapper();
     URL resource = getClass().getClassLoader().getResource("dataset.json");
     Objects.requireNonNull(resource);
@@ -75,7 +45,7 @@ class TestDataset {
   }
 
   @Test
-  void testSerialization() throws IOException {
+  void testSerialization() {
     Dataset dataset = getDataset();
 
     ObjectMapper objectMapper = new ObjectMapper();
