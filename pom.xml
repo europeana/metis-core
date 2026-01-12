@@ -54,7 +54,6 @@
     <version.commons.text>1.13.0</version.commons.text>
     <version.jaxb.runtime>4.0.4</version.jaxb.runtime>
     <version.org.wiremock>3.4.2</version.org.wiremock>
-    <version.mockito.core>4.3.1</version.mockito.core>
     <version.awaitability>4.2.0</version.awaitability>
     <version.json.path>2.9.0</version.json.path>
     <version.jetbrains>24.0.1</version.jetbrains>
@@ -68,6 +67,13 @@
         <groupId>org.springframework</groupId>
         <artifactId>spring-framework-bom</artifactId>
         <version>${version.spring}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${version.spring.boot}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -108,13 +114,6 @@
         <version>${version.metis-common}</version>
       </dependency>
 
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>${version.spring.boot}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
 
       <dependency>
         <groupId>jakarta.xml.bind</groupId>
@@ -397,19 +396,6 @@
         <artifactId>corelib-lookup</artifactId>
         <version>${version.corelib}</version>
       </dependency>
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>${version.mockito.core}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-junit-jupiter</artifactId>
-        <version>${version.mockito.core}</version>
-        <scope>test</scope>
-      </dependency>
-
       <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
