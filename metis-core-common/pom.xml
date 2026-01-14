@@ -70,7 +70,7 @@
     <!-- Compile -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-jackson</artifactId>
+      <artifactId>spring-boot-starter-jackson</artifactId>
     </dependency>
     <dependency>
       <groupId>dev.morphia.morphia</groupId>
