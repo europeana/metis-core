@@ -36,6 +36,6 @@ public class CountryDeserializer extends StdDeserializer<Country> {
   @Override
   public Country deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
     JsonNode node = deserializationContext.readTree(jsonParser);
-    return Country.getCountryFromEnumName(node.get("enum").asText());
+    return Country.getCountryFromEnumName(node.get("enum").asString());
   }
 }

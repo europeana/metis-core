@@ -30,7 +30,7 @@ public class LanguageDeserializer extends StdDeserializer<Language> {
   @Override
   public Language deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
     JsonNode node = deserializationContext.readTree(jsonParser);
-    return Language.getLanguageFromEnumName(node.get("enum").asText());
+    return Language.getLanguageFromEnumName(node.get("enum").asString());
   }
 
 }
