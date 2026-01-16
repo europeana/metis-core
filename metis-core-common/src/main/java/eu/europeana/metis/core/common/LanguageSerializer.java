@@ -1,38 +1,31 @@
 package eu.europeana.metis.core.common;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 /**
  * Serializer for {@link Language} enum.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-01-09
  */
 public class LanguageSerializer extends StdSerializer<Language> {
 
-  private static final long serialVersionUID = 1L;
-
   /**
-   * Constructor for the {@link Language} json serializer.
+   * Default constructor.
+   * Initializes the serializer with the {@link Language} class as the target type.
+   * Note: Required, do not remove.
    */
   public LanguageSerializer() {
     super(Language.class);
   }
 
   @Override
-  public void serialize(Language language,
-      JsonGenerator generator,
-      SerializerProvider provider)
-      throws IOException {
+  public void serialize(Language language, JsonGenerator generator, SerializationContext provider) throws JacksonException {
     generator.writeStartObject();
-    generator.writeFieldName("enum");
+    generator.writeName("enum");
     generator.writeString(language.name());
-    generator.writeFieldName("name");
+    generator.writeName("name");
     generator.writeString(language.getName());
     generator.writeEndObject();
   }
-
 }

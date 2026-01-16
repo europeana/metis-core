@@ -1,26 +1,22 @@
 package eu.europeana.metis.core.common;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 /**
  * Deserializer for {@link Language} enum.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-01-09
  */
 public class LanguageDeserializer extends StdDeserializer<Language> {
 
-  private static final long serialVersionUID = 1L;
-
   /**
-   * Constructor for null value
+   * Default constructor.
+   * Initializes the deserializer with the {@link Language} class as the target type.
+   * Note: Required, do not remove.
    */
   public LanguageDeserializer() {
-    this(null);
+    this(Language.class);
   }
 
   /**
@@ -32,10 +28,9 @@ public class LanguageDeserializer extends StdDeserializer<Language> {
   }
 
   @Override
-  public Language deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-      throws IOException {
-    JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-    return Language.getLanguageFromEnumName(node.get("enum").asText());
+  public Language deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
+    JsonNode node = deserializationContext.readTree(jsonParser);
+    return Language.getLanguageFromEnumName(node.get("enum").asString());
   }
 
 }

@@ -1,16 +1,13 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import org.bson.types.ObjectId;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * The database structure to hold the dataset identifiers sequence.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-12-27
  */
 @Entity
 public class DatasetIdSequence {

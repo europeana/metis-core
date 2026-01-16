@@ -20,15 +20,16 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import tools.jackson.databind.ObjectMapper;
 
 import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
 import static eu.europeana.metis.security.test.JwtUtils.BEARER;
@@ -58,21 +59,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(classes = {ScheduleWorkflowController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
 class TestScheduleWorkflowController {
 
-  @MockBean
+  @MockitoBean
   private ScheduleWorkflowService scheduleWorkflowService;
 
-  @MockBean
+  @MockitoBean
   private JwtDecoder jwtDecoder;
 
-  @MockBean
+  @MockitoBean
   private UserService userService;
 
   private static MockMvc mockMvc;
   private final JwtUtils jwtUtils;
 
   @Autowired
-  public TestScheduleWorkflowController(SecurityConfigurationProperties securityConfigurationProperties) {
+  public TestScheduleWorkflowController(SecurityConfigurationProperties securityConfigurationProperties, ObjectMapper objectMapper) {
     jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
+    TestUtils.setObjectMapper(objectMapper);
   }
 
   @BeforeAll

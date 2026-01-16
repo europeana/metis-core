@@ -1,27 +1,27 @@
 package eu.europeana.metis.core.common;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
 import eu.europeana.metis.utils.Country;
-import java.io.IOException;
 
 /**
  * Deserializer for {@link Country} enum.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-01-09
  */
 public class CountryDeserializer extends StdDeserializer<Country> {
 
   private static final long serialVersionUID = 1L;
 
   /**
-   * Constructor for null value
+   * Default constructor.
+   * <p>
+   * Initializes the deserializer with the {@link Country} class as the target type.
+   * <p>
+   * Note: Required, do not remove.
    */
   public CountryDeserializer() {
-    this(null);
+    this(Country.class);
   }
 
   /**
@@ -34,9 +34,8 @@ public class CountryDeserializer extends StdDeserializer<Country> {
   }
 
   @Override
-  public Country deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-      throws IOException {
-    JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-    return Country.getCountryFromEnumName(node.get("enum").asText());
+  public Country deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
+    JsonNode node = deserializationContext.readTree(jsonParser);
+    return Country.getCountryFromEnumName(node.get("enum").asString());
   }
 }
