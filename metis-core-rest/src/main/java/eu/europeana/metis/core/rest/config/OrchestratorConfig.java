@@ -1,9 +1,7 @@
 package eu.europeana.metis.core.rest.config;
 
-import com.rabbitmq.client.Channel;
 import eu.europeana.metis.common.config.properties.TruststoreConfigurationProperties;
 import eu.europeana.metis.common.config.properties.ecloud.EcloudConfigurationProperties;
-import eu.europeana.metis.common.config.properties.rabbitmq.RabbitmqConfigurationProperties;
 import eu.europeana.metis.common.config.properties.redis.RedisConfigurationProperties;
 import eu.europeana.metis.common.config.properties.validation.ValidationConfigurationProperties;
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
@@ -16,8 +14,8 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.execution.MongoQueuePoller;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
-import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
@@ -210,17 +208,21 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
     return new SemaphoresPerPluginManager(metisCoreConfigurationProperties.maxConcurrentThreads());
   }
 
+  @Bean
+  public MongoQueuePoller<S, T> mongoQueuePoller(WorkflowExecutorManager<S, T> workflowExecutorManager,
+      WorkflowExecutionDao workflowExecutionDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    return new MongoQueuePoller<>(workflowExecutorManager, workflowExecutionDao,
+        getFailsafeLeniencyDuration(metisCoreConfigurationProperties));
+  }
+
   /**
    * Creates and configures a WorkflowExecutorManager bean for handling workflow execution operations.
    *
    * @param semaphoresPerPluginManager Manages semaphores for controlling access to plugins.
    * @param workflowExecutionDao Data access object for managing workflow executions.
    * @param workflowPostProcessor Post-processor for workflow execution-related actions.
-   * @param rabbitmqPublisherChannel RabbitMQ channel used for publishing messages.
-   * @param rabbitmqConsumerChannel RabbitMQ channel used for consuming messages.
    * @param redissonClient Redisson client for distributed locking and caching.
    * @param engineTaskClient Client for interactions with data processing services.
-   * @param rabbitmqConfigurationProperties Configuration properties for RabbitMQ setup.
    * @param metisCoreConfigurationProperties Core configuration properties for the system.
    * @return A configured instance of WorkflowExecutorManager.
    */
@@ -229,22 +231,18 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao,
       WorkflowPostProcessor workflowPostProcessor,
-      @Qualifier("rabbitmqPublisherChannel") Channel rabbitmqPublisherChannel,
-      @Qualifier("rabbitmqConsumerChannel") Channel rabbitmqConsumerChannel,
       RedissonClient redissonClient,
       EngineTaskClient<S, T> engineTaskClient,
-      RabbitmqConfigurationProperties rabbitmqConfigurationProperties,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
-    workflowExecutorManagerSettings.setRabbitmqQueueName(rabbitmqConfigurationProperties.getQueueName());
     workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(
         metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
     workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
 
     return new WorkflowExecutorManager<>(
-        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
-        rabbitmqPublisherChannel, rabbitmqConsumerChannel, redissonClient, engineTaskClient);
+        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, redissonClient,
+        engineTaskClient);
   }
 
   /**
@@ -288,30 +286,14 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
     return new WorkflowDao(morphiaDatastoreProvider);
   }
 
-  /**
-   * Creates and configures a WorkflowExecutionMonitor bean for monitoring the execution of workflows.
-   *
-   * @param workflowExecutorManager WorkflowExecutorManager instance responsible for managing workflow executions.
-   * @param workflowExecutionDao WorkflowExecutionDao instance used for accessing and managing workflow execution data.
-   * @param redissonClient RedissonClient instance for distributed caching and locking mechanisms.
-   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core system.
-   * @return A configured WorkflowExecutionMonitor instance.
-   */
-  @Bean
-  public WorkflowExecutionMonitor getWorkflowExecutionMonitor(
-      WorkflowExecutorManager<S, T> workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
-      RedissonClient redissonClient, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-
+  private static Duration getFailsafeLeniencyDuration(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     /*Computes the leniency for the failsafe action: how long ago (the worst case)
      did the last update action take place before we assume the execution hangs.*/
-    final Duration failsafeLeniency = Duration.ZERO
+    return Duration.ZERO
         .plusMillis(metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds())
         .plusMillis(metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds())
         .plusSeconds(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds())
         .plusSeconds(metisCoreConfigurationProperties.failsafeMarginOfInactivityInSeconds());
-
-    return new WorkflowExecutionMonitor(workflowExecutorManager,
-        workflowExecutionDao, redissonClient, failsafeLeniency);
   }
 
   /**

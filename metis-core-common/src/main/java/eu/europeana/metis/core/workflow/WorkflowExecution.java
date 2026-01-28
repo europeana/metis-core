@@ -53,6 +53,7 @@ public class WorkflowExecution implements HasMongoObjectId {
   private String ecloudDatasetId;
   private String cancelledBy;
   private String startedBy;
+  private String claimedByInstance;
   private boolean cancelling;
 
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
@@ -118,6 +119,14 @@ public class WorkflowExecution implements HasMongoObjectId {
 
   public void setStartedBy(String startedBy) {
     this.startedBy = startedBy;
+  }
+
+  public String getClaimedByInstance() {
+    return claimedByInstance;
+  }
+
+  public void setClaimedByInstance(String claimedByInstance) {
+    this.claimedByInstance = claimedByInstance;
   }
 
   public String getEcloudDatasetId() {

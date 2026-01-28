@@ -19,10 +19,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.DataRevision;
+import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
@@ -39,7 +39,6 @@ import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +58,6 @@ class TestWorkflowExecutor {
   private static WorkflowExecutionDao workflowExecutionDao;
   private static WorkflowPostProcessor workflowPostProcessor;
   private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
-  private static WorkflowExecutionMonitor workflowExecutionMonitor;
   private static WorkflowExecutorManager<EngineTaskSettings, EngineTask> workflowExecutorManager;
 
   @BeforeAll
@@ -67,21 +65,19 @@ class TestWorkflowExecutor {
     workflowExecutionDao = Mockito.mock(WorkflowExecutionDao.class);
     workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
     engineTaskClient = mock(EngineTaskClient.class);
-    workflowExecutionMonitor = Mockito.mock(WorkflowExecutionMonitor.class);
 
     WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
     workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(0);
     workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(10);
 
     workflowExecutorManager = new WorkflowExecutorManager<>(workflowExecutorManagerSettings, new SemaphoresPerPluginManager(2), workflowExecutionDao,
-        workflowPostProcessor, null, null, null, engineTaskClient);
+        workflowPostProcessor, null, engineTaskClient);
   }
 
   @BeforeEach
   void cleanUp() {
     Mockito.reset(workflowExecutionDao);
     Mockito.reset(workflowPostProcessor);
-    Mockito.reset(workflowExecutionMonitor);
     Mockito.reset(engineTaskClient);
 
     EngineTask engineTask = mock(EngineTask.class);
@@ -115,7 +111,7 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -160,7 +156,7 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(droppedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -209,7 +205,7 @@ class TestWorkflowExecutor {
         .thenThrow(engineTaskException100Times)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -246,7 +242,7 @@ class TestWorkflowExecutor {
     when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
         .thenThrow(new ExternalTaskException("", new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -294,7 +290,7 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -348,7 +344,7 @@ class TestWorkflowExecutor {
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
     doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message));
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false)
                                                                       .thenReturn(true);
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
@@ -390,7 +386,7 @@ class TestWorkflowExecutor {
     when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
         .thenReturn(currentlyProcessingProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     EngineTaskProgress processedProgress = new EngineTaskProgress();
@@ -427,8 +423,8 @@ class TestWorkflowExecutor {
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
-    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
-        .thenReturn(new ImmutablePair<>(workflowExecution, true));
+//    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
+//        .thenReturn(new ImmutablePair<>(workflowExecution, true));
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
@@ -470,8 +466,8 @@ class TestWorkflowExecutor {
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
-    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
-        .thenReturn(new ImmutablePair<>(workflowExecution, true));
+//    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
+//        .thenReturn(new ImmutablePair<>(workflowExecution, true));
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();

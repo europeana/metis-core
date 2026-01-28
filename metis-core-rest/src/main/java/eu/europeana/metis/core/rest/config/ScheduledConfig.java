@@ -1,8 +1,9 @@
 package eu.europeana.metis.core.rest.config;
 
-import eu.europeana.metis.core.execution.QueueConsumer;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.execution.MongoQueuePoller;
 import eu.europeana.metis.core.execution.SchedulerExecutor;
-import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.UserService;
 import java.lang.invoke.MethodHandles;
@@ -23,16 +24,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 @EnableConfigurationProperties({MetisCoreConfigurationProperties.class})
 public class ScheduledConfig {
 
-  /**
-   * Retrieves the periodic failsafe check interval in milliseconds from the provided MetisCoreConfigurationProperties.
-   *
-   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
-   * @return The periodic failsafe check interval in milliseconds.
-   */
-  @Bean
-  public long getPeriodicFailsafeCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.periodicFailsafeCheckInMilliseconds();
-  }
+//  /**
+//   * Retrieves the periodic failsafe check interval in milliseconds from the provided MetisCoreConfigurationProperties.
+//   *
+//   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
+//   * @return The periodic failsafe check interval in milliseconds.
+//   */
+//  @Bean
+//  public long getPeriodicFailsafeCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+//    return metisCoreConfigurationProperties.periodicFailsafeCheckInMilliseconds();
+//  }
 
   /**
    * Retrieves the periodic scheduler check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
@@ -77,31 +78,25 @@ public class ScheduledConfig {
    */
   @Configuration
   @EnableScheduling
-  static class ScheduledTasks {
+  static class ScheduledTasks<S extends EngineTaskSettings, T extends EngineTask> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private final WorkflowExecutionMonitor workflowExecutionMonitor;
+    private final MongoQueuePoller<S, T> mongoQueuePoller;
     private final SchedulerExecutor schedulerExecutor;
-    private final QueueConsumer queueConsumer;
     private final UserService userService;
 
     @Autowired
-    public ScheduledTasks(WorkflowExecutionMonitor workflowExecutionMonitor, SchedulerExecutor schedulerExecutor,
-        QueueConsumer queueConsumer, UserService userService) {
+    public ScheduledTasks(MongoQueuePoller<S, T> mongoQueuePoller,
+        SchedulerExecutor schedulerExecutor, UserService userService) {
+      this.mongoQueuePoller = mongoQueuePoller;
       this.userService = userService;
-      this.workflowExecutionMonitor = workflowExecutionMonitor;
-      this.queueConsumer = queueConsumer;
       this.schedulerExecutor = schedulerExecutor;
     }
 
-    /**
-     * Failsafe periodic thread.
-     * <p>It will find stale executions and will re-submit them in the distributed queue.</p>
-     */
-    @Scheduled(fixedDelayString = "#{@getPeriodicFailsafeCheckInMilliseconds}")
-    public void runFailsafeExecutor() {
-      this.workflowExecutionMonitor.performFailsafe();
-      LOGGER.info("Failsafe task finished.");
+    @Scheduled(fixedDelayString = "5000")
+    public void runExecutions() {
+      this.mongoQueuePoller.poll();
+      LOGGER.info("Run executions.");
     }
 
     /**
@@ -119,9 +114,9 @@ public class ScheduledConfig {
     }
 
     /**
-     * Queue consumer cleanup periodic thread.
+     * Mongo poller cleanup periodic thread.
      * <p>
-     * Periodically runs a cleanup operation on the queue consumer's completion service. This method logs the completion of the
+     * Periodically runs a cleanup operation on the mongo poller's completion service. This method logs the completion of the
      * cleanup operation and may throw an {@code InterruptedException} if interrupted during execution.
      *
      * @throws InterruptedException if the execution of this method is interrupted
@@ -130,8 +125,8 @@ public class ScheduledConfig {
         initialDelayString = "#{@getPollingTimeoutForCleaningCompletionServiceInMilliseconds}",
         fixedDelayString = "#{@getPollingTimeoutForCleaningCompletionServiceInMilliseconds}"
     )
-    public void runQueueConsumerCleanup() throws InterruptedException {
-      this.queueConsumer.checkAndCleanCompletionService();
+    public void runExecutorCompletionServiceCleanup() throws InterruptedException {
+      this.mongoQueuePoller.cleanup();
       LOGGER.debug("Queue consumer cleanup finished.");
     }
 

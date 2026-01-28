@@ -23,6 +23,7 @@ public enum DaoFieldNames {
   UPDATED_DATE("updatedDate"),
   FINISHED_DATE("finishedDate"),
   PLUGIN_METADATA("pluginMetadata"),
+  EXTERNAL_TASK_ID("externalTaskId"),
   XSLT_ID("xsltId");
 
   private final String fieldName;

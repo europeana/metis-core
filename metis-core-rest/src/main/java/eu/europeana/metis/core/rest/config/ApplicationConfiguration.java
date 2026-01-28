@@ -133,7 +133,6 @@ public class ApplicationConfiguration {
    * Get the DAO for datasets.
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider}
-   * @param ecloudDataSetServiceClient the ecloud dataset client
    * @param ecloudConfigurationProperties the properties for ecloud configuration
    * @return {@link DatasetDao} used to access the database for datasets
    */

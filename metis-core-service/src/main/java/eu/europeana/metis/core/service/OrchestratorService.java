@@ -417,10 +417,6 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       executionDatasetIdLock.unlock();
     }
 
-    // Add the workflow execution to the queue.
-    workflowExecutorManager.addWorkflowExecutionToQueue(objectId);
-    LOGGER.info("WorkflowExecution with id: {}, added to execution queue", objectId);
-
     // Done. Get a fresh copy of the workflow execution to return.
     return workflowExecutionDao.getById(objectId);
   }

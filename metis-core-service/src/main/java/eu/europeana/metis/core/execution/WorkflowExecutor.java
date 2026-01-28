@@ -115,8 +115,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         workflowExecution.setFinishedDate(finishDate);
         workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
         workflowExecution.setCancelling(false);
-        LOGGER.info("workflowExecutionId: {} - Finished workflow execution",
-            workflowExecution.getId());
+        LOGGER.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
       }
     }
 
@@ -235,10 +234,6 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         LOGGER.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
             workflowExecution.getId(), executablePluginType);
       }
-    } else {
-      // Rest workflow execution to INQUEUE so that it can be reclaimed
-      workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-      workflowExecutionDao.updateMonitorInformation(workflowExecution);
     }
     return acquired;
   }
@@ -366,6 +361,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   record PreviousRecordCounter(AtomicInteger expected, AtomicInteger processed,
                                AtomicInteger deleted, AtomicInteger ignored,
                                AtomicInteger errors, AtomicInteger total) {
+
   }
 
   private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
@@ -380,6 +376,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
     AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis = new AtomicLong(
         System.currentTimeMillis());
+    boolean updateSuccess;
     do {
       try {
         Thread.sleep(sleepTime);
@@ -437,9 +434,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         Date updatedDate = new Date();
         plugin.setUpdatedDate(updatedDate);
         workflowExecution.setUpdatedDate(updatedDate);
-        workflowExecutionDao.updateMonitorInformation(workflowExecution);
+        updateSuccess = workflowExecutionDao.updateMonitorInformation(workflowExecution);
       }
-    } while (isContinueMonitor(engineTaskProgress));
+    } while (updateSuccess && isContinueMonitor(engineTaskProgress));
 
     // Perform post-processing if needed.
     if (!applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
@@ -514,7 +511,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     final boolean notCleaningOrPending = plugin.getPluginStatus() != PluginStatus.CLEANING
         && plugin.getPluginStatus() != PluginStatus.PENDING;
     final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin,
-         checkPointDateOfProcessedRecordsPeriodInMillis,  previousRecordsCounters);
+        checkPointDateOfProcessedRecordsPeriodInMillis, previousRecordsCounters);
     return (notCleaningAndCancelling || (notCleaningOrPending && isMinuteCapExceeded));
   }
 
