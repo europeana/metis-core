@@ -36,6 +36,8 @@ import java.util.List;
     @Index(fields = {@Field("startedDate")}),
     @Index(fields = {@Field("updatedDate")}),
     @Index(fields = {@Field("finishedDate")}),
+    @Index(fields = {@Field("workflowStatus"), @Field("claimedByInstance"), @Field("createdDate")}),
+    @Index(fields = {@Field("workflowStatus"), @Field("updatedDate")}),
     //Embedded indexes definitions should be referenced on the parent entity
     // disabling index validation mapping due metisPlugins is an AbstractMetisPlugin<?>
     // so ? can be anything. Morphia has a potential feature lack when normalizing

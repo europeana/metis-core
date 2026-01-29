@@ -917,7 +917,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     Filter[] filters = {
         Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.INQUEUE),
         Filters.eq(CLAIMED_BY_INSTANCE, null),
-        Filters.ne(STARTED_DATE.getFieldName(), null)
+        Filters.exists(STARTED_DATE.getFieldName())
     };
     UpdateOperator[] updateOperators = {
         UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
@@ -930,7 +930,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   private WorkflowExecution tryClaimStaleRunning(Date dateNow, ModifyOptions modifyOptions, Date staleBefore) {
     Filter[] filters = {
         Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
-        Filters.ne(CLAIMED_BY_INSTANCE, null),
+        Filters.exists(CLAIMED_BY_INSTANCE),
         Filters.lt(UPDATED_DATE.getFieldName(), staleBefore)
     };
     UpdateOperator[] updateOperators = {
