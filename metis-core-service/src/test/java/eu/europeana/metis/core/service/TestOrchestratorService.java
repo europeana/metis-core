@@ -317,7 +317,6 @@ class TestOrchestratorService {
 
     // Add the workflow
     orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null, TestObjectFactory.USER_ID);
-    orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(dataset.getDatasetId(), null, null);
 
     // Verify the validation parameters
     final Map<ExecutablePluginType, AbstractExecutablePluginMetadata> pluginsByType = workflow
@@ -513,14 +512,6 @@ class TestOrchestratorService {
     when(datasetDao.getDatasetOrThrow(datasetId)).thenThrow(new NoDatasetFoundException(datasetId));
     assertThrows(NoDatasetFoundException.class, () -> orchestratorService
         .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, null, TestObjectFactory.USER_ID));
-  }
-
-  @Test
-  void addWorkflowInQueueOfWorkflowExecutions_NoDatasetFoundException_Unauthorized() {
-    final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
-    when(datasetDao.getDatasetByDatasetId(datasetId)).thenReturn(null);
-    assertThrows(NoDatasetFoundException.class,
-        () -> orchestratorService.addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(datasetId, null, null));
   }
 
   @Test

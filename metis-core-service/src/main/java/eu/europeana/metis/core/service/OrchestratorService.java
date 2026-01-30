@@ -287,45 +287,6 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   }
 
   /**
-   * <p> Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates
-   * the status of the WorkflowExecution to {@link WorkflowStatus#INQUEUE}, adds it to the database and also it's identifier goes
-   * into the distributed queue of WorkflowExecutions. The source data for the first plugin in the workflow can be controlled, if
-   * required, from the {@code enforcedPredecessorType}, which means that the last valid plugin that is provided with that
-   * parameter, will be used as the source data. </p>
-   * <p> <b>Please note:</b> this method is not checked for authorization: it is only meant to be
-   * called from a scheduled task. </p>
-   *
-   * @param datasetId the dataset identifier for which the execution will take place
-   * @param workflowProvided optional, the workflow to use instead of retrieving the saved one from the db
-   * @param enforcedPredecessorType optional, the plugin type to be used as source data
-   * @return the WorkflowExecution object that was generated
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link NoWorkflowFoundException} if a workflow for the dataset identifier provided does
-   * not exist</li>
-   * <li>{@link BadContentException} if the workflow is empty or no plugin enabled</li>
-   * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link ExternalTaskException} if there was an exception when contacting the external
-   * resource(ECloud)</li>
-   * <li>{@link PluginExecutionNotAllowed} if the execution of the first plugin was not allowed,
-   * because a valid source plugin could not be found</li>
-   * <li>{@link WorkflowExecutionAlreadyExistsException} if a workflow execution for the generated
-   * execution identifier already exists, almost impossible to happen since ids are UUIDs</li>
-   * </ul>
-   */
-  public WorkflowExecution addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(
-      String datasetId, @Nullable Workflow workflowProvided,
-      @Nullable ExecutablePluginType enforcedPredecessorType)
-      throws GenericMetisException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: %s, in METIS", datasetId));
-    }
-    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, null);
-  }
-
-  /**
    * Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates the status of the WorkflowExecution
    * to {@link WorkflowStatus#INQUEUE}, adds it to the database, and also it's identifier goes into the distributed queue of
    * WorkflowExecutions. The source data for the first plugin in the workflow can be controlled, if required, from the

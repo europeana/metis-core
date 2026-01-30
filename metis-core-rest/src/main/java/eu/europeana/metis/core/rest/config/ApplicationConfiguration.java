@@ -7,7 +7,6 @@ import eu.europeana.metis.common.config.properties.mongo.MongoConfigurationPrope
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
-import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
@@ -178,7 +177,6 @@ public class ApplicationConfiguration {
    * @param datasetXsltDao the Dao instance to access the DatasetXslt database
    * @param workflowDao the Dao instance to access the Workflow database
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient {@link RedissonClient}
    * @param userService the user service
    * @param metisCoreConfigurationProperties the metis configuration properties
@@ -188,10 +186,10 @@ public class ApplicationConfiguration {
   public DatasetService getDatasetService(
       DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
-      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient, UserService userService,
+      RedissonClient redissonClient, UserService userService,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     DatasetService datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao,
-        workflowExecutionDao, scheduledWorkflowDao, redissonClient, userService);
+        workflowExecutionDao, redissonClient, userService);
     datasetService.setMetisCoreUrl(metisCoreConfigurationProperties.baseUrl());
     return datasetService;
   }

@@ -8,7 +8,6 @@ import eu.europeana.metis.core.common.TransformationParameters;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
-import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -69,7 +68,6 @@ public class DatasetService {
   private final DatasetXsltDao datasetXsltDao;
   private final WorkflowDao workflowDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final ScheduledWorkflowDao scheduledWorkflowDao;
   private final RedissonClient redissonClient;
   private final UserService userService;
   private String metisCoreUrl; //Initialize with setter
@@ -82,19 +80,16 @@ public class DatasetService {
    * @param datasetXsltDao the Dao instance to access the DatasetXslt database
    * @param workflowDao the Dao instance to access the Workflow database
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient the redisson client used for distributed locks
    * @param userService the user service
    */
   @Autowired
   public DatasetService(DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
-      WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
-      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient, UserService userService) {
+      WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao, RedissonClient redissonClient, UserService userService) {
     this.datasetDao = datasetDao;
     this.datasetXsltDao = datasetXsltDao;
     this.workflowDao = workflowDao;
     this.workflowExecutionDao = workflowExecutionDao;
-    this.scheduledWorkflowDao = scheduledWorkflowDao;
     this.redissonClient = redissonClient;
     this.userService = userService;
   }
@@ -262,7 +257,6 @@ public class DatasetService {
     datasetXsltDao.deleteAllByDatasetId(datasetId);
     workflowDao.deleteWorkflow(datasetId);
     workflowExecutionDao.deleteAllByDatasetId(datasetId);
-    scheduledWorkflowDao.deleteAllByDatasetId(datasetId);
   }
 
   /**

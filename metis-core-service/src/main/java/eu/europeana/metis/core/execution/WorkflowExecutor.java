@@ -249,8 +249,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, String datasetId) {
     final PluginExecutor<S, T> pluginExecutor = new PluginExecutor<>(plugin, engineTaskClient);
     try {
-      // Compute previous plugin revision information. Only need to look within the workflow: when
-      // scheduling the workflow, the previous plugin information is set for the first plugin.
+      // Compute previous plugin revision information.
       final AbstractExecutablePluginMetadata metadata = plugin.getPluginMetadata();
       final ExecutedMetisPluginId executedMetisPluginId = ExecutedMetisPluginId
           .forPredecessor(plugin);

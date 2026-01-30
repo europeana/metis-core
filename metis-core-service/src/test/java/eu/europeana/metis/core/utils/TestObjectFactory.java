@@ -23,8 +23,6 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.user.User.UserBuilder;
-import eu.europeana.metis.core.workflow.ScheduleFrequence;
-import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -167,59 +165,6 @@ public class TestObjectFactory {
       result.add(new ExecutionDatasetPair(dataset, workflowExecution));
     }
     return result;
-  }
-
-  /**
-   * Create a dummy scheduled workflow
-   *
-   * @return the created scheduled workflow
-   */
-  public static ScheduledWorkflow createScheduledWorkflowObject() {
-    ScheduledWorkflow scheduledWorkflow = new ScheduledWorkflow();
-    scheduledWorkflow.setDatasetId(Integer.toString(DATASETID));
-    scheduledWorkflow.setPointerDate(new Date());
-    scheduledWorkflow.setScheduleFrequence(ScheduleFrequence.ONCE);
-    return scheduledWorkflow;
-  }
-
-  /**
-   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each dataset.
-   *
-   * @param size the number of dummy scheduled workflows to create
-   * @return the created list
-   */
-  public static List<ScheduledWorkflow> createListOfScheduledWorkflows(int size) {
-    List<ScheduledWorkflow> scheduledWorkflows = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-      scheduledWorkflow.setId(new ObjectId());
-      scheduledWorkflow.setDatasetId(Integer.toString(DATASETID + i));
-      scheduledWorkflows.add(scheduledWorkflow);
-    }
-    return scheduledWorkflows;
-  }
-
-  /**
-   * Create a list of dummy scheduled workflows with pointer date and frequency. The dataset name will have a suffix number for
-   * each dataset.
-   *
-   * @param size the number of dummy scheduled workflows to create
-   * @param date the pointer date
-   * @param scheduleFrequence the schedule frequence
-   * @return the created list
-   */
-  public static List<ScheduledWorkflow> createListOfScheduledWorkflowsWithDateAndFrequence(
-      int size, Date date, ScheduleFrequence scheduleFrequence) {
-    List<ScheduledWorkflow> scheduledWorkflows = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-      scheduledWorkflow.setId(new ObjectId());
-      scheduledWorkflow.setDatasetId(Integer.toString(DATASETID + i));
-      scheduledWorkflow.setPointerDate(date);
-      scheduledWorkflow.setScheduleFrequence(scheduleFrequence);
-      scheduledWorkflows.add(scheduledWorkflow);
-    }
-    return scheduledWorkflows;
   }
 
   /**

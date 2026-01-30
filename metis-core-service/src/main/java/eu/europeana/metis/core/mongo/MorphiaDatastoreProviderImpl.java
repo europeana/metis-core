@@ -12,7 +12,6 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.dataset.DepublishRecordId;
-import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -107,7 +106,6 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(DatasetIdSequence.class);
     mapper.getEntityModel(Workflow.class);
     mapper.getEntityModel(WorkflowExecution.class);
-    mapper.getEntityModel(ScheduledWorkflow.class);
     mapper.getEntityModel(DatasetXslt.class);
     mapper.getEntityModel(DepublishRecordId.class);
     // Plugins

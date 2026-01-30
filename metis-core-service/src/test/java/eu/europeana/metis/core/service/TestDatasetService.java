@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
-import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -74,7 +73,6 @@ class TestDatasetService {
   private DatasetDao datasetDao;
   private DatasetXsltDao datasetXsltDao;
   private WorkflowExecutionDao workflowExecutionDao;
-  private ScheduledWorkflowDao scheduledWorkflowDao;
   private DatasetService datasetService;
   private RedissonClient redissonClient;
   private UserService userService;
@@ -115,12 +113,11 @@ class TestDatasetService {
     datasetXsltDao = mock(DatasetXsltDao.class);
     WorkflowDao workflowDao = mock(WorkflowDao.class);
     workflowExecutionDao = mock(WorkflowExecutionDao.class);
-    scheduledWorkflowDao = mock(ScheduledWorkflowDao.class);
     redissonClient = mock(RedissonClient.class);
     userService = mock(UserService.class);
 
-    datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao, workflowExecutionDao, scheduledWorkflowDao,
-        redissonClient, userService);
+    datasetService =
+        new DatasetService(datasetDao, datasetXsltDao, workflowDao, workflowExecutionDao, redissonClient, userService);
     datasetService.setMetisCoreUrl(String.format("http://localhost:%d", portForWireMock));
   }
 
@@ -151,7 +148,8 @@ class TestDatasetService {
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(DATASET_CREATION_LOCK)).thenReturn(rlock);
     when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(dataset);
-    expectException(DatasetAlreadyExistsException.class, () -> datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO));
+    expectException(DatasetAlreadyExistsException.class,
+        () -> datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO));
     verify(datasetDao, times(0)).create(any(Dataset.class));
     verify(datasetDao, times(0)).getById(null);
   }
@@ -216,7 +214,8 @@ class TestDatasetService {
   @Test
   void testUpdateDatasetNoDatasetFoundException() throws NoDatasetFoundException {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-    when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenThrow(new NoDatasetFoundException(datasetDTO.getDatasetId()));
+    when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenThrow(
+        new NoDatasetFoundException(datasetDTO.getDatasetId()));
     assertThrows(NoDatasetFoundException.class, () -> datasetService.updateDataset(datasetDTO, null));
   }
 
@@ -226,7 +225,6 @@ class TestDatasetService {
     datasetService.deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(datasetDao, times(1)).deleteByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(workflowExecutionDao, times(1)).deleteAllByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
-    verify(scheduledWorkflowDao, times(1)).deleteAllByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
   }
 
   @Test

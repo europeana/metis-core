@@ -3,7 +3,6 @@ package eu.europeana.metis.core.rest.config;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.MongoQueuePoller;
-import eu.europeana.metis.core.execution.SchedulerExecutor;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.UserService;
 import java.lang.invoke.MethodHandles;
@@ -34,17 +33,6 @@ public class ScheduledConfig {
 //  public long getPeriodicFailsafeCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
 //    return metisCoreConfigurationProperties.periodicFailsafeCheckInMilliseconds();
 //  }
-
-  /**
-   * Retrieves the periodic scheduler check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
-   *
-   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
-   * @return The periodic scheduler check-in interval in milliseconds.
-   */
-  @Bean
-  public long getPeriodicSchedulerCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.periodicSchedulerCheckInMilliseconds();
-  }
 
   /**
    * Retrieves the polling timeout for the cleaning completion service in milliseconds from the provided
@@ -82,35 +70,18 @@ public class ScheduledConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final MongoQueuePoller<S, T> mongoQueuePoller;
-    private final SchedulerExecutor schedulerExecutor;
     private final UserService userService;
 
     @Autowired
-    public ScheduledTasks(MongoQueuePoller<S, T> mongoQueuePoller,
-        SchedulerExecutor schedulerExecutor, UserService userService) {
+    public ScheduledTasks(MongoQueuePoller<S, T> mongoQueuePoller, UserService userService) {
       this.mongoQueuePoller = mongoQueuePoller;
       this.userService = userService;
-      this.schedulerExecutor = schedulerExecutor;
     }
 
     @Scheduled(fixedDelayString = "5000")
     public void runExecutions() {
       this.mongoQueuePoller.poll();
       LOGGER.info("Run executions.");
-    }
-
-    /**
-     * Scheduling periodic thread.
-     * <p>Checks if scheduled workflows are valid for starting and sends them to the distributed
-     * queue.</p>
-     */
-    @Scheduled(
-        initialDelayString = "#{@getPeriodicSchedulerCheckInMilliseconds}",
-        fixedDelayString = "#{@getPeriodicSchedulerCheckInMilliseconds}"
-    )
-    public void runSchedulingExecutor() {
-      this.schedulerExecutor.performScheduling();
-      LOGGER.info("Scheduler task finished.");
     }
 
     /**
