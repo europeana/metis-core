@@ -59,6 +59,7 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
+import io.micrometer.common.util.StringUtils;
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
@@ -97,7 +98,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   private static final String CANCELLED_BY = "cancelledBy";
   private static final String STARTED_BY = "startedBy";
   private static final String CLAIMED_BY_INSTANCE = "claimedByInstance";
-  private static final String INSTANCE_ID = UUID.randomUUID().toString();
+  private static final String INSTANCE_ID = resolveInstanceId();
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
   private int workflowExecutionsPerRequest = RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
@@ -111,6 +112,17 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   @Autowired
   public WorkflowExecutionDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     this.morphiaDatastoreProvider = morphiaDatastoreProvider;
+  }
+
+  private static String resolveInstanceId() {
+    // Kubernetes default
+    String hostname = System.getenv("HOSTNAME");
+    if (StringUtils.isNotBlank(hostname)) {
+      return hostname;
+    }
+
+    // Fallback for local/dev
+    return "local-" + UUID.randomUUID();
   }
 
   @Override
