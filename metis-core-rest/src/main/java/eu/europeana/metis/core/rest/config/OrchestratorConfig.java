@@ -9,6 +9,7 @@ import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.DepublishRecordIdDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
+import eu.europeana.metis.core.dao.WorkflowExecutionClaimDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.engine.base.EngineTask;
@@ -217,14 +218,14 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * configuration properties.
    *
    * @param workflowExecutorManager the manager responsible for maintaining and executing workflow instances
-   * @param workflowExecutionDao the data access object for persisting and retrieving workflow execution details
+   * @param workflowExecutionClaimDao the data access object for persisting and retrieving workflow execution details
    * @param metisCoreConfigurationProperties the configuration properties for setting up the workflow system
    * @return an initialized instance of {@link WorkflowExecutionDispatcher}
    */
   @Bean
   public WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
-      WorkflowExecutionDao workflowExecutionDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    workflowExecutionDispatcher = new WorkflowExecutionDispatcher<>(workflowExecutorManager, workflowExecutionDao,
+      WorkflowExecutionClaimDao workflowExecutionClaimDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    workflowExecutionDispatcher = new WorkflowExecutionDispatcher<>(workflowExecutorManager, workflowExecutionClaimDao,
         getFailsafeLeniencyDuration(metisCoreConfigurationProperties));
     return workflowExecutionDispatcher;
   }
@@ -273,6 +274,17 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
     workflowExecutionDao
         .setMaxServedExecutionListLength(metisCoreConfigurationProperties.maxServedExecutionListLength());
     return workflowExecutionDao;
+  }
+
+  /**
+   * Provides an instance of WorkflowExecutionClaimDao configured with datastore provider and properties.
+   *
+   * @param morphiaDatastoreProvider MorphiaDatastoreProvider instance to interact with the datastore.
+   * @return Configured instance of WorkflowExecutionDao.
+   */
+  @Bean
+  public WorkflowExecutionClaimDao getWorkflowExecutionClaimDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
+    return new WorkflowExecutionClaimDao(morphiaDatastoreProvider);
   }
 
   @Bean

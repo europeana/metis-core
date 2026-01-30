@@ -1,11 +1,11 @@
 package eu.europeana.metis.core.common;
 
+import lombok.Getter;
+
 /**
  * Enumeration that contains field names for dao queries.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2019-07-04
  */
+@Getter
 public enum DaoFieldNames {
   ID("_id"),
   USER_ID("userId"),
@@ -24,16 +24,13 @@ public enum DaoFieldNames {
   FINISHED_DATE("finishedDate"),
   PLUGIN_METADATA("pluginMetadata"),
   EXTERNAL_TASK_ID("externalTaskId"),
-  XSLT_ID("xsltId");
+  XSLT_ID("xsltId"),
+  CLAIMED_BY_INSTANCE("claimedByInstance");
 
   private final String fieldName;
 
   DaoFieldNames(String fieldName) {
     this.fieldName = fieldName;
-  }
-
-  public String getFieldName() {
-    return fieldName;
   }
 
   @Override

@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.execution;
 
-import eu.europeana.metis.core.dao.WorkflowExecutionDao;
+import eu.europeana.metis.core.dao.WorkflowExecutionClaimDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -28,7 +28,7 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
   private static final int MAX_CLAIM_BATCH = 20;
 
   private final WorkflowExecutorManager<S, T> workflowExecutorManager;
-  private final WorkflowExecutionDao workflowExecutionDao;
+  private final WorkflowExecutionClaimDao workflowExecutionClaimDao;
   private final ExecutorService threadPool = Executors.newCachedThreadPool();
   private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService =
       new ExecutorCompletionService<>(threadPool);
@@ -39,13 +39,13 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
    * Constructor.
    *
    * @param workflowExecutorManager Manager responsible for handling workflow executions and associated tasks.
-   * @param workflowExecutionDao Data access object for managing workflow execution data.
+   * @param workflowExecutionClaimDao Data access object for managing workflow execution data.
    * @param failsafeLeniency The duration defining the leniency window for handling execution failures.
    */
   public WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
-      WorkflowExecutionDao workflowExecutionDao, Duration failsafeLeniency) {
+      WorkflowExecutionClaimDao workflowExecutionClaimDao, Duration failsafeLeniency) {
     this.workflowExecutorManager = workflowExecutorManager;
-    this.workflowExecutionDao = workflowExecutionDao;
+    this.workflowExecutionClaimDao = workflowExecutionClaimDao;
     this.failsafeLeniency = failsafeLeniency;
   }
 
@@ -59,7 +59,7 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
   public void pollAndSubmit() {
     int claimedExecutions = 0;
     while (claimedExecutions < MAX_CLAIM_BATCH) {
-      WorkflowExecution workflowExecution = workflowExecutionDao.claimNextExecution(failsafeLeniency);
+      WorkflowExecution workflowExecution = workflowExecutionClaimDao.claimNextExecution(failsafeLeniency);
       if (workflowExecution == null) {
         return;
       }
@@ -109,7 +109,7 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
       } else {
         LOGGER.info("workflowExecutionId: {} - Sent to queue because execution could "
             + "not be claimed or plugin could not run in this instance", workflowExecution.getId());
-        if (!workflowExecutionDao.requeue(workflowExecution)) {
+        if (!workflowExecutionClaimDao.requeue(workflowExecution)) {
           LOGGER.warn("Could not requeue workflowExecutionId: {}", workflowExecution.getId());
         }
       }

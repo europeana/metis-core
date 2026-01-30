@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.dao;
 
-import static com.mongodb.client.model.Sorts.ascending;
+import static eu.europeana.metis.core.common.DaoFieldNames.CLAIMED_BY_INSTANCE;
 import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.EXTERNAL_TASK_ID;
@@ -17,11 +17,9 @@ import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_ID;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import dev.morphia.DeleteOptions;
-import dev.morphia.ModifyOptions;
 import dev.morphia.UpdateOptions;
 import dev.morphia.aggregation.Aggregation;
 import dev.morphia.aggregation.expressions.ArrayExpressions;
@@ -56,10 +54,7 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
-import io.micrometer.common.util.StringUtils;
 import java.lang.invoke.MethodHandles;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,8 +63,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -91,8 +84,6 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   private static final int DEFAULT_POSITION_IN_OVERVIEW = 3;
   private static final String CANCELLING = "cancelling";
   private static final String CANCELLED_BY = "cancelledBy";
-  private static final String CLAIMED_BY_INSTANCE = "claimedByInstance";
-  private static final String INSTANCE_ID = resolveInstanceId();
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
   private int workflowExecutionsPerRequest = RequestLimits.WORKFLOW_EXECUTIONS_PER_REQUEST.getLimit();
@@ -106,17 +97,6 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   @Autowired
   public WorkflowExecutionDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     this.morphiaDatastoreProvider = morphiaDatastoreProvider;
-  }
-
-  private static String resolveInstanceId() {
-    // Kubernetes default
-    String hostname = System.getenv("HOSTNAME");
-    if (StringUtils.isNotBlank(hostname)) {
-      return hostname;
-    }
-
-    // Fallback for local dev
-    return "local-" + UUID.randomUUID();
   }
 
   @Override
@@ -150,7 +130,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)
                                                              .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-                                                                 Filters.eq(CLAIMED_BY_INSTANCE,
+                                                                 Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(),
                                                                      workflowExecution.getClaimedByInstance()));
 
     final UpdateOperator updateOperator = UpdateOperators
@@ -177,7 +157,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)
                                                              .filter(Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-                                                                 Filters.eq(CLAIMED_BY_INSTANCE,
+                                                                 Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(),
                                                                      workflowExecution.getClaimedByInstance()));
     final ArrayList<UpdateOperator> updateOperators = new ArrayList<>();
     updateOperators.add(UpdateOperators
@@ -321,8 +301,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    */
   public PluginWithExecutionId<MetisPlugin> getFirstSuccessfulPlugin(String datasetId,
       Set<PluginType> pluginTypes) {
-    return Optional.ofNullable(getFirstOrLastFinishedPlugin(datasetId, pluginTypes, true))
-                   .orElse(null);
+    return getFirstOrLastFinishedPlugin(datasetId, pluginTypes, true);
   }
 
   /**
@@ -334,8 +313,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    */
   public PluginWithExecutionId<MetisPlugin> getLatestSuccessfulPlugin(String datasetId,
       Set<PluginType> pluginTypes) {
-    return Optional.ofNullable(getFirstOrLastFinishedPlugin(datasetId, pluginTypes, false))
-                   .orElse(null);
+    return getFirstOrLastFinishedPlugin(datasetId, pluginTypes, false);
   }
 
   /**
@@ -365,12 +343,11 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     }
 
     // Check for the result type: it should be executable.
-    if (!(uncastResult instanceof ExecutablePlugin)) {
+    if (!(uncastResult instanceof ExecutablePlugin castResult)) {
       LOGGER.warn("Found plugin {} for executable plugin type {} that is not itself executable.",
           uncastResult.getId(), uncastResult.getPluginType());
       return null;
     }
-    final ExecutablePlugin castResult = (ExecutablePlugin) uncastResult;
 
     // if necessary, check for the data validity.
     final PluginWithExecutionId<ExecutablePlugin> result;
@@ -795,12 +772,12 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    */
   public WorkflowExecution getByTaskExecution(ExecutedMetisPluginId plugin, String datasetId) {
 
-    // Create subquery to find the correct plugin.
+    // Create a subquery to find the correct plugin.
     List<Filter> elemMatchFilters = new ArrayList<>();
     elemMatchFilters.add(Filters.eq(STARTED_DATE.getFieldName(), plugin.getPluginStartedDate()));
     elemMatchFilters.add(Filters.eq(PLUGIN_TYPE.getFieldName(), plugin.getPluginType()));
 
-    // Create query to find workflow execution
+    // Create a query to find workflow execution
     final Query<WorkflowExecution> query =
         morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class);
     query.filter(Filters.eq(DATASET_ID.getFieldName(), datasetId));
@@ -879,113 +856,5 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     public ResultList {
       results = List.copyOf(results); // Ensures immutability
     }
-  }
-
-  /**
-   * Attempts to claim the next available {@code WorkflowExecution} for processing. The method checks for eligible executions in a
-   * prioritized order: new in-queue executions, re-queued executions, and stale running executions. If an eligible execution is
-   * found, it is claimed and returned. If no eligible execution is found, {@code null} is returned.
-   *
-   * @param staleLeniency the duration used to determine the staleness threshold for running executions. Executions that have been
-   * in a running state without updates for a duration longer than this value are considered stale and eligible for claiming.
-   * @return the claimed {@code WorkflowExecution} instance if one is available; {@code null} if no execution could be claimed.
-   */
-  public WorkflowExecution claimNextExecution(Duration staleLeniency) {
-    Instant now = Instant.now();
-    Date dateNow = Date.from(now);
-    Date staleBefore = Date.from(now.minus(staleLeniency));
-
-    ModifyOptions modifyOptions = new ModifyOptions()
-        .sort(ascending(CREATED_DATE.getFieldName()))
-        .returnDocument(ReturnDocument.AFTER)
-        .upsert(false);
-
-    List<Supplier<WorkflowExecution>> claimSuppliers = List.of(
-        () -> tryClaimNewInqueue(dateNow, modifyOptions),
-        () -> tryClaimRequeuedInqueue(dateNow, modifyOptions),
-        () -> tryClaimStaleRunning(dateNow, modifyOptions, staleBefore));
-
-    for (Supplier<WorkflowExecution> claimSupplier : claimSuppliers) {
-      WorkflowExecution workflowExecution = claimSupplier.get();
-      if (workflowExecution != null) {
-        return workflowExecution;
-      }
-    }
-    return null;
-  }
-
-  private WorkflowExecution tryClaimNewInqueue(Date dateNow, ModifyOptions modifyOptions) {
-    Filter[] filters = {
-        Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.INQUEUE),
-        Filters.eq(CLAIMED_BY_INSTANCE, null),
-        Filters.eq(STARTED_DATE.getFieldName(), null)
-    };
-    UpdateOperator[] updateOperators = {
-        UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
-        UpdateOperators.set(CLAIMED_BY_INSTANCE, INSTANCE_ID),
-        UpdateOperators.set(UPDATED_DATE.getFieldName(), dateNow),
-        UpdateOperators.set(STARTED_DATE.getFieldName(), dateNow)
-    };
-    return tryClaim(filters, modifyOptions, updateOperators);
-  }
-
-  private WorkflowExecution tryClaimRequeuedInqueue(Date dateNow, ModifyOptions modifyOptions) {
-    Filter[] filters = {
-        Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.INQUEUE),
-        Filters.eq(CLAIMED_BY_INSTANCE, null),
-        Filters.exists(STARTED_DATE.getFieldName())
-    };
-    UpdateOperator[] updateOperators = {
-        UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
-        UpdateOperators.set(CLAIMED_BY_INSTANCE, INSTANCE_ID),
-        UpdateOperators.set(UPDATED_DATE.getFieldName(), dateNow)
-    };
-    return tryClaim(filters, modifyOptions, updateOperators);
-  }
-
-  private WorkflowExecution tryClaimStaleRunning(Date dateNow, ModifyOptions modifyOptions, Date staleBefore) {
-    Filter[] filters = {
-        Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
-        Filters.exists(CLAIMED_BY_INSTANCE),
-        Filters.lt(UPDATED_DATE.getFieldName(), staleBefore)
-    };
-    UpdateOperator[] updateOperators = {
-        UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
-        UpdateOperators.set(CLAIMED_BY_INSTANCE, INSTANCE_ID),
-        UpdateOperators.set(UPDATED_DATE.getFieldName(), dateNow)
-    };
-    return tryClaim(filters, modifyOptions, updateOperators);
-  }
-
-  private WorkflowExecution tryClaim(Filter[] filters, ModifyOptions modifyOptions, UpdateOperator[] updateOperators) {
-    Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class)
-                                                             .filter(filters);
-    return retryableExternalRequestForNetworkExceptions(() ->
-        query.modify(modifyOptions, updateOperators)
-    );
-  }
-
-  /**
-   * Re-queues a given workflow execution by changing its status to "INQUEUE" and unsetting the instance that has claimed it if
-   * certain conditions are met.
-   *
-   * @param workflowExecution The workflow execution object to be re-queued. It must contain an ID, claimed instance, and status.
-   * @return true if the workflow execution was successfully updated; false otherwise.
-   */
-  public boolean requeue(WorkflowExecution workflowExecution) {
-    Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
-                                                             .find(WorkflowExecution.class)
-                                                             .filter(
-                                                                 Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-                                                                 Filters.eq(CLAIMED_BY_INSTANCE,
-                                                                     workflowExecution.getClaimedByInstance()),
-                                                                 Filters.eq(WORKFLOW_STATUS.getFieldName(),
-                                                                     WorkflowStatus.RUNNING));
-
-    UpdateResult updateResult = query.update(new UpdateOptions(),
-        UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.INQUEUE),
-        UpdateOperators.unset(CLAIMED_BY_INSTANCE)
-    );
-    return updateResult.getModifiedCount() == 1;
   }
 }
