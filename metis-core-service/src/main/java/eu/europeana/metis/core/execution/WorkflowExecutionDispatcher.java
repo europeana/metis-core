@@ -15,7 +15,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MongoQueuePoller<S extends EngineTaskSettings, T extends EngineTask> {
+/**
+ * The WorkflowExecutionDispatcher is responsible for managing the lifecycle of workflow executions. It handles the polling,
+ * execution submission, and cleanup of workflow executions using a thread pool and completion service.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be executed.
+ */
+public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int MAX_CLAIM_BATCH = 20;
@@ -26,17 +33,30 @@ public class MongoQueuePoller<S extends EngineTaskSettings, T extends EngineTask
   private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService =
       new ExecutorCompletionService<>(threadPool);
   private final Duration failsafeLeniency;
-
   private int threadsCounter;
 
-  public MongoQueuePoller(WorkflowExecutorManager<S, T> workflowExecutorManager, WorkflowExecutionDao workflowExecutionDao,
-      Duration failsafeLeniency) {
+  /**
+   * Constructor.
+   *
+   * @param workflowExecutorManager Manager responsible for handling workflow executions and associated tasks.
+   * @param workflowExecutionDao Data access object for managing workflow execution data.
+   * @param failsafeLeniency The duration defining the leniency window for handling execution failures.
+   */
+  public WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
+      WorkflowExecutionDao workflowExecutionDao, Duration failsafeLeniency) {
     this.workflowExecutorManager = workflowExecutorManager;
     this.workflowExecutionDao = workflowExecutionDao;
     this.failsafeLeniency = failsafeLeniency;
   }
 
-  public void poll() {
+  /**
+   * Polls for workflow executions and submits them for processing.
+   * <p>
+   * This method interacts with the {@code workflowExecutionDao} to claim the next available workflow execution. It claims up to a
+   * maximum of {@code MAX_CLAIM_BATCH} executions in a single invocation. Each claimed execution is submitted for processing
+   * using the {@code submitExecution} method.
+   */
+  public void pollAndSubmit() {
     int claimedExecutions = 0;
     while (claimedExecutions < MAX_CLAIM_BATCH) {
       WorkflowExecution workflowExecution = workflowExecutionDao.claimNextExecution(failsafeLeniency);
@@ -54,6 +74,15 @@ public class MongoQueuePoller<S extends EngineTaskSettings, T extends EngineTask
     threadsCounter++;
   }
 
+  /**
+   * Cleans up completed tasks from the internal completion service and updates the thread counter.
+   * <p>
+   * This method polls the {@code completionService} for tasks that have completed execution. For each completed task, the thread
+   * counter is decremented, and the task's result is processed using the {@code checkCollectedWorkflowExecution} method. Any
+   * resulting exceptions during the processing of tasks are logged.
+   *
+   * @throws InterruptedException if the thread is interrupted while waiting for task completion.
+   */
   public void cleanup() throws InterruptedException {
     LOGGER.debug("Check if we have a task that has finished, threadsCounter: {}", threadsCounter);
     Future<Pair<WorkflowExecution, Boolean>> userWorkflowExecutionFuture = completionService.poll();
@@ -80,13 +109,17 @@ public class MongoQueuePoller<S extends EngineTaskSettings, T extends EngineTask
       } else {
         LOGGER.info("workflowExecutionId: {} - Sent to queue because execution could "
             + "not be claimed or plugin could not run in this instance", workflowExecution.getId());
-        workflowExecutionDao.requeue(workflowExecution);
+        if (!workflowExecutionDao.requeue(workflowExecution)) {
+          LOGGER.warn("Could not requeue workflowExecutionId: {}", workflowExecution.getId());
+        }
       }
     }
   }
 
+  /**
+   * Shuts down the internal thread pool immediately, halting all active tasks and discarding queued tasks.
+   */
   public void close() {
-    //Interrupt running threads
     threadPool.shutdownNow();
   }
 }

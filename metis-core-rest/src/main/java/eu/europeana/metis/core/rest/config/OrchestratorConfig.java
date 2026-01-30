@@ -14,7 +14,7 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.execution.MongoQueuePoller;
+import eu.europeana.metis.core.execution.WorkflowExecutionDispatcher;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
@@ -29,6 +29,7 @@ import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.core.service.WorkflowExecutionFactory;
 import eu.europeana.metis.core.workflow.ValidationProperties;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
+import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -54,6 +55,8 @@ import org.springframework.context.annotation.Configuration;
     EcloudConfigurationProperties.class})
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
 public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTask> {
+
+  private WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher;
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -208,11 +211,22 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
     return new SemaphoresPerPluginManager(metisCoreConfigurationProperties.maxConcurrentThreads());
   }
 
+  /**
+   * Constructs and provides a {@link WorkflowExecutionDispatcher} bean. This method initializes
+   * the dispatcher with the provided workflow executor manager, workflow execution DAO, and
+   * configuration properties.
+   *
+   * @param workflowExecutorManager the manager responsible for maintaining and executing workflow instances
+   * @param workflowExecutionDao the data access object for persisting and retrieving workflow execution details
+   * @param metisCoreConfigurationProperties the configuration properties for setting up the workflow system
+   * @return an initialized instance of {@link WorkflowExecutionDispatcher}
+   */
   @Bean
-  public MongoQueuePoller<S, T> mongoQueuePoller(WorkflowExecutorManager<S, T> workflowExecutorManager,
+  public WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
       WorkflowExecutionDao workflowExecutionDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return new MongoQueuePoller<>(workflowExecutorManager, workflowExecutionDao,
+    workflowExecutionDispatcher = new WorkflowExecutionDispatcher<>(workflowExecutorManager, workflowExecutionDao,
         getFailsafeLeniencyDuration(metisCoreConfigurationProperties));
+    return workflowExecutionDispatcher;
   }
 
   /**
@@ -221,7 +235,6 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * @param semaphoresPerPluginManager Manages semaphores for controlling access to plugins.
    * @param workflowExecutionDao Data access object for managing workflow executions.
    * @param workflowPostProcessor Post-processor for workflow execution-related actions.
-   * @param redissonClient Redisson client for distributed locking and caching.
    * @param engineTaskClient Client for interactions with data processing services.
    * @param metisCoreConfigurationProperties Core configuration properties for the system.
    * @return A configured instance of WorkflowExecutorManager.
@@ -231,7 +244,6 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao,
       WorkflowPostProcessor workflowPostProcessor,
-      RedissonClient redissonClient,
       EngineTaskClient<S, T> engineTaskClient,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
@@ -241,8 +253,7 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
 
     return new WorkflowExecutorManager<>(
-        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, redissonClient,
-        engineTaskClient);
+        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, engineTaskClient);
   }
 
   /**
@@ -307,5 +318,15 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
     return new ThrottlingValues(metisCoreConfigurationProperties.threadLimitThrottlingLevelWeak(),
         metisCoreConfigurationProperties.threadLimitThrottlingLevelMedium(),
         metisCoreConfigurationProperties.threadLimitThrottlingLevelStrong());
+  }
+
+  /**
+   * Closes connections to databases when the application closes.
+   */
+  @PreDestroy
+  public void close() {
+    if (workflowExecutionDispatcher != null) {
+      workflowExecutionDispatcher.close();
+    }
   }
 }

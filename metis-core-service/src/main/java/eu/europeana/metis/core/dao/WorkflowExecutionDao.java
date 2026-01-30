@@ -158,13 +158,14 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
         updateResult == null ? 0 : updateResult.getModifiedCount());
   }
 
-
   /**
-   * Overwrites only the portion of the WorkflowExecution that contains the monitor information(plugins, started date, updated
-   * date).
+   * Updates the monitor information of the given {@link WorkflowExecution} in the datastore. The monitor information includes
+   * properties such as workflow status, started date, updated date, and Metis plugins.
    *
-   * @param workflowExecution the WorkflowExecution to update
-   * @return
+   * @param workflowExecution the workflow execution object containing the updated monitor information. It is expected to have
+   * valid IDs and the claimed instance information.
+   * @return {@code true} if the monitor information was successfully updated in the datastore (i.e., exactly one record was
+   * modified); {@code false} otherwise.
    */
   public boolean updateMonitorInformation(WorkflowExecution workflowExecution) {
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
@@ -874,10 +875,19 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     }
   }
 
-  public WorkflowExecution claimNextExecution(Duration leniency) {
+  /**
+   * Attempts to claim the next available {@code WorkflowExecution} for processing. The method checks for eligible executions in a
+   * prioritized order: new in-queue executions, re-queued executions, and stale running executions. If an eligible execution is
+   * found, it is claimed and returned. If no eligible execution is found, {@code null} is returned.
+   *
+   * @param staleLeniency the duration used to determine the staleness threshold for running executions. Executions that have been
+   * in a running state without updates for a duration longer than this value are considered stale and eligible for claiming.
+   * @return the claimed {@code WorkflowExecution} instance if one is available; {@code null} if no execution could be claimed.
+   */
+  public WorkflowExecution claimNextExecution(Duration staleLeniency) {
     Instant now = Instant.now();
     Date dateNow = Date.from(now);
-    Date staleBefore = Date.from(now.minus(leniency));
+    Date staleBefore = Date.from(now.minus(staleLeniency));
 
     ModifyOptions modifyOptions = new ModifyOptions()
         .sort(ascending(CREATED_DATE.getFieldName()))
@@ -949,6 +959,13 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     );
   }
 
+  /**
+   * Re-queues a given workflow execution by changing its status to "INQUEUE" and unsetting the instance that has claimed it if
+   * certain conditions are met.
+   *
+   * @param workflowExecution The workflow execution object to be re-queued. It must contain an ID, claimed instance, and status.
+   * @return true if the workflow execution was successfully updated; false otherwise.
+   */
   public boolean requeue(WorkflowExecution workflowExecution) {
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore()
                                                              .find(WorkflowExecution.class)

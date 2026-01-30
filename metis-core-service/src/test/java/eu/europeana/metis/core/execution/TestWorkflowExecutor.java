@@ -71,7 +71,7 @@ class TestWorkflowExecutor {
     workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(10);
 
     workflowExecutorManager = new WorkflowExecutorManager<>(workflowExecutorManagerSettings, new SemaphoresPerPluginManager(2), workflowExecutionDao,
-        workflowPostProcessor, null, engineTaskClient);
+        workflowPostProcessor, engineTaskClient);
   }
 
   @BeforeEach
@@ -423,8 +423,6 @@ class TestWorkflowExecutor {
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
-//    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
-//        .thenReturn(new ImmutablePair<>(workflowExecution, true));
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
@@ -466,8 +464,6 @@ class TestWorkflowExecutor {
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
-//    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
-//        .thenReturn(new ImmutablePair<>(workflowExecution, true));
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();

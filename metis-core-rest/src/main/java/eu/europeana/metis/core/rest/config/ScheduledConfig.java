@@ -2,7 +2,7 @@ package eu.europeana.metis.core.rest.config;
 
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.execution.MongoQueuePoller;
+import eu.europeana.metis.core.execution.WorkflowExecutionDispatcher;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.UserService;
 import java.lang.invoke.MethodHandles;
@@ -69,18 +69,33 @@ public class ScheduledConfig {
   static class ScheduledTasks<S extends EngineTaskSettings, T extends EngineTask> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private final MongoQueuePoller<S, T> mongoQueuePoller;
+    private final WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher;
     private final UserService userService;
 
     @Autowired
-    public ScheduledTasks(MongoQueuePoller<S, T> mongoQueuePoller, UserService userService) {
-      this.mongoQueuePoller = mongoQueuePoller;
+    public ScheduledTasks(WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher, UserService userService) {
+      this.workflowExecutionDispatcher = workflowExecutionDispatcher;
       this.userService = userService;
     }
 
+    /**
+     * Periodically polls for workflow executions and dispatches them for processing.
+     *
+     * This method is scheduled with a fixed delay to continuously check for available
+     * workflow executions and submit them for processing. The polling interval is
+     * configured dynamically using Spring Expression Language (SpEL) and is retrieved
+     * from the method {@code getQueuePollingCheckInMilliseconds} in the configuration.
+     *
+     * The actual polling and dispatching logic is delegated to the
+     * {@code WorkflowExecutionDispatcher#pollAndDispatch()} method, which handles the
+     * claiming and submission of workflow executions.
+     *
+     * Log messages are generated to track the execution of this method, providing
+     * insight into operational behavior and successful runs.
+     */
     @Scheduled(fixedDelayString = "#{@getQueuePollingCheckInMilliseconds}")
-    public void runExecutions() {
-      this.mongoQueuePoller.poll();
+    public void pollAndDispatchWorkflowExecutions() {
+      this.workflowExecutionDispatcher.pollAndSubmit();
       LOGGER.info("Run executions.");
     }
 
@@ -97,7 +112,7 @@ public class ScheduledConfig {
         fixedDelayString = "#{@getPollingTimeoutForCleaningCompletionServiceInMilliseconds}"
     )
     public void runExecutorCompletionServiceCleanup() throws InterruptedException {
-      this.mongoQueuePoller.cleanup();
+      this.workflowExecutionDispatcher.cleanup();
       LOGGER.debug("Queue consumer cleanup finished.");
     }
 
