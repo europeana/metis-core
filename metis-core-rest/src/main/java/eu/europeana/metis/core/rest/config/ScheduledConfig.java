@@ -23,16 +23,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 @EnableConfigurationProperties({MetisCoreConfigurationProperties.class})
 public class ScheduledConfig {
 
-//  /**
-//   * Retrieves the periodic failsafe check interval in milliseconds from the provided MetisCoreConfigurationProperties.
-//   *
-//   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
-//   * @return The periodic failsafe check interval in milliseconds.
-//   */
-//  @Bean
-//  public long getPeriodicFailsafeCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-//    return metisCoreConfigurationProperties.periodicFailsafeCheckInMilliseconds();
-//  }
+  /**
+   * Retrieves the queue polling check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
+   *
+   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
+   * @return The queue polling check-in interval in milliseconds.
+   */
+  @Bean
+  public long getQueuePollingCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    return metisCoreConfigurationProperties.queuePollingCheckInMilliseconds();
+  }
 
   /**
    * Retrieves the polling timeout for the cleaning completion service in milliseconds from the provided
@@ -78,7 +78,7 @@ public class ScheduledConfig {
       this.userService = userService;
     }
 
-    @Scheduled(fixedDelayString = "5000")
+    @Scheduled(fixedDelayString = "#{@getQueuePollingCheckInMilliseconds}")
     public void runExecutions() {
       this.mongoQueuePoller.poll();
       LOGGER.info("Run executions.");

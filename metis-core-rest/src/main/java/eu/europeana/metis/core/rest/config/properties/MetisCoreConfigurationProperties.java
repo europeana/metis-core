@@ -17,7 +17,7 @@ public record MetisCoreConfigurationProperties(
     int dpsConnectTimeoutInMilliseconds,
     int dpsReadTimeoutInMilliseconds,
     int failsafeMarginOfInactivityInSeconds,
-//    int periodicFailsafeCheckInMilliseconds,
+    int queuePollingCheckInMilliseconds,
     int pollingTimeoutForCleaningCompletionServiceInMilliseconds,
     int userCacheClearIntervalInMinutes,
     int periodOfNoProcessedRecordsChangeInMinutes,
