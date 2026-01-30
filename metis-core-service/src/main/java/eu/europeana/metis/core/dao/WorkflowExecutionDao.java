@@ -121,7 +121,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
       return hostname;
     }
 
-    // Fallback for local/dev
+    // Fallback for local dev
     return "local-" + UUID.randomUUID();
   }
 
