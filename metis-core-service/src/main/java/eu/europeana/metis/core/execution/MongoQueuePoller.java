@@ -6,7 +6,6 @@ import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +18,7 @@ import org.slf4j.LoggerFactory;
 public class MongoQueuePoller<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final int MAX_CLAIM_BATCH = 20;
 
   private final WorkflowExecutorManager<S, T> workflowExecutorManager;
   private final WorkflowExecutionDao workflowExecutionDao;
@@ -37,12 +37,15 @@ public class MongoQueuePoller<S extends EngineTaskSettings, T extends EngineTask
   }
 
   public void poll() {
-    WorkflowExecution workflowExecution = workflowExecutionDao.claimNextExecution(failsafeLeniency);
-    if (workflowExecution == null) {
-      return;
+    int claimedExecutions = 0;
+    while (claimedExecutions < MAX_CLAIM_BATCH) {
+      WorkflowExecution workflowExecution = workflowExecutionDao.claimNextExecution(failsafeLeniency);
+      if (workflowExecution == null) {
+        return;
+      }
+      submitExecution(workflowExecution);
+      claimedExecutions++;
     }
-
-    submitExecution(workflowExecution);
   }
 
   private void submitExecution(WorkflowExecution workflowExecution) {
