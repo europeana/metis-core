@@ -49,10 +49,6 @@ import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpServerErrorException;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-17
- */
 class TestWorkflowExecutor {
 
   private static WorkflowExecutionDao workflowExecutionDao;
