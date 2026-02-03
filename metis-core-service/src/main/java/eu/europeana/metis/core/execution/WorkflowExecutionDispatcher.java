@@ -8,9 +8,10 @@ import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,28 +26,50 @@ import org.slf4j.LoggerFactory;
 public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int MAX_CLAIM_BATCH = 20;
+  private static final int SHORT_COMPLETION_POLL_TIMEOUT_MILLIS = 50;
 
   private final WorkflowExecutorManager<S, T> workflowExecutorManager;
   private final WorkflowExecutionClaimDao workflowExecutionClaimDao;
-  private final ExecutorService threadPool = Executors.newCachedThreadPool();
-  private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService =
-      new ExecutorCompletionService<>(threadPool);
+  private final ThreadPoolExecutor threadPoolExecutor;
+  private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService;
+  private final BiFunction<WorkflowExecution, WorkflowExecutorManager<S, T>, WorkflowExecutor<S, T>> executorFactory;
   private final Duration failsafeLeniency;
-  private int threadsCounter;
 
   /**
    * Constructor.
    *
-   * @param workflowExecutorManager Manager responsible for handling workflow executions and associated tasks.
-   * @param workflowExecutionClaimDao Data access object for managing workflow execution data.
-   * @param failsafeLeniency The duration defining the leniency window for handling execution failures.
+   * @param workflowExecutorManager Manager responsible for managing the execution of workflows and interacting with the
+   * distributed workflow queue.
+   * @param threadPoolExecutor Thread pool executor used to manage worker threads for executing workflows.
+   * @param workflowExecutionClaimDao Data access object for claiming workflow executions and ensuring proper ownership during
+   * processing.
+   * @param failsafeLeniency Duration specifying the leniency period allowed for handling failsafe operations in the workflow
+   * execution process.
    */
-  public WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
+  public WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager, ThreadPoolExecutor threadPoolExecutor,
       WorkflowExecutionClaimDao workflowExecutionClaimDao, Duration failsafeLeniency) {
+    this(workflowExecutorManager, WorkflowExecutor::new, threadPoolExecutor, workflowExecutionClaimDao, failsafeLeniency);
+  }
+
+  /**
+   * Constructor.
+   *
+   * @param workflowExecutorManager Manager for handling workflow execution and queue management.
+   * @param executorFactory Factory function to create WorkflowExecutor instances based on the current workflow execution and the
+   * executor manager.
+   * @param threadPoolExecutor Executor service for managing thread pool and task execution.
+   * @param workflowExecutionClaimDao Data access object for claiming workflow executions.
+   * @param failsafeLeniency Duration representing the leniency period used for failsafe operations.
+   */
+  WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
+      BiFunction<WorkflowExecution, WorkflowExecutorManager<S, T>, WorkflowExecutor<S, T>> executorFactory,
+      ThreadPoolExecutor threadPoolExecutor, WorkflowExecutionClaimDao workflowExecutionClaimDao, Duration failsafeLeniency) {
     this.workflowExecutorManager = workflowExecutorManager;
     this.workflowExecutionClaimDao = workflowExecutionClaimDao;
+    this.threadPoolExecutor = threadPoolExecutor;
     this.failsafeLeniency = failsafeLeniency;
+    this.completionService = new ExecutorCompletionService<>(threadPoolExecutor);
+    this.executorFactory = executorFactory;
   }
 
   /**
@@ -57,21 +80,26 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
    * using the {@code submitExecution} method.
    */
   public void pollAndSubmit() {
-    int claimedExecutions = 0;
-    while (claimedExecutions < MAX_CLAIM_BATCH) {
-      WorkflowExecution workflowExecution = workflowExecutionClaimDao.claimNextExecution(failsafeLeniency);
-      if (workflowExecution == null) {
+    int availableSlots = getAvailableSlots();
+
+    while (availableSlots > 0) {
+      WorkflowExecution execution = workflowExecutionClaimDao.claimNextExecution(failsafeLeniency);
+      if (execution == null) {
         return;
       }
-      submitExecution(workflowExecution);
-      claimedExecutions++;
+      submitExecution(execution);
+      availableSlots--;
     }
   }
 
+  private int getAvailableSlots() {
+    return threadPoolExecutor.getMaximumPoolSize() - threadPoolExecutor.getActiveCount();
+  }
+
+
   private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor<S, T> executor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<S, T> executor = executorFactory.apply(workflowExecution, workflowExecutorManager);
     completionService.submit(executor);
-    threadsCounter++;
   }
 
   /**
@@ -84,17 +112,15 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
    * @throws InterruptedException if the thread is interrupted while waiting for task completion.
    */
   public void cleanup() throws InterruptedException {
-    LOGGER.debug("Check if we have a task that has finished, threadsCounter: {}", threadsCounter);
-    Future<Pair<WorkflowExecution, Boolean>> userWorkflowExecutionFuture = completionService.poll();
-    while (userWorkflowExecutionFuture != null) {
-      threadsCounter--;
+    Future<Pair<WorkflowExecution, Boolean>> userWorkflowExecutionFuture;
+    while ((userWorkflowExecutionFuture = completionService.poll(SHORT_COMPLETION_POLL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS))
+        != null) {
       try {
         Pair<WorkflowExecution, Boolean> result = userWorkflowExecutionFuture.get();
         checkCollectedWorkflowExecution(result);
       } catch (ExecutionException e) {
         LOGGER.warn("Exception occurred in Future task", e);
       }
-      userWorkflowExecutionFuture = completionService.poll();
     }
   }
 
@@ -114,13 +140,6 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
         }
       }
     }
-  }
-
-  /**
-   * Shuts down the internal thread pool immediately, halting all active tasks and discarding queued tasks.
-   */
-  public void close() {
-    threadPool.shutdownNow();
   }
 }
 

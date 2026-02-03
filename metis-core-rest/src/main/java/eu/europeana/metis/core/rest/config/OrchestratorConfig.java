@@ -15,8 +15,8 @@ import eu.europeana.metis.core.dao.WorkflowValidationUtils;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.execution.WorkflowExecutionDispatcher;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
+import eu.europeana.metis.core.execution.WorkflowExecutionDispatcher;
 import eu.europeana.metis.core.execution.WorkflowExecutorManager;
 import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
@@ -38,6 +38,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * Configuration class for setting up beans and managing the dependencies required by the orchestrator services in the
@@ -57,7 +58,8 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
 public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher;
+  private static final int WORKFLOW_CORE_POOL_SIZE = 8;
+  private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
   /**
    * Creates and configures a {@link OrchestratorService} bean.
@@ -213,21 +215,40 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
   }
 
   /**
-   * Constructs and provides a {@link WorkflowExecutionDispatcher} bean. This method initializes
-   * the dispatcher with the provided workflow executor manager, workflow execution DAO, and
-   * configuration properties.
+   * Configures and returns a ThreadPoolTaskExecutor bean named "pipelineTaskExecutor". The executor is used for concurrent task
+   * execution with a defined core pool size, maximum pool size, and queue capacity. It also sets a custom thread name prefix for
+   * better identification of threads.
    *
-   * @param workflowExecutorManager the manager responsible for maintaining and executing workflow instances
-   * @param workflowExecutionClaimDao the data access object for persisting and retrieving workflow execution details
-   * @param metisCoreConfigurationProperties the configuration properties for setting up the workflow system
-   * @return an initialized instance of {@link WorkflowExecutionDispatcher}
+   * @return the configured ThreadPoolTaskExecutor instance for task execution.
+   */
+  @Bean(name = "workflowExecutorPool")
+  ThreadPoolTaskExecutor workflowExecutorPool() {
+    threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+    threadPoolTaskExecutor.setCorePoolSize(WORKFLOW_CORE_POOL_SIZE);
+    threadPoolTaskExecutor.setMaxPoolSize(WORKFLOW_CORE_POOL_SIZE);
+    threadPoolTaskExecutor.setQueueCapacity(WORKFLOW_CORE_POOL_SIZE * 2);
+    threadPoolTaskExecutor.setThreadNamePrefix("workflowExecutorPool-");
+    threadPoolTaskExecutor.initialize();
+    return threadPoolTaskExecutor;
+  }
+
+  /**
+   * Creates and configures a {@link WorkflowExecutionDispatcher} instance to manage and dispatch workflow executions.
+   *
+   * @param workflowExecutorManager the manager responsible for handling workflow execution logic.
+   * @param workflowExecutionClaimDao the DAO for managing workflow execution claim persistence operations.
+   * @param metisCoreConfigurationProperties the configuration properties for setting up core components.
+   * @param threadPoolTaskExecutor the thread pool task executor used for managing concurrency and task execution.
+   * @return an instance of {@link WorkflowExecutionDispatcher}.
    */
   @Bean
   public WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
-      WorkflowExecutionClaimDao workflowExecutionClaimDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    workflowExecutionDispatcher = new WorkflowExecutionDispatcher<>(workflowExecutorManager, workflowExecutionClaimDao,
-        getFailsafeLeniencyDuration(metisCoreConfigurationProperties));
-    return workflowExecutionDispatcher;
+      WorkflowExecutionClaimDao workflowExecutionClaimDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties,
+      @Qualifier("workflowExecutorPool") ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+    return new WorkflowExecutionDispatcher<>(
+        workflowExecutorManager, threadPoolTaskExecutor.getThreadPoolExecutor(), workflowExecutionClaimDao,
+        getFailsafeLeniencyDuration(metisCoreConfigurationProperties)
+    );
   }
 
   /**
@@ -254,7 +275,8 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
 
     return new WorkflowExecutorManager<>(
-        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, engineTaskClient);
+        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
+        engineTaskClient);
   }
 
   /**
@@ -337,8 +359,8 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    */
   @PreDestroy
   public void close() {
-    if (workflowExecutionDispatcher != null) {
-      workflowExecutionDispatcher.close();
+    if (threadPoolTaskExecutor != null) {
+      threadPoolTaskExecutor.shutdown();
     }
   }
 }

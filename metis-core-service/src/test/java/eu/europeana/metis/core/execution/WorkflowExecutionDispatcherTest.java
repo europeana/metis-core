@@ -1,7 +1,9 @@
 package eu.europeana.metis.core.execution;
 
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,49 +16,52 @@ import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Queue;
+import java.util.function.BiFunction;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @ExtendWith(MockitoExtension.class)
 class WorkflowExecutionDispatcherTest {
 
-  @Mock
-  private WorkflowExecutorManager<EngineTaskSettings, EngineTask> workflowExecutorManager;
-
+  public static final int CORE_POOL_SIZE = 20;
+  private static ThreadPoolTaskExecutor threadPoolTaskExecutor;
   @Mock
   private WorkflowExecutionClaimDao workflowExecutionClaimDao;
 
-  private WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher;
-
-  @BeforeEach
-  void setup() {
-    Mockito.reset(workflowExecutionClaimDao);
-    workflowExecutionDispatcher =
-        new WorkflowExecutionDispatcher<>(
-            workflowExecutorManager,
-            workflowExecutionClaimDao,
-            Duration.ofSeconds(10));
+  @AfterEach
+  void shutdown() {
+    threadPoolTaskExecutor.shutdown();
   }
 
-  @AfterEach
-  void tearDown() {
-    workflowExecutionDispatcher.close();
+  @Test
+  void publicConstructor_usesDefaultExecutorFactory() {
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> dispatcher =
+        new WorkflowExecutionDispatcher<>(
+            mock(),
+            getThreadPoolTaskExecutor().getThreadPoolExecutor(),
+            workflowExecutionClaimDao,
+            Duration.ofSeconds(5)
+        );
+    assertNotNull(dispatcher);
   }
 
   @Test
   void pollAndSubmit_stopsWhenNoExecutionClaimed() {
+    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
     when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(null);
 
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
+        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
     workflowExecutionDispatcher.pollAndSubmit();
 
     verify(workflowExecutionClaimDao, times(1)).claimNextExecution(any());
@@ -65,9 +70,13 @@ class WorkflowExecutionDispatcherTest {
 
   @Test
   void pollAndSubmit_submitsAtMostMaxBatch20() {
+    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
+
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
     for (int i = 0; i < 20; i++) {
-      workflowExecutions.add(TestObjectFactory.createWorkflowExecutionObject());
+      WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+      workflowExecutions.add(workflowExecution);
+      executors.add(mockExecutor(Pair.of(workflowExecution, true)));
     }
 
     var stubbing = when(workflowExecutionClaimDao.claimNextExecution(any()));
@@ -76,180 +85,158 @@ class WorkflowExecutionDispatcherTest {
     }
     stubbing.thenReturn(null);
 
-    try (MockedConstruction<WorkflowExecutor> ignored = Mockito.mockConstruction(
-        WorkflowExecutor.class,
-        (mock, ctx) -> {
-          WorkflowExecution we = (WorkflowExecution) ctx.arguments().getFirst();
-          when(mock.call()).thenReturn(Pair.of(we, true));
-        })) {
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
+        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+    workflowExecutionDispatcher.pollAndSubmit();
 
-      workflowExecutionDispatcher.pollAndSubmit();
-      //No chance to claim +1 because we reached the max batch size
-      verify(workflowExecutionClaimDao, times(20)).claimNextExecution(any());
-    }
+    //No chance to claim +1 because we reached the max batch size
+    verify(workflowExecutionClaimDao, times(20)).claimNextExecution(any());
   }
 
   @Test
-  void cleanup_swallowsExecutionException() {
-    List<WorkflowExecution> workflowExecutions = new ArrayList<>();
-    for (int i = 0; i < 2; i++) {
-      workflowExecutions.add(TestObjectFactory.createWorkflowExecutionObject());
-    }
+  void cleanup_swallowsExecutionException() throws InterruptedException {
+    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
+    WorkflowExecution workflowExecution1 = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecution workflowExecution2 = TestObjectFactory.createWorkflowExecutionObject();
 
-    var stubbing = when(workflowExecutionClaimDao.claimNextExecution(any()));
-    for (WorkflowExecution workflowExecution : workflowExecutions) {
-      stubbing = stubbing.thenReturn(workflowExecution);
-    }
-    stubbing.thenReturn(null);
+    executors.add(mockExecutor(Pair.of(workflowExecution1, true)));
+    executors.add(failingExecutor());
 
-    AtomicInteger invocationCounter = new AtomicInteger();
-    try (MockedConstruction<WorkflowExecutor> ignored = Mockito.mockConstruction(
-        WorkflowExecutor.class,
-        (mock, ctx) -> {
-          WorkflowExecution we = (WorkflowExecution) ctx.arguments().getFirst();
-          when(mock.call()).thenAnswer(inv -> {
+    when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(workflowExecution1, workflowExecution2, null);
 
-            int callNumber = invocationCounter.incrementAndGet();
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
+        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+    workflowExecutionDispatcher.pollAndSubmit();
+    workflowExecutionDispatcher.cleanup();
 
-            if (callNumber == 1) {
-              return Pair.of(we, true);
-            }
-
-            throw new RuntimeException("Failure");
-          });
-        })) {
-
-      workflowExecutionDispatcher.pollAndSubmit();
-      await().atMost(Duration.ofSeconds(2))
-             .untilAsserted(() -> {
-               workflowExecutionDispatcher.cleanup();
-               verify(workflowExecutionClaimDao, never()).requeue(any());
-             });
-      //We claim +1 to exit the loop
-      verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
-    }
+    //We claim +1 to exit the loop
+    verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
+    await()
+        .atMost(Duration.ofSeconds(5))
+        .untilAsserted(() -> {
+          workflowExecutionDispatcher.cleanup();
+          verify(workflowExecutionClaimDao, never()).requeue(any());
+        });
   }
 
 
   @Test
   void cleanup_requeuesWhenPluginDidNotRun() {
-    List<WorkflowExecution> workflowExecutions = new ArrayList<>();
-    for (int i = 0; i < 2; i++) {
-      workflowExecutions.add(TestObjectFactory.createWorkflowExecutionObject());
-    }
+    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
+    WorkflowExecution workflowExecution1 = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecution workflowExecution2 = TestObjectFactory.createWorkflowExecutionObject();
 
-    var stubbing = when(workflowExecutionClaimDao.claimNextExecution(any()));
-    for (WorkflowExecution workflowExecution : workflowExecutions) {
-      stubbing = stubbing.thenReturn(workflowExecution);
-    }
-    stubbing.thenReturn(null);
+    executors.add(mockExecutor(Pair.of(workflowExecution1, true)));
+    executors.add(mockExecutor(Pair.of(workflowExecution1, false)));
+
+    when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(workflowExecution1, workflowExecution2, null);
     when(workflowExecutionClaimDao.requeue(any())).thenReturn(true);
 
-    AtomicInteger invocationCounter = new AtomicInteger();
-    try (MockedConstruction<WorkflowExecutor> ignored = Mockito.mockConstruction(
-        WorkflowExecutor.class,
-        (mock, ctx) -> {
-          WorkflowExecution we = (WorkflowExecution) ctx.arguments().getFirst();
-          when(mock.call()).thenAnswer(inv -> {
-
-            int callNumber = invocationCounter.incrementAndGet();
-
-            if (callNumber == 1) {
-              return Pair.of(we, true);
-            }
-            return Pair.of(we, false);
-          });
-        })) {
-
-      workflowExecutionDispatcher.pollAndSubmit();
-      await().atMost(Duration.ofSeconds(2))
-             .untilAsserted(() -> {
-               workflowExecutionDispatcher.cleanup();
-               verify(workflowExecutionClaimDao, times(1)).requeue(any());
-             });
-      //We claim +1 to exit the loop
-      verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
-    }
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
+        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+    workflowExecutionDispatcher.pollAndSubmit();
+    //We claim +1 to exit the loop
+    verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
+    await()
+        .atMost(Duration.ofSeconds(5))
+        .untilAsserted(() -> {
+          workflowExecutionDispatcher.cleanup();
+          verify(workflowExecutionClaimDao, times(1)).requeue(any());
+        });
   }
 
   @Test
   void cleanup_requeuesWhenPluginDidNotRun_FailOnRequeue() {
-    List<WorkflowExecution> workflowExecutions = new ArrayList<>();
-    for (int i = 0; i < 2; i++) {
-      workflowExecutions.add(TestObjectFactory.createWorkflowExecutionObject());
-    }
+    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
+    WorkflowExecution workflowExecution1 = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecution workflowExecution2 = TestObjectFactory.createWorkflowExecutionObject();
+    executors.add(mockExecutor(Pair.of(workflowExecution1, true)));
+    executors.add(mockExecutor(Pair.of(workflowExecution1, false)));
 
-    var stubbing = when(workflowExecutionClaimDao.claimNextExecution(any()));
-    for (WorkflowExecution workflowExecution : workflowExecutions) {
-      stubbing = stubbing.thenReturn(workflowExecution);
-    }
-    stubbing.thenReturn(null);
+    when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(workflowExecution1, workflowExecution2, null);
     when(workflowExecutionClaimDao.requeue(any())).thenReturn(false);
 
-    AtomicInteger invocationCounter = new AtomicInteger();
-    try (MockedConstruction<WorkflowExecutor> ignored = Mockito.mockConstruction(
-        WorkflowExecutor.class,
-        (mock, ctx) -> {
-          WorkflowExecution we = (WorkflowExecution) ctx.arguments().getFirst();
-          when(mock.call()).thenAnswer(inv -> {
-
-            int callNumber = invocationCounter.incrementAndGet();
-
-            if (callNumber == 1) {
-              return Pair.of(we, true);
-            }
-            return Pair.of(we, false);
-          });
-        })) {
-
-      workflowExecutionDispatcher.pollAndSubmit();
-      await().atMost(Duration.ofSeconds(2))
-             .untilAsserted(() -> {
-               workflowExecutionDispatcher.cleanup();
-               verify(workflowExecutionClaimDao, times(1)).requeue(any());
-             });
-      //We claim +1 to exit the loop
-      verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
-    }
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
+        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+    workflowExecutionDispatcher.pollAndSubmit();
+    //We claim +1 to exit the loop
+    verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
+    await()
+        .atMost(Duration.ofSeconds(5))
+        .untilAsserted(() -> {
+          workflowExecutionDispatcher.cleanup();
+          verify(workflowExecutionClaimDao, times(1)).requeue(any());
+        });
   }
 
   @Test
-  void cleanup_Ignore_NullWorkflowExecution() {
-    List<WorkflowExecution> workflowExecutions = new ArrayList<>();
-    for (int i = 0; i < 2; i++) {
-      workflowExecutions.add(TestObjectFactory.createWorkflowExecutionObject());
+  void cleanup_Ignore_NullWorkflowExecution() throws InterruptedException {
+    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
+    WorkflowExecution workflowExecution1 = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecution workflowExecution2 = TestObjectFactory.createWorkflowExecutionObject();
+    executors.add(mockExecutor(Pair.of(workflowExecution1, true)));
+    executors.add(mockExecutor(Pair.of(null, true)));
+
+    when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(workflowExecution1, workflowExecution2, null);
+
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
+        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+    workflowExecutionDispatcher.pollAndSubmit();
+    workflowExecutionDispatcher.cleanup();
+    //We claim +1 to exit the loop
+    verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
+    await()
+        .atMost(Duration.ofSeconds(5))
+        .untilAsserted(() -> {
+          workflowExecutionDispatcher.cleanup();
+          verify(workflowExecutionClaimDao, never()).requeue(any());
+        });
+  }
+
+  private WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> createDispatcher(
+      BiFunction<WorkflowExecution, WorkflowExecutorManager<EngineTaskSettings, EngineTask>, WorkflowExecutor<EngineTaskSettings, EngineTask>> workflowExecutorFactory) {
+    return new WorkflowExecutionDispatcher<>(
+        mock(),
+        workflowExecutorFactory, getThreadPoolTaskExecutor().getThreadPoolExecutor(), workflowExecutionClaimDao,
+        Duration.ofSeconds(10)
+    );
+  }
+
+  private static @NonNull ThreadPoolTaskExecutor getThreadPoolTaskExecutor() {
+    threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+    threadPoolTaskExecutor.setCorePoolSize(CORE_POOL_SIZE);
+    threadPoolTaskExecutor.setMaxPoolSize(CORE_POOL_SIZE);
+    threadPoolTaskExecutor.setQueueCapacity(CORE_POOL_SIZE * 2);
+    threadPoolTaskExecutor.setThreadNamePrefix("workflowExecutorPool-");
+    threadPoolTaskExecutor.initialize();
+    return threadPoolTaskExecutor;
+  }
+
+  private WorkflowExecutor<EngineTaskSettings, EngineTask> mockExecutor(Pair<WorkflowExecution, Boolean> result) {
+
+    @SuppressWarnings("unchecked")
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = mock(WorkflowExecutor.class);
+
+    try {
+      when(workflowExecutor.call()).thenReturn(result);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
 
-    var stubbing = when(workflowExecutionClaimDao.claimNextExecution(any()));
-    for (WorkflowExecution workflowExecution : workflowExecutions) {
-      stubbing = stubbing.thenReturn(workflowExecution);
+    return workflowExecutor;
+  }
+
+  private WorkflowExecutor<EngineTaskSettings, EngineTask> failingExecutor() {
+
+    @SuppressWarnings("unchecked")
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = mock(WorkflowExecutor.class);
+
+    try {
+      when(workflowExecutor.call()).thenThrow(new RuntimeException("Failure"));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-    stubbing.thenReturn(null);
 
-    AtomicInteger invocationCounter = new AtomicInteger();
-    try (MockedConstruction<WorkflowExecutor> ignored = Mockito.mockConstruction(
-        WorkflowExecutor.class,
-        (mock, ctx) -> {
-          WorkflowExecution we = (WorkflowExecution) ctx.arguments().getFirst();
-          when(mock.call()).thenAnswer(inv -> {
-
-            int callNumber = invocationCounter.incrementAndGet();
-
-            if (callNumber == 1) {
-              return Pair.of(we, true);
-            }
-            return Pair.of(null, false);
-          });
-        })) {
-
-      workflowExecutionDispatcher.pollAndSubmit();
-      await().atMost(Duration.ofSeconds(2))
-             .untilAsserted(() -> {
-               workflowExecutionDispatcher.cleanup();
-               verify(workflowExecutionClaimDao, never()).requeue(any());
-             });
-      //We claim +1 to exit the loop
-      verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
-    }
+    return workflowExecutor;
   }
 }

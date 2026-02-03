@@ -74,7 +74,14 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
 
-  WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager<S, T> workflowExecutorManager) {
+  /**
+   * Constructor.
+   *
+   * @param workflowExecution Represents the workflow execution instance to be processed.
+   * @param workflowExecutorManager Manages the configuration, dependencies, and execution settings
+   *                                required for the workflow execution process.
+   */
+  public WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager<S, T> workflowExecutorManager) {
     this.workflowExecution = workflowExecution;
     this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
     this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
