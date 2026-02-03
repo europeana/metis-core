@@ -19,16 +19,26 @@ import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@Slf4j
 class TestWorkflowExecutionClaimDao {
 
   private static EmbeddedLocalhostMongo embeddedLocalhostMongo;
   private static MorphiaDatastoreProviderImpl provider;
+  private static MongoClient mongoClient;
 
   private WorkflowExecutionClaimDao workflowExecutionClaimDao;
 
@@ -39,8 +49,7 @@ class TestWorkflowExecutionClaimDao {
 
     String mongoHost = embeddedLocalhostMongo.getMongoHost();
     int mongoPort = embeddedLocalhostMongo.getMongoPort();
-    MongoClient mongoClient = MongoClients
-        .create(String.format("mongodb://%s:%s", mongoHost, mongoPort));
+    mongoClient = MongoClients.create(String.format("mongodb://%s:%s", mongoHost, mongoPort));
     provider = new MorphiaDatastoreProviderImpl(mongoClient, "test");
   }
 
@@ -231,5 +240,67 @@ class TestWorkflowExecutionClaimDao {
     boolean result = workflowExecutionClaimDao.requeue(workflowExecution);
 
     assertFalse(result);
+  }
+
+  @Test
+  void concurrentBulkClaim_shouldDistributeWork() throws Exception {
+    int totalExecutions = 1000;
+    int workers = 16;
+
+    // Insert executions
+    for (int i = 0; i < totalExecutions; i++) {
+      WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+      workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+      workflowExecution.setClaimedByInstance(null);
+      workflowExecution.setStartedDate(null);
+
+      provider.getDatastore().save(workflowExecution);
+    }
+
+    Set<ObjectId> claimedIds = ConcurrentHashMap.newKeySet();
+    try(ExecutorService executorService = Executors.newFixedThreadPool(workers)) {
+
+      CountDownLatch startGate = new CountDownLatch(1);
+      CountDownLatch finishGate = new CountDownLatch(workers);
+
+      for (int i = 0; i < workers; i++) {
+
+        MorphiaDatastoreProviderImpl morphiaDatastoreProvider = new MorphiaDatastoreProviderImpl(mongoClient, "test");
+        WorkflowExecutionClaimDao executionClaimDao = new WorkflowExecutionClaimDao(morphiaDatastoreProvider);
+
+        executorService.submit(() -> {
+
+          startGate.await();
+
+          while (true) {
+
+            WorkflowExecution workflowExecution = executionClaimDao.claimNextExecution(Duration.ofMinutes(5));
+
+            if (workflowExecution == null) {
+              break;
+            }
+
+            claimedIds.add(workflowExecution.getId());
+          }
+
+          finishGate.countDown();
+          return null;
+        });
+      }
+
+      startGate.countDown();
+      finishGate.await();
+      executorService.shutdown();
+    }
+
+    assertEquals(totalExecutions, claimedIds.size());
+
+    Set<String> instances = provider.getDatastore().getDatabase()
+                                    .getCollection(WorkflowExecution.class.getSimpleName())
+                                    .distinct("claimedByInstance", String.class)
+                                    .into(new HashSet<>());
+
+    assertTrue(instances.size() > 1);
+    log.info("Instances participating: {}", instances.size());
   }
 }
