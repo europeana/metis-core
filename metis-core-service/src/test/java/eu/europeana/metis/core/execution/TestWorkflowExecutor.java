@@ -36,6 +36,7 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -62,13 +63,10 @@ class TestWorkflowExecutor {
     workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
     engineTaskClient = mock(EngineTaskClient.class);
 
-    WorkflowExecutorSettings<EngineTaskSettings, EngineTask> workflowExecutorSettings = new WorkflowExecutorSettings<>(
+    TestWorkflowExecutor.workflowExecutorSettings = new WorkflowExecutorSettings<>(
+        Duration.ofMillis(1), Duration.ofMinutes(10),
         new SemaphoresPerPluginManager(2), workflowExecutionDao,
         workflowPostProcessor, engineTaskClient);
-    workflowExecutorSettings.setDpsMonitorCheckIntervalInSecs(0);
-    workflowExecutorSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(10);
-
-    TestWorkflowExecutor.workflowExecutorSettings = workflowExecutorSettings;
   }
 
   @BeforeEach

@@ -4,8 +4,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import lombok.Getter;
-import lombok.Setter;
+import java.time.Duration;
 
 /**
  * These are settings that are all related to the actual execution of workflows, and used mostly by the classes
@@ -14,34 +13,46 @@ import lombok.Setter;
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
-@Setter
-@Getter
-public class WorkflowExecutorSettings<S extends EngineTaskSettings, T extends EngineTask> {
+public record WorkflowExecutorSettings<S extends EngineTaskSettings, T extends EngineTask>(
+    Duration monitorCheckInterval,
+    Duration noChangeInProcessedRecordsTimeout,
 
-  private static final int DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS = 5;
-  private static final int DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES = 30;
-  private int dpsMonitorCheckIntervalInSecs = DEFAULT_MONITOR_CHECK_INTERVAL_IN_SECS;
-  private int periodOfNoProcessedRecordsChangeInMinutes = DEFAULT_PERIOD_OF_NO_PROCESSED_RECORDS_CHANGE_IN_MINUTES;
+    SemaphoresPerPluginManager semaphoresPerPluginManager,
+    WorkflowExecutionDao workflowExecutionDao,
+    WorkflowPostProcessor workflowPostProcessor,
+    EngineTaskClient<S, T> engineTaskClient
+) {
 
-  private final SemaphoresPerPluginManager semaphoresPerPluginManager;
-  private final WorkflowExecutionDao workflowExecutionDao;
-  private final WorkflowPostProcessor workflowPostProcessor;
-  private final EngineTaskClient<S, T> engineTaskClient;
+  private static final Duration DEFAULT_MONITOR_CHECK_INTERVAL = Duration.ofSeconds(5);
+  private static final Duration DEFAULT_NO_CHANGE_IN_PROCESSED_RECORDS_TIMEOUT = Duration.ofMinutes(30);
 
   /**
-   * Constructor.
-   *
-   * @param semaphoresPerPluginManager the semaphores manager for controlling access to plugin types
-   * @param workflowExecutionDao the data access object for workflow execution operations
-   * @param workflowPostProcessor the post-processor responsible for post-execution actions
-   * @param engineTaskClient the client to manage engine tasks with specified settings and task types
+   * Compact constructor for validation and defaults
    */
-  public WorkflowExecutorSettings(
-      SemaphoresPerPluginManager semaphoresPerPluginManager, WorkflowExecutionDao workflowExecutionDao,
-      WorkflowPostProcessor workflowPostProcessor, EngineTaskClient<S, T> engineTaskClient) {
-    this.semaphoresPerPluginManager = semaphoresPerPluginManager;
-    this.workflowExecutionDao = workflowExecutionDao;
-    this.workflowPostProcessor = workflowPostProcessor;
-    this.engineTaskClient = engineTaskClient;
+  public WorkflowExecutorSettings {
+    if (monitorCheckInterval == null) {
+      monitorCheckInterval = DEFAULT_MONITOR_CHECK_INTERVAL;
+    }
+
+    if (noChangeInProcessedRecordsTimeout == null) {
+      noChangeInProcessedRecordsTimeout = DEFAULT_NO_CHANGE_IN_PROCESSED_RECORDS_TIMEOUT;
+    }
+
+    if (monitorCheckInterval.isZero() || monitorCheckInterval.isNegative()) {
+      throw new IllegalArgumentException("dpsMonitorCheckInterval must be positive");
+    }
+
+    if (noChangeInProcessedRecordsTimeout.isZero() || noChangeInProcessedRecordsTimeout.isNegative()) {
+      throw new IllegalArgumentException("periodOfNoProcessedRecordsChange must be positive");
+    }
+
+    if (semaphoresPerPluginManager == null ||
+        workflowExecutionDao == null ||
+        workflowPostProcessor == null ||
+        engineTaskClient == null) {
+
+      throw new IllegalArgumentException("WorkflowExecutorSettings dependencies must not be null");
+    }
   }
 }
+

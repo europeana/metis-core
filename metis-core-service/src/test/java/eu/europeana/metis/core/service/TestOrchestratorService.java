@@ -166,7 +166,7 @@ class TestOrchestratorService {
     //Stub for engine task dataset id creation
     EngineTaskClient<?, ?> mockEngineTaskClient = mock(EngineTaskClient.class);
     when(mockEngineTaskClient.createEngineDatasetId(anyString())).thenReturn(true);
-    when(workflowExecutorSettings.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
+    when(workflowExecutorSettings.engineTaskClient()).thenReturn(mockEngineTaskClient);
     when(datasetDao.update(any(Dataset.class))).thenReturn("");
   }
 
@@ -499,7 +499,7 @@ class TestOrchestratorService {
 
     EngineTaskClient<?, ?> mockEngineTaskClient = mock(EngineTaskClient.class);
     when(mockEngineTaskClient.createEngineDatasetId(anyString())).thenReturn(false);
-    when(workflowExecutorSettings.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
+    when(workflowExecutorSettings.engineTaskClient()).thenReturn(mockEngineTaskClient);
     assertThrows(ExternalTaskException.class, () ->
         orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null,
             TestObjectFactory.USER_ID));

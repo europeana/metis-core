@@ -268,14 +268,10 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
       WorkflowPostProcessor workflowPostProcessor,
       EngineTaskClient<S, T> engineTaskClient,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    WorkflowExecutorSettings<S, T> workflowExecutorSettings = new WorkflowExecutorSettings<>(
+    return new WorkflowExecutorSettings<>(
+        Duration.ofSeconds(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds()),
+        Duration.ofMinutes(metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes()),
         semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, engineTaskClient);
-    workflowExecutorSettings.setDpsMonitorCheckIntervalInSecs(
-        metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
-    workflowExecutorSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
-        metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
-
-    return workflowExecutorSettings;
   }
 
   /**

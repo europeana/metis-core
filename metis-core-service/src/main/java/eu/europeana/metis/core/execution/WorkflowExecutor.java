@@ -29,14 +29,15 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -68,8 +69,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final SemaphoresPerPluginManager semaphoresPerPluginManager;
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowPostProcessor workflowPostProcessor;
-  private final int monitorCheckIntervalInSecs;
-  private final long periodOfNoProcessedRecordsChangeInSeconds;
+  private final Duration monitorCheckInterval;
+  private final Duration periodOfNoProcessedRecordsChange;
   private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private WorkflowExecution workflowExecution;
@@ -84,13 +85,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   public WorkflowExecutor(WorkflowExecution workflowExecution,
       WorkflowExecutorSettings<S, T> workflowExecutorSettings) {
     this.workflowExecution = workflowExecution;
-    this.semaphoresPerPluginManager = workflowExecutorSettings.getSemaphoresPerPluginManager();
-    this.workflowExecutionDao = workflowExecutorSettings.getWorkflowExecutionDao();
-    this.workflowPostProcessor = workflowExecutorSettings.getWorkflowPostProcessor();
-    this.engineTaskClient = workflowExecutorSettings.getEngineTaskClient();
-    this.monitorCheckIntervalInSecs = workflowExecutorSettings.getDpsMonitorCheckIntervalInSecs();
-    this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
-        .toSeconds(workflowExecutorSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
+    this.semaphoresPerPluginManager = workflowExecutorSettings.semaphoresPerPluginManager();
+    this.workflowExecutionDao = workflowExecutorSettings.workflowExecutionDao();
+    this.workflowPostProcessor = workflowExecutorSettings.workflowPostProcessor();
+    this.engineTaskClient = workflowExecutorSettings.engineTaskClient();
+    this.monitorCheckInterval = workflowExecutorSettings.monitorCheckInterval();
+    this.periodOfNoProcessedRecordsChange = workflowExecutorSettings.noChangeInProcessedRecordsTimeout();
   }
 
   @Override
@@ -303,8 +303,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     }
 
     // Start periodical check and wait for plugin to be done
-    long sleepTime = TimeUnit.SECONDS.toMillis(monitorCheckIntervalInSecs);
-    periodicCheckingLoop(sleepTime, plugin, datasetId);
+    periodicCheckingLoop(plugin, datasetId);
   }
 
   private void setHarvestParametersToIndexingPlugin(ExecutablePlugin indexingPlugin,
@@ -371,7 +370,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   }
 
-  private void periodicCheckingLoop(long sleepTime, AbstractExecutablePlugin<?> plugin, String datasetId) {
+  private void periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
     final PluginMonitor<S, T> pluginMonitor = new PluginMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
@@ -381,15 +380,14 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         new AtomicInteger(0), new AtomicInteger(0),
         new AtomicInteger(0), new AtomicInteger(0));
 
-    AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis = new AtomicLong(
-        System.currentTimeMillis());
+    AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod = new AtomicReference<>(Instant.now());
     boolean updateSuccess;
     do {
       try {
-        Thread.sleep(sleepTime);
+        Thread.sleep(monitorCheckInterval);
         // Check if the task is cancelling and send the external cancelling call if needed
         sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin,
-            checkPointDateOfProcessedRecordsPeriodInMillis, previousRecordsCounters);
+            checkPointDateOfProcessedRecordsPeriod, previousRecordsCounters);
         engineTaskProgress = pluginMonitor.monitor();
         consecutiveCancelOrMonitorFailures = 0;
 
@@ -470,10 +468,10 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
       PluginMonitor<S, T> pluginMonitor, AbstractExecutablePlugin<?> plugin,
-      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis,
+      AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
       PreviousRecordCounter previousRecordsCounters) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin,
-        checkPointDateOfProcessedRecordsPeriodInMillis, previousRecordsCounters)) {
+        checkPointDateOfProcessedRecordsPeriod, previousRecordsCounters)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
 
@@ -508,7 +506,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
-      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis,
+      AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
       PreviousRecordCounter previousRecordsCounters) {
     // A plugin with CLEANING state is NOT cancellable, it will be when the state is updated
     final boolean notCleaningAndCancelling =
@@ -518,12 +516,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     final boolean notCleaningOrPending = plugin.getPluginStatus() != PluginStatus.CLEANING
         && plugin.getPluginStatus() != PluginStatus.PENDING;
     final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin,
-        checkPointDateOfProcessedRecordsPeriodInMillis, previousRecordsCounters);
+        checkPointDateOfProcessedRecordsPeriod, previousRecordsCounters);
     return (notCleaningAndCancelling || (notCleaningOrPending && isMinuteCapExceeded));
   }
 
   private boolean isMinuteCapOverWithoutChangeInProcessedRecords(AbstractExecutablePlugin<?> plugin,
-      AtomicLong checkPointDateOfProcessedRecordsPeriodInMillis,
+      AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
       PreviousRecordCounter previousRecordsCounters) {
     final int processedRecords = plugin.getExecutionProgress().getProcessedRecords();
     final int deletedRecords = plugin.getExecutionProgress().getDeletedRecords();
@@ -545,7 +543,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     if (plugin.getPluginStatus() == PluginStatus.CLEANING
         || plugin.getPluginStatus() == PluginStatus.PENDING
         || previousRecordsCountersChanged) {
-      checkPointDateOfProcessedRecordsPeriodInMillis.set(System.currentTimeMillis());
+      checkPointDateOfProcessedRecordsPeriod.set(Instant.now());
       previousRecordsCounters.processed().set(processedRecords);
       previousRecordsCounters.deleted().set(deletedRecords);
       previousRecordsCounters.expected().set(expectedRecords);
@@ -555,9 +553,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       return false;
     }
 
-    final boolean isMinuteCapOverWithoutChangeInProcessedRecords = TimeUnit.MILLISECONDS.toSeconds(
-        System.currentTimeMillis() - checkPointDateOfProcessedRecordsPeriodInMillis.get())
-        >= periodOfNoProcessedRecordsChangeInSeconds;
+    final boolean isMinuteCapOverWithoutChangeInProcessedRecords =
+        Duration.between(checkPointDateOfProcessedRecordsPeriod.get(), Instant.now())
+                .compareTo(periodOfNoProcessedRecordsChange) >= 0;
     if (isMinuteCapOverWithoutChangeInProcessedRecords) {
       workflowExecutionDao.setCancellingStateSystem(workflowExecution);
     }

@@ -67,11 +67,11 @@ class WorkflowExecutionDispatcherTest {
   }
 
   @Test
-  void pollAndSubmit_submitsAtMostMaxBatch20() {
+  void pollAndSubmit_submitsAtMostMaxBatch() {
     Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
 
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < CORE_POOL_SIZE; i++) {
       WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
       workflowExecutions.add(workflowExecution);
       executors.add(mockExecutor(Pair.of(workflowExecution, true)));
@@ -88,7 +88,7 @@ class WorkflowExecutionDispatcherTest {
     workflowExecutionDispatcher.pollAndSubmit();
 
     //No chance to claim +1 because we reached the max batch size
-    verify(workflowExecutionClaimDao, times(20)).claimNextExecution(any());
+    verify(workflowExecutionClaimDao, times(CORE_POOL_SIZE)).claimNextExecution(any());
   }
 
   @Test

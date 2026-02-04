@@ -386,7 +386,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
         || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
       final String engineDatasetUuid = UUID.randomUUID().toString();
-      boolean isEngineDatasetIdCreated = workflowExecutorSettings.getEngineTaskClient().createEngineDatasetId(engineDatasetUuid);
+      boolean isEngineDatasetIdCreated = workflowExecutorSettings.engineTaskClient().createEngineDatasetId(engineDatasetUuid);
       if (!isEngineDatasetIdCreated) {
         throw new ExternalTaskException(
             String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
