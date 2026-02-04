@@ -28,7 +28,6 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
-import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -38,12 +37,11 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that WorkflowExecution given to it
@@ -54,10 +52,10 @@ import org.slf4j.LoggerFactory;
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
+@Slf4j
 public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask>
     implements Callable<Pair<WorkflowExecution, Boolean>> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
   private static final String MONITOR_ERROR_PREFIX = "An error occurred while monitoring the external task. ";
   private static final String POSTPROCESS_ERROR_PREFIX = "An error occurred while post-processing the external task. ";
@@ -96,7 +94,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   @Override
   public Pair<WorkflowExecution, Boolean> call() {
     // Perform the work - run the workflow.
-    LOGGER.info("workflowExecutionId: {}- Starting workflow execution", workflowExecution.getId());
+    log.info("workflowExecutionId: {}- Starting workflow execution", workflowExecution.getId());
     final Pair<Date, Boolean> didPluginRunDatePair = runInqueueOrRunningStateWorkflowExecution();
     final Date finishDate = didPluginRunDatePair.getLeft();
     final Boolean didPluginsRun = didPluginRunDatePair.getRight();
@@ -111,19 +109,19 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString())
                                                  .getCancelledBy();
         workflowExecution.setCancelledBy(cancelledBy);
-        LOGGER.info("workflowExecutionId: {} - Cancelled running workflow execution",
+        log.info("workflowExecutionId: {} - Cancelled running workflow execution",
             workflowExecution.getId());
       } else if (finishDate == null && didPluginsRun) {
         // One plugin failed
         workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
       } else if (finishDate == null) {
-        LOGGER.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to run", workflowExecution.getId());
+        log.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to run", workflowExecution.getId());
       } else {
         // If the workflow finished successfully, we record this.
         workflowExecution.setFinishedDate(finishDate);
         workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
         workflowExecution.setCancelling(false);
-        LOGGER.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
+        log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
       }
     }
 
@@ -233,13 +231,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         .tryAcquireForExecutablePluginType(executablePluginType);
     if (acquired) {
       try {
-        LOGGER.debug("workflowExecutionId: {}, executablePluginType: {} - Acquired semaphore",
+        log.debug("workflowExecutionId: {}, executablePluginType: {} - Acquired semaphore",
             workflowExecution.getId(), executablePluginType);
         final Date startDateToUse = i == 0 ? workflowExecution.getStartedDate() : new Date();
         runMetisPlugin(executablePlugin, startDateToUse, workflowExecution.getDatasetId());
       } finally {
         semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
-        LOGGER.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
+        log.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
             workflowExecution.getId(), executablePluginType);
       }
     }
@@ -291,7 +289,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
             getExternalTaskIdOfPreviousPlugin(metadata));
       }
     } catch (ExternalTaskException | RuntimeException e) {
-      LOGGER.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
+      log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
           + "failed", workflowExecution.getId(), plugin.getPluginType()), e);
       plugin.setFinishedDate(null);
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
@@ -381,37 +379,29 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         new AtomicInteger(0), new AtomicInteger(0));
 
     AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod = new AtomicReference<>(Instant.now());
-    boolean updateSuccess;
-    do {
+    boolean updateSuccess = true;
+
+    while (updateSuccess && isContinueMonitor(engineTaskProgress)) {
       try {
-        Thread.sleep(monitorCheckInterval);
-        // Check if the task is cancelling and send the external cancelling call if needed
-        sendExternalCancelCallIfNeeded(externalCancelCallSent, pluginMonitor, plugin,
-            checkPointDateOfProcessedRecordsPeriod, previousRecordsCounters);
+        if (!sleepMonitorInterval()) {
+          return;
+        }
+
+        sendExternalCancelCallIfNeeded(
+            externalCancelCallSent,
+            pluginMonitor,
+            plugin,
+            checkPointDateOfProcessedRecordsPeriod,
+            previousRecordsCounters
+        );
+
         engineTaskProgress = pluginMonitor.monitor();
         consecutiveCancelOrMonitorFailures = 0;
 
-        EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
-        if (engineTaskState == EngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
-            isIndexingInPostProcessing(engineTaskState, plugin)) {
-          plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
-
-        } else if (isHarvestingInPostProcessing(engineTaskState, plugin)) {
-          plugin.setPluginStatusAndResetFailMessage(PluginStatus.IDENTIFYING_DELETED_RECORDS);
-
-        } else {
-          plugin.setPluginStatusAndResetFailMessage(PluginStatus.RUNNING);
-        }
-
-      } catch (InterruptedException e) {
-        LOGGER.warn(String.format(
-            "workflowExecutionId: %s, pluginType: %s - Thread was interrupted during monitoring of external task",
-            workflowExecution.getId(), plugin.getPluginType()), e);
-        currentThread().interrupt();
-        return;
+        applyRuntimePluginState(plugin, engineTaskProgress);
       } catch (ExternalTaskException | RuntimeException e) {
         if (e.getCause() instanceof UnrecoverableExternalTaskException) {
-          LOGGER.warn(String
+          log.warn(String
               .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
                   + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
           // Set plugin to FAILED and return immediately
@@ -422,34 +412,62 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
           return;
         }
 
-        LOGGER.warn(String
-            .format("workflowExecutionId: %s, pluginType: %s - ExternalTaskException occurred.",
-                workflowExecution.getId(), plugin.getPluginType()), e);
-
         consecutiveCancelOrMonitorFailures++;
-        LOGGER.warn(String.format(
-            "workflowExecutionId: %s, pluginType: %s - Monitoring of external task failed %s "
-                + "consecutive times. After exceeding %s retries, pending status will be set",
-            workflowExecution.getId(), plugin.getPluginType(), consecutiveCancelOrMonitorFailures,
-            MAX_CANCEL_OR_MONITOR_FAILURES), e);
-        if (consecutiveCancelOrMonitorFailures >= MAX_CANCEL_OR_MONITOR_FAILURES) {
-          plugin.setPluginStatusAndResetFailMessage(PluginStatus.PENDING);
-        }
+        handleRecoverableMonitorFailure(plugin, e, consecutiveCancelOrMonitorFailures);
+
       } finally {
         Date updatedDate = new Date();
         plugin.setUpdatedDate(updatedDate);
         workflowExecution.setUpdatedDate(updatedDate);
         updateSuccess = workflowExecutionDao.updateMonitorInformation(workflowExecution);
       }
-    } while (updateSuccess && isContinueMonitor(engineTaskProgress));
+    }
 
     // Perform post-processing if needed.
-    if (!applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
+    if (engineTaskProgress == null || !applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
       return;
     }
 
     // Set the status of the task.
     preparePluginStateAndFinishedDate(plugin, engineTaskProgress);
+  }
+
+  private boolean sleepMonitorInterval() {
+    try {
+      Thread.sleep(monitorCheckInterval);
+      return true;
+    } catch (InterruptedException e) {
+      log.warn("Thread interrupted during monitoring sleep for workflowExecutionId {}",
+          workflowExecution.getId(), e);
+      Thread.currentThread().interrupt();
+      return false;
+    }
+  }
+
+  private void handleRecoverableMonitorFailure(AbstractExecutablePlugin<?> plugin, Exception e,
+      int consecutiveCancelOrMonitorFailures) {
+    log.warn(String.format(
+        "workflowExecutionId: %s, pluginType: %s - Monitoring of external task failed %s "
+            + "consecutive times. After exceeding %s retries, pending status will be set",
+        workflowExecution.getId(), plugin.getPluginType(), consecutiveCancelOrMonitorFailures,
+        MAX_CANCEL_OR_MONITOR_FAILURES), e);
+    if (consecutiveCancelOrMonitorFailures >= MAX_CANCEL_OR_MONITOR_FAILURES) {
+      plugin.setPluginStatusAndResetFailMessage(PluginStatus.PENDING);
+    }
+  }
+
+  private void applyRuntimePluginState(AbstractExecutablePlugin<?> plugin, EngineTaskProgress engineTaskProgress) {
+    EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
+    if (engineTaskState == EngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
+        isIndexingInPostProcessing(engineTaskState, plugin)) {
+      plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
+
+    } else if (isHarvestingInPostProcessing(engineTaskState, plugin)) {
+      plugin.setPluginStatusAndResetFailMessage(PluginStatus.IDENTIFYING_DELETED_RECORDS);
+
+    } else {
+      plugin.setPluginStatusAndResetFailMessage(PluginStatus.RUNNING);
+    }
   }
 
   private boolean isIndexingInPostProcessing(EngineTaskState engineTaskState,
@@ -489,7 +507,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         this.workflowPostProcessor.performPluginPostProcessing(plugin, datasetId);
       } catch (DpsException | InvalidIndexPluginException | BadContentException | RuntimeException | ExternalTaskException e) {
         processingAppliedOrNotRequired = false;
-        LOGGER.warn("Problem occurred during Metis post-processing.", e);
+        log.warn("Problem occurred during Metis post-processing.", e);
         plugin.setFinishedDate(null);
         plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
         plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, POSTPROCESS_ERROR_PREFIX,
@@ -581,7 +599,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
           plugin.setFailMessage(EXECUTION_ERROR_PREFIX + message);
         }
       }
-      default -> LOGGER.debug("No action for other states");
+      default -> log.debug("No action for other states");
     }
     workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
   }
