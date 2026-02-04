@@ -132,12 +132,10 @@ public class ApplicationConfiguration {
    * Get the DAO for datasets.
    *
    * @param morphiaDatastoreProvider {@link MorphiaDatastoreProvider}
-   * @param ecloudConfigurationProperties the properties for ecloud configuration
    * @return {@link DatasetDao} used to access the database for datasets
    */
   @Bean
-  public DatasetDao getDatasetDao(
-      MorphiaDatastoreProvider morphiaDatastoreProvider, EcloudConfigurationProperties ecloudConfigurationProperties) {
+  public DatasetDao getDatasetDao(MorphiaDatastoreProvider morphiaDatastoreProvider) {
     DatasetDao datasetDao = new DatasetDao(morphiaDatastoreProvider);
     datasetDao.setDatasetsPerRequest(RequestLimits.DATASETS_PER_REQUEST.getLimit());
     return datasetDao;
