@@ -3,6 +3,7 @@ package eu.europeana.metis.core.execution;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -86,6 +87,12 @@ class WorkflowExecutionDispatcherTest {
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
         createDispatcherWithStub(executors);
     workflowExecutionDispatcher.pollAndSubmit();
+    await().atMost(Duration.ofSeconds(2))
+           .untilAsserted(() ->
+               executors.forEach(executor ->
+                   verify(executor, atLeastOnce()).call()
+               )
+           );
 
     //No chance to claim +1 because we reached the max batch size
     verify(workflowExecutionClaimDao, times(CORE_POOL_SIZE)).claimNextExecution(any());

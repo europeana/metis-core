@@ -133,8 +133,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
                                                                  Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(),
                                                                      workflowExecution.getClaimedByInstance()));
 
-    final UpdateOperator updateOperator = UpdateOperators
-        .set(METIS_PLUGINS.getFieldName(), workflowExecution.getMetisPlugins());
+    final UpdateOperator updateOperator = UpdateOperators.set(METIS_PLUGINS.getFieldName(), workflowExecution.getMetisPlugins());
 
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), updateOperator));
@@ -160,19 +159,9 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
                                                                  Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(),
                                                                      workflowExecution.getClaimedByInstance()));
     final ArrayList<UpdateOperator> updateOperators = new ArrayList<>();
-    updateOperators.add(UpdateOperators
-        .set(WORKFLOW_STATUS.getFieldName(),
-            workflowExecution.getWorkflowStatus()));
-    if (workflowExecution.getStartedDate() != null) {
-      updateOperators
-          .add(UpdateOperators.set(STARTED_DATE.getFieldName(), workflowExecution.getStartedDate()));
-    }
-    if (workflowExecution.getUpdatedDate() != null) {
-      updateOperators
-          .add(UpdateOperators.set(UPDATED_DATE.getFieldName(), workflowExecution.getUpdatedDate()));
-    }
-    updateOperators.add(
-        UpdateOperators.set(METIS_PLUGINS.getFieldName(), workflowExecution.getMetisPlugins()));
+    updateOperators.add(UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), workflowExecution.getWorkflowStatus()));
+    updateOperators.add(UpdateOperators.set(UPDATED_DATE.getFieldName(), workflowExecution.getUpdatedDate()));
+    updateOperators.add(UpdateOperators.set(METIS_PLUGINS.getFieldName(), workflowExecution.getMetisPlugins()));
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), updateOperators.toArray(UpdateOperator[]::new)));
     LOGGER.debug(

@@ -141,7 +141,6 @@ class TestWorkflowExecutionDao {
     String objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     Date startedDate = new Date();
-    workflowExecution.setStartedDate(startedDate);
     workflowExecution.setUpdatedDate(startedDate);
     workflowExecution.getMetisPlugins().getFirst().setPluginStatus(PluginStatus.RUNNING);
     Date pluginUpdatedDate = new Date();
@@ -152,7 +151,6 @@ class TestWorkflowExecutionDao {
     WorkflowExecution updatedWorkflowExecution = workflowExecutionDao.getById(objectId);
     assertEquals(WorkflowStatus.RUNNING, updatedWorkflowExecution.getWorkflowStatus());
     assertEquals(0, createdDate.compareTo(updatedWorkflowExecution.getCreatedDate()));
-    assertEquals(0, startedDate.compareTo(updatedWorkflowExecution.getStartedDate()));
     assertEquals(0, startedDate.compareTo(updatedWorkflowExecution.getUpdatedDate()));
     assertEquals(PluginStatus.RUNNING,
         updatedWorkflowExecution.getMetisPlugins().getFirst().getPluginStatus());
