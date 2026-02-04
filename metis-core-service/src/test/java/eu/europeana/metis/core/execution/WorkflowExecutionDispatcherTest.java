@@ -3,6 +3,7 @@ package eu.europeana.metis.core.execution;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -20,13 +21,13 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.function.BiFunction;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -44,24 +45,23 @@ class WorkflowExecutionDispatcherTest {
   }
 
   @Test
-  void publicConstructor_usesDefaultExecutorFactory() {
-    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> dispatcher =
-        new WorkflowExecutionDispatcher<>(
-            mock(),
-            getThreadPoolTaskExecutor().getThreadPoolExecutor(),
-            workflowExecutionClaimDao,
-            Duration.ofSeconds(5)
-        );
-    assertNotNull(dispatcher);
+  void createExecutor() {
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher = createDispatcher();
+    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = mock(WorkflowExecutorManagerSettings.class);
+    WorkflowExecutorManager<EngineTaskSettings, EngineTask> workflowExecutorManager = mock(WorkflowExecutorManager.class);
+    when(workflowExecutorManager.getWorkflowExecutionSettings()).thenReturn(workflowExecutorManagerSettings);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor = workflowExecutionDispatcher
+        .createExecutor(mock(WorkflowExecution.class),  workflowExecutorManager);
+    assertNotNull(executor);
   }
 
   @Test
   void pollAndSubmit_stopsWhenNoExecutionClaimed() {
-    Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
     when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(null);
 
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
-        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+        createDispatcher();
     workflowExecutionDispatcher.pollAndSubmit();
 
     verify(workflowExecutionClaimDao, times(1)).claimNextExecution(any());
@@ -86,7 +86,7 @@ class WorkflowExecutionDispatcherTest {
     stubbing.thenReturn(null);
 
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
-        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+        createDispatcherWithStub(executors);
     workflowExecutionDispatcher.pollAndSubmit();
 
     //No chance to claim +1 because we reached the max batch size
@@ -105,7 +105,7 @@ class WorkflowExecutionDispatcherTest {
     when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(workflowExecution1, workflowExecution2, null);
 
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
-        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+        createDispatcherWithStub(executors);
     workflowExecutionDispatcher.pollAndSubmit();
     workflowExecutionDispatcher.cleanup();
 
@@ -133,7 +133,7 @@ class WorkflowExecutionDispatcherTest {
     when(workflowExecutionClaimDao.requeue(any())).thenReturn(true);
 
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
-        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+        createDispatcherWithStub(executors);
     workflowExecutionDispatcher.pollAndSubmit();
     //We claim +1 to exit the loop
     verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
@@ -157,7 +157,7 @@ class WorkflowExecutionDispatcherTest {
     when(workflowExecutionClaimDao.requeue(any())).thenReturn(false);
 
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
-        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+        createDispatcherWithStub(executors);
     workflowExecutionDispatcher.pollAndSubmit();
     //We claim +1 to exit the loop
     verify(workflowExecutionClaimDao, times(3)).claimNextExecution(any());
@@ -180,7 +180,7 @@ class WorkflowExecutionDispatcherTest {
     when(workflowExecutionClaimDao.claimNextExecution(any())).thenReturn(workflowExecution1, workflowExecution2, null);
 
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
-        createDispatcher((workflowExecution, workflowExecutorManager) -> executors.poll());
+        createDispatcherWithStub(executors);
     workflowExecutionDispatcher.pollAndSubmit();
     workflowExecutionDispatcher.cleanup();
     //We claim +1 to exit the loop
@@ -193,13 +193,21 @@ class WorkflowExecutionDispatcherTest {
         });
   }
 
-  private WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> createDispatcher(
-      BiFunction<WorkflowExecution, WorkflowExecutorManager<EngineTaskSettings, EngineTask>, WorkflowExecutor<EngineTaskSettings, EngineTask>> workflowExecutorFactory) {
-    return new WorkflowExecutionDispatcher<>(
-        mock(),
-        workflowExecutorFactory, getThreadPoolTaskExecutor().getThreadPoolExecutor(), workflowExecutionClaimDao,
-        Duration.ofSeconds(10)
-    );
+  private WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> createDispatcherWithStub(
+      Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors) {
+    WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher = createDispatcher();
+
+    doAnswer(invocation -> executors.poll())
+        .when(workflowExecutionDispatcher)
+        .createExecutor(any(), any());
+
+    return workflowExecutionDispatcher;
+  }
+
+  private WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> createDispatcher() {
+    return Mockito.spy(new WorkflowExecutionDispatcher<>(
+        mock(), getThreadPoolTaskExecutor().getThreadPoolExecutor(), workflowExecutionClaimDao,
+        Duration.ofSeconds(10)));
   }
 
   private static @NonNull ThreadPoolTaskExecutor getThreadPoolTaskExecutor() {

@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,6 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
   private final WorkflowExecutionClaimDao workflowExecutionClaimDao;
   private final ThreadPoolExecutor threadPoolExecutor;
   private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService;
-  private final BiFunction<WorkflowExecution, WorkflowExecutorManager<S, T>, WorkflowExecutor<S, T>> executorFactory;
   private final Duration failsafeLeniency;
 
   /**
@@ -48,28 +46,11 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
    */
   public WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager, ThreadPoolExecutor threadPoolExecutor,
       WorkflowExecutionClaimDao workflowExecutionClaimDao, Duration failsafeLeniency) {
-    this(workflowExecutorManager, WorkflowExecutor::new, threadPoolExecutor, workflowExecutionClaimDao, failsafeLeniency);
-  }
-
-  /**
-   * Constructor.
-   *
-   * @param workflowExecutorManager Manager for handling workflow execution and queue management.
-   * @param executorFactory Factory function to create WorkflowExecutor instances based on the current workflow execution and the
-   * executor manager.
-   * @param threadPoolExecutor Executor service for managing thread pool and task execution.
-   * @param workflowExecutionClaimDao Data access object for claiming workflow executions.
-   * @param failsafeLeniency Duration representing the leniency period used for failsafe operations.
-   */
-  WorkflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
-      BiFunction<WorkflowExecution, WorkflowExecutorManager<S, T>, WorkflowExecutor<S, T>> executorFactory,
-      ThreadPoolExecutor threadPoolExecutor, WorkflowExecutionClaimDao workflowExecutionClaimDao, Duration failsafeLeniency) {
     this.workflowExecutorManager = workflowExecutorManager;
     this.workflowExecutionClaimDao = workflowExecutionClaimDao;
     this.threadPoolExecutor = threadPoolExecutor;
     this.failsafeLeniency = failsafeLeniency;
     this.completionService = new ExecutorCompletionService<>(threadPoolExecutor);
-    this.executorFactory = executorFactory;
   }
 
   /**
@@ -96,10 +77,14 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
     return threadPoolExecutor.getMaximumPoolSize() - threadPoolExecutor.getActiveCount();
   }
 
-
   private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor<S, T> executor = executorFactory.apply(workflowExecution, workflowExecutorManager);
-    completionService.submit(executor);
+    WorkflowExecutor<S, T> workflowExecutor = createExecutor(workflowExecution, workflowExecutorManager);
+    completionService.submit(workflowExecutor);
+  }
+
+  WorkflowExecutor<S, T> createExecutor(WorkflowExecution workflowExecution,
+      WorkflowExecutorManager<S, T> workflowExecutorManager) {
+    return new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
   }
 
   /**
