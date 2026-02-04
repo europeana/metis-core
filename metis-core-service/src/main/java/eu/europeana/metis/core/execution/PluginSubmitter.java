@@ -62,7 +62,7 @@ import org.slf4j.LoggerFactory;
  * @param <S> Generic type parameter extending AbstractEngineTaskSettings.
  * @param <T> Generic type parameter extending AbstractEngineTask.
  */
-public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> {
+public class PluginSubmitter<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
@@ -74,18 +74,20 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    * @param plugin AbstractExecutablePlugin instance used to execute the plugin logic.
    * @param engineTaskClient EngineTaskClient instance used to manage and interact with engine tasks.
    */
-  public PluginExecutor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
+  public PluginSubmitter(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
   }
 
   /**
-   * Submits a task to the processing engine for the specified dataset and previous task if any.
+   * Submits a new task to the engine for execution based on the provided dataset identifiers and the previous task information.
+   * This method creates an engine task using the given parameters, submits it to the engine, and updates the plugin with the
+   * submitted task ID and data status. If an error occurs during task creation or submission, an exception is thrown.
    *
-   * @param datasetId Identifier of the dataset for which the task is submitted.
-   * @param engineDatasetId
-   * @param previousTaskId Identifier of the previous task to maintain task dependencies. Can be null or empty.
-   * @throws ExternalTaskException If an error occurs while submitting the task.
+   * @param datasetId The unique identifier of the dataset to be processed by the plugin.
+   * @param engineDatasetId The unique identifier of the dataset within the engine context.
+   * @param previousTaskId The unique identifier of the previous task, used for task chaining or dependencies.
+   * @throws ExternalTaskException If an error occurs during task submission or execution.
    */
   public void submit(String datasetId, String engineDatasetId, String previousTaskId) throws ExternalTaskException {
     T engineTask = createEngineTask(datasetId, engineDatasetId, previousTaskId);

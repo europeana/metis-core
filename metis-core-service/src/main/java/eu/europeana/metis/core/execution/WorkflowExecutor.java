@@ -3,9 +3,6 @@ package eu.europeana.metis.core.execution;
 import static java.lang.Thread.currentThread;
 
 import eu.europeana.cloud.service.dps.exception.DpsException;
-import eu.europeana.metis.core.dao.DataEvolutionUtils;
-import eu.europeana.metis.core.dao.ExecutedMetisPluginId;
-import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
@@ -17,11 +14,7 @@ import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -32,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,7 +51,6 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
   private static final String MONITOR_ERROR_PREFIX = "An error occurred while monitoring the external task. ";
   private static final String POSTPROCESS_ERROR_PREFIX = "An error occurred while post-processing the external task. ";
-  private static final String TRIGGER_ERROR_PREFIX = "An error occurred while triggering the external task. ";
   private static final String DETAILED_EXCEPTION_FORMAT = "%s%nDetailed exception:%s";
 
   protected static final int MAX_CANCEL_OR_MONITOR_FAILURES = 10;
@@ -71,6 +62,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final Duration periodOfNoProcessedRecordsChange;
   private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
+  private final PluginExecutionService<S, T> pluginExecutionService;
   private WorkflowExecution workflowExecution;
 
   /**
@@ -89,6 +81,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     this.engineTaskClient = workflowExecutorSettings.engineTaskClient();
     this.monitorCheckInterval = workflowExecutorSettings.monitorCheckInterval();
     this.periodOfNoProcessedRecordsChange = workflowExecutorSettings.noChangeInProcessedRecordsTimeout();
+    this.pluginExecutionService = new PluginExecutionService<>(
+        workflowExecutorSettings.engineTaskClient(),
+        workflowExecutorSettings.workflowExecutionDao());
   }
 
   @Override
@@ -226,15 +221,15 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       throw new IllegalStateException("Plugin type cannot be null.");
     }
 
-    //Try to acquire semaphore and run plugin. Don't forget to release
-    boolean acquired = semaphoresPerPluginManager
-        .tryAcquireForExecutablePluginType(executablePluginType);
+    //Try to acquire semaphore and run the plugin. Remember to release.
+    boolean acquired = semaphoresPerPluginManager.tryAcquireForExecutablePluginType(executablePluginType);
     if (acquired) {
       try {
         log.debug("workflowExecutionId: {}, executablePluginType: {} - Acquired semaphore",
             workflowExecution.getId(), executablePluginType);
         final Date startDateToUse = i == 0 ? workflowExecution.getStartedDate() : new Date();
-        runMetisPlugin(executablePlugin, startDateToUse, workflowExecution.getDatasetId());
+        pluginExecutionService.executePlugin(executablePlugin, startDateToUse, workflowExecution);
+        periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
       } finally {
         semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
         log.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
@@ -244,113 +239,10 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     return acquired;
   }
 
-  /**
-   * It will prepare the plugin, request the external execution and will periodically monitor, update the plugin's progress and at
-   * the end finalize the plugin's status and finished date.
-   *
-   * @param plugin the plugin to run
-   * @param startDateToUse The date that should be used as start date (if the plugin is not already running).
-   * @param datasetId The dataset ID.
-   */
-  private void runMetisPlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, String datasetId) {
-    final PluginExecutor<S, T> pluginExecutor = new PluginExecutor<>(plugin, engineTaskClient);
-    try {
-      // Compute previous plugin revision information.
-      final AbstractExecutablePluginMetadata metadata = plugin.getPluginMetadata();
-      final ExecutedMetisPluginId executedMetisPluginId = ExecutedMetisPluginId
-          .forPredecessor(plugin);
-      if (executedMetisPluginId == null) {
-        final ExecutablePlugin predecessor = DataEvolutionUtils
-            .computePredecessorPlugin(metadata.getExecutablePluginType(), workflowExecution);
-        if (predecessor != null) {
-          metadata.setPreviousRevisionInformation(predecessor);
-          // Save so that we can use it below to find the root ancestor.
-          workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
-        }
-      }
-
-      // Compute base harvesting plugin information. We can't do this when creating the workflow
-      // execution: the harvest might be part of this very workflow.
-      if (DataEvolutionUtils.getIndexPluginGroup()
-                            .contains(plugin.getPluginMetadata().getExecutablePluginType())) {
-        final PluginWithExecutionId<ExecutablePlugin> rootAncestor = new DataEvolutionUtils(
-            workflowExecutionDao).getRootAncestor(
-            new PluginWithExecutionId<>(workflowExecution, plugin));
-        setHarvestParametersToIndexingPlugin(plugin, rootAncestor.getPlugin());
-      }
-
-      // Start execution if it has not already started
-      if (StringUtils.isEmpty(plugin.getExternalTaskId())) {
-        if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
-          plugin.setStartedDate(startDateToUse);
-        }
-
-        pluginExecutor.submit(workflowExecution.getDatasetId(), workflowExecution.getEcloudDatasetId(),
-            getExternalTaskIdOfPreviousPlugin(metadata));
-      }
-    } catch (ExternalTaskException | RuntimeException e) {
-      log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin "
-          + "failed", workflowExecution.getId(), plugin.getPluginType()), e);
-      plugin.setFinishedDate(null);
-      plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-      plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, TRIGGER_ERROR_PREFIX,
-          ExceptionUtils.getStackTrace(e)));
-      return;
-    } finally {
-      workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
-    }
-
-    // Start periodical check and wait for plugin to be done
-    periodicCheckingLoop(plugin, datasetId);
-  }
-
-  private void setHarvestParametersToIndexingPlugin(ExecutablePlugin indexingPlugin,
-      ExecutablePlugin harvestPlugin) {
-
-    // Check the harvesting types
-    if (!DataEvolutionUtils.getHarvestPluginGroup()
-                           .contains(harvestPlugin.getPluginMetadata().getExecutablePluginType())) {
-      throw new IllegalStateException(String.format(
-          "workflowExecutionId: %s, pluginId: %s - Found plugin root that is not a harvesting plugin.",
-          workflowExecution.getId(), indexingPlugin.getId()));
-    }
-
-    // get the information from the harvesting plugin.
-    final boolean incrementalHarvest =
-        harvestPlugin.getPluginMetadata() instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata
-            && abstractHarvestPluginMetadata.isIncrementalHarvest();
-    final Date harvestDate = harvestPlugin.getStartedDate();
-
-    // Set the information to the indexing plugin.
-    if (indexingPlugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata abstractIndexPluginMetadata) {
-      abstractIndexPluginMetadata.setIncrementalIndexing(incrementalHarvest);
-      abstractIndexPluginMetadata.setHarvestDate(harvestDate);
-    }
-  }
-
-  private String getExternalTaskIdOfPreviousPlugin(AbstractExecutablePluginMetadata metadata) {
-
-    // Get the previous plugin parameters from the plugin - if there is none, we are done.
-    final ExecutedMetisPluginId predecessorPlugin = ExecutedMetisPluginId.forPredecessor(metadata);
-    if (predecessorPlugin == null) {
-      return null;
-    }
-
-    // Get the previous plugin based on the parameters.
-    final WorkflowExecution previousExecution = workflowExecutionDao
-        .getByTaskExecution(predecessorPlugin, workflowExecution.getDatasetId());
-    return Optional.ofNullable(previousExecution)
-                   .flatMap(
-                       execution -> workflowExecutionHelper.getMetisPluginWithType(execution, predecessorPlugin.getPluginType()))
-                   .map(this::expectExecutablePlugin).map(AbstractExecutablePlugin::getExternalTaskId)
-                   .orElse(null);
-  }
-
   private AbstractExecutablePlugin<?> expectExecutablePlugin(AbstractMetisPlugin<?> plugin) {
     if (plugin == null) {
       return null;
     }
-
     if (plugin instanceof AbstractExecutablePlugin<?> abstractExecutablePlugin) {
       return abstractExecutablePlugin;
     }
