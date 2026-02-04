@@ -54,7 +54,7 @@ class TestWorkflowExecutor {
   private static WorkflowExecutionDao workflowExecutionDao;
   private static WorkflowPostProcessor workflowPostProcessor;
   private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
-  private static WorkflowExecutorManager<EngineTaskSettings, EngineTask> workflowExecutorManager;
+  private static WorkflowExecutorSettings<EngineTaskSettings, EngineTask> workflowExecutorSettings;
 
   @BeforeAll
   static void prepare() {
@@ -62,12 +62,13 @@ class TestWorkflowExecutor {
     workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
     engineTaskClient = mock(EngineTaskClient.class);
 
-    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
-    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(0);
-    workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(10);
-
-    workflowExecutorManager = new WorkflowExecutorManager<>(workflowExecutorManagerSettings, new SemaphoresPerPluginManager(2), workflowExecutionDao,
+    WorkflowExecutorSettings<EngineTaskSettings, EngineTask> workflowExecutorSettings = new WorkflowExecutorSettings<>(
+        new SemaphoresPerPluginManager(2), workflowExecutionDao,
         workflowPostProcessor, engineTaskClient);
+    workflowExecutorSettings.setDpsMonitorCheckIntervalInSecs(0);
+    workflowExecutorSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(10);
+
+    TestWorkflowExecutor.workflowExecutorSettings = workflowExecutorSettings;
   }
 
   @BeforeEach
@@ -115,7 +116,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
@@ -160,7 +162,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
@@ -209,7 +212,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
@@ -236,7 +240,8 @@ class TestWorkflowExecutor {
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
-        .thenThrow(new ExternalTaskException("", new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
+        .thenThrow(new ExternalTaskException("",
+            new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 
     when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
@@ -246,7 +251,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
@@ -295,7 +301,8 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
@@ -350,7 +357,8 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
@@ -396,7 +404,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     assertEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
@@ -433,7 +442,8 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
         .thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor
@@ -474,7 +484,8 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
         .thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor

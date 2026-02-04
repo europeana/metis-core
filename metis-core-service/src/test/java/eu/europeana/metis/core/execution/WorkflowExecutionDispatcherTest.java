@@ -47,12 +47,10 @@ class WorkflowExecutionDispatcherTest {
   @Test
   void createExecutor() {
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher = createDispatcher();
-    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = mock(WorkflowExecutorManagerSettings.class);
-    WorkflowExecutorManager<EngineTaskSettings, EngineTask> workflowExecutorManager = mock(WorkflowExecutorManager.class);
-    when(workflowExecutorManager.getWorkflowExecutionSettings()).thenReturn(workflowExecutorManagerSettings);
+    WorkflowExecutorSettings<EngineTaskSettings, EngineTask> workflowExecutorSettings = mock(WorkflowExecutorSettings.class);
 
     WorkflowExecutor<EngineTaskSettings, EngineTask> executor = workflowExecutionDispatcher
-        .createExecutor(mock(WorkflowExecution.class),  workflowExecutorManager);
+        .createExecutor(mock(WorkflowExecution.class), workflowExecutorSettings);
     assertNotNull(executor);
   }
 

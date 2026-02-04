@@ -77,19 +77,20 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   /**
    * Constructor.
    *
-   * @param workflowExecution Represents the workflow execution instance to be processed.
-   * @param workflowExecutorManager Manages the configuration, dependencies, and execution settings
-   *                                required for the workflow execution process.
+   * @param workflowExecution The object representing the workflow to execute.
+   * @param workflowExecutorSettings The settings instance containing configuration values and dependencies required for
+   * execution, such as semaphores, DAOs, and post-processing utilities.
    */
-  public WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorManager<S, T> workflowExecutorManager) {
+  public WorkflowExecutor(WorkflowExecution workflowExecution,
+      WorkflowExecutorSettings<S, T> workflowExecutorSettings) {
     this.workflowExecution = workflowExecution;
-    this.semaphoresPerPluginManager = workflowExecutorManager.getSemaphoresPerPluginManager();
-    this.workflowExecutionDao = workflowExecutorManager.getWorkflowExecutionDao();
-    this.workflowPostProcessor = workflowExecutorManager.getWorkflowPostProcessor();
-    this.engineTaskClient = workflowExecutorManager.getEngineTaskClient();
-    this.monitorCheckIntervalInSecs = workflowExecutorManager.getWorkflowExecutionSettings().getDpsMonitorCheckIntervalInSecs();
+    this.semaphoresPerPluginManager = workflowExecutorSettings.getSemaphoresPerPluginManager();
+    this.workflowExecutionDao = workflowExecutorSettings.getWorkflowExecutionDao();
+    this.workflowPostProcessor = workflowExecutorSettings.getWorkflowPostProcessor();
+    this.engineTaskClient = workflowExecutorSettings.getEngineTaskClient();
+    this.monitorCheckIntervalInSecs = workflowExecutorSettings.getDpsMonitorCheckIntervalInSecs();
     this.periodOfNoProcessedRecordsChangeInSeconds = TimeUnit.MINUTES
-        .toSeconds(workflowExecutorManager.getWorkflowExecutionSettings().getPeriodOfNoProcessedRecordsChangeInMinutes());
+        .toSeconds(workflowExecutorSettings.getPeriodOfNoProcessedRecordsChangeInMinutes());
   }
 
   @Override

@@ -44,7 +44,7 @@ import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.exceptions.WorkflowAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.WorkflowExecutionAlreadyExistsException;
-import eu.europeana.metis.core.execution.WorkflowExecutorManager;
+import eu.europeana.metis.core.execution.WorkflowExecutorSettings;
 import eu.europeana.metis.core.rest.ExecutionHistory;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
 import eu.europeana.metis.core.rest.VersionEvolution;
@@ -119,7 +119,7 @@ class TestOrchestratorService {
   private static DatasetDao datasetDao;
   private static DatasetXsltDao datasetXsltDao;
   private static DepublishRecordIdDao depublishRecordIdDao;
-  private static WorkflowExecutorManager workflowExecutorManager;
+  private static WorkflowExecutorSettings workflowExecutorSettings;
   private static WorkflowExecutionFactory workflowExecutionFactory;
   private static OrchestratorService orchestratorService;
   private static RedissonClient redissonClient;
@@ -134,7 +134,7 @@ class TestOrchestratorService {
     datasetDao = mock(DatasetDao.class);
     datasetXsltDao = mock(DatasetXsltDao.class);
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
-    workflowExecutorManager = mock(WorkflowExecutorManager.class);
+    workflowExecutorSettings = mock(WorkflowExecutorSettings.class);
     redissonClient = mock(RedissonClient.class);
     userService = mock(UserService.class);
 
@@ -148,7 +148,7 @@ class TestOrchestratorService {
 
     orchestratorService = spy(new OrchestratorService(workflowExecutionFactory, workflowDao,
         workflowExecutionDao, validationUtils, dataEvolutionUtils, datasetDao,
-        workflowExecutorManager, redissonClient, depublishRecordIdDao, userService));
+        workflowExecutorSettings, redissonClient, depublishRecordIdDao, userService));
     orchestratorService.setSolrCommitPeriodInMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES);
   }
 
@@ -158,7 +158,7 @@ class TestOrchestratorService {
     Mockito.reset(validationUtils);
     Mockito.reset(workflowDao);
     Mockito.reset(datasetDao);
-    Mockito.reset(workflowExecutorManager);
+    Mockito.reset(workflowExecutorSettings);
     Mockito.reset(redissonClient);
     Mockito.reset(workflowExecutionFactory);
     Mockito.reset(orchestratorService);
@@ -166,7 +166,7 @@ class TestOrchestratorService {
     //Stub for engine task dataset id creation
     EngineTaskClient<?, ?> mockEngineTaskClient = mock(EngineTaskClient.class);
     when(mockEngineTaskClient.createEngineDatasetId(anyString())).thenReturn(true);
-    when(workflowExecutorManager.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
+    when(workflowExecutorSettings.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
     when(datasetDao.update(any(Dataset.class))).thenReturn("");
   }
 
@@ -499,7 +499,7 @@ class TestOrchestratorService {
 
     EngineTaskClient<?, ?> mockEngineTaskClient = mock(EngineTaskClient.class);
     when(mockEngineTaskClient.createEngineDatasetId(anyString())).thenReturn(false);
-    when(workflowExecutorManager.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
+    when(workflowExecutorSettings.getEngineTaskClient()).thenReturn(mockEngineTaskClient);
     assertThrows(ExternalTaskException.class, () ->
         orchestratorService.addWorkflowInQueueOfWorkflowExecutions(dataset.getDatasetId(), null, null,
             TestObjectFactory.USER_ID));
@@ -566,7 +566,7 @@ class TestOrchestratorService {
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(null);
     assertThrows(NoWorkflowExecutionFoundException.class,
         () -> orchestratorService.cancelWorkflowExecution(TestObjectFactory.EXECUTIONID, TestObjectFactory.USER_ID));
-    verifyNoMoreInteractions(workflowExecutorManager);
+    verifyNoMoreInteractions(workflowExecutorSettings);
   }
 
   @Test

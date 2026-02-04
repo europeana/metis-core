@@ -22,7 +22,7 @@ import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.exceptions.WorkflowAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.WorkflowExecutionAlreadyExistsException;
-import eu.europeana.metis.core.execution.WorkflowExecutorManager;
+import eu.europeana.metis.core.execution.WorkflowExecutorSettings;
 import eu.europeana.metis.core.rest.ExecutionHistory;
 import eu.europeana.metis.core.rest.ExecutionHistory.Execution;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
@@ -107,7 +107,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private final DataEvolutionUtils dataEvolutionUtils;
   private final WorkflowDao workflowDao;
   private final DatasetDao datasetDao;
-  private final WorkflowExecutorManager<S, T> workflowExecutorManager;
+  private final WorkflowExecutorSettings<S, T> workflowExecutorSettings;
   private final RedissonClient redissonClient;
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
@@ -116,24 +116,24 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private int solrCommitPeriodInMins; // Use getter and setter for this field!
 
   /**
-   * Constructor with all the required parameters
+   * Constructor.
    *
-   * @param workflowExecutionFactory the orchestratorHelper instance
-   * @param workflowDao the Dao instance to access the Workflow database
-   * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param workflowValidationUtils utilities class providing more functionality on top of DAOs.
-   * @param dataEvolutionUtils utilities class providing more functionality on top of DAOs.
-   * @param datasetDao the Dao instance to access the Dataset database
-   * @param workflowExecutorManager the instance that handles the production and consumption of workflowExecutions
-   * @param redissonClient the instance of Redisson library that handles distributed locks
-   * @param depublishRecordIdDao the Dao instance to access the DepublishRecordId database
-   * @param userService the service instance for managing user-related operations
+   * @param workflowExecutionFactory Factory for creating workflow execution objects.
+   * @param workflowDao Data Access Object for workflows.
+   * @param workflowExecutionDao Data Access Object for workflow executions.
+   * @param workflowValidationUtils Utility for validating workflows.
+   * @param dataEvolutionUtils Utility for handling data evolution processes.
+   * @param datasetDao Data Access Object for datasets.
+   * @param workflowExecutorSettings Configuration settings for the workflow executor manager.
+   * @param redissonClient Redis client for distributed operations.
+   * @param depublishRecordIdDao Data Access Object for managing depublish record IDs.
+   * @param userService Service for managing user-related operations.
    */
   @Autowired
   public OrchestratorService(WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       WorkflowValidationUtils workflowValidationUtils, DataEvolutionUtils dataEvolutionUtils,
-      DatasetDao datasetDao, WorkflowExecutorManager<S, T> workflowExecutorManager,
+      DatasetDao datasetDao, WorkflowExecutorSettings<S, T> workflowExecutorSettings,
       RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao, UserService userService) {
     this.workflowExecutionFactory = workflowExecutionFactory;
     this.workflowDao = workflowDao;
@@ -141,7 +141,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     this.workflowValidationUtils = workflowValidationUtils;
     this.dataEvolutionUtils = dataEvolutionUtils;
     this.datasetDao = datasetDao;
-    this.workflowExecutorManager = workflowExecutorManager;
+    this.workflowExecutorSettings = workflowExecutorSettings;
     this.redissonClient = redissonClient;
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.userService = userService;
@@ -386,7 +386,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
         || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
       final String engineDatasetUuid = UUID.randomUUID().toString();
-      boolean isEngineDatasetIdCreated = workflowExecutorManager.getEngineTaskClient().createEngineDatasetId(engineDatasetUuid);
+      boolean isEngineDatasetIdCreated = workflowExecutorSettings.getEngineTaskClient().createEngineDatasetId(engineDatasetUuid);
       if (!isEngineDatasetIdCreated) {
         throw new ExternalTaskException(
             String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));

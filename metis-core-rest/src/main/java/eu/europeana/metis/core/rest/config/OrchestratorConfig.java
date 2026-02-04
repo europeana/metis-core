@@ -17,8 +17,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.execution.SemaphoresPerPluginManager;
 import eu.europeana.metis.core.execution.WorkflowExecutionDispatcher;
-import eu.europeana.metis.core.execution.WorkflowExecutorManager;
-import eu.europeana.metis.core.execution.WorkflowExecutorManagerSettings;
+import eu.europeana.metis.core.execution.WorkflowExecutorSettings;
 import eu.europeana.metis.core.execution.WorkflowPostProcessor;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.rest.RequestLimits;
@@ -74,7 +73,7 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * @param dataEvolutionUtils utility class for handling data evolution
    * @param datasetDao the DAO for accessing dataset information
    * @param workflowExecutionFactory factory for creating workflow execution instances
-   * @param workflowExecutorManager manager for handling workflow execution processes
+   * @param workflowExecutorSettings settings for handling workflow execution processes
    * @param depublishRecordIdDao the DAO for managing depublished record IDs
    * @param redissonClient the Redisson client instance for distributed locking and caching
    * @param userService the service for managing user-related operations
@@ -86,12 +85,12 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
       WorkflowExecutionDao workflowExecutionDao, WorkflowValidationUtils workflowValidationUtils,
       DataEvolutionUtils dataEvolutionUtils, DatasetDao datasetDao,
       WorkflowExecutionFactory workflowExecutionFactory,
-      WorkflowExecutorManager<S, T> workflowExecutorManager,
+      WorkflowExecutorSettings<S, T> workflowExecutorSettings,
       DepublishRecordIdDao depublishRecordIdDao,
       RedissonClient redissonClient, UserService userService, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     OrchestratorService<S, T> orchestratorService = new OrchestratorService<>(workflowExecutionFactory,
         workflowDao, workflowExecutionDao, workflowValidationUtils, dataEvolutionUtils, datasetDao,
-        workflowExecutorManager, redissonClient, depublishRecordIdDao, userService);
+        workflowExecutorSettings, redissonClient, depublishRecordIdDao, userService);
     orchestratorService.setSolrCommitPeriodInMinutes(metisCoreConfigurationProperties.solrCommitPeriodInMinutes());
     return orchestratorService;
   }
@@ -162,7 +161,7 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * Provides an instance of RedirectionInferrer configured with the required dependencies.
    *
    * @param workflowExecutionDao WorkflowExecutionDao instance to manage workflow execution data.
-   * @param dataEvolutionUtils DataEvolutionUtils instance to assist with data transformations.
+   * @param dataEvolutionUtils DataEvolutionUtils instance to help with data transformations.
    * @return A configured RedirectionInferrer object.
    */
   @Bean
@@ -186,13 +185,13 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
   }
 
   /**
-   * Bean workflow execution post processor.
+   * Bean workflow execution post-processor.
    *
    * @param depublishRecordIdDao the depublish record id dao
    * @param datasetDao the dataset dao
    * @param workflowExecutionDao the workflow execution dao
    * @param engineTaskClient the dps client
-   * @return the workflow post processor
+   * @return the workflow post-processor
    */
   @Bean
   public WorkflowPostProcessor workflowPostProcessor(
@@ -235,24 +234,25 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
   /**
    * Creates and configures a {@link WorkflowExecutionDispatcher} instance to manage and dispatch workflow executions.
    *
-   * @param workflowExecutorManager the manager responsible for handling workflow execution logic.
+   * @param workflowExecutorSettings the settings for handling workflow execution logic.
    * @param workflowExecutionClaimDao the DAO for managing workflow execution claim persistence operations.
    * @param metisCoreConfigurationProperties the configuration properties for setting up core components.
    * @param threadPoolTaskExecutor the thread pool task executor used for managing concurrency and task execution.
    * @return an instance of {@link WorkflowExecutionDispatcher}.
    */
   @Bean
-  public WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher(WorkflowExecutorManager<S, T> workflowExecutorManager,
+  public WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher(
+      WorkflowExecutorSettings<S, T> workflowExecutorSettings,
       WorkflowExecutionClaimDao workflowExecutionClaimDao, MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       @Qualifier("workflowExecutorPool") ThreadPoolTaskExecutor threadPoolTaskExecutor) {
     return new WorkflowExecutionDispatcher<>(
-        workflowExecutorManager, threadPoolTaskExecutor.getThreadPoolExecutor(), workflowExecutionClaimDao,
+        workflowExecutorSettings, threadPoolTaskExecutor.getThreadPoolExecutor(), workflowExecutionClaimDao,
         getFailsafeLeniencyDuration(metisCoreConfigurationProperties)
     );
   }
 
   /**
-   * Creates and configures a WorkflowExecutorManager bean for handling workflow execution operations.
+   * Creates and configures a {@link WorkflowExecutorSettings} bean.
    *
    * @param semaphoresPerPluginManager Manages semaphores for controlling access to plugins.
    * @param workflowExecutionDao Data access object for managing workflow executions.
@@ -262,21 +262,20 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * @return A configured instance of WorkflowExecutorManager.
    */
   @Bean
-  public WorkflowExecutorManager<S, T> getWorkflowExecutorManager(
+  public WorkflowExecutorSettings<S, T> getWorkflowExecutorSettings(
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao,
       WorkflowPostProcessor workflowPostProcessor,
       EngineTaskClient<S, T> engineTaskClient,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
-    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(
+    WorkflowExecutorSettings<S, T> workflowExecutorSettings = new WorkflowExecutorSettings<>(
+        semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, engineTaskClient);
+    workflowExecutorSettings.setDpsMonitorCheckIntervalInSecs(
         metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds());
-    workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
+    workflowExecutorSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(
         metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes());
 
-    return new WorkflowExecutorManager<>(
-        workflowExecutorManagerSettings, semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor,
-        engineTaskClient);
+    return workflowExecutorSettings;
   }
 
   /**
