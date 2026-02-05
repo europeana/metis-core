@@ -97,15 +97,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     // Process the results if we were not interrupted
     if (!currentThread().isInterrupted()) {
       if (finishDate == null && workflowExecutionDao.isCancelling(workflowExecution.getId())) {
-        // If the workflow was cancelled before it had the chance to finish, we cancel all remaining
-        // plugins.
+        // If the workflow was canceled before it had the chance to finish, we cancel all remaining plugins.
         workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
         // Make sure the cancelledBy information is not lost
-        String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString())
-                                                 .getCancelledBy();
+        String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString()).getCancelledBy();
         workflowExecution.setCancelledBy(cancelledBy);
-        log.info("workflowExecutionId: {} - Cancelled running workflow execution",
-            workflowExecution.getId());
+        log.info("workflowExecutionId: {} - Cancelled running workflow execution", workflowExecution.getId());
       } else if (finishDate == null && didPluginsRun) {
         // One plugin failed
         workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
@@ -154,8 +151,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     boolean continueNextPlugin = true;
     List<AbstractMetisPlugin> metisPlugins = workflowExecution.getMetisPlugins();
     // One by one start the plugins of the workflow
-    for (int i = firstPluginPositionToStart;
-        i < metisPlugins.size() && continueNextPlugin; i++) {
+    for (int i = firstPluginPositionToStart; i < metisPlugins.size() && continueNextPlugin; i++) {
       final AbstractMetisPlugin<?> plugin = metisPlugins.get(i);
 
       //Run plugin if available space
@@ -296,11 +292,10 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
           log.warn(String
               .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
                   + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
-          // Set plugin to FAILED and return immediately
+          // Set the plugin to FAILED and return immediately
           plugin.setFinishedDate(null);
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
-          plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX,
-              ExceptionUtils.getStackTrace(e)));
+          plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX, ExceptionUtils.getStackTrace(e)));
           return;
         }
 
@@ -329,8 +324,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       Thread.sleep(monitorCheckInterval);
       return true;
     } catch (InterruptedException e) {
-      log.warn("Thread interrupted during monitoring sleep for workflowExecutionId {}",
-          workflowExecution.getId(), e);
+      log.warn("Thread interrupted during monitoring sleep for workflowExecutionId {}", workflowExecution.getId(), e);
       Thread.currentThread().interrupt();
       return false;
     }
@@ -418,11 +412,11 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
       AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
       PreviousRecordCounter previousRecordsCounters) {
-    // A plugin with CLEANING state is NOT cancellable, it will be when the state is updated
+    // A plugin with a CLEANING state is NOT cancellable, it will be when the state is updated
     final boolean notCleaningAndCancelling =
         plugin.getPluginStatus() != PluginStatus.CLEANING && workflowExecutionDao
             .isCancelling(workflowExecution.getId());
-    // A cleaning or a pending task should not be cancelled by exceeding the minute cap
+    // A cleaning or a pending task should not be canceled by exceeding the minute cap
     final boolean notCleaningOrPending = plugin.getPluginStatus() != PluginStatus.CLEANING
         && plugin.getPluginStatus() != PluginStatus.PENDING;
     final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin,
@@ -448,8 +442,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
             || previousRecordsCounters.errors().get() != errors
             || previousRecordsCounters.total().get() != totalRecords;
 
-    //If CLEANING is in progress then just reset the values to be sure and return false
-    //Or if we have progress
+    //If CLEANING is in progress, then just reset the values to be sure and return false. Or if we have progress
     if (plugin.getPluginStatus() == PluginStatus.CLEANING
         || plugin.getPluginStatus() == PluginStatus.PENDING
         || previousRecordsCountersChanged) {
