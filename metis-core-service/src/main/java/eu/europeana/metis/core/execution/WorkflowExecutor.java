@@ -27,8 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -90,37 +89,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   public Pair<WorkflowExecution, Boolean> call() {
     // Perform the work - run the workflow.
     log.info("workflowExecutionId: {}- Starting workflow execution", workflowExecution.getId());
-    final Pair<Date, Boolean> didPluginRunDatePair = runInqueueOrRunningStateWorkflowExecution();
-    final Date finishDate = didPluginRunDatePair.getLeft();
-    final Boolean didPluginsRun = didPluginRunDatePair.getRight();
-
-    // Process the results if we were not interrupted
-    if (!currentThread().isInterrupted()) {
-      if (finishDate == null && workflowExecutionDao.isCancelling(workflowExecution.getId())) {
-        // If the workflow was canceled before it had the chance to finish, we cancel all remaining plugins.
-        workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
-        // Make sure the cancelledBy information is not lost
-        String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString()).getCancelledBy();
-        workflowExecution.setCancelledBy(cancelledBy);
-        log.info("workflowExecutionId: {} - Cancelled running workflow execution", workflowExecution.getId());
-      } else if (finishDate == null && didPluginsRun) {
-        // One plugin failed
-        workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
-      } else if (finishDate == null) {
-        log.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to run", workflowExecution.getId());
-      } else {
-        // If the workflow finished successfully, we record this.
-        workflowExecution.setFinishedDate(finishDate);
-        workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-        workflowExecution.setCancelling(false);
-        log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
-      }
-    }
+    final Pair<Date, Boolean> didPluginRunDatePair = runWorkflowExecution();
+    final Boolean anyPluginRan = handleWorkflowCompletion(didPluginRunDatePair);
 
     // The only full update is used here. The rest of the execution uses partial updates to avoid
     // losing the cancelling state field
     workflowExecutionDao.update(workflowExecution);
-    return new ImmutablePair<>(workflowExecution, didPluginsRun);
+    return new ImmutablePair<>(workflowExecution, anyPluginRan);
   }
 
   /**
@@ -142,12 +117,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
    *
    * @return The pair of date and boolean flag
    */
-  private Pair<Date, Boolean> runInqueueOrRunningStateWorkflowExecution() {
+  private Pair<Date, Boolean> runWorkflowExecution() {
 
     // Find the first plugin to continue execution from
     int firstPluginPositionToStart = getFirstPluginPositionToStart();
 
-    boolean didPluginRun = true;
+    boolean anyPluginRan = false;
     boolean continueNextPlugin = true;
     List<AbstractMetisPlugin> metisPlugins = workflowExecution.getMetisPlugins();
     // One by one start the plugins of the workflow
@@ -155,11 +130,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       final AbstractMetisPlugin<?> plugin = metisPlugins.get(i);
 
       //Run plugin if available space
-      didPluginRun = runMetisPluginWithSemaphoreAllocation(i, plugin);
-      continueNextPlugin = !currentThread().isInterrupted() && didPluginRun && (
-          !workflowExecutionDao.isCancelling(workflowExecution.getId())
-              || plugin.getFinishedDate() != null)
-          && plugin.getPluginStatus() != PluginStatus.FAILED;
+      boolean didPluginRun = runMetisPluginWithSemaphoreAllocation(i, plugin);
+      anyPluginRan |= didPluginRun;
+      continueNextPlugin = shouldContinueNextPlugin(plugin, didPluginRun);
     }
 
     // Compute the finished date
@@ -170,7 +143,46 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     } else {
       finishDate = null;
     }
-    return new ImmutablePair<>(finishDate, didPluginRun);
+    return new ImmutablePair<>(finishDate, anyPluginRan);
+  }
+
+  private boolean shouldContinueNextPlugin(AbstractMetisPlugin<?> plugin, boolean didPluginRun) {
+    boolean notInterrupted = !currentThread().isInterrupted();
+    boolean notFailed = plugin.getPluginStatus() != PluginStatus.FAILED;
+    boolean cancelling = workflowExecutionDao.isCancelling(workflowExecution.getId());
+    boolean pluginFinished = plugin.getFinishedDate() != null;
+    boolean notCancellingOrPluginFinished = !cancelling || pluginFinished;
+
+    return notInterrupted && didPluginRun && notFailed && notCancellingOrPluginFinished;
+  }
+
+  private Boolean handleWorkflowCompletion(Pair<Date, Boolean> anyPluginRanDatePair) {
+    final Date finishDate = anyPluginRanDatePair.getLeft();
+    final Boolean anyPluginRan = anyPluginRanDatePair.getRight();
+
+    // Process the results if we were not interrupted
+    if (!currentThread().isInterrupted()) {
+      if (finishDate == null && workflowExecutionDao.isCancelling(workflowExecution.getId())) {
+        // If the workflow was canceled before it had the chance to finish, we cancel all remaining plugins.
+        workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
+        // Make sure the cancelledBy information is not lost
+        String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString()).getCancelledBy();
+        workflowExecution.setCancelledBy(cancelledBy);
+        log.info("workflowExecutionId: {} - Cancelled running workflow execution", workflowExecution.getId());
+      } else if (finishDate == null && anyPluginRan) {
+        // Workflow stopped midway (a plugin failed, was cancelled, or monitoring stopped)
+        workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
+      } else if (finishDate == null) {
+        log.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to run", workflowExecution.getId());
+      } else {
+        // If the workflow finished successfully, we record this.
+        workflowExecution.setFinishedDate(finishDate);
+        workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
+        workflowExecution.setCancelling(false);
+        log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
+      }
+    }
+    return anyPluginRan;
   }
 
   private int getFirstPluginPositionToStart() {
@@ -247,28 +259,51 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         workflowExecution.getId(), plugin.getId()));
   }
 
-  /**
-   * The type Previous record counter.
-   */
-  record PreviousRecordCounter(AtomicInteger expected, AtomicInteger processed,
-                               AtomicInteger deleted, AtomicInteger ignored,
-                               AtomicInteger errors, AtomicInteger total) {
+  private static class ProgressState {
 
+    @Getter
+    private Instant lastProgressChange = Instant.now();
+    private int expected;
+    private int processed;
+    private int deleted;
+    private int ignored;
+    private int errors;
+    private int total;
+
+    void updateFrom(AbstractExecutablePlugin<?> plugin) {
+      lastProgressChange = Instant.now();
+      this.processed = plugin.getExecutionProgress().getProcessedRecords();
+      this.deleted = plugin.getExecutionProgress().getDeletedRecords();
+      this.expected = plugin.getExecutionProgress().getExpectedRecords();
+      this.ignored = plugin.getExecutionProgress().getIgnoredRecords();
+      this.errors = plugin.getExecutionProgress().getErrors();
+      this.total = plugin.getExecutionProgress().getTotalDatabaseRecords();
+    }
+
+    boolean hasChanged(AbstractExecutablePlugin<?> plugin) {
+      var progress = plugin.getExecutionProgress();
+      return processed != progress.getProcessedRecords()
+          || deleted != progress.getDeletedRecords()
+          || expected != progress.getExpectedRecords()
+          || ignored != progress.getIgnoredRecords()
+          || errors != progress.getErrors()
+          || total != progress.getTotalDatabaseRecords();
+    }
+
+    Duration timeSinceLastChange() {
+      return Duration.between(lastProgressChange, Instant.now());
+    }
   }
+
 
   private void periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
     final EngineTaskMonitor<S, T> engineTaskMonitor = new EngineTaskMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
-    PreviousRecordCounter previousRecordsCounters = new PreviousRecordCounter(
-        new AtomicInteger(0), new AtomicInteger(0),
-        new AtomicInteger(0), new AtomicInteger(0),
-        new AtomicInteger(0), new AtomicInteger(0));
-
-    AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod = new AtomicReference<>(Instant.now());
+    ProgressState progressState = new ProgressState();
+    progressState.updateFrom(plugin);
     boolean updateSuccess = true;
-
     while (updateSuccess && isContinueMonitor(engineTaskProgress)) {
       try {
         if (!sleepMonitorInterval()) {
@@ -279,8 +314,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
             externalCancelCallSent,
             engineTaskMonitor,
             plugin,
-            checkPointDateOfProcessedRecordsPeriod,
-            previousRecordsCounters
+            progressState
         );
 
         engineTaskProgress = engineTaskMonitor.monitor();
@@ -303,9 +337,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         handleRecoverableMonitorFailure(plugin, e, consecutiveCancelOrMonitorFailures);
 
       } finally {
-        Date updatedDate = new Date();
-        plugin.setUpdatedDate(updatedDate);
-        workflowExecution.setUpdatedDate(updatedDate);
+        Date now = new Date();
+        plugin.setUpdatedDate(now);
+        workflowExecution.setUpdatedDate(now);
         updateSuccess = workflowExecutionDao.updateMonitorInformation(workflowExecution);
       }
     }
@@ -372,10 +406,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
       EngineTaskMonitor<S, T> engineTaskMonitor, AbstractExecutablePlugin<?> plugin,
-      AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
-      PreviousRecordCounter previousRecordsCounters) throws ExternalTaskException {
-    if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin,
-        checkPointDateOfProcessedRecordsPeriod, previousRecordsCounters)) {
+      ProgressState progressState) throws ExternalTaskException {
+    if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, progressState)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
 
@@ -409,56 +441,30 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
             && engineTaskProgress.getEngineTaskState() != EngineTaskState.PROCESSED);
   }
 
-  private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin,
-      AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
-      PreviousRecordCounter previousRecordsCounters) {
+  private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin, ProgressState progressState) {
     // A plugin with a CLEANING state is NOT cancellable, it will be when the state is updated
     final boolean notCleaningAndCancelling =
-        plugin.getPluginStatus() != PluginStatus.CLEANING && workflowExecutionDao
-            .isCancelling(workflowExecution.getId());
+        plugin.getPluginStatus() != PluginStatus.CLEANING
+            && workflowExecutionDao.isCancelling(workflowExecution.getId());
     // A cleaning or a pending task should not be canceled by exceeding the minute cap
     final boolean notCleaningOrPending = plugin.getPluginStatus() != PluginStatus.CLEANING
         && plugin.getPluginStatus() != PluginStatus.PENDING;
-    final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin,
-        checkPointDateOfProcessedRecordsPeriod, previousRecordsCounters);
+    final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin, progressState);
     return (notCleaningAndCancelling || (notCleaningOrPending && isMinuteCapExceeded));
   }
 
   private boolean isMinuteCapOverWithoutChangeInProcessedRecords(AbstractExecutablePlugin<?> plugin,
-      AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
-      PreviousRecordCounter previousRecordsCounters) {
-    final int processedRecords = plugin.getExecutionProgress().getProcessedRecords();
-    final int deletedRecords = plugin.getExecutionProgress().getDeletedRecords();
-    final int expectedRecords = plugin.getExecutionProgress().getExpectedRecords();
-    final int ignoredRecords = plugin.getExecutionProgress().getIgnoredRecords();
-    final int errors = plugin.getExecutionProgress().getErrors();
-    final int totalRecords = plugin.getExecutionProgress().getTotalDatabaseRecords();
-
-    final boolean previousRecordsCountersChanged =
-        previousRecordsCounters.processed().get() != processedRecords
-            || previousRecordsCounters.deleted().get() != deletedRecords
-            || previousRecordsCounters.expected().get() != expectedRecords
-            || previousRecordsCounters.ignored().get() != ignoredRecords
-            || previousRecordsCounters.errors().get() != errors
-            || previousRecordsCounters.total().get() != totalRecords;
-
+      ProgressState progressState) {
     //If CLEANING is in progress, then just reset the values to be sure and return false. Or if we have progress
     if (plugin.getPluginStatus() == PluginStatus.CLEANING
         || plugin.getPluginStatus() == PluginStatus.PENDING
-        || previousRecordsCountersChanged) {
-      checkPointDateOfProcessedRecordsPeriod.set(Instant.now());
-      previousRecordsCounters.processed().set(processedRecords);
-      previousRecordsCounters.deleted().set(deletedRecords);
-      previousRecordsCounters.expected().set(expectedRecords);
-      previousRecordsCounters.ignored().set(ignoredRecords);
-      previousRecordsCounters.errors().set(errors);
-      previousRecordsCounters.total().set(totalRecords);
+        || progressState.hasChanged(plugin)) {
+      progressState.updateFrom(plugin);
       return false;
     }
 
     final boolean isMinuteCapOverWithoutChangeInProcessedRecords =
-        Duration.between(checkPointDateOfProcessedRecordsPeriod.get(), Instant.now())
-                .compareTo(periodOfNoProcessedRecordsChange) >= 0;
+        progressState.timeSinceLastChange().compareTo(periodOfNoProcessedRecordsChange) >= 0;
     if (isMinuteCapOverWithoutChangeInProcessedRecords) {
       workflowExecutionDao.setCancellingStateSystem(workflowExecution);
     }

@@ -111,9 +111,9 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
       Pair<WorkflowExecution, Boolean> workflowExecutionRanFlagPair) {
     final WorkflowExecution workflowExecution = workflowExecutionRanFlagPair.getLeft();
     if (workflowExecution != null) {
-      boolean wasExecutionClaimedAndPluginRan = workflowExecutionRanFlagPair.getRight();
+      boolean wasExecutionClaimedAndAnyPluginRan = workflowExecutionRanFlagPair.getRight();
       //If a plugin did not run, we are sending it back to queue so another instance can pick it up
-      if (wasExecutionClaimedAndPluginRan) {
+      if (wasExecutionClaimedAndAnyPluginRan) {
         LOGGER.info("workflowExecutionId: {} - Task finished", workflowExecution.getId());
       } else {
         LOGGER.info("workflowExecutionId: {} - Sent to queue because execution could "
