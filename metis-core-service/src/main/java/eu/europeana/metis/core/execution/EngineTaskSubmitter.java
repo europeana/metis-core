@@ -57,24 +57,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A class responsible for executing plugins by creating and submitting corresponding engine tasks.
+ * A class responsible for submitting engine tasks based on the provided plugin.
  *
  * @param <S> Generic type parameter extending AbstractEngineTaskSettings.
  * @param <T> Generic type parameter extending AbstractEngineTask.
  */
-public class PluginSubmitter<S extends EngineTaskSettings, T extends EngineTask> {
+public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
   /**
-   * Constructs a PluginExecutor with the specified plugin and engine task client.
+   * Constructor.
    *
    * @param plugin AbstractExecutablePlugin instance used to execute the plugin logic.
    * @param engineTaskClient EngineTaskClient instance used to manage and interact with engine tasks.
    */
-  public PluginSubmitter(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
+  public EngineTaskSubmitter(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
   }

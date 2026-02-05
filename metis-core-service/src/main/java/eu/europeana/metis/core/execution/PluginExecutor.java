@@ -32,7 +32,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  * @param <T> The type of {@link EngineTask} used for representing the tasks to be executed.
  */
 @Slf4j
-public class PluginExecutionService<S extends EngineTaskSettings, T extends EngineTask> {
+public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final String TRIGGER_ERROR_PREFIX = "An error occurred while triggering the external task. ";
   private static final String DETAILED_EXCEPTION_FORMAT = "%s%nDetailed exception:%s";
@@ -48,7 +48,7 @@ public class PluginExecutionService<S extends EngineTaskSettings, T extends Engi
    * @param workflowExecutionDao the {@link WorkflowExecutionDao} instance used to perform database operations related to workflow
    * executions
    */
-  public PluginExecutionService(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao) {
+  public PluginExecutor(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao) {
     this.engineTaskClient = engineTaskClient;
     this.workflowExecutionDao = workflowExecutionDao;
   }
@@ -60,12 +60,12 @@ public class PluginExecutionService<S extends EngineTaskSettings, T extends Engi
    * @param startDateToUse the {@link Date} to be used as the starting reference for execution
    * @param workflowExecution the {@link WorkflowExecution} object representing the current workflow execution context
    */
-  public void executePlugin(AbstractExecutablePlugin<?> plugin, Date startDateToUse, WorkflowExecution workflowExecution) {
-    PluginSubmitter<S, T> pluginSubmitter = new PluginSubmitter<>(plugin, engineTaskClient);
+  public void execute(AbstractExecutablePlugin<?> plugin, Date startDateToUse, WorkflowExecution workflowExecution) {
+    EngineTaskSubmitter<S, T> engineTaskSubmitter = new EngineTaskSubmitter<>(plugin, engineTaskClient);
     try {
       preparePredecessorMetadata(plugin, workflowExecution);
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);
-      submitIfNotStarted(plugin, workflowExecution, startDateToUse, pluginSubmitter);
+      submitIfNotStarted(plugin, workflowExecution, startDateToUse, engineTaskSubmitter);
     } catch (ExternalTaskException | RuntimeException e) {
       log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin failed", workflowExecution.getId(),
           plugin.getPluginType()), e);
@@ -79,14 +79,14 @@ public class PluginExecutionService<S extends EngineTaskSettings, T extends Engi
   }
 
   private void submitIfNotStarted(AbstractExecutablePlugin<?> plugin,
-      WorkflowExecution workflowExecution, Date startDateToUse, PluginSubmitter<S, T> pluginSubmitter)
+      WorkflowExecution workflowExecution, Date startDateToUse, EngineTaskSubmitter<S, T> engineTaskSubmitter)
       throws ExternalTaskException {
     if (isBlank(plugin.getExternalTaskId())) {
       if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
         plugin.setStartedDate(startDateToUse);
       }
 
-      pluginSubmitter.submit(
+      engineTaskSubmitter.submit(
           workflowExecution.getDatasetId(),
           workflowExecution.getEcloudDatasetId(),
           getExternalTaskIdOfPreviousPlugin(plugin.getPluginMetadata(), workflowExecution)

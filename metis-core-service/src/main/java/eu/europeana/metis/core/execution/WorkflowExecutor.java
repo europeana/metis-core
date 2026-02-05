@@ -38,8 +38,8 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that WorkflowExecution given to it
  * and will continue monitoring and updating its progress until it ends either by user interaction or by the end of the Workflow.
- * When the WorkflowExecution is received there is a chance that the execution is already being handled from another
- * WorkflowExecutor in another instance and if that is the case the WorkflowExecution will be dropped.
+ * When the WorkflowExecution is received, there is a chance that the execution is already being handled from another
+ * WorkflowExecutor in another instance, and if that is the case, the WorkflowExecution will be dropped.
  *
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
@@ -62,7 +62,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final Duration periodOfNoProcessedRecordsChange;
   private final EngineTaskClient<S, T> engineTaskClient;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
-  private final PluginExecutionService<S, T> pluginExecutionService;
+  private final PluginExecutor<S, T> pluginExecutor;
   private WorkflowExecution workflowExecution;
 
   /**
@@ -81,7 +81,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     this.engineTaskClient = workflowExecutorSettings.engineTaskClient();
     this.monitorCheckInterval = workflowExecutorSettings.monitorCheckInterval();
     this.periodOfNoProcessedRecordsChange = workflowExecutorSettings.noChangeInProcessedRecordsTimeout();
-    this.pluginExecutionService = new PluginExecutionService<>(
+    this.pluginExecutor = new PluginExecutor<>(
         workflowExecutorSettings.engineTaskClient(),
         workflowExecutorSettings.workflowExecutionDao());
   }
@@ -228,7 +228,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         log.debug("workflowExecutionId: {}, executablePluginType: {} - Acquired semaphore",
             workflowExecution.getId(), executablePluginType);
         final Date startDateToUse = i == 0 ? workflowExecution.getStartedDate() : new Date();
-        pluginExecutionService.executePlugin(executablePlugin, startDateToUse, workflowExecution);
+        pluginExecutor.execute(executablePlugin, startDateToUse, workflowExecution);
         periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
       } finally {
         semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
@@ -261,7 +261,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
-    final PluginMonitor<S, T> pluginMonitor = new PluginMonitor<>(plugin, engineTaskClient);
+    final EngineTaskMonitor<S, T> engineTaskMonitor = new EngineTaskMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
@@ -281,13 +281,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
         sendExternalCancelCallIfNeeded(
             externalCancelCallSent,
-            pluginMonitor,
+            engineTaskMonitor,
             plugin,
             checkPointDateOfProcessedRecordsPeriod,
             previousRecordsCounters
         );
 
-        engineTaskProgress = pluginMonitor.monitor();
+        engineTaskProgress = engineTaskMonitor.monitor();
         consecutiveCancelOrMonitorFailures = 0;
 
         applyRuntimePluginState(plugin, engineTaskProgress);
@@ -377,7 +377,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
-      PluginMonitor<S, T> pluginMonitor, AbstractExecutablePlugin<?> plugin,
+      EngineTaskMonitor<S, T> engineTaskMonitor, AbstractExecutablePlugin<?> plugin,
       AtomicReference<Instant> checkPointDateOfProcessedRecordsPeriod,
       PreviousRecordCounter previousRecordsCounters) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin,
@@ -385,7 +385,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
 
-      pluginMonitor.cancel(workflowExecution.getCancelledBy());
+      engineTaskMonitor.cancel(workflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }
