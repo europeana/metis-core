@@ -67,8 +67,7 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
-      MediaType.TEXT_PLAIN_VALUE})
+  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestBody String recordIdsInSeparateLines
@@ -92,8 +91,7 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
-      MediaType.MULTIPART_FORM_DATA_VALUE})
+  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestPart("depublicationFile") MultipartFile recordIdsFile) throws GenericMetisException {
@@ -118,8 +116,7 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  @DeleteMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
-      MediaType.TEXT_PLAIN_VALUE})
+  @DeleteMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deletePendingRecordIds(@PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
@@ -144,8 +141,7 @@ public class DepublishRecordIdController {
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DepublicationInfoView getDepublishRecordIds(
       @PathVariable("datasetId") String datasetId,
@@ -209,8 +205,7 @@ public class DepublishRecordIdController {
    *
    * @return All possible values of depublication reasons
    */
-  @GetMapping(value = RestEndpoints.DEPUBLISH_REASONS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DEPUBLISH_REASONS, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<DepublicationReasonView> getAllDepublicationReasons() {
     return Arrays.stream(DepublicationReason.values()).filter(value -> value != DepublicationReason.LEGACY)
