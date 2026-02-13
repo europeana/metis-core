@@ -20,10 +20,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-04
- */
 class TestWorkflowDao {
 
   private static WorkflowDao workflowDao;

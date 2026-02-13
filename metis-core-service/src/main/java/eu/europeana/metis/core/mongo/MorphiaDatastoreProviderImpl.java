@@ -12,7 +12,6 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.dataset.DepublishRecordId;
-import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -48,10 +47,12 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import io.micrometer.common.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,7 @@ import org.slf4j.LoggerFactory;
 public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private final String instanceId;
   private Datastore datastore;
 
   /**
@@ -86,13 +88,53 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
    * @param databaseName the database name
    * @param createIndexes flag that initiates the database/indices
    */
-  public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName,
-      boolean createIndexes) {
+  public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName, boolean createIndexes) {
     createDatastore(mongoClient, databaseName);
     if (createIndexes) {
       LOGGER.info("Initializing database indices");
       datastore.ensureIndexes();
     }
+    this.instanceId = resolveInstanceId();
+  }
+
+  /**
+   * Constructor. In addition to the functionality of {@link #MorphiaDatastoreProviderImpl(MongoClient,
+   * String)}, it also sets a default non-dataset specific {@link DatasetXslt} if none is present.
+   *
+   * @param mongoClient {@link MongoClient}
+   * @param databaseName the database name
+   * @param defaultTransformationSupplier The default non-dataset specific {@link DatasetXslt} to
+   * set if none is available.
+   * @throws IOException In case the default transformation could not be loaded.
+   */
+  public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName,
+      InputStreamProvider defaultTransformationSupplier) throws IOException {
+
+    // Initialize this class.
+    this(mongoClient, databaseName);
+
+    // Initialize the default DatasetXslt if needed.
+    final DatasetXsltDao datasetXsltDao = new DatasetXsltDao(this);
+    if (datasetXsltDao.getLatestDefaultXslt() == null) {
+      try (final InputStream inputStream = defaultTransformationSupplier.get()) {
+        final String defaultTransformationAsString = IOUtils
+            .toString(inputStream, StandardCharsets.UTF_8.name());
+        final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID,
+            defaultTransformationAsString);
+        datasetXsltDao.create(defaultTransformation);
+      }
+    }
+  }
+
+  private String resolveInstanceId() {
+    // Kubernetes default
+    String hostname = System.getenv("HOSTNAME");
+    if (StringUtils.isNotBlank(hostname)) {
+      return hostname;
+    }
+
+    // Fallback for local dev
+    return "local-" + UUID.randomUUID();
   }
 
   private void createDatastore(MongoClient mongoClient, String databaseName) {
@@ -107,7 +149,6 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(DatasetIdSequence.class);
     mapper.getEntityModel(Workflow.class);
     mapper.getEntityModel(WorkflowExecution.class);
-    mapper.getEntityModel(ScheduledWorkflow.class);
     mapper.getEntityModel(DatasetXslt.class);
     mapper.getEntityModel(DepublishRecordId.class);
     // Plugins
@@ -154,38 +195,14 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     LOGGER.info("Datastore initialized");
   }
 
-  /**
-   * Constructor. In addition to the functionality of {@link #MorphiaDatastoreProviderImpl(MongoClient,
-   * String)}, it also sets a default non-dataset specific {@link DatasetXslt} if none is present.
-   *
-   * @param mongoClient {@link MongoClient}
-   * @param databaseName the database name
-   * @param defaultTransformationSupplier The default non-dataset specific {@link DatasetXslt} to
-   * set if none is available.
-   * @throws IOException In case the default transformation could not be loaded.
-   */
-  public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName,
-      InputStreamProvider defaultTransformationSupplier) throws IOException {
-
-    // Initialize this class.
-    this(mongoClient, databaseName);
-
-    // Initialize the default DatasetXslt if needed.
-    final DatasetXsltDao datasetXsltDao = new DatasetXsltDao(this);
-    if (datasetXsltDao.getLatestDefaultXslt() == null) {
-      try (final InputStream inputStream = defaultTransformationSupplier.get()) {
-        final String defaultTransformationAsString = IOUtils
-            .toString(inputStream, StandardCharsets.UTF_8.name());
-        final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID,
-            defaultTransformationAsString);
-        datasetXsltDao.create(defaultTransformation);
-      }
-    }
-  }
-
   @Override
   public Datastore getDatastore() {
     return datastore;
+  }
+
+  @Override
+  public String getInstanceId() {
+    return instanceId;
   }
 
   /**

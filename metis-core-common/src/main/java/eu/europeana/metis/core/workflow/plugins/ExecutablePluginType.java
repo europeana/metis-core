@@ -13,19 +13,19 @@ public enum ExecutablePluginType {
 
   OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST, ExecutablePluginTypeGroup.HARVEST),
 
-  ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.PROCESS),
+  ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.CURATE),
 
-  MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.PROCESS),
+  MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.CURATE),
 
-  LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.PROCESS),
+  LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.CURATE),
 
-  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.PROCESS),
+  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.CURATE),
 
-  TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.PROCESS),
+  TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.CURATE),
 
-  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL, ExecutablePluginTypeGroup.PROCESS),
+  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL, ExecutablePluginTypeGroup.CURATE),
 
-  NORMALIZATION(PluginType.NORMALIZATION, ExecutablePluginTypeGroup.PROCESS),
+  NORMALIZATION(PluginType.NORMALIZATION, ExecutablePluginTypeGroup.CURATE),
 
   PREVIEW(PluginType.PREVIEW, ExecutablePluginTypeGroup.INDEX),
 
@@ -90,6 +90,6 @@ public enum ExecutablePluginType {
    * These groups categorize functionality types that can be executed as part of the workflow.
    */
   public enum ExecutablePluginTypeGroup {
-    HARVEST, PROCESS, INDEX, DEPUBLISH
+    HARVEST, CURATE, INDEX, DEPUBLISH
   }
 }

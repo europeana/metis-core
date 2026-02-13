@@ -15,24 +15,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Monitors and manages the execution of a plugin task in a processing engine.
+ * Monitors and manages the execution of a task in a processing engine.
  *
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
-public class PluginMonitor<S extends EngineTaskSettings, T extends EngineTask> {
+public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
   /**
-   * Constructs a PluginMonitor to monitor and interact with a plugin and its associated engine tasks.
+   * Constructor
    *
    * @param plugin The plugin instance to be monitored, of type {@link AbstractExecutablePlugin}.
    * @param engineTaskClient The engine task client for managing and interacting with engine tasks.
    */
-  public PluginMonitor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
+  public EngineTaskMonitor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
   }

@@ -11,4 +11,6 @@ public interface MorphiaDatastoreProvider {
    * @return the {@link Datastore} connection to Mongo
    */
   Datastore getDatastore();
+
+  String getInstanceId();
 }

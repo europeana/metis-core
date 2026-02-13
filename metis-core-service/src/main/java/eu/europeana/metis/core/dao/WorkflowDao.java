@@ -6,6 +6,7 @@ import static eu.europeana.metis.core.common.DaoFieldNames.ID;
 import com.mongodb.client.result.DeleteResult;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import eu.europeana.metis.core.workflow.Workflow;
@@ -60,8 +61,8 @@ public class WorkflowDao implements MetisDao<Workflow, String> {
 
   @Override
   public Workflow getById(String id) {
-    Query<Workflow> query = morphiaDatastoreProvider.getDatastore()
-        .find(Workflow.class).filter(Filters.eq(ID.getFieldName(), new ObjectId(id)));
+    Filter filter = Filters.eq(ID.getFieldName(), new ObjectId(id));
+    Query<Workflow> query = morphiaDatastoreProvider.getDatastore().find(Workflow.class).filter(filter);
     return ExternalRequestUtil.retryableExternalRequestForNetworkExceptions(query::first);
   }
 
@@ -79,8 +80,7 @@ public class WorkflowDao implements MetisDao<Workflow, String> {
   public boolean deleteWorkflow(String datasetId) {
     Query<Workflow> query = morphiaDatastoreProvider.getDatastore().find(Workflow.class);
     query.filter(Filters.eq(DATASET_ID.getFieldName(), datasetId));
-    DeleteResult deleteResult = ExternalRequestUtil
-        .retryableExternalRequestForNetworkExceptions(query::delete);
+    DeleteResult deleteResult = ExternalRequestUtil.retryableExternalRequestForNetworkExceptions(query::delete);
     LOGGER.info("Workflow with datasetId {}, deleted from Mongo", datasetId);
     return (deleteResult == null ? 0 : deleteResult.getDeletedCount()) == 1;
   }
@@ -96,11 +96,10 @@ public class WorkflowDao implements MetisDao<Workflow, String> {
   }
 
   private String getWorkflowId(String datasetId) {
-    Workflow storedWorkflow = ExternalRequestUtil
-        .retryableExternalRequestForNetworkExceptions(
-            () -> morphiaDatastoreProvider.getDatastore().find(Workflow.class)
-                .filter(Filters.eq(DATASET_ID.getFieldName(), datasetId))
-                .first(new FindOptions().projection().include(ID.getFieldName())));
+    FindOptions findOptions = new FindOptions().projection().include(ID.getFieldName());
+    Filter filter = Filters.eq(DATASET_ID.getFieldName(), datasetId);
+    Workflow storedWorkflow = ExternalRequestUtil.retryableExternalRequestForNetworkExceptions(
+        () -> morphiaDatastoreProvider.getDatastore().find(Workflow.class, findOptions).filter(filter).first());
     return storedWorkflow == null ? null : storedWorkflow.getId().toString();
   }
 
@@ -111,10 +110,9 @@ public class WorkflowDao implements MetisDao<Workflow, String> {
    * @return {@link Workflow}
    */
   public Workflow getWorkflow(String datasetId) {
-    return ExternalRequestUtil
-        .retryableExternalRequestForNetworkExceptions(
-            () -> morphiaDatastoreProvider.getDatastore().find(Workflow.class)
-                .filter(Filters.eq(DATASET_ID.getFieldName(), datasetId)).first());
+    Filter filter = Filters.eq(DATASET_ID.getFieldName(), datasetId);
+    return ExternalRequestUtil.retryableExternalRequestForNetworkExceptions(
+        () -> morphiaDatastoreProvider.getDatastore().find(Workflow.class).filter(filter).first());
   }
 }
 

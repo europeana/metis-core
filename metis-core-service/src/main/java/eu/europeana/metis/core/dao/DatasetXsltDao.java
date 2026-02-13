@@ -9,6 +9,7 @@ import dev.morphia.DeleteOptions;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
@@ -67,16 +68,16 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
 
   @Override
   public DatasetXslt getById(String id) {
+    Filter filter = Filters.eq(ID.getFieldName(), new ObjectId(id));
     return retryableExternalRequestForNetworkExceptions(
-        () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class)
-                                      .filter(Filters.eq(ID.getFieldName(), new ObjectId(id))).first());
+        () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class).filter(filter).first());
   }
 
   @Override
   public boolean delete(DatasetXslt datasetXslt) {
+    Filter filter = Filters.eq(ID.getFieldName(), datasetXslt.getId());
     retryableExternalRequestForNetworkExceptions(
-        () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class)
-                                      .filter(Filters.eq(ID.getFieldName(), datasetXslt.getId())).delete());
+        () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class).filter(filter).delete());
     LOGGER.debug("DatasetXslt with objectId: '{}', datasetId: '{}'deleted in Mongo",
         datasetXslt.getId(), datasetXslt.getDatasetId());
     return true;
@@ -91,8 +92,7 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
   public boolean deleteAllByDatasetId(String datasetId) {
     Query<DatasetXslt> query = morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class);
     query.filter(Filters.eq(DATASET_ID.getFieldName(), datasetId));
-    DeleteResult deleteResult = retryableExternalRequestForNetworkExceptions(
-        () -> query.delete(new DeleteOptions().multi(true)));
+    DeleteResult deleteResult = retryableExternalRequestForNetworkExceptions(() -> query.delete(new DeleteOptions().multi(true)));
     LOGGER.debug("Xslts with datasetId: {}, deleted from Mongo", datasetId);
     return (deleteResult == null ? 0 : deleteResult.getDeletedCount()) >= 1;
   }
@@ -104,10 +104,11 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
    * @return the {@link DatasetXslt} object
    */
   DatasetXslt getLatestXsltForDatasetId(String datasetId) {
+    FindOptions findOptions = new FindOptions().sort(Sort.descending("createdDate"));
     return retryableExternalRequestForNetworkExceptions(
-        () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class)
+        () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class, findOptions)
                                       .filter(Filters.eq(DATASET_ID.getFieldName(), datasetId))
-                                      .first(new FindOptions().sort(Sort.descending("createdDate"))));
+                                      .first());
   }
 
   /**

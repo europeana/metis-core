@@ -1,8 +1,8 @@
 package eu.europeana.metis.core.rest.config;
 
-import eu.europeana.metis.core.execution.QueueConsumer;
-import eu.europeana.metis.core.execution.SchedulerExecutor;
-import eu.europeana.metis.core.execution.WorkflowExecutionMonitor;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.execution.WorkflowExecutionDispatcher;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.service.UserService;
 import java.lang.invoke.MethodHandles;
@@ -24,25 +24,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class ScheduledConfig {
 
   /**
-   * Retrieves the periodic failsafe check interval in milliseconds from the provided MetisCoreConfigurationProperties.
+   * Retrieves the workflow dispatch check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
    *
    * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
-   * @return The periodic failsafe check interval in milliseconds.
+   * @return The queue polling check-in interval in milliseconds.
    */
   @Bean
-  public long getPeriodicFailsafeCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.periodicFailsafeCheckInMilliseconds();
-  }
-
-  /**
-   * Retrieves the periodic scheduler check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
-   *
-   * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
-   * @return The periodic scheduler check-in interval in milliseconds.
-   */
-  @Bean
-  public long getPeriodicSchedulerCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.periodicSchedulerCheckInMilliseconds();
+  public long workflowDispatchPeriodCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    return metisCoreConfigurationProperties.workflowDispatchPeriodCheckInMilliseconds();
   }
 
   /**
@@ -77,51 +66,43 @@ public class ScheduledConfig {
    */
   @Configuration
   @EnableScheduling
-  static class ScheduledTasks {
+  static class ScheduledTasks<S extends EngineTaskSettings, T extends EngineTask> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private final WorkflowExecutionMonitor workflowExecutionMonitor;
-    private final SchedulerExecutor schedulerExecutor;
-    private final QueueConsumer queueConsumer;
+    private final WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher;
     private final UserService userService;
 
     @Autowired
-    public ScheduledTasks(WorkflowExecutionMonitor workflowExecutionMonitor, SchedulerExecutor schedulerExecutor,
-        QueueConsumer queueConsumer, UserService userService) {
+    public ScheduledTasks(WorkflowExecutionDispatcher<S, T> workflowExecutionDispatcher, UserService userService) {
+      this.workflowExecutionDispatcher = workflowExecutionDispatcher;
       this.userService = userService;
-      this.workflowExecutionMonitor = workflowExecutionMonitor;
-      this.queueConsumer = queueConsumer;
-      this.schedulerExecutor = schedulerExecutor;
     }
 
     /**
-     * Failsafe periodic thread.
-     * <p>It will find stale executions and will re-submit them in the distributed queue.</p>
+     * Periodically polls for workflow executions and dispatches them for processing.
+     *
+     * This method is scheduled with a fixed delay to continuously check for available
+     * workflow executions and submit them for processing. The polling interval is
+     * configured dynamically using Spring Expression Language (SpEL) and is retrieved
+     * from the method {@code getQueuePollingCheckInMilliseconds} in the configuration.
+     *
+     * The actual polling and dispatching logic is delegated to the
+     * {@code WorkflowExecutionDispatcher#pollAndDispatch()} method, which handles the
+     * claiming and submission of workflow executions.
+     *
+     * Log messages are generated to track the execution of this method, providing
+     * insight into operational behavior and successful runs.
      */
-    @Scheduled(fixedDelayString = "#{@getPeriodicFailsafeCheckInMilliseconds}")
-    public void runFailsafeExecutor() {
-      this.workflowExecutionMonitor.performFailsafe();
-      LOGGER.info("Failsafe task finished.");
+    @Scheduled(fixedDelayString = "#{@workflowDispatchPeriodCheckInMilliseconds}")
+    public void pollAndDispatchWorkflowExecutions() {
+      this.workflowExecutionDispatcher.pollAndSubmit();
+      LOGGER.info("Run executions.");
     }
 
     /**
-     * Scheduling periodic thread.
-     * <p>Checks if scheduled workflows are valid for starting and sends them to the distributed
-     * queue.</p>
-     */
-    @Scheduled(
-        initialDelayString = "#{@getPeriodicSchedulerCheckInMilliseconds}",
-        fixedDelayString = "#{@getPeriodicSchedulerCheckInMilliseconds}"
-    )
-    public void runSchedulingExecutor() {
-      this.schedulerExecutor.performScheduling();
-      LOGGER.info("Scheduler task finished.");
-    }
-
-    /**
-     * Queue consumer cleanup periodic thread.
+     * Mongo poller cleanup periodic thread.
      * <p>
-     * Periodically runs a cleanup operation on the queue consumer's completion service. This method logs the completion of the
+     * Periodically runs a cleanup operation on the mongo poller's completion service. This method logs the completion of the
      * cleanup operation and may throw an {@code InterruptedException} if interrupted during execution.
      *
      * @throws InterruptedException if the execution of this method is interrupted
@@ -130,8 +111,8 @@ public class ScheduledConfig {
         initialDelayString = "#{@getPollingTimeoutForCleaningCompletionServiceInMilliseconds}",
         fixedDelayString = "#{@getPollingTimeoutForCleaningCompletionServiceInMilliseconds}"
     )
-    public void runQueueConsumerCleanup() throws InterruptedException {
-      this.queueConsumer.checkAndCleanCompletionService();
+    public void runExecutorCompletionServiceCleanup() throws InterruptedException {
+      this.workflowExecutionDispatcher.cleanup();
       LOGGER.debug("Queue consumer cleanup finished.");
     }
 

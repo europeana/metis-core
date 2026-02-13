@@ -36,6 +36,8 @@ import java.util.List;
     @Index(fields = {@Field("startedDate")}),
     @Index(fields = {@Field("updatedDate")}),
     @Index(fields = {@Field("finishedDate")}),
+    @Index(fields = {@Field("workflowStatus"), @Field("claimedByInstance"), @Field("createdDate")}),
+    @Index(fields = {@Field("workflowStatus"), @Field("updatedDate")}),
     //Embedded indexes definitions should be referenced on the parent entity
     // disabling index validation mapping due metisPlugins is an AbstractMetisPlugin<?>
     // so ? can be anything. Morphia has a potential feature lack when normalizing
@@ -53,6 +55,7 @@ public class WorkflowExecution implements HasMongoObjectId {
   private String ecloudDatasetId;
   private String cancelledBy;
   private String startedBy;
+  private String claimedByInstance;
   private boolean cancelling;
 
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
@@ -118,6 +121,14 @@ public class WorkflowExecution implements HasMongoObjectId {
 
   public void setStartedBy(String startedBy) {
     this.startedBy = startedBy;
+  }
+
+  public String getClaimedByInstance() {
+    return claimedByInstance;
+  }
+
+  public void setClaimedByInstance(String claimedByInstance) {
+    this.claimedByInstance = claimedByInstance;
   }
 
   public String getEcloudDatasetId() {
