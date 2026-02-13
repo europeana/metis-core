@@ -322,21 +322,17 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
       return null;
     }
 
-    // Check for the result type: it should be executable.
-    if (!(uncastResult instanceof ExecutablePlugin castResult)) {
-      LOGGER.warn("Found plugin {} for executable plugin type {} that is not itself executable.",
-          uncastResult.getId(), uncastResult.getPluginType());
-      return null;
-    }
-
-    // if necessary, check for the data validity.
-    final PluginWithExecutionId<ExecutablePlugin> result;
-    if (limitToValidData && MetisPlugin.getDataStatus(castResult) != DataStatus.VALID) {
-      result = null;
-    } else {
-      result = new PluginWithExecutionId<>(uncastResultWrapper.getExecutionId(), castResult);
-    }
-    return result;
+    return switch (uncastResult) {
+      case ExecutablePlugin executablePlugin
+          when !limitToValidData || MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID ->
+          new PluginWithExecutionId<>(uncastResultWrapper.getExecutionId(), executablePlugin);
+      case ExecutablePlugin ignored -> null;
+      default -> {
+        LOGGER.warn("Found plugin {} for executable plugin type {} that is not itself executable.",
+            uncastResult.getId(), uncastResult.getPluginType());
+        yield null;
+      }
+    };
   }
 
   PluginWithExecutionId<MetisPlugin> getFirstOrLastFinishedPlugin(String datasetId,

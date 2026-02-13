@@ -24,14 +24,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class ScheduledConfig {
 
   /**
-   * Retrieves the queue polling check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
+   * Retrieves the workflow dispatch check-in interval in milliseconds from the provided MetisCoreConfigurationProperties.
    *
    * @param metisCoreConfigurationProperties Configuration properties for the Metis Core.
    * @return The queue polling check-in interval in milliseconds.
    */
   @Bean
-  public long getQueuePollingCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
-    return metisCoreConfigurationProperties.queuePollingCheckInMilliseconds();
+  public long workflowDispatchPeriodCheckInMilliseconds(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    return metisCoreConfigurationProperties.workflowDispatchPeriodCheckInMilliseconds();
   }
 
   /**
@@ -93,7 +93,7 @@ public class ScheduledConfig {
      * Log messages are generated to track the execution of this method, providing
      * insight into operational behavior and successful runs.
      */
-    @Scheduled(fixedDelayString = "#{@getQueuePollingCheckInMilliseconds}")
+    @Scheduled(fixedDelayString = "#{@workflowDispatchPeriodCheckInMilliseconds}")
     public void pollAndDispatchWorkflowExecutions() {
       this.workflowExecutionDispatcher.pollAndSubmit();
       LOGGER.info("Run executions.");

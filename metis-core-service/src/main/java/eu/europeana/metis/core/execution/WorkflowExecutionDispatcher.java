@@ -10,7 +10,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,6 @@ import org.slf4j.LoggerFactory;
 public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int SHORT_COMPLETION_POLL_TIMEOUT_MILLIS = 50;
 
   private final WorkflowExecutorSettings<S, T> workflowExecutorSettings;
   private final WorkflowExecutionClaimDao workflowExecutionClaimDao;
@@ -96,8 +94,7 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
    */
   public void cleanup() throws InterruptedException {
     Future<Pair<WorkflowExecution, Boolean>> userWorkflowExecutionFuture;
-    while ((userWorkflowExecutionFuture = completionService.poll(SHORT_COMPLETION_POLL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS))
-        != null) {
+    while ((userWorkflowExecutionFuture = completionService.poll()) != null) {
       try {
         Pair<WorkflowExecution, Boolean> result = userWorkflowExecutionFuture.get();
         checkCollectedWorkflowExecution(result);

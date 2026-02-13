@@ -30,7 +30,7 @@ metis-core.dpsMonitorCheckIntervalInSeconds=5
 metis-core.dpsConnectTimeoutInMilliseconds=10000
 metis-core.dpsReadTimeoutInMilliseconds=30000
 metis-core.failsafeMarginOfInactivityInSeconds=5
-metis-core.queuePollingCheckInMilliseconds=10000
+metis-core.workflowDispatchPeriodCheckInMilliseconds=10000
 metis-core.pollingTimeoutForCleaningCompletionServiceInMilliseconds=10000
 metis-core.userCacheClearIntervalInMinutes=1440
 #If a task passed this cap the task will be cancelled
