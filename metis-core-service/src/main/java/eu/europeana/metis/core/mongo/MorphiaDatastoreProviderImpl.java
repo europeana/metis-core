@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String LOCAL_DEV_INSTANCE_ID = "local-" + UUID.randomUUID();
   private final String instanceId;
   private Datastore datastore;
 
@@ -134,7 +135,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     }
 
     // Fallback for local dev
-    return "local-" + UUID.randomUUID();
+    return LOCAL_DEV_INSTANCE_ID;
   }
 
   private void createDatastore(MongoClient mongoClient, String databaseName) {

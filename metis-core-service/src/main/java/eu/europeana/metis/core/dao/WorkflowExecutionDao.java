@@ -1,6 +1,5 @@
 package eu.europeana.metis.core.dao;
 
-import static eu.europeana.metis.core.common.DaoFieldNames.CLAIMED_BY_INSTANCE;
 import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.EXTERNAL_TASK_ID;
@@ -125,10 +124,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * @param workflowExecution the WorkflowExecution to update
    */
   public void updateWorkflowPlugins(WorkflowExecution workflowExecution) {
-    Filter[] filters = {
-        Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-        Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), workflowExecution.getClaimedByInstance())
-    };
+    Filter[] filters = {Filters.eq(ID.getFieldName(), workflowExecution.getId())};
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class).filter(filters);
 
     final UpdateOperator updateOperator = UpdateOperators.set(METIS_PLUGINS.getFieldName(), workflowExecution.getMetisPlugins());
@@ -151,10 +147,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * modified); {@code false} otherwise.
    */
   public boolean updateMonitorInformation(WorkflowExecution workflowExecution) {
-    Filter[] filters = {
-        Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-        Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), workflowExecution.getClaimedByInstance())
-    };
+    Filter[] filters = {Filters.eq(ID.getFieldName(), workflowExecution.getId())};
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class).filter(filters);
     final ArrayList<UpdateOperator> updateOperators = new ArrayList<>();
     updateOperators.add(UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), workflowExecution.getWorkflowStatus()));

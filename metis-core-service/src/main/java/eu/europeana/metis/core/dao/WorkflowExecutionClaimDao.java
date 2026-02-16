@@ -145,7 +145,7 @@ public class WorkflowExecutionClaimDao {
                                                              .filter(
                                                                  Filters.eq(ID.getFieldName(), workflowExecution.getId()),
                                                                  Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(),
-                                                                     workflowExecution.getClaimedByInstance()),
+                                                                     morphiaDatastoreProvider.getInstanceId()),
                                                                  Filters.eq(WORKFLOW_STATUS.getFieldName(),
                                                                      WorkflowStatus.RUNNING));
 
