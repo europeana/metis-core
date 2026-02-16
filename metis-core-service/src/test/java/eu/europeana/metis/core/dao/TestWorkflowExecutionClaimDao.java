@@ -296,7 +296,7 @@ class TestWorkflowExecutionClaimDao {
                                     .distinct("claimedByInstance", String.class)
                                     .into(new HashSet<>());
 
-    assertTrue(instances.size() == 1);
+    assertEquals(1, instances.size());
     log.info("Instances participating: {}", instances.size());
   }
 }
