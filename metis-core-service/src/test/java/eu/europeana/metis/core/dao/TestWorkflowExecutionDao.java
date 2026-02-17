@@ -118,8 +118,8 @@ class TestWorkflowExecutionDao {
 
   @Test
   void updateWorkflowPlugins() {
-    WorkflowExecution workflowExecution = TestObjectFactory
-        .createWorkflowExecutionObject();
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setClaimedByInstance(provider.getInstanceId());
     assertEquals(PluginStatus.INQUEUE,
         workflowExecution.getMetisPlugins().getFirst().getPluginStatus());
     String objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
@@ -132,8 +132,8 @@ class TestWorkflowExecutionDao {
 
   @Test
   void updateMonitorInformation() {
-    WorkflowExecution workflowExecution = TestObjectFactory
-        .createWorkflowExecutionObject();
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setClaimedByInstance(provider.getInstanceId());
     Date createdDate = new Date();
     workflowExecution.setCreatedDate(createdDate);
     assertEquals(PluginStatus.INQUEUE,
