@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.mongo;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+
 import com.mongodb.client.MongoClient;
 import dev.morphia.Datastore;
 import dev.morphia.Morphia;
@@ -47,31 +49,29 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
-import io.micrometer.common.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * Class to initialize the mongo collections and the {@link Datastore} connection. It also performs
- * data initialization tasks if needed.
+ * Class to initialize the mongo collections and the {@link Datastore} connection. It also performs data initialization tasks if
+ * needed.
  */
+@Slf4j
 public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String APPLICATION_HOSTNAME_VARIABLE = System.getenv("HOSTNAME");
   private static final String LOCAL_DEV_INSTANCE_ID = "local-" + UUID.randomUUID();
-  private final String instanceId;
+  private static final String INSTANCE_ID = defaultIfBlank(APPLICATION_HOSTNAME_VARIABLE, LOCAL_DEV_INSTANCE_ID);
   private Datastore datastore;
 
   /**
-   * Constructor to initialize the mongo mappings/collections and the {@link Datastore} connection.
-   * This also initializes the {@link DatasetIdSequence} that this database uses. This constructor
-   * is meant to be used when the database is already available.
+   * Constructor to initialize the mongo mappings/collections and the {@link Datastore} connection. This also initializes the
+   * {@link DatasetIdSequence} that this database uses. This constructor is meant to be used when the database is already
+   * available.
    *
    * @param mongoClient {@link MongoClient}
    * @param databaseName the database name
@@ -81,9 +81,9 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
   }
 
   /**
-   * Constructor to initialize the mongo mappings/collections and the {@link Datastore} connection.
-   * This also initializes the {@link DatasetIdSequence} that this database uses. This constructor
-   * is meant to be used mostly for when the creation of the database is required.
+   * Constructor to initialize the mongo mappings/collections and the {@link Datastore} connection. This also initializes the
+   * {@link DatasetIdSequence} that this database uses. This constructor is meant to be used mostly for when the creation of the
+   * database is required.
    *
    * @param mongoClient {@link MongoClient}
    * @param databaseName the database name
@@ -92,20 +92,18 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
   public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName, boolean createIndexes) {
     createDatastore(mongoClient, databaseName);
     if (createIndexes) {
-      LOGGER.info("Initializing database indices");
+      log.info("Initializing database indices");
       datastore.ensureIndexes();
     }
-    this.instanceId = resolveInstanceId();
   }
 
   /**
-   * Constructor. In addition to the functionality of {@link #MorphiaDatastoreProviderImpl(MongoClient,
-   * String)}, it also sets a default non-dataset specific {@link DatasetXslt} if none is present.
+   * Constructor. In addition to the functionality of {@link #MorphiaDatastoreProviderImpl(MongoClient, String)}, it also sets a
+   * default non-dataset specific {@link DatasetXslt} if none is present.
    *
    * @param mongoClient {@link MongoClient}
    * @param databaseName the database name
-   * @param defaultTransformationSupplier The default non-dataset specific {@link DatasetXslt} to
-   * set if none is available.
+   * @param defaultTransformationSupplier The default non-dataset specific {@link DatasetXslt} to set if none is available.
    * @throws IOException In case the default transformation could not be loaded.
    */
   public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName,
@@ -127,23 +125,12 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     }
   }
 
-  private String resolveInstanceId() {
-    // Kubernetes default
-    String hostname = System.getenv("HOSTNAME");
-    if (StringUtils.isNotBlank(hostname)) {
-      return hostname;
-    }
-
-    // Fallback for local dev
-    return LOCAL_DEV_INSTANCE_ID;
-  }
-
   private void createDatastore(MongoClient mongoClient, String databaseName) {
     // Register the mappings and set up the data store.
     // TODO: 8/28/20 The mapper options should eventually be removed but requires an update of the affected fields on all documents in the database
     final MapperOptions mapperOptions = MapperOptions.builder().discriminatorKey("className")
-        .discriminator(DiscriminatorFunction.className())
-        .collectionNaming(NamingStrategy.identity()).build();
+                                                     .discriminator(DiscriminatorFunction.className())
+                                                     .collectionNaming(NamingStrategy.identity()).build();
     datastore = Morphia.createDatastore(mongoClient, databaseName, mapperOptions);
     final Mapper mapper = datastore.getMapper();
     mapper.getEntityModel(Dataset.class);
@@ -193,7 +180,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     if (datastore.find(DatasetIdSequence.class).count() == 0) {
       datastore.save(new DatasetIdSequence(0));
     }
-    LOGGER.info("Datastore initialized");
+    log.info("Datastore initialized");
   }
 
   @Override
@@ -203,12 +190,12 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
   @Override
   public String getInstanceId() {
-    return instanceId;
+    return INSTANCE_ID;
   }
 
   /**
-   * An interface similar to {@link java.util.function.Supplier}, but specifically for instances of
-   * {@link InputStream} and that allows the throwing of an {@link IOException}.
+   * An interface similar to {@link java.util.function.Supplier}, but specifically for instances of {@link InputStream} and that
+   * allows the throwing of an {@link IOException}.
    */
   public interface InputStreamProvider {
 

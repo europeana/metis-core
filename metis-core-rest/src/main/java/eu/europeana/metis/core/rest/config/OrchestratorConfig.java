@@ -57,7 +57,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @ComponentScan(basePackages = {"eu.europeana.metis.core.rest.controller"})
 public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private static final int WORKFLOW_CORE_POOL_SIZE = 8;
+  private static final int WORKFLOW_CORE_POOL_SIZE = 20;
   private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
   /**
