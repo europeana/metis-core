@@ -17,7 +17,9 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Abstract base class for creating process tasks.
+ * Abstract base class for creating curate or index tasks.
+ * <p>
+ * Represents a task factory that has an input data revision as a base.
  *
  * @param <S> The type of {@link EngineTaskSettings} used by the task.
  * @param <T> The type of {@link EngineTask} created by the factory.
