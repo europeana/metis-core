@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.mongo;
 
+import static java.lang.System.getenv;
+import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 import com.mongodb.client.MongoClient;
@@ -52,7 +54,6 @@ import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -63,9 +64,7 @@ import org.apache.commons.io.IOUtils;
 @Slf4j
 public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
-  private static final String APPLICATION_HOSTNAME_VARIABLE = System.getenv("HOSTNAME");
-  private static final String LOCAL_DEV_INSTANCE_ID = "local-" + UUID.randomUUID();
-  private static final String INSTANCE_ID = defaultIfBlank(APPLICATION_HOSTNAME_VARIABLE, LOCAL_DEV_INSTANCE_ID);
+  private static final String INSTANCE_ID = defaultIfBlank(getenv("HOSTNAME"), "local-" + randomUUID());
   private Datastore datastore;
 
   /**
