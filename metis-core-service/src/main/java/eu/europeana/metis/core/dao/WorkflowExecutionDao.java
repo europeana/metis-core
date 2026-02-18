@@ -127,7 +127,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   public void updateWorkflowPlugins(WorkflowExecution workflowExecution) {
     Filter[] filters = {
         Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-        Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), workflowExecution.getClaimedByInstance())
+        Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), morphiaDatastoreProvider.getInstanceId())
     };
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class).filter(filters);
 
@@ -153,7 +153,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   public boolean updateMonitorInformation(WorkflowExecution workflowExecution) {
     Filter[] filters = {
         Filters.eq(ID.getFieldName(), workflowExecution.getId()),
-        Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), workflowExecution.getClaimedByInstance())
+        Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), morphiaDatastoreProvider.getInstanceId())
     };
     Query<WorkflowExecution> query = morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class).filter(filters);
     final ArrayList<UpdateOperator> updateOperators = new ArrayList<>();

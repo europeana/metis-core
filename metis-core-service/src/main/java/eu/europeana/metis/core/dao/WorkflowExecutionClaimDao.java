@@ -68,9 +68,9 @@ public class WorkflowExecutionClaimDao {
         .upsert(false);
 
     List<Supplier<WorkflowExecution>> claimSuppliers = List.of(
-        () -> tryClaimNewInqueue(dateNow, modifyOptions),
+        () -> tryClaimStaleRunning(dateNow, modifyOptions, staleBefore),
         () -> tryClaimRequeuedInqueue(dateNow, modifyOptions),
-        () -> tryClaimStaleRunning(dateNow, modifyOptions, staleBefore));
+        () -> tryClaimNewInqueue(dateNow, modifyOptions));
 
     for (Supplier<WorkflowExecution> claimSupplier : claimSuppliers) {
       WorkflowExecution workflowExecution = claimSupplier.get();
@@ -145,7 +145,7 @@ public class WorkflowExecutionClaimDao {
                                                              .filter(
                                                                  Filters.eq(ID.getFieldName(), workflowExecution.getId()),
                                                                  Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(),
-                                                                     workflowExecution.getClaimedByInstance()),
+                                                                     morphiaDatastoreProvider.getInstanceId()),
                                                                  Filters.eq(WORKFLOW_STATUS.getFieldName(),
                                                                      WorkflowStatus.RUNNING));
 

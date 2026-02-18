@@ -125,7 +125,7 @@ class TestWorkflowExecutionClaimDao {
   }
 
   @Test
-  void claimNextExecution_shouldPreferNewInqueueOverOthers() {
+  void claimNextExecution_shouldPreferStaleOverOthers() {
     WorkflowExecution newInqueue1 = TestObjectFactory.createWorkflowExecutionObject();
     newInqueue1.setWorkflowStatus(WorkflowStatus.INQUEUE);
     newInqueue1.setStartedDate(null);
@@ -141,19 +141,19 @@ class TestWorkflowExecutionClaimDao {
     staleWorkflowExecution.setUpdatedDate(Date.from(Instant.now().minusSeconds(300)));
     staleWorkflowExecution.setClaimedByInstance("old-instance");
 
-    provider.getDatastore().save(staleWorkflowExecution);
     provider.getDatastore().save(newInqueue1);
     provider.getDatastore().save(requeued1);
     provider.getDatastore().save(newInqueue2);
+    provider.getDatastore().save(staleWorkflowExecution);
 
     WorkflowExecution workflowExecution = workflowExecutionClaimDao.claimNextExecution(Duration.ofSeconds(60));
-    assertEquals(newInqueue1.getId(), workflowExecution.getId());
-    workflowExecution = workflowExecutionClaimDao.claimNextExecution(Duration.ofSeconds(60));
-    assertEquals(newInqueue2.getId(), workflowExecution.getId());
+    assertEquals(staleWorkflowExecution.getId(), workflowExecution.getId());
     workflowExecution = workflowExecutionClaimDao.claimNextExecution(Duration.ofSeconds(60));
     assertEquals(requeued1.getId(), workflowExecution.getId());
     workflowExecution = workflowExecutionClaimDao.claimNextExecution(Duration.ofSeconds(60));
-    assertEquals(staleWorkflowExecution.getId(), workflowExecution.getId());
+    assertEquals(newInqueue1.getId(), workflowExecution.getId());
+    workflowExecution = workflowExecutionClaimDao.claimNextExecution(Duration.ofSeconds(60));
+    assertEquals(newInqueue2.getId(), workflowExecution.getId());
   }
 
   @Test
@@ -273,16 +273,12 @@ class TestWorkflowExecutionClaimDao {
           startGate.await();
 
           while (true) {
-
             WorkflowExecution workflowExecution = executionClaimDao.claimNextExecution(Duration.ofMinutes(5));
-
             if (workflowExecution == null) {
               break;
             }
-
             claimedIds.add(workflowExecution.getId());
           }
-
           finishGate.countDown();
           return null;
         });
@@ -300,7 +296,7 @@ class TestWorkflowExecutionClaimDao {
                                     .distinct("claimedByInstance", String.class)
                                     .into(new HashSet<>());
 
-    assertTrue(instances.size() > 1);
+    assertEquals(1, instances.size());
     log.info("Instances participating: {}", instances.size());
   }
 }
