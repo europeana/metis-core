@@ -68,8 +68,7 @@ public class ProxiesController {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<DataItemStatus> getExternalTaskLogs(
       @PathVariable("topologyName") String topologyName,

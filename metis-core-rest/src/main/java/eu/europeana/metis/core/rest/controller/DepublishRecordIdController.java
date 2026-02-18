@@ -184,8 +184,7 @@ public class DepublishRecordIdController {
    * happen since ids are UUIDs</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DEPUBLISH_EXECUTE_DATASETID, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @PostMapping(value = RestEndpoints.DEPUBLISH_EXECUTE_DATASETID, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public WorkflowExecutionDTO addDepublishWorkflowInQueueOfWorkflowExecutions(
       @AuthenticationPrincipal Jwt jwtPrincipal,

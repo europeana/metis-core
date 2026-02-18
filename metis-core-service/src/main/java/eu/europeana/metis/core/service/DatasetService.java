@@ -383,11 +383,11 @@ public class DatasetService {
   }
 
   /**
-   * Transform a list of xmls using the latest default xslt stored.
+   * Transform a list of records using the latest default xslt stored.
    * <p>
    * This method can be used, for example, after a response from
    * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
@@ -417,11 +417,11 @@ public class DatasetService {
   }
 
   /**
-   * Transform a list of xmls using the latest dataset xslt stored.
+   * Transform a list of records using the latest dataset xslt stored.
    * <p>
    * This method can be used, for example, after a response from
    * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, String, int)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection

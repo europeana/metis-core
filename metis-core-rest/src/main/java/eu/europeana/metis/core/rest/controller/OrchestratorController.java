@@ -146,8 +146,6 @@ public class OrchestratorController {
     }
   }
 
-  //WORKFLOW EXECUTIONS
-
   /**
    * Get a workflow for a dataset identifier.
    *
@@ -170,6 +168,7 @@ public class OrchestratorController {
     return workflow;
   }
 
+  //WORKFLOW EXECUTIONS
   /**
    * Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates the status of the WorkflowExecution
    * to {@link WorkflowStatus#INQUEUE}, adds it to the database and also it's identifier goes into the distributed queue of

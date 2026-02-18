@@ -1,25 +1,20 @@
 package eu.europeana.metis.core.rest;
 
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 
 /**
- * Class used to wrap a list of result object to be given back as a response on a REST API
+ * Class used to wrap a list of a result object to be given back as a response on a REST API
  * endpoint.
  *
  * @param <T> the type of objects to be wrapped
  * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
  * @since 2017-06-01
  */
-
 public class ResponseListWrapper<T> {
 
-  @JacksonXmlElementWrapper(localName = "Results")
-  @JacksonXmlProperty(localName = "Result")
   private List<T> results;
   private int listSize;
   private int nextPage;

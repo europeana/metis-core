@@ -68,7 +68,7 @@ public class DatasetController {
 
   /**
    * Create a provided dataset.
-   * <p>Dataset is provided as json or xml.</p>
+   * <p>Dataset is provided as json.</p>
    *
    * <p> The expected input should follow the rule Bearer
    * accessTokenHere </p>
@@ -263,11 +263,11 @@ public class DatasetController {
   }
 
   /**
-   * Transform a list of xmls using the latest dataset xslt stored.
+   * Transform a list of records using the latest dataset xslt stored.
    * <p>
    * This method is meant to be used after a response from
    * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * <p> The expected input should follow the rule Bearer
@@ -293,11 +293,11 @@ public class DatasetController {
   }
 
   /**
-   * Transform a list of xmls using the latest default xslt stored.
+   * Transform a list of records using the latest default xslt stored.
    * <p>
    * This method is meant to be used after a response from
    * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * <p> The expected input should follow the rule Bearer
@@ -468,8 +468,7 @@ public class DatasetController {
    *
    * @return The list of countries that are serialized based on {@link eu.europeana.metis.core.common.LanguageSerializer}
    */
-  @GetMapping(value = RestEndpoints.DATASETS_LANGUAGES, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_LANGUAGES, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<LanguageView> getDatasetsLanguages() {
     return Language.getLanguageListSortedByName().stream().map(LanguageView::new).toList();
