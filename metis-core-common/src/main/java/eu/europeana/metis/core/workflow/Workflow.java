@@ -1,8 +1,6 @@
 package eu.europeana.metis.core.workflow;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
@@ -12,11 +10,10 @@ import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
-import org.bson.types.ObjectId;
-import tools.jackson.databind.annotation.JsonSerialize;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.bson.types.ObjectId;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Workflow model class.
@@ -30,9 +27,6 @@ public class Workflow implements HasMongoObjectId {
   @JsonSerialize(using = ObjectIdSerializer.class)
   private ObjectId id;
   private String datasetId;
-
-  @JacksonXmlElementWrapper(localName = "metisPluginsMetadatas")
-  @JacksonXmlProperty(localName = "metisPluginsMetadata")
   private List<AbstractExecutablePluginMetadata> metisPluginsMetadata = new ArrayList<>();
 
   @Override

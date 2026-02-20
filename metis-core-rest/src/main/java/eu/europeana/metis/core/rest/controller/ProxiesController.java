@@ -68,8 +68,7 @@ public class ProxiesController {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<DataItemStatus> getExternalTaskLogs(
       @PathVariable("topologyName") String topologyName,
@@ -98,8 +97,8 @@ public class ProxiesController {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Map<String, Boolean> existsExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
@@ -131,8 +130,8 @@ public class ProxiesController {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public EngineTaskErrors getExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
@@ -160,7 +159,7 @@ public class ProxiesController {
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordStatisticsDTO getExternalTaskStatistics(
       @PathVariable("topologyName") String topologyName,
@@ -189,7 +188,7 @@ public class ProxiesController {
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public NodePathStatisticsDTO getAdditionalNodeStatistics(
       @PathVariable("topologyName") String topologyName,
@@ -221,7 +220,7 @@ public class ProxiesController {
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
@@ -250,8 +249,8 @@ public class ProxiesController {
    * </ul>
    */
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS,
-      consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
@@ -279,7 +278,7 @@ public class ProxiesController {
    * </ul>
    */
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORD_SEARCH_BY_ID,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Record searchRecordByIdFromPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
@@ -307,8 +306,8 @@ public class ProxiesController {
    * </ul>
    */
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_FROM_PREDECESSOR_PLUGIN,
-      consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPredecessorOfPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
