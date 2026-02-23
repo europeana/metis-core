@@ -137,11 +137,6 @@
         <version>${version.commons.text}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-collections4</artifactId>
-        <version>${version.commons-collections4}</version>
-      </dependency>
-      <dependency>
         <groupId>eu.europeana.corelib</groupId>
         <artifactId>corelib-storage</artifactId>
         <version>${version.corelib}</version>
@@ -425,41 +420,6 @@
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>${version.xerces}</version>
-        <exclusions>
-          <exclusion>
-            <artifactId>xml-apis</artifactId>
-            <groupId>xml-apis</groupId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>io.gdcc</groupId>
-        <artifactId>xoai-service-provider</artifactId>
-        <version>${version.gdcc.xoai}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <!-- Tomcat tries to set a SAX feature not supported by this SAX parser. -->
-          <exclusion>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>woodstox-core-asl</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>wstx-asl</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

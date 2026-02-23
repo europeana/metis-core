@@ -2,6 +2,7 @@ package eu.europeana.metis.core.engine.base;
 
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.DATASET_IDS_TO_REDIRECT_FROM;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.DEPUBLICATION_REASON;
+import static eu.europeana.metis.core.engine.base.EngineTaskKey.ENGINE_DATASET_ID;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.GENERATE_STATS;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.HARVEST_DATE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.INCREMENTAL_HARVEST;
@@ -59,6 +60,7 @@ public final class EngineTaskParametersConfigurator {
   /**
    * Creates a default set of task parameters used for configuring an engine task.
    *
+   * @param engineDatasetId
    * @param datasetId the identifier of the dataset
    * @param previousTaskId the identifier of the previous task
    * @param inputDataRevision the revision of input data
@@ -66,8 +68,9 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParameters(
-      String datasetId, String previousTaskId, DataRevision inputDataRevision, String dataLocation) {
+      String engineDatasetId, String datasetId, String previousTaskId, DataRevision inputDataRevision, String dataLocation) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     parameters.put(REVISION_NAME, inputDataRevision.name());
@@ -82,6 +85,7 @@ public final class EngineTaskParametersConfigurator {
   /**
    * Creates a map of default task parameters for a harvest operation.
    *
+   * @param engineDatasetId
    * @param datasetId the identifier of the dataset to be harvested
    * @param incrementalHarvest a flag indicating if the harvest should be incremental
    * @param startedDate the starting date of the harvest operation
@@ -90,8 +94,9 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
-      String datasetId, boolean incrementalHarvest, Date startedDate, String dataLocation, String providerId) {
+      String engineDatasetId, String datasetId, boolean incrementalHarvest, Date startedDate, String dataLocation, String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(INCREMENTAL_HARVEST, String.valueOf(incrementalHarvest));
     parameters.put(HARVEST_DATE, formatUtcDate(startedDate));

@@ -84,7 +84,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url",
+    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url", "",
         new DataRevision("name", "provider", new Date(), false));
     DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
     EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint,
@@ -95,7 +95,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask_throws() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url",
+    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url", "",
         new DataRevision("name", "provider", new Date(), false));
     DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
@@ -141,7 +141,7 @@ class TestEcloudEngineTaskClient {
 
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenReturn(taskInfo);
 
-    EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1");
+    EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null);
 
     assertEquals(taskInfo.getExpectedRecordsNumber(), engineTaskProgress.getExpectedRecords());
     assertEquals(taskInfo.getProcessedRecordsCount(), engineTaskProgress.getProcessedRecords());
@@ -158,7 +158,7 @@ class TestEcloudEngineTaskClient {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new AccessDeniedOrObjectDoesNotExistException());
 
     ExternalTaskException externalTaskException = assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+        () -> ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null));
 
     Throwable cause = externalTaskException.getCause();
     assertNotNull(cause);
@@ -169,14 +169,16 @@ class TestEcloudEngineTaskClient {
   void getEngineTaskProgress_throwsDpsException() throws Exception {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new DpsException(""));
 
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+    assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null));
 
   }
 
   @Test
   void getEngineTaskProgress_throwsRuntimeException() throws DpsException {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new RuntimeException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+    assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null));
   }
 
   @Test
@@ -318,20 +320,20 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void cancelEngineTask_success() throws Exception {
-    ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "");
+    ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "", null);
     verify(dpsClient).killTask(TOPOLOGY_NAME, 1L, "");
   }
 
   @Test
   void cancelEngineTask_throws() throws DpsException {
     when(dpsClient.killTask(TOPOLOGY_NAME, 1L, "")).thenThrow(new DpsException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", ""));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "", null));
   }
 
   @Test
   void cancelEngineTask_throwsRuntimeException() throws DpsException {
     when(dpsClient.killTask(TOPOLOGY_NAME, 1L, "")).thenThrow(new RuntimeException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", ""));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "", null));
   }
 
   @Test

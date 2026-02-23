@@ -46,7 +46,7 @@ public abstract class AbstractInternalEngineTaskFactory<S extends EngineTaskSett
 
     final String dataLocation = getDataLocation(engineDatasetId);
     final Map<EngineTaskKey, String> basicTaskParameters =
-        createDefaultTaskParameters(datasetId, previousTaskId, inputDataRevision, dataLocation);
+        createDefaultTaskParameters(engineDatasetId, datasetId, previousTaskId, inputDataRevision, dataLocation);
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
     allParameters.putAll(pluginParameters);
@@ -54,8 +54,8 @@ public abstract class AbstractInternalEngineTaskFactory<S extends EngineTaskSett
     final DataRevision outputDataRevision = createDataRevision(
         plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
 
-    final InternalInputDataEndpoint internalInputDataEndpoint = new InternalInputDataEndpoint(dataLocation,
-        inputDataRevision);
+    final InternalInputDataEndpoint internalInputDataEndpoint =
+        new InternalInputDataEndpoint(dataLocation, previousTaskId, inputDataRevision);
     return engineTaskClient.createEngineTask(allParameters, internalInputDataEndpoint, outputDataRevision);
   }
 }

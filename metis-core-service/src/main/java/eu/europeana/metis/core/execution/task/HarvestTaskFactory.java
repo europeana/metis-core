@@ -9,12 +9,14 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -79,10 +81,14 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
     final String dataLocation = getDataLocation(engineDatasetId);
     final Map<EngineTaskKey, String> basicTaskParameters =
         createDefaultTaskParametersHarvest(
-            datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
+            engineDatasetId, datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
             engineTaskClient.getEngineTaskSettings().getProvider());
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginType());
+    if (fullBatchJobType != null) {
+      allParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
+    }
 
     final DataRevision outputDataRevision = createDataRevision(
         plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());

@@ -13,6 +13,7 @@ import eu.europeana.cloud.common.model.dps.TaskInfo;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -30,6 +31,7 @@ import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -99,7 +101,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId)
+  public EngineTaskProgress getEngineTaskProgress(String datasetId, String topologyName, String taskId, FullBatchJobType map)
       throws ExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));
@@ -228,7 +230,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public void cancelEngineTask(String topologyName, String taskId, String message) throws ExternalTaskException {
+  public void cancelEngineTask(String topologyName, String taskId, String message, FullBatchJobType step) throws ExternalTaskException {
     try {
       dpsClient.killTask(topologyName, parseLong(taskId), message);
     } catch (DpsException | RuntimeException e) {
@@ -239,6 +241,11 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   @Override
   public boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), engineDatasetId);
+  }
+
+  @Override
+  public String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
+    return null;
   }
 
   @Override

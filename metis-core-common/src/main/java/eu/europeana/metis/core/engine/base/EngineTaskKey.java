@@ -4,6 +4,13 @@ package eu.europeana.metis.core.engine.base;
  * Enum representing various keys used to configure and manage tasks within the processing engine.
  */
 public enum EngineTaskKey {
+
+  //Sandbox
+  STEP_SIZE,
+  ENGINE_DATASET_ID,
+  JOB_NAME,
+
+  //Ecloud
   /**
    * URL of the XSLT transformation content
    */

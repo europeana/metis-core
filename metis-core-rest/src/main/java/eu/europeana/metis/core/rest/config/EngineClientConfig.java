@@ -10,15 +10,18 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineDatasetRecordClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
 import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskSettings;
+import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskClient;
+import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskSettings;
+import eu.europeana.metis.core.rest.config.properties.EngineConfigurationProperties;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties.EngineType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import jakarta.annotation.PreDestroy;
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 
 /**
  * Configuration class responsible for providing clients and settings required for interacting with processing engines.
@@ -26,14 +29,23 @@ import org.springframework.context.annotation.Configuration;
  * Determines which type of client should be initialized based on configuration properties.
  */
 @Configuration
+@Slf4j
+@EnableConfigurationProperties({MetisCoreConfigurationProperties.class, EcloudConfigurationProperties.class,
+    EngineConfigurationProperties.class})
 public class EngineClientConfig {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private DpsClient dpsClient;
   private DataSetServiceClient dataSetServiceClient;
   private RecordServiceClient recordServiceClient;
   private FileServiceClient fileServiceClient;
   private UISClient uisClient;
+
+  @Bean
+  public RestClient engineRestClient(EngineConfigurationProperties engineConfigurationProperties) {
+    return RestClient.builder()
+                     .baseUrl(engineConfigurationProperties.baseUrl())
+                     .build();
+  }
 
   /**
    * Configures and returns an instance of EngineTaskClient based on the engine type.
@@ -50,14 +62,29 @@ public class EngineClientConfig {
   public EngineTaskClient<?, ?> engineTaskClient(
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties,
-      ThrottlingValues throttlingValues
+      EngineConfigurationProperties engineConfigurationProperties,
+      ThrottlingValues throttlingValues,
+      RestClient restClient
   ) {
     if (EngineType.ECLOUD.equals(metisCoreConfigurationProperties.engineType())) {
-      LOGGER.info("Initializing DPS Engine Task Client");
+      log.info("Initializing DPS Engine Task Client");
       return ecloudEngineTaskClient(metisCoreConfigurationProperties, ecloudConfigurationProperties, throttlingValues);
+    } else if (EngineType.SANDBOX.equals(metisCoreConfigurationProperties.engineType())) {
+      return sandboxEngineTaskClient(metisCoreConfigurationProperties, engineConfigurationProperties, restClient,
+          throttlingValues);
     } else {
       throw new IllegalArgumentException("Invalid engine type: " + metisCoreConfigurationProperties.engineType());
     }
+  }
+
+  private EngineTaskClient<?, ?> sandboxEngineTaskClient(
+      MetisCoreConfigurationProperties metisCoreConfigurationProperties,
+      EngineConfigurationProperties engineConfigurationProperties,
+      RestClient restClient, ThrottlingValues throttlingValues) {
+    SandboxEngineTaskSettings sandboxEngineTaskSettings =
+        new SandboxEngineTaskSettings(engineConfigurationProperties.baseUrl(), null,
+            metisCoreConfigurationProperties.baseUrl(), throttlingValues);
+    return new SandboxEngineTaskClient(sandboxEngineTaskSettings, restClient);
   }
 
   private EngineTaskClient<?, ?> ecloudEngineTaskClient(

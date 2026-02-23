@@ -9,6 +9,6 @@ import eu.europeana.metis.core.engine.base.DataRevision;
  * @param inputRevision The data revision associated with the input data endpoint.
  */
 public record InternalInputDataEndpoint(
-    String url, DataRevision inputRevision) implements InputDataEndpoint {
+    String url, String sourceExecutionId, DataRevision inputRevision) implements InputDataEndpoint {
 
 }

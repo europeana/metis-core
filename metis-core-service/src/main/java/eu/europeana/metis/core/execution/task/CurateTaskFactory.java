@@ -10,6 +10,7 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
@@ -20,6 +21,7 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +50,10 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
     Map<EngineTaskKey, String> pluginParameters = getProcessPluginParameters();
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginType());
+    if (fullBatchJobType != null) {
+      pluginParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
+    }
     return createInternalEngineTask(datasetId, engineDatasetId, previousTaskId, pluginParameters);
   }
 

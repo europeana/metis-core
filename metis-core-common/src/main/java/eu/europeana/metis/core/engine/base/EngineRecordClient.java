@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.engine.base;
 
+import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.util.Date;
@@ -74,5 +75,7 @@ public interface EngineRecordClient {
    * @throws ExternalTaskException if an error occurs while creating the dataset identifier
    */
   boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException;
+
+  String createEngineDatasetId(Dataset dataset) throws ExternalTaskException;
 
 }

@@ -37,6 +37,7 @@ public record MetisCoreConfigurationProperties(
    */
   public enum EngineType {
     ECLOUD,
+    SANDBOX,
     MOCK;
   }
 }

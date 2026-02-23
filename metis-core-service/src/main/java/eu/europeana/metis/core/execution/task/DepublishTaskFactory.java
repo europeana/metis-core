@@ -8,9 +8,11 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
+import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
 import eu.europeana.metis.utils.DepublicationReason;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +44,11 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
     Map<EngineTaskKey, String> pluginParameters = getDepublishPluginParameters(datasetId);
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginType());
+    if (fullBatchJobType != null) {
+      pluginParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
+    }
+    pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineDatasetId);
     return createDepublishEngineTask(engineDatasetId, pluginParameters);
   }
 
