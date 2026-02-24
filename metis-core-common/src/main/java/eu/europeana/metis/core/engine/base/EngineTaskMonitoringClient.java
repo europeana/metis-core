@@ -4,7 +4,7 @@ import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.exception.ExternalTaskException;
-import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.List;
 
 /**
@@ -18,11 +18,11 @@ public interface EngineTaskMonitoringClient {
    *
    * @param topologyName The name of the topology associated with the task.
    * @param taskId The unique identifier of the task whose progress is to be retrieved.
-   * @param map
+   * @param step
    * @return An instance of {@link EngineTaskProgress} containing details about the task's progress.
    * @throws ExternalTaskException If an error occurs while accessing the external resource.
    */
-  EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, FullBatchJobType map) throws ExternalTaskException;
+  EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, FullBatchJobType step) throws ExternalTaskException;
 
   /**
    * Retrieves a list of data item statuses based on the specified parameters.

@@ -11,7 +11,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
-import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;

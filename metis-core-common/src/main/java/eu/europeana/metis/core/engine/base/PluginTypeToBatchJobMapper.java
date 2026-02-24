@@ -1,7 +1,7 @@
 package eu.europeana.metis.core.engine.base;
 
 import eu.europeana.metis.core.workflow.plugins.PluginType;
-import eu.europeana.metis.sandbox.batch.common.FullBatchJobType;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 
 public final class PluginTypeToBatchJobMapper {
 

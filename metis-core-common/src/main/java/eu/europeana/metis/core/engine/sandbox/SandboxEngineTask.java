@@ -8,11 +8,11 @@ import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoi
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
-import eu.europeana.metis.sandbox.controller.task.input.InputMetadataRequest;
-import eu.europeana.metis.sandbox.controller.task.input.InternalInputMetadataRequest;
-import eu.europeana.metis.sandbox.controller.task.input.OaiHarvestInputMetadataRequest;
-import eu.europeana.metis.sandbox.controller.task.input.SandboxTask;
-import eu.europeana.metis.sandbox.controller.task.input.SandboxTaskKey;
+import eu.europeana.metis.sandbox.common.task.input.InputMetadataRequest;
+import eu.europeana.metis.sandbox.common.task.input.InternalInputMetadataRequest;
+import eu.europeana.metis.sandbox.common.task.input.OaiHarvestInputMetadataRequest;
+import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
+import eu.europeana.metis.sandbox.common.task.input.SandboxTaskKey;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;

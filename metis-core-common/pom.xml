@@ -11,8 +11,8 @@
   <dependencies>
     <dependency>
       <groupId>eu.europeana.metis</groupId>
-      <artifactId>metis-sandbox</artifactId>
-      <version>12-SNAPSHOT</version>
+      <artifactId>metis-sandbox-common</artifactId>
+      <version>${version.metis-sandbox-common}</version>
       <exclusions>
         <exclusion>
           <groupId>org.springframework.boot</groupId>
