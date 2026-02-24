@@ -83,7 +83,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String datasetId, String topologyName, String taskId, FullBatchJobType step)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, FullBatchJobType step)
       throws ExternalTaskException {
     try {
       SandboxTaskProgress sandboxTaskProgress =
@@ -91,7 +91,6 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
                     .uri(uriBuilder -> uriBuilder
                         .path("/task/progress")
                         .queryParam("executionId", taskId)
-                        .queryParam("datasetId", datasetId)
                         .queryParam("step", step)
                         .build())
                     .retrieve()

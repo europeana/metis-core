@@ -105,7 +105,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress processedProgress = new EngineTaskProgress();
     processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
@@ -152,7 +152,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(droppedProgress);
 
@@ -203,7 +203,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress processedProgress = new EngineTaskProgress();
     processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenThrow(engineTaskException100Times)
         .thenReturn(processedProgress);
 
@@ -243,7 +243,7 @@ class TestWorkflowExecutor {
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any(FullBatchJobType.class)))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any(FullBatchJobType.class)))
         .thenThrow(new ExternalTaskException("",
             new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 
@@ -292,7 +292,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress processedProgress = new EngineTaskProgress();
     processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(anyString(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenThrow(engineTaskExceptions)
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
@@ -345,7 +345,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress processedProgress = new EngineTaskProgress();
     processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
@@ -392,7 +392,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress);
 
     when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
@@ -400,7 +400,7 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress processedProgress = new EngineTaskProgress();
     processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(any(), eq(topologyName), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
@@ -441,7 +441,7 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
-    when(engineTaskClient.getEngineTaskProgress(any(), anyString(), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any()))
         .thenReturn(droppedProgress);
 
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
@@ -483,7 +483,7 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    when(engineTaskClient.getEngineTaskProgress(any(), anyString(), any(), any()))
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any()))
         .thenReturn(currentlyProcessingProgress);
 
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))

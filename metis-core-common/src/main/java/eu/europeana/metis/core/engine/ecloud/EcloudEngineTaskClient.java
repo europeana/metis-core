@@ -101,7 +101,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String datasetId, String topologyName, String taskId, FullBatchJobType map)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, FullBatchJobType map)
       throws ExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));

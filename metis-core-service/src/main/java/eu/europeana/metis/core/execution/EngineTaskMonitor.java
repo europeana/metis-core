@@ -49,7 +49,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
    */
   public EngineTaskProgress monitor() throws ExternalTaskException {
     LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
-    EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(datasetId,
+    EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
         plugin.getTopologyName(), plugin.getExternalTaskId(), PluginTypeToBatchJobMapper.map(plugin.getPluginType()));
     LOGGER.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
     updateExecutionProgress(engineTaskProgress);

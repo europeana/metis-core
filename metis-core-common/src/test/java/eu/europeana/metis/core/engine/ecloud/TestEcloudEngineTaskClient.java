@@ -141,7 +141,7 @@ class TestEcloudEngineTaskClient {
 
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenReturn(taskInfo);
 
-    EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null);
+    EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1", null);
 
     assertEquals(taskInfo.getExpectedRecordsNumber(), engineTaskProgress.getExpectedRecords());
     assertEquals(taskInfo.getProcessedRecordsCount(), engineTaskProgress.getProcessedRecords());
@@ -158,7 +158,7 @@ class TestEcloudEngineTaskClient {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new AccessDeniedOrObjectDoesNotExistException());
 
     ExternalTaskException externalTaskException = assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null));
+        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1",null));
 
     Throwable cause = externalTaskException.getCause();
     assertNotNull(cause);
@@ -170,7 +170,7 @@ class TestEcloudEngineTaskClient {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new DpsException(""));
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null));
+        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1", null));
 
   }
 
@@ -178,7 +178,7 @@ class TestEcloudEngineTaskClient {
   void getEngineTaskProgress_throwsRuntimeException() throws DpsException {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new RuntimeException(""));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineTaskClient.getEngineTaskProgress("datasetId", TOPOLOGY_NAME, "1", null));
+        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1",  null));
   }
 
   @Test
