@@ -8,6 +8,7 @@ import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoi
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
+import eu.europeana.metis.sandbox.common.task.input.HttpHarvestInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.InputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.InternalInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.OaiHarvestInputMetadataRequest;
@@ -64,8 +65,8 @@ public class SandboxEngineTask extends EngineTask {
           oaiHarvestInputDataParameters.url(), oaiHarvestInputDataParameters.set(),
           oaiHarvestInputDataParameters.metadataPrefix(),
           oaiHarvestInputDataParameters.from(), oaiHarvestInputDataParameters.until());
-      case HttpHarvestInputDataEndpoint ignored ->
-          throw new IllegalArgumentException("HttpHarvestInputDataEndpoint is not supported for sandbox tasks");
+      case HttpHarvestInputDataEndpoint httpHarvestInputDataEndpoint ->
+          new HttpHarvestInputMetadataRequest(httpHarvestInputDataEndpoint.url());
       case InternalInputDataEndpoint internalInputDataEndpoint ->
           new InternalInputMetadataRequest(internalInputDataEndpoint.sourceExecutionId());
       case DepublishInputDataEndpoint ignored ->
