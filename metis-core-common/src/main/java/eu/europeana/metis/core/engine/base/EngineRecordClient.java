@@ -67,15 +67,6 @@ public interface EngineRecordClient {
    */
   long getTotalIndexedRecords(String datasetId, IndexDatabase indexDatabase) throws ExternalTaskException;
 
-  /**
-   * Creates a dataset identifier for use within the processing engine.
-   *
-   * @param engineDatasetId the identifier of the dataset to be created
-   * @return true if the dataset identifier was successfully created, false otherwise
-   * @throws ExternalTaskException if an error occurs while creating the dataset identifier
-   */
-  boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException;
-
   String createEngineDatasetId(Dataset dataset) throws ExternalTaskException;
 
 }

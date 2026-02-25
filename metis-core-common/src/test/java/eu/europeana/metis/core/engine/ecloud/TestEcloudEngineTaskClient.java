@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
@@ -43,6 +45,7 @@ import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import io.micrometer.common.util.StringUtils;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -338,9 +341,9 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void createEngineDatasetId() throws ExternalTaskException {
-    when(ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), DATASET_ID)).thenReturn(
+    when(ecloudEngineDatasetRecordClient.createEngineDatasetId(eq(ecloudEngineTaskSettings.getProvider()), anyString())).thenReturn(
         true);
-    assertTrue(ecloudEngineTaskClient.createEngineDatasetId(DATASET_ID));
+    assertTrue(StringUtils.isNotBlank(ecloudEngineTaskClient.createEngineDatasetId(new Dataset())));
   }
 
   @Test

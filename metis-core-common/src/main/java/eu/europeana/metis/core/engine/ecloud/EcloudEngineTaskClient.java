@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -230,7 +231,8 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public void cancelEngineTask(String topologyName, String taskId, String message, FullBatchJobType step) throws ExternalTaskException {
+  public void cancelEngineTask(String topologyName, String taskId, String message, FullBatchJobType step)
+      throws ExternalTaskException {
     try {
       dpsClient.killTask(topologyName, parseLong(taskId), message);
     } catch (DpsException | RuntimeException e) {
@@ -239,13 +241,15 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException {
-    return ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), engineDatasetId);
-  }
-
-  @Override
   public String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
-    return null;
+    String engineDatasetId = UUID.randomUUID().toString();
+    boolean isEngineDatasetIdCreated = ecloudEngineDatasetRecordClient.createEngineDatasetId(
+        ecloudEngineTaskSettings.getProvider(), engineDatasetId);
+    if (!isEngineDatasetIdCreated) {
+      throw new ExternalTaskException(
+          String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
+    }
+    return engineDatasetId;
   }
 
   @Override

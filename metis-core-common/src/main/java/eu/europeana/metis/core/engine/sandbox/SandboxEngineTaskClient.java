@@ -52,11 +52,6 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException {
-    return false;
-  }
-
-  @Override
   public String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
     Country country = Country.valueOf(dataset.getCountry().name());
     Language language = Language.valueOf(dataset.getLanguage().name());

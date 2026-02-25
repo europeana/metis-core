@@ -62,7 +62,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
@@ -386,14 +385,6 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
         || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
       String engineDatasetId = workflowExecutorSettings.engineTaskClient().createEngineDatasetId(dataset);
-      if (StringUtils.isBlank(engineDatasetId)) {
-        engineDatasetId = UUID.randomUUID().toString();
-        boolean isEngineDatasetIdCreated = workflowExecutorSettings.engineTaskClient().createEngineDatasetId(engineDatasetId);
-        if (!isEngineDatasetIdCreated) {
-          throw new ExternalTaskException(
-              String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
-        }
-      }
       dataset.setEcloudDatasetId(engineDatasetId);
       datasetDao.update(dataset);
     } else {
