@@ -15,6 +15,7 @@ import eu.europeana.metis.sandbox.common.task.input.OaiHarvestInputMetadataReque
 import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskKey;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -60,15 +61,12 @@ public class SandboxEngineTask extends EngineTask {
 
   private void setInputDataLocation() {
     InputMetadataRequest inputMetadataRequest = switch (this.inputDataEndpoint) {
-      case OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters ->
-          new OaiHarvestInputMetadataRequest(
-          oaiHarvestInputDataParameters.url(), oaiHarvestInputDataParameters.set(),
-          oaiHarvestInputDataParameters.metadataPrefix(),
-          oaiHarvestInputDataParameters.from(), oaiHarvestInputDataParameters.until());
-      case HttpHarvestInputDataEndpoint httpHarvestInputDataEndpoint ->
-          new HttpHarvestInputMetadataRequest(httpHarvestInputDataEndpoint.url());
-      case InternalInputDataEndpoint internalInputDataEndpoint ->
-          new InternalInputMetadataRequest(internalInputDataEndpoint.sourceExecutionId());
+      case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Date from, Date until) ->
+          new OaiHarvestInputMetadataRequest(url, set, metadataPrefix, from, until);
+      case HttpHarvestInputDataEndpoint(String url) ->
+          new HttpHarvestInputMetadataRequest(url);
+      case InternalInputDataEndpoint(String url, String sourceExecutionId, DataRevision inputRevision) ->
+          new InternalInputMetadataRequest(sourceExecutionId);
       case DepublishInputDataEndpoint ignored ->
           throw new IllegalArgumentException("DepublishInputDataEndpoint is not supported for sandbox tasks");
     };
@@ -76,6 +74,6 @@ public class SandboxEngineTask extends EngineTask {
   }
 
   private void setOutputRevision() {
-
+    //Not required.
   }
 }

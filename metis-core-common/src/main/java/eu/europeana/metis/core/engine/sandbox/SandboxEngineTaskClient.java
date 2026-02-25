@@ -181,7 +181,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
 
   @Override
   public void close() throws Exception {
-
+    //Not required
   }
 
   private static EngineTaskProgress convertToProcessingEngineTaskProgress(SandboxTaskProgress sandboxTaskProgress) {
