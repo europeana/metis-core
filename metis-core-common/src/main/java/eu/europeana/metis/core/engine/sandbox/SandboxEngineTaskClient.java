@@ -52,7 +52,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
+  public String createEngineDatasetId(Dataset dataset) {
     Country country = Country.valueOf(dataset.getCountry().name());
     Language language = Language.valueOf(dataset.getLanguage().name());
     DatasetMetadataRequest datasetMetadataRequest = new DatasetMetadataRequest(dataset.getDatasetName(), country, language);
@@ -142,12 +142,12 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) {
     return null;
   }
 
   @Override
-  public List<String> getPublishedRecords(String datasetId, List<String> recordsIds) throws ExternalTaskException {
+  public List<String> getPublishedRecords(String datasetId, List<String> recordsIds) {
     return List.of();
   }
 
@@ -158,29 +158,27 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public boolean hasEngineTaskErrorReport(String topologyName, String taskId) throws ExternalTaskException {
+  public boolean hasEngineTaskErrorReport(String topologyName, String taskId) {
     return false;
   }
 
   @Override
-  public EngineTaskErrors getEngineTaskErrors(String topologyName, String taskId, int maxEntries) throws ExternalTaskException {
+  public EngineTaskErrors getEngineTaskErrors(String topologyName, String taskId, int maxEntries) {
     return null;
   }
 
   @Override
-  public RecordStatisticsDTO getEngineTaskContentRecordStatistics(String topologyName, String taskId)
-      throws ExternalTaskException {
+  public RecordStatisticsDTO getEngineTaskContentRecordStatistics(String topologyName, String taskId) {
     return null;
   }
 
   @Override
-  public NodePathStatisticsDTO getEngineTaskContentNodePathStatistics(String topologyName, String taskId, String nodePath)
-      throws ExternalTaskException {
+  public NodePathStatisticsDTO getEngineTaskContentNodePathStatistics(String topologyName, String taskId, String nodePath) {
     return null;
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     //Not required
   }
 

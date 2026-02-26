@@ -11,9 +11,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.exception.ExternalTaskException;
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Monitors and manages the execution of a task in a processing engine.
@@ -21,10 +19,9 @@ import org.slf4j.LoggerFactory;
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
+@Slf4j
 public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private final String datasetId;
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
@@ -34,8 +31,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
    * @param plugin The plugin instance to be monitored, of type {@link AbstractExecutablePlugin}.
    * @param engineTaskClient The engine task client for managing and interacting with engine tasks.
    */
-  public EngineTaskMonitor(String datasetId, AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
-    this.datasetId = datasetId;
+  public EngineTaskMonitor(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
   }
@@ -48,10 +44,10 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
    * @throws ExternalTaskException If an error occurs while interacting with the external resource.
    */
   public EngineTaskProgress monitor() throws ExternalTaskException {
-    LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
+    log.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
     EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
         plugin.getTopologyName(), plugin.getExternalTaskId(), PluginTypeToBatchJobMapper.map(plugin.getPluginType()));
-    LOGGER.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
+    log.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
     updateExecutionProgress(engineTaskProgress);
     return engineTaskProgress;
   }
@@ -120,7 +116,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
    * @throws ExternalTaskException If an error occurs while attempting to cancel the task.
    */
   public void cancel(String cancelledById) throws ExternalTaskException {
-    LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
+    log.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User";
     engineTaskClient.cancelEngineTask(plugin.getTopologyName(), plugin.getExternalTaskId(), message, PluginTypeToBatchJobMapper.map(plugin.getPluginType()));
   }

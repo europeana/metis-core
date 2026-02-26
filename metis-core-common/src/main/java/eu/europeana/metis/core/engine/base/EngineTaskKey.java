@@ -6,7 +6,6 @@ package eu.europeana.metis.core.engine.base;
 public enum EngineTaskKey {
 
   //Sandbox
-  STEP_SIZE,
   ENGINE_DATASET_ID,
   JOB_NAME,
 

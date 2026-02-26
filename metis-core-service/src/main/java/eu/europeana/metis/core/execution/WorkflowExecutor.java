@@ -297,7 +297,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
 
   private void periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
-    final EngineTaskMonitor<S, T> engineTaskMonitor = new EngineTaskMonitor<>(datasetId, plugin, engineTaskClient);
+    final EngineTaskMonitor<S, T> engineTaskMonitor = new EngineTaskMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
