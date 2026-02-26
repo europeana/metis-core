@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <T> The type of {@link EngineTask} created by this factory.
  */
 public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
-    AbstractInternalEngineTaskFactory<S, T> {
+    AbstractIntermediateEngineTaskFactory<S, T> {
 
   /**
    * Constructor.
