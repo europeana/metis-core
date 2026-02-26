@@ -35,9 +35,9 @@ import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
+import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
-import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -243,7 +243,7 @@ class TestWorkflowExecutor {
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
-    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any(FullBatchJobType.class)))
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any(PluginType.class)))
         .thenThrow(new ExternalTaskException("",
             new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 

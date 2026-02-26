@@ -1,10 +1,13 @@
 package eu.europeana.metis.core.engine.sandbox;
 
+import static java.util.Objects.requireNonNull;
+
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
@@ -13,6 +16,7 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
+import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.sandbox.common.DatasetMetadataRequest;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
@@ -23,7 +27,6 @@ import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress.SandboxT
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestClient;
 
@@ -78,33 +81,35 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, FullBatchJobType step)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, PluginType pluginType)
       throws ExternalTaskException {
+    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
     try {
       SandboxTaskProgress sandboxTaskProgress =
           restClient.get()
                     .uri(uriBuilder -> uriBuilder
                         .path("/task/progress")
                         .queryParam("executionId", taskId)
-                        .queryParam("step", step)
+                        .queryParam("step", fullBatchJobType)
                         .build())
                     .retrieve()
                     .body(SandboxTaskProgress.class);
-      return convertToProcessingEngineTaskProgress(Objects.requireNonNull(sandboxTaskProgress));
+      return convertToProcessingEngineTaskProgress(requireNonNull(sandboxTaskProgress));
     } catch (RuntimeException e) {
       throw new ExternalTaskException("Fetching task progress failed", e);
     }
   }
 
   @Override
-  public void cancelEngineTask(String topologyName, String taskId, String message, FullBatchJobType step)
+  public void cancelEngineTask(String topologyName, String taskId, String message, PluginType pluginType)
       throws ExternalTaskException {
+    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
     try {
       restClient.post()
                 .uri(uriBuilder -> uriBuilder
                     .path("/task/cancel")
                     .queryParam("executionId", taskId)
-                    .queryParam("step", step)
+                    .queryParam("step", fullBatchJobType)
                     .build())
                 .retrieve()
                 .toBodilessEntity();
@@ -142,8 +147,23 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) {
-    return null;
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp, PluginType pluginType)
+      throws ExternalTaskException {
+    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
+    try {
+      String recordXml =
+          restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                        .path("/dataset/{datasetId}/record")
+                        .queryParam("recordId", recordId)
+                        .queryParam("step", fullBatchJobType)
+                        .build(engineDatasetId))
+                    .retrieve()
+                    .body(String.class);
+      return recordXml == null ? null : new Record(recordId, recordXml);
+    } catch (RuntimeException e) {
+      throw new ExternalTaskException("Failed to fetch record from Sandbox", e);
+    }
   }
 
   @Override

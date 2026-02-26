@@ -301,7 +301,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * Get a record from the external resource based on o searchId, workflow execution and {@link PluginType}.
    *
    * @param workflowExecutionId the execution identifier of the workflow
-   * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
+   * @param executablePluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param idToSearch the ID we are searching for and for which we want to find a record
    * @return the record from the external resource
    * @throws GenericMetisException can be one of:
@@ -312,19 +312,22 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * execution exists for the provided identifier</li>
    * </ul>
    */
-  public Record searchRecordByIdFromPluginExecution(String workflowExecutionId, ExecutablePluginType pluginType,
-      String idToSearch) throws GenericMetisException {
+  public Record searchRecordByIdFromPluginExecution(
+      String workflowExecutionId, ExecutablePluginType executablePluginType, String idToSearch) throws GenericMetisException {
 
     // Get the right workflow execution and plugin type.
-    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
-    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
+    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId,
+        executablePluginType);
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, executablePluginType, executionAndPlugin);
 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();
+    final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
 
     //Check engine record id and then europeana record id.
-    Record recordData = engineTaskClient.getRecord(idToSearch, revisionName, executionAndPlugin.getRight().getStartedDate());
+    Record recordData = engineTaskClient.getRecord(engineDatasetId, idToSearch, revisionName,
+        executionAndPlugin.getRight().getStartedDate(), executablePluginType.toPluginType());
     if (recordData == null) {
       String normalizedRecordId = idToSearch;
       try {
@@ -333,7 +336,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       } catch (BadContentException e) {
         LOGGER.info(format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
-      recordData = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
+      recordData = engineTaskClient.getRecord(engineDatasetId, normalizedRecordId, revisionName,
+          executionAndPlugin.getRight().getStartedDate(), executablePluginType.toPluginType());
     }
     return recordData;
   }

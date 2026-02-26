@@ -29,9 +29,9 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
+import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
-import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -102,7 +102,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, FullBatchJobType step)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, PluginType pluginType)
       throws ExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));
@@ -231,7 +231,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public void cancelEngineTask(String topologyName, String taskId, String message, FullBatchJobType step)
+  public void cancelEngineTask(String topologyName, String taskId, String message, PluginType pluginType)
       throws ExternalTaskException {
     try {
       dpsClient.killTask(topologyName, parseLong(taskId), message);
@@ -267,7 +267,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp, PluginType pluginType) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), recordId, revisionName,
         revisionTimestamp);
   }

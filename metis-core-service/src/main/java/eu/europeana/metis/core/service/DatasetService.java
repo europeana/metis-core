@@ -467,16 +467,16 @@ public class DatasetService {
       return records.stream().map(ecloudIdXmlRecord -> {
         try {
           EuropeanaGeneratedIdsMap europeanaGeneratedIdsMap = europeanIdCreator
-              .constructEuropeanaId(ecloudIdXmlRecord.getXmlRecord(), dataset.getDatasetId());
-          return new Record(ecloudIdXmlRecord.getEcloudId(),
-              transformer.transform(ecloudIdXmlRecord.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap)
+              .constructEuropeanaId(ecloudIdXmlRecord.xmlRecord(), dataset.getDatasetId());
+          return new Record(ecloudIdXmlRecord.ecloudId(),
+              transformer.transform(ecloudIdXmlRecord.xmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap)
                          .toString());
         } catch (TransformationException e) {
           LOGGER.info("Record from list failed transformation", e);
-          return new Record(ecloudIdXmlRecord.getEcloudId(), e.getMessage());
+          return new Record(ecloudIdXmlRecord.ecloudId(), e.getMessage());
         } catch (EuropeanaIdException e) {
           LOGGER.info(CommonStringValues.EUROPEANA_ID_CREATOR_INITIALIZATION_FAILED, e);
-          return new Record(ecloudIdXmlRecord.getEcloudId(), e.getMessage());
+          return new Record(ecloudIdXmlRecord.ecloudId(), e.getMessage());
         }
       }).toList();
     } catch (TransformationException e) {

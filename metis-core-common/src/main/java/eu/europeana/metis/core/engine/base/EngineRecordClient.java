@@ -2,6 +2,7 @@ package eu.europeana.metis.core.engine.base;
 
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.util.Date;
 import java.util.List;
@@ -42,10 +43,11 @@ public interface EngineRecordClient {
    * @param recordId the unique identifier of the record to retrieve
    * @param revisionName the revision name of the record to retrieve
    * @param revisionTimestamp the timestamp of the record's specific revision
+   * @param pluginType
    * @return the retrieved Record object matching the provided criteria
    * @throws ExternalTaskException if there is an error while retrieving the record
    */
-  Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException;
+  Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp, PluginType pluginType) throws ExternalTaskException;
 
   /**
    * Retrieves a list of published record identifiers for a given dataset.

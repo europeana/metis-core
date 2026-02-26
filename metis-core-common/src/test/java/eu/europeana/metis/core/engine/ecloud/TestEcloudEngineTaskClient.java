@@ -371,7 +371,7 @@ class TestEcloudEngineTaskClient {
     Record records = new Record();
     when(ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), "recordId", REVISION_NAME,
         now)).thenReturn(records);
-    assertEquals(records, ecloudEngineTaskClient.getRecord("recordId", REVISION_NAME, now));
+    assertEquals(records, ecloudEngineTaskClient.getRecord(DATASET_ID, "recordId", REVISION_NAME, now, null));
   }
 
   @Test
