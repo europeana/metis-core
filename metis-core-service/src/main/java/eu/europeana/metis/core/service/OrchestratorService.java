@@ -63,7 +63,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -698,12 +698,11 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
         executionInfo::setLastPublishedRecords, executionInfo::setTotalPublishedRecords);
 
     //Compute depublish count
-    final int depublishedRecordCount;
+    final long depublishedRecordCount;
     if (datasetCurrentlyDepublished) {
       depublishedRecordCount = executionInfo.getLastPublishedRecords();
     } else {
-      depublishedRecordCount = (int) depublishRecordIdDao
-          .countSuccessfullyDepublishedRecordIdsForDataset(datasetId);
+      depublishedRecordCount = depublishRecordIdDao.countSuccessfullyDepublishedRecordIdsForDataset(datasetId);
     }
 
     //Compute more general information of the plugin
@@ -757,10 +756,10 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
         && depublishPlugin.getPluginMetadata().isDatasetDepublish();
   }
 
-  private boolean computeRecordCountsAndCheckDeletedRecords(ExecutablePlugin executablePlugin, IntConsumer lastRecordsSetter,
-      IntConsumer totalRecordsSetter) {
-    int recordCount = 0;
-    int totalRecordCount = -1;
+  private boolean computeRecordCountsAndCheckDeletedRecords(ExecutablePlugin executablePlugin, LongConsumer lastRecordsSetter,
+      LongConsumer totalRecordsSetter) {
+    long recordCount = 0;
+    long totalRecordCount = -1;
     boolean hasDeletedRecords = false;
     if (Objects.nonNull(executablePlugin)) {
       recordCount = executablePlugin.getExecutionProgress().getProcessedRecords()

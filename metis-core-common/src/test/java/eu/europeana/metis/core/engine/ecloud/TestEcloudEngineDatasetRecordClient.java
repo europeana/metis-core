@@ -98,8 +98,8 @@ class TestEcloudEngineDatasetRecordClient {
     List<Record> records =
         ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, new Date(), 1);
     assertEquals(1, records.size());
-    assertEquals(cloudTagsResponse.getCloudId(), records.getFirst().getEcloudId());
-    assertEquals(recordContent, records.getFirst().getXmlRecord());
+    assertEquals(cloudTagsResponse.getCloudId(), records.getFirst().ecloudId());
+    assertEquals(recordContent, records.getFirst().xmlRecord());
   }
 
   @Test
@@ -226,8 +226,8 @@ class TestEcloudEngineDatasetRecordClient {
     List<Record> records =
         ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date());
     assertEquals(1, records.size());
-    assertEquals(recordIds.getFirst(), records.getFirst().getEcloudId());
-    assertEquals(recordContent, records.getFirst().getXmlRecord());
+    assertEquals(recordIds.getFirst(), records.getFirst().ecloudId());
+    assertEquals(recordContent, records.getFirst().xmlRecord());
   }
 
   @Test
@@ -319,8 +319,8 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
 
     Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date());
-    assertEquals(recordId, recordItem.getEcloudId());
-    assertEquals(recordContent, recordItem.getXmlRecord());
+    assertEquals(recordId, recordItem.ecloudId());
+    assertEquals(recordContent, recordItem.xmlRecord());
   }
 
   @Test
@@ -436,8 +436,8 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
 
     Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date());
-    assertEquals(recordId, recordItem.getEcloudId());
-    assertEquals(recordContent, recordItem.getXmlRecord());
+    assertEquals(recordId, recordItem.ecloudId());
+    assertEquals(recordContent, recordItem.xmlRecord());
   }
 
   @Test

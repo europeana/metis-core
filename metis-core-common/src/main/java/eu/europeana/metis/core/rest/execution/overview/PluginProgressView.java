@@ -1,18 +1,20 @@
 package eu.europeana.metis.core.rest.execution.overview;
 
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
+import lombok.Getter;
 
 /**
  * This class contains executionProgress information on a plugin's execution.
  */
+@Getter
 public class PluginProgressView {
 
-  private int expectedRecords;
-  private int processedRecords;
-  private int ignoredRecords;
-  private int deletedRecords;
-  private int errors;
-  private int progressPercentage;
+  private long expectedRecords;
+  private long processedRecords;
+  private long ignoredRecords;
+  private long deletedRecords;
+  private long errors;
+  private long progressPercentage;
 
   PluginProgressView() {
   }
@@ -26,29 +28,5 @@ public class PluginProgressView {
       this.errors = progress.getErrors();
       this.progressPercentage = progress.getProgressPercentage();
     }
-  }
-
-  public int getExpectedRecords() {
-    return expectedRecords;
-  }
-
-  public int getProcessedRecords() {
-    return processedRecords;
-  }
-
-  public int getIgnoredRecords() {
-    return ignoredRecords;
-  }
-
-  public int getDeletedRecords() {
-    return deletedRecords;
-  }
-
-  public int getErrors() {
-    return errors;
-  }
-
-  public int getProgressPercentage() {
-    return progressPercentage;
   }
 }

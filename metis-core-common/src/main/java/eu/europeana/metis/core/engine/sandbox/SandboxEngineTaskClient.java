@@ -204,13 +204,13 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
 
   private static EngineTaskProgress convertToProcessingEngineTaskProgress(SandboxTaskProgress sandboxTaskProgress) {
     EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
-    engineTaskProgress.setExpectedRecords(Math.toIntExact(sandboxTaskProgress.expectedRecords()));
-    engineTaskProgress.setProcessedRecords(Math.toIntExact(sandboxTaskProgress.processedRecords()));
-    engineTaskProgress.setDeletedRecords(Math.toIntExact(sandboxTaskProgress.deletedRecords()));
+    engineTaskProgress.setExpectedRecords(sandboxTaskProgress.expectedRecords());
+    engineTaskProgress.setProcessedRecords(sandboxTaskProgress.processedRecords());
+    engineTaskProgress.setDeletedRecords(sandboxTaskProgress.successDepublishRecords());
     engineTaskProgress.setIgnoredRecords(0);
-    engineTaskProgress.setProcessedErrors(Math.toIntExact(sandboxTaskProgress.failedRecords()));
+    engineTaskProgress.setProcessedErrors(sandboxTaskProgress.failRecords());
     engineTaskProgress.setPostProcessedRecordsCount(0);
-    engineTaskProgress.setDeletedErrors(0);
+    engineTaskProgress.setDeletedErrors(sandboxTaskProgress.failDepublishRecords());
     EngineTaskState engineTaskState = convertToEngineTaskState(sandboxTaskProgress.sandboxTaskState());
     engineTaskProgress.setEngineTaskState(engineTaskState);
     engineTaskProgress.setEngineTaskStateInfo("");

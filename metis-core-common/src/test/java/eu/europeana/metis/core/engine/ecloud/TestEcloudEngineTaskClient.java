@@ -349,7 +349,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void getRecords_withDatasetId() throws ExternalTaskException {
     Date now = new Date();
-    List<Record> records = List.of(new Record());
+    List<Record> records = List.of(new Record(null, null));
     when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), DATASET_ID, REPRESENTATION_NAME,
         REVISION_NAME, now, 1)).thenReturn(records);
     List<Record> recordsResult = ecloudEngineTaskClient.getRecords(DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1);
@@ -359,7 +359,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void getRecords_fromIds() throws ExternalTaskException {
     Date now = new Date();
-    List<Record> records = List.of(new Record());
+    List<Record> records = List.of(new Record(null, null));
     when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), List.of("recordId1"), REVISION_NAME,
         now)).thenReturn(records);
     assertEquals(records, ecloudEngineTaskClient.getRecords(List.of("recordId1"), REVISION_NAME, now));
@@ -368,7 +368,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void getRecord() throws ExternalTaskException {
     Date now = new Date();
-    Record records = new Record();
+    Record records = new Record(null, null);
     when(ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), "recordId", REVISION_NAME,
         now)).thenReturn(records);
     assertEquals(records, ecloudEngineTaskClient.getRecord(DATASET_ID, "recordId", REVISION_NAME, now, null));

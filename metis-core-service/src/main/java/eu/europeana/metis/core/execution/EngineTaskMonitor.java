@@ -55,9 +55,9 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
 
     // Calculate the various counts.
     // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
-    int expectedRecordCount;
-    int processedRecordCount;
-    int deletedRecordCount;
+    long expectedRecordCount;
+    long processedRecordCount;
+    long deletedRecordCount;
 
     switch (plugin.getPluginMetadata()) {
       case
@@ -96,7 +96,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
       }
     }
 
-    int errorCount = engineTaskProgress.getProcessedErrors() + engineTaskProgress.getDeletedErrors();
+    long errorCount = engineTaskProgress.getProcessedErrors() + engineTaskProgress.getDeletedErrors();
     // Update the execution progress.
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(expectedRecordCount);
