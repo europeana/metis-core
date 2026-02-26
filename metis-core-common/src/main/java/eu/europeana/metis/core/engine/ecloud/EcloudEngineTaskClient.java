@@ -77,6 +77,17 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
     engineTaskProgress.setEngineTaskState(engineTaskState);
     engineTaskProgress.setEngineTaskStateInfo(taskInfo.getStateDescription());
+
+    //Unused upcoming new counters
+    engineTaskProgress.setSuccessRecords(0);
+    engineTaskProgress.setFailRecords(0);
+    engineTaskProgress.setWarningRecords(0);
+    engineTaskProgress.setDuplicateRecords(0);
+    engineTaskProgress.setExpectedDepublishRecords(0);
+    engineTaskProgress.setSuccessDepublishRecords(0);
+    engineTaskProgress.setFailDepublishRecords(0);
+    engineTaskProgress.setProcessedDepublishRecords(0);
+
     return engineTaskProgress;
   }
 
@@ -267,7 +278,8 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp, PluginType pluginType) throws ExternalTaskException {
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
+      PluginType pluginType) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), recordId, revisionName,
         revisionTimestamp);
   }

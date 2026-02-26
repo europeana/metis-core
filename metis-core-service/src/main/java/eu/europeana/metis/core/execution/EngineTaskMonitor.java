@@ -4,6 +4,8 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
+import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
+import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskClient;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
@@ -36,8 +38,8 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   }
 
   /**
-   * Monitors and retrieves the progress of an external task associated with the plugin.
-   * Updates the execution progress based on the retrieved task information.
+   * Monitors and retrieves the progress of an external task associated with the plugin. Updates the execution progress based on
+   * the retrieved task information.
    *
    * @return An instance of {@link EngineTaskProgress} containing the progress details of the external task.
    * @throws ExternalTaskException If an error occurs while interacting with the external resource.
@@ -52,7 +54,27 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   }
 
   void updateExecutionProgress(EngineTaskProgress engineTaskProgress) {
+    //Differentiate between Ecloud and Sandbox engine task clients due to current discrepancies
+    if (engineTaskClient instanceof EcloudEngineTaskClient) {
+      updateExecutionProgressEcloud(engineTaskProgress);
+    } else if (engineTaskClient instanceof SandboxEngineTaskClient) {
+      updateExecutionProgressSandbox(engineTaskProgress);
+    }
+  }
 
+  private void updateExecutionProgressSandbox(EngineTaskProgress engineTaskProgress) {
+    //todo: We further need to update the ExecutionProgress entity to support the new counters
+    ExecutionProgress executionProgress = plugin.getExecutionProgress();
+    executionProgress.setExpectedRecords(engineTaskProgress.getExpectedRecords());
+    executionProgress.setProcessedRecords(engineTaskProgress.getProcessedRecords());
+    executionProgress.setDeletedRecords(engineTaskProgress.getDeletedRecords());
+    executionProgress.setIgnoredRecords(engineTaskProgress.getIgnoredRecords());
+    executionProgress.setErrors(engineTaskProgress.getFailRecords() + engineTaskProgress.getFailDepublishRecords());
+    executionProgress.recalculateProgressPercentage();
+    executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
+  }
+
+  private void updateExecutionProgressEcloud(EngineTaskProgress engineTaskProgress) {
     // Calculate the various counts.
     // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
     long expectedRecordCount;

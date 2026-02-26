@@ -35,4 +35,14 @@ public class EngineTaskProgress {
 
   private String engineTaskStateInfo;
 
+  //Upcoming new counters.
+  private long successRecords;
+  private long failRecords;
+  private long warningRecords;
+  private long duplicateRecords;
+  private long expectedDepublishRecords;
+  private long successDepublishRecords;
+  private long failDepublishRecords;
+  private long processedDepublishRecords;
+
 }
