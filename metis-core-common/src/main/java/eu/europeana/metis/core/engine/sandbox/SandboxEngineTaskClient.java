@@ -30,12 +30,26 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestClient;
 
+/**
+ * Client for managing and interacting with tasks in the Metis Sandbox processing engine. Handles task creation, submission, monitoring,
+ * error reporting, and record operations.
+ */
 @Slf4j
 public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTaskSettings, SandboxEngineTask> {
 
+  private static final String FULL_BATCH_JOB_TYPE_PARAM = "fullBatchJobType";
+  private static final String EXECUTION_ID_PARAM = "executionId";
+  private static final String RECORD_ID_PARAM = "recordId";
+  private static final String METIS_DATASET_ID_PARAM = "metisDatasetId";
   private final SandboxEngineTaskSettings engineTaskSettings;
   private final RestClient restClient;
 
+  /**
+   * Constructor.
+   *
+   * @param engineTaskSettings the settings for configuring the engine task. Must not be null.
+   * @param restClient the REST client used for communication with external services. Must not be null.
+   */
   public SandboxEngineTaskClient(SandboxEngineTaskSettings engineTaskSettings, RestClient restClient) {
     this.engineTaskSettings = engineTaskSettings;
     this.restClient = restClient;
@@ -89,8 +103,8 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
           restClient.get()
                     .uri(uriBuilder -> uriBuilder
                         .path("/task/progress")
-                        .queryParam("executionId", taskId)
-                        .queryParam("step", fullBatchJobType)
+                        .queryParam(EXECUTION_ID_PARAM, taskId)
+                        .queryParam(FULL_BATCH_JOB_TYPE_PARAM, fullBatchJobType)
                         .build())
                     .retrieve()
                     .body(SandboxTaskProgress.class);
@@ -108,8 +122,8 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
       restClient.post()
                 .uri(uriBuilder -> uriBuilder
                     .path("/task/cancel")
-                    .queryParam("executionId", taskId)
-                    .queryParam("step", fullBatchJobType)
+                    .queryParam(EXECUTION_ID_PARAM, taskId)
+                    .queryParam(FULL_BATCH_JOB_TYPE_PARAM, fullBatchJobType)
                     .build())
                 .retrieve()
                 .toBodilessEntity();
@@ -124,7 +138,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
       Long response = restClient.get()
                                 .uri(uriBuilder -> uriBuilder
                                     .path("/task/indexedRecordsCount")
-                                    .queryParam("metisDatasetId", datasetId)
+                                    .queryParam(METIS_DATASET_ID_PARAM, datasetId)
                                     .build())
                                 .retrieve()
                                 .body(Long.class);
@@ -147,7 +161,8 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp, PluginType pluginType)
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
+      PluginType pluginType)
       throws ExternalTaskException {
     FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
     try {
@@ -155,8 +170,8 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
           restClient.get()
                     .uri(uriBuilder -> uriBuilder
                         .path("/dataset/{datasetId}/record")
-                        .queryParam("recordId", recordId)
-                        .queryParam("step", fullBatchJobType)
+                        .queryParam(RECORD_ID_PARAM, recordId)
+                        .queryParam(FULL_BATCH_JOB_TYPE_PARAM, fullBatchJobType)
                         .build(engineDatasetId))
                     .retrieve()
                     .body(String.class);
