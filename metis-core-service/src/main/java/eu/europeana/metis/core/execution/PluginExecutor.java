@@ -59,8 +59,9 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    * @param plugin the {@link AbstractExecutablePlugin} instance to be executed
    * @param startDateToUse the {@link Date} to be used as the starting reference for execution
    * @param workflowExecution the {@link WorkflowExecution} object representing the current workflow execution context
+   * @return true if the plugin execution was successful, false otherwise
    */
-  public void execute(AbstractExecutablePlugin<?> plugin, Date startDateToUse, WorkflowExecution workflowExecution) {
+  public boolean execute(AbstractExecutablePlugin<?> plugin, Date startDateToUse, WorkflowExecution workflowExecution) {
     EngineTaskSubmitter<S, T> engineTaskSubmitter = new EngineTaskSubmitter<>(plugin, engineTaskClient);
     try {
       preparePredecessorMetadata(plugin, workflowExecution);
@@ -73,9 +74,11 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       plugin.setFinishedDate(null);
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
       plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, TRIGGER_ERROR_PREFIX, ExceptionUtils.getStackTrace(e)));
+      return false;
     } finally {
       workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
     }
+    return true;
   }
 
   private void submitIfNotStarted(AbstractExecutablePlugin<?> plugin,
