@@ -237,10 +237,11 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
             workflowExecution.getId(), executablePluginType);
         final Date startDateToUse = i == 0 ? workflowExecution.getStartedDate() : new Date();
         boolean startedSuccessfully = pluginExecutor.execute(executablePlugin, startDateToUse, workflowExecution);
-        if (!startedSuccessfully) {
-          return true;  // plugin attempted but failed immediately
+        if (startedSuccessfully) {
+          periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
+        } else {
+          log.debug("Plugin execution attempted but failed immediately");
         }
-        periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
       } finally {
         semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
         log.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
