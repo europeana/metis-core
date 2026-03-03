@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -131,7 +133,7 @@ class TestWorkflowExecutor {
   }
 
   @Test
-  void callNonMockedFieldValue_DROPPEDExeternalTaskButNotCancelled() throws Exception {
+  void callNonMockedFieldValue_DROPPEDExternalTaskButNotCancelled() throws Exception {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -493,5 +495,35 @@ class TestWorkflowExecutor {
         workflowExecutionArgumentCaptor.getValue().getWorkflowStatus());
     assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(),
         workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+  }
+
+  @Test
+  void call_whenSubmitThrows_thenPluginFailsImmediately_andMonitoringIsNotStarted() throws Exception {
+    OaipmhHarvestPlugin plugin = Mockito.spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPluginMetadata metadata = new OaipmhHarvestPluginMetadata();
+    plugin.setPluginMetadata(metadata);
+
+    ArrayList<AbstractMetisPlugin> plugins = new ArrayList<>();
+    plugins.add(plugin);
+
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecution.setMetisPlugins(plugins);
+    workflowExecution.setStartedDate(new Date());
+
+    doThrow(new ExternalTaskException("Submit failed"))
+        .when(engineTaskClient)
+        .submitEngineTask(any(EngineTask.class), anyString());
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+
+    executor.call();
+    verify(plugin).setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+    verify(plugin).setFailMessage(anyString());
+    verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), any());
+    assertNotEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
+    verify(workflowExecutionDao, times(1)).update(workflowExecution);
   }
 }

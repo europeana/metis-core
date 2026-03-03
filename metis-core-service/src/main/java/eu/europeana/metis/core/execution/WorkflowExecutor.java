@@ -207,13 +207,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
    * <ol>
    *   <li>If semaphore permission granted then there is space for that plugin and the plugin
    *   starts</li>
-   *   <li>If semaphore permission NOT granted then the plugin din not run and a false flag is
-   *   send back as a return result</li>
+   *   <li>If semaphore permission NOT granted then the plugin did not run and a false flag is
+   *   sent back as a return result</li>
    * </ol>
    *
    * @param i the index of the plugin in the list of plugins inside the workflow execution
    * @param plugin the provided plugin to run
-   * @return true if plugin ran, false if plugin did not run
+   * @return true if there was space for the plugin to run, false otherwise
    */
   private boolean runMetisPluginWithSemaphoreAllocation(int i, AbstractMetisPlugin<?> plugin) {
     // Sanity check
@@ -236,8 +236,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         log.debug("workflowExecutionId: {}, executablePluginType: {} - Acquired semaphore",
             workflowExecution.getId(), executablePluginType);
         final Date startDateToUse = i == 0 ? workflowExecution.getStartedDate() : new Date();
-        pluginExecutor.execute(executablePlugin, startDateToUse, workflowExecution);
-        periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
+        boolean startedSuccessfully = pluginExecutor.execute(executablePlugin, startDateToUse, workflowExecution);
+        if (startedSuccessfully) {
+          periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
+        } else {
+          log.debug("Plugin execution attempted but failed immediately");
+        }
       } finally {
         semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
         log.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
