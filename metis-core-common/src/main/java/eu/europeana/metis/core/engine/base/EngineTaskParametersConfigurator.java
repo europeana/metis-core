@@ -60,7 +60,7 @@ public final class EngineTaskParametersConfigurator {
   /**
    * Creates a default set of task parameters used for configuring an engine task.
    *
-   * @param engineDatasetId
+   * @param engineDatasetId the identifier of the engine dataset
    * @param datasetId the identifier of the dataset
    * @param previousTaskId the identifier of the previous task
    * @param inputDataRevision the revision of input data
@@ -85,7 +85,7 @@ public final class EngineTaskParametersConfigurator {
   /**
    * Creates a map of default task parameters for a harvest operation.
    *
-   * @param engineDatasetId
+   * @param engineDatasetId the identifier of the engine dataset
    * @param datasetId the identifier of the dataset to be harvested
    * @param incrementalHarvest a flag indicating if the harvest should be incremental
    * @param startedDate the starting date of the harvest operation

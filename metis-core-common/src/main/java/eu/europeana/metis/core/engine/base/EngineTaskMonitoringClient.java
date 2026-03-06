@@ -16,9 +16,9 @@ public interface EngineTaskMonitoringClient {
   /**
    * Retrieves the progress of a specific task running in the engine.
    *
-   * @param topologyName The name of the topology associated with the task.
-   * @param taskId The unique identifier of the task whose progress is to be retrieved.
-   * @param pluginType
+   * @param topologyName the name of the topology associated with the task.
+   * @param taskId the unique identifier of the task whose progress is to be retrieved.
+   * @param pluginType the plugin type associated with the task
    * @return An instance of {@link EngineTaskProgress} containing details about the task's progress.
    * @throws ExternalTaskException If an error occurs while accessing the external resource.
    */

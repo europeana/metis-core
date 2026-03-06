@@ -22,6 +22,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
 
+/**
+ * Represents a task for the metis-sandbox processing engine that wraps and transforms task parameters for use in a metis-sandbox
+ * task.
+ */
 @Getter
 public class SandboxEngineTask extends EngineTask {
 

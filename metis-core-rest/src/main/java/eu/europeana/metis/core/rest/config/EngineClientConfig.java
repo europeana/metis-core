@@ -40,6 +40,12 @@ public class EngineClientConfig {
   private FileServiceClient fileServiceClient;
   private UISClient uisClient;
 
+  /**
+   * Creates and configures a {@link RestClient} instance based on the specified engine configuration properties.
+   *
+   * @param engineConfigurationProperties the configuration properties for the engine
+   * @return a fully configured {@link RestClient} instance
+   */
   @Bean
   public RestClient engineRestClient(EngineConfigurationProperties engineConfigurationProperties) {
     return RestClient.builder()
@@ -52,9 +58,11 @@ public class EngineClientConfig {
    * <p>
    * If the engine type is ECLOUD, initializes an EcloudEngineTaskClient; otherwise, initializes a MockEngineTaskClient.
    *
-   * @param metisCoreConfigurationProperties The core configuration properties for the Metis engine.
-   * @param ecloudConfigurationProperties The configuration properties specific to the ECLOUD engine.
-   * @param throttlingValues The throttling values for managing concurrency levels.
+   * @param metisCoreConfigurationProperties the core configuration properties for the Metis engine.
+   * @param ecloudConfigurationProperties the configuration properties specific to the ECLOUD engine.
+   * @param engineConfigurationProperties the configuration properties specific to the engine.
+   * @param throttlingValues the throttling values for managing concurrency levels.
+   * @param restClient the RestClient instance used for making HTTP requests. Currently used for metis-sandbox api.
    * @return An instance of EngineTaskClient configured based on the specified properties and engine type.
    */
   @Bean(destroyMethod = "close")

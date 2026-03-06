@@ -40,10 +40,11 @@ public interface EngineRecordClient {
   /**
    * Retrieves a record based on the provided record identifier, revision name, and timestamp.
    *
+   * @param engineDatasetId the identifier of the engine dataset containing the record
    * @param recordId the unique identifier of the record to retrieve
    * @param revisionName the revision name of the record to retrieve
    * @param revisionTimestamp the timestamp of the record's specific revision
-   * @param pluginType
+   * @param pluginType the plugin type associated with the record retrieval
    * @return the retrieved Record object matching the provided criteria
    * @throws ExternalTaskException if there is an error while retrieving the record
    */
@@ -69,6 +70,13 @@ public interface EngineRecordClient {
    */
   long getTotalIndexedRecords(String datasetId, IndexDatabase indexDatabase) throws ExternalTaskException;
 
+  /**
+   * Generates a unique engine dataset identifier for the given dataset to be used in the processing engine.
+   *
+   * @param dataset the dataset object for which the engine dataset identifier is to be generated
+   * @return the generated engine dataset identifier
+   * @throws ExternalTaskException if an error occurs during the identifier generation process
+   */
   String createEngineDatasetId(Dataset dataset) throws ExternalTaskException;
 
 }
