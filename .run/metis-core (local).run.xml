@@ -2,7 +2,7 @@
   <configuration default="false" name="metis-core (local)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" folderName="spring-run-configuration">
     <option name="ALTERNATIVE_JRE_PATH" value="temurin-21" />
     <module name="metis-core-rest" />
-    <option name="PROGRAM_PARAMETERS" value="--spring.config.location=file:///data/metis-configuration/metis-core/metis-core-rest/k8s/overlays/local/components/properties/application.properties --server.servlet.context-path=/metis-core --logging.config=file:///data/metis-configuration/k8s/common-components/log4j2-xml/log4j2.xml --truststore.path=/data/metis-configuration/k8s/common-components/custom-truststore-jks/custom-truststore.jks --server.port=8081" />
+    <option name="PROGRAM_PARAMETERS" value="--spring.config.location=file:///data/metis-configuration/metis-core/metis-core-rest/k8s/overlays/local/components/properties/application.properties --server.servlet.context-path=/metis-core --logging.config=file:///data/metis-configuration/k8s/common-components/log4j2-xml/log4j2.xml --truststore.path=/data/metis-configuration/k8s/common-components/custom-truststore-jks/custom-truststore.jks" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="eu.europeana.metis.core.rest.Application" />
     <option name="VM_PARAMETERS" value="-Dorg.springframework.boot.logging.LoggingSystem=none" />
     <extension name="coverage">
