@@ -47,7 +47,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   public EngineTaskProgress monitor() throws ExternalTaskException {
     log.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
     EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
-        plugin.getTopologyName(), plugin.getExternalTaskId(), plugin.getPluginType());
+        plugin.getTopologyName(), plugin.getExternalTaskId(), plugin.getPluginMetadata().getExecutablePluginType());
     log.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
     updateExecutionProgress(engineTaskProgress);
     return engineTaskProgress;
@@ -139,6 +139,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   public void cancel(String cancelledById) throws ExternalTaskException {
     log.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User";
-    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), plugin.getExternalTaskId(), message, plugin.getPluginType());
+    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), plugin.getExternalTaskId(), message,
+        plugin.getPluginMetadata().getExecutablePluginType());
   }
 }

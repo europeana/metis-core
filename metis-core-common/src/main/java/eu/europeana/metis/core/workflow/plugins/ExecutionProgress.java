@@ -23,10 +23,10 @@ public class ExecutionProgress {
   private long progressPercentage;
 
   // The number of processed records so far that are to be ignored for follow-up tasks.
-  private long ignoredRecords = 0;
+  private long ignoredRecords;
 
   // The number of deleted records processed so far.
-  private long deletedRecords = 0;
+  private long deletedRecords;
 
   // The number of errors encountered so far.
   private long errors;

@@ -1,7 +1,9 @@
 package eu.europeana.metis.core.engine.base;
 
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
+import org.jetbrains.annotations.UnknownNullability;
 
 /**
  * Utility class for mapping plugin types to their corresponding full batch job types. This class provides a static method to
@@ -20,7 +22,7 @@ public final class PluginTypeToBatchJobMapper {
    * @param pluginType the plugin type
    * @return the corresponding {@link FullBatchJobType} if a match is found; otherwise, {@code null}.
    */
-  public static FullBatchJobType map(PluginType pluginType) {
+  public static FullBatchJobType map(@UnknownNullability ExecutablePluginType pluginType) {
 
     return switch (pluginType) {
 
@@ -36,7 +38,7 @@ public final class PluginTypeToBatchJobMapper {
 
       //Preview and publish here redo the samething.
       case PREVIEW, PUBLISH -> FullBatchJobType.INDEX_PUBLISH;
-      case LINK_CHECKING, DEPUBLISH, REINDEX_TO_PUBLISH, REINDEX_TO_PREVIEW -> null;
+      case LINK_CHECKING, DEPUBLISH -> null;
     };
   }
 }

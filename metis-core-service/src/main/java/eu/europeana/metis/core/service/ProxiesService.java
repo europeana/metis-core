@@ -327,7 +327,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
 
     //Check engine record id and then europeana record id.
     Record recordData = engineTaskClient.getRecord(engineDatasetId, idToSearch, revisionName,
-        executionAndPlugin.getRight().getStartedDate(), executablePluginType.toPluginType());
+        executionAndPlugin.getRight().getStartedDate(), executablePluginType);
     if (recordData == null) {
       String normalizedRecordId = idToSearch;
       try {
@@ -337,7 +337,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
         LOGGER.info(format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
       recordData = engineTaskClient.getRecord(engineDatasetId, normalizedRecordId, revisionName,
-          executionAndPlugin.getRight().getStartedDate(), executablePluginType.toPluginType());
+          executionAndPlugin.getRight().getStartedDate(), executablePluginType);
     }
     return recordData;
   }

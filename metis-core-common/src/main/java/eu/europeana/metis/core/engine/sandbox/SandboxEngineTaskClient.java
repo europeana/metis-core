@@ -16,7 +16,7 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
-import eu.europeana.metis.core.workflow.plugins.PluginType;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.sandbox.common.DatasetMetadataRequest;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
@@ -27,14 +27,16 @@ import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress.SandboxT
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestClient;
 
 /**
- * Client for managing and interacting with tasks in the Metis Sandbox processing engine. Handles task creation, submission, monitoring,
- * error reporting, and record operations.
+ * Client for managing and interacting with tasks in the Metis Sandbox processing engine. Handles task creation, submission,
+ * monitoring, error reporting, and record operations.
  */
 @Slf4j
+@RequiredArgsConstructor
 public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTaskSettings, SandboxEngineTask> {
 
   private static final String FULL_BATCH_JOB_TYPE_PARAM = "fullBatchJobType";
@@ -42,18 +44,10 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   private static final String RECORD_ID_PARAM = "recordId";
   private static final String METIS_DATASET_ID_PARAM = "metisDatasetId";
   private final SandboxEngineTaskSettings engineTaskSettings;
-  private final RestClient restClient;
-
   /**
-   * Constructor.
-   *
-   * @param engineTaskSettings the settings for configuring the engine task. Must not be null.
-   * @param restClient the REST client used for communication with external services. Must not be null.
+   * REST client used for communication with external services.
    */
-  public SandboxEngineTaskClient(SandboxEngineTaskSettings engineTaskSettings, RestClient restClient) {
-    this.engineTaskSettings = engineTaskSettings;
-    this.restClient = restClient;
-  }
+  private final RestClient restClient;
 
   @Override
   public SandboxEngineTaskSettings getEngineTaskSettings() {
@@ -95,9 +89,9 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, PluginType pluginType)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
-    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
+    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(executablePluginType));
     try {
       SandboxTaskProgress sandboxTaskProgress =
           restClient.get()
@@ -115,9 +109,9 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public void cancelEngineTask(String topologyName, String taskId, String message, PluginType pluginType)
+  public void cancelEngineTask(String topologyName, String taskId, String message, ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
-    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
+    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(executablePluginType));
     try {
       restClient.post()
                 .uri(uriBuilder -> uriBuilder
@@ -162,9 +156,9 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
 
   @Override
   public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
-      PluginType pluginType)
+      ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
-    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(pluginType));
+    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(executablePluginType));
     try {
       String recordXml =
           restClient.get()

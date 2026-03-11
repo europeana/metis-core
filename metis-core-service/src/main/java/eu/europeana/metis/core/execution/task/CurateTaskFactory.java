@@ -50,7 +50,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
     Map<EngineTaskKey, String> pluginParameters = getProcessPluginParameters();
-    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginType());
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginMetadata().getExecutablePluginType());
     if (fullBatchJobType != null) {
       pluginParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
     }

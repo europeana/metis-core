@@ -84,7 +84,7 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
             engineTaskClient.getEngineTaskSettings().getProvider());
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
-    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginType());
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginMetadata().getExecutablePluginType());
     if (fullBatchJobType != null) {
       allParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
     }

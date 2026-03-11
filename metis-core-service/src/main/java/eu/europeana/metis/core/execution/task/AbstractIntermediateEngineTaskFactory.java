@@ -30,6 +30,14 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
   protected final EngineTaskClient<S, T> engineTaskClient;
   protected final AbstractExecutablePlugin<?> plugin;
 
+  /**
+   * Constructor.
+   *
+   * @param engineTaskClient the client interface for managing engine tasks, including task creation, monitoring, and operational
+   * interactions
+   * @param plugin an instance of {@code AbstractExecutablePlugin}, representing the plugin providing configuration and metadata
+   * for the associated task
+   */
   protected AbstractIntermediateEngineTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin) {
     super(engineTaskClient.getEngineTaskSettings());
     this.engineTaskClient = engineTaskClient;
