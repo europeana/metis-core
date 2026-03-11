@@ -9,7 +9,7 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import java.util.EnumMap;
@@ -24,13 +24,21 @@ import org.jetbrains.annotations.NotNull;
  * @param <S> The type of {@link EngineTaskSettings} used by the task.
  * @param <T> The type of {@link EngineTask} created by the factory.
  */
-public abstract class AbstractInternalEngineTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
+public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
     AbstractEngineTaskFactory<S, T> {
 
   protected final EngineTaskClient<S, T> engineTaskClient;
   protected final AbstractExecutablePlugin<?> plugin;
 
-  protected AbstractInternalEngineTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin) {
+  /**
+   * Constructor.
+   *
+   * @param engineTaskClient the client interface for managing engine tasks, including task creation, monitoring, and operational
+   * interactions
+   * @param plugin an instance of {@code AbstractExecutablePlugin}, representing the plugin providing configuration and metadata
+   * for the associated task
+   */
+  protected AbstractIntermediateEngineTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin) {
     super(engineTaskClient.getEngineTaskSettings());
     this.engineTaskClient = engineTaskClient;
     this.plugin = plugin;
@@ -46,7 +54,7 @@ public abstract class AbstractInternalEngineTaskFactory<S extends EngineTaskSett
 
     final String dataLocation = getDataLocation(engineDatasetId);
     final Map<EngineTaskKey, String> basicTaskParameters =
-        createDefaultTaskParameters(datasetId, previousTaskId, inputDataRevision, dataLocation);
+        createDefaultTaskParameters(engineDatasetId, datasetId, previousTaskId, inputDataRevision, dataLocation);
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
     allParameters.putAll(pluginParameters);
@@ -54,8 +62,8 @@ public abstract class AbstractInternalEngineTaskFactory<S extends EngineTaskSett
     final DataRevision outputDataRevision = createDataRevision(
         plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
 
-    final InternalInputDataEndpoint internalInputDataEndpoint = new InternalInputDataEndpoint(dataLocation,
-        inputDataRevision);
-    return engineTaskClient.createEngineTask(allParameters, internalInputDataEndpoint, outputDataRevision);
+    final IntermediateInputDataEndpoint intermediateInputDataEndpoint =
+        new IntermediateInputDataEndpoint(dataLocation, previousTaskId, inputDataRevision);
+    return engineTaskClient.createEngineTask(allParameters, intermediateInputDataEndpoint, outputDataRevision);
   }
 }

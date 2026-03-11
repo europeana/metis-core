@@ -13,7 +13,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class EcloudEngineTask extends EngineTask {
         yield REPOSITORY_URLS;
       }
       case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
-      case InternalInputDataEndpoint ignored -> DATASET_URLS;
+      case IntermediateInputDataEndpoint ignored -> DATASET_URLS;
       case DepublishInputDataEndpoint ignored -> null;
     };
     if (inputDataType != null) {

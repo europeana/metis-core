@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -26,13 +27,14 @@ import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
@@ -43,6 +45,7 @@ import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import io.micrometer.common.util.StringUtils;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +87,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url",
+    InputDataEndpoint inputDataEndpoint = new IntermediateInputDataEndpoint("http://internal.url", "",
         new DataRevision("name", "provider", new Date(), false));
     DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
     EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint,
@@ -95,7 +98,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask_throws() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new InternalInputDataEndpoint("http://internal.url",
+    InputDataEndpoint inputDataEndpoint = new IntermediateInputDataEndpoint("http://internal.url", "",
         new DataRevision("name", "provider", new Date(), false));
     DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
@@ -141,7 +144,7 @@ class TestEcloudEngineTaskClient {
 
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenReturn(taskInfo);
 
-    EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1");
+    EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1", null);
 
     assertEquals(taskInfo.getExpectedRecordsNumber(), engineTaskProgress.getExpectedRecords());
     assertEquals(taskInfo.getProcessedRecordsCount(), engineTaskProgress.getProcessedRecords());
@@ -158,7 +161,7 @@ class TestEcloudEngineTaskClient {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new AccessDeniedOrObjectDoesNotExistException());
 
     ExternalTaskException externalTaskException = assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1",null));
 
     Throwable cause = externalTaskException.getCause();
     assertNotNull(cause);
@@ -169,14 +172,16 @@ class TestEcloudEngineTaskClient {
   void getEngineTaskProgress_throwsDpsException() throws Exception {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new DpsException(""));
 
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+    assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1", null));
 
   }
 
   @Test
   void getEngineTaskProgress_throwsRuntimeException() throws DpsException {
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenThrow(new RuntimeException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1"));
+    assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1",  null));
   }
 
   @Test
@@ -318,33 +323,33 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void cancelEngineTask_success() throws Exception {
-    ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "");
+    ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "", null);
     verify(dpsClient).killTask(TOPOLOGY_NAME, 1L, "");
   }
 
   @Test
   void cancelEngineTask_throws() throws DpsException {
     when(dpsClient.killTask(TOPOLOGY_NAME, 1L, "")).thenThrow(new DpsException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", ""));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "", null));
   }
 
   @Test
   void cancelEngineTask_throwsRuntimeException() throws DpsException {
     when(dpsClient.killTask(TOPOLOGY_NAME, 1L, "")).thenThrow(new RuntimeException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", ""));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.cancelEngineTask(TOPOLOGY_NAME, "1", "", null));
   }
 
   @Test
   void createEngineDatasetId() throws ExternalTaskException {
-    when(ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), DATASET_ID)).thenReturn(
+    when(ecloudEngineDatasetRecordClient.createEngineDatasetId(eq(ecloudEngineTaskSettings.getProvider()), anyString())).thenReturn(
         true);
-    assertTrue(ecloudEngineTaskClient.createEngineDatasetId(DATASET_ID));
+    assertTrue(StringUtils.isNotBlank(ecloudEngineTaskClient.createEngineDatasetId(new Dataset())));
   }
 
   @Test
   void getRecords_withDatasetId() throws ExternalTaskException {
     Date now = new Date();
-    List<Record> records = List.of(new Record());
+    List<Record> records = List.of(new Record(null, null));
     when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), DATASET_ID, REPRESENTATION_NAME,
         REVISION_NAME, now, 1)).thenReturn(records);
     List<Record> recordsResult = ecloudEngineTaskClient.getRecords(DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1);
@@ -354,7 +359,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void getRecords_fromIds() throws ExternalTaskException {
     Date now = new Date();
-    List<Record> records = List.of(new Record());
+    List<Record> records = List.of(new Record(null, null));
     when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), List.of("recordId1"), REVISION_NAME,
         now)).thenReturn(records);
     assertEquals(records, ecloudEngineTaskClient.getRecords(List.of("recordId1"), REVISION_NAME, now));
@@ -363,10 +368,10 @@ class TestEcloudEngineTaskClient {
   @Test
   void getRecord() throws ExternalTaskException {
     Date now = new Date();
-    Record records = new Record();
+    Record records = new Record(null, null);
     when(ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), "recordId", REVISION_NAME,
         now)).thenReturn(records);
-    assertEquals(records, ecloudEngineTaskClient.getRecord("recordId", REVISION_NAME, now));
+    assertEquals(records, ecloudEngineTaskClient.getRecord(DATASET_ID, "recordId", REVISION_NAME, now, null));
   }
 
   @Test

@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -42,10 +43,8 @@ import eu.europeana.metis.core.rest.ResponseListWrapper;
 import eu.europeana.metis.core.rest.VersionEvolution;
 import eu.europeana.metis.core.rest.VersionEvolution.VersionEvolutionStep;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.controller.advice.RestResponseExceptionHandler;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
-import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.OrchestratorService;
@@ -58,6 +57,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -78,6 +78,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(OrchestratorController.class)
 @ContextConfiguration(classes = {OrchestratorController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
@@ -96,8 +97,9 @@ class TestOrchestratorController {
   private final JwtUtils jwtUtils;
 
   @Autowired
-  public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties) {
+  public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties, ObjectMapper objectMapper) {
     jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
+    TestUtils.setObjectMapper(objectMapper);
   }
 
   private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
@@ -245,8 +247,8 @@ class TestOrchestratorController {
   @Test
   void deleteWorkflow_Unauthenticated() throws Exception {
     mockMvc.perform(delete(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID, Integer.toString(TestObjectFactory.DATASETID))
-                   .contentType(MediaType.APPLICATION_JSON)
-                   .content(""))
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
            .andExpect(status().isUnauthorized());
   }
 
@@ -297,8 +299,8 @@ class TestOrchestratorController {
   @Test
   void addWorkflowInQueueOfWorkflowExecutions_Unauthenticated() throws Exception {
     mockMvc.perform(post(RestEndpoints.ORCHESTRATOR_WORKFLOWS_DATASETID_EXECUTE, Integer.toString(TestObjectFactory.DATASETID))
-                   .contentType(MediaType.APPLICATION_JSON)
-                   .content(""))
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(""))
            .andExpect(status().isUnauthorized());
   }
 
@@ -487,13 +489,13 @@ class TestOrchestratorController {
            .andExpect(jsonPath("$.lastHarvestedDate",
                is(simpleDateFormat.format(datasetExecutionInformation.getLastHarvestedDate()))))
            .andExpect(jsonPath("$.lastHarvestedRecords",
-               is(datasetExecutionInformation.getLastHarvestedRecords())))
+               is((int) datasetExecutionInformation.getLastHarvestedRecords())))
            .andExpect(jsonPath("$.firstPublishedDate",
                is(simpleDateFormat.format(datasetExecutionInformation.getFirstPublishedDate()))))
            .andExpect(jsonPath("$.lastPublishedDate",
                is(simpleDateFormat.format(datasetExecutionInformation.getLastPublishedDate()))))
            .andExpect(jsonPath("$.lastPublishedRecords",
-               is(datasetExecutionInformation.getLastPublishedRecords())));
+               is((int) datasetExecutionInformation.getLastPublishedRecords())));
   }
 
   @Test
@@ -730,56 +732,57 @@ class TestOrchestratorController {
            .andExpect(status().isForbidden());
   }
 
-    @Test
-    void testGetRecordEvolutionForVersion() throws Exception {
-      when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
+  @Test
+  void testGetRecordEvolutionForVersion() throws Exception {
+    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
 
-      // Create nonempty evolution step
-      final VersionEvolutionStep step1 = new VersionEvolutionStep();
-      step1.setFinishedTime(new Date(1));
-      step1.setPluginType(ExecutablePluginType.OAIPMH_HARVEST);
-      step1.setWorkflowExecutionId("execution 1");
-      final VersionEvolutionStep step2 = new VersionEvolutionStep();
-      step2.setFinishedTime(new Date(2));
-      step2.setPluginType(ExecutablePluginType.TRANSFORMATION);
-      step2.setWorkflowExecutionId("execution 2");
-      final VersionEvolution resultNonEmpty = new VersionEvolution();
-      resultNonEmpty.setEvolutionSteps(Arrays.asList(step1, step2));
+    // Create nonempty evolution step
+    final VersionEvolutionStep step1 = new VersionEvolutionStep();
+    step1.setFinishedTime(new Date(1));
+    step1.setPluginType(ExecutablePluginType.OAIPMH_HARVEST);
+    step1.setWorkflowExecutionId("execution 1");
+    final VersionEvolutionStep step2 = new VersionEvolutionStep();
+    step2.setFinishedTime(new Date(2));
+    step2.setPluginType(ExecutablePluginType.TRANSFORMATION);
+    step2.setWorkflowExecutionId("execution 2");
+    final VersionEvolution resultNonEmpty = new VersionEvolution();
+    resultNonEmpty.setEvolutionSteps(Arrays.asList(step1, step2));
 
-      // Test happy flow with non-empty evolution
-      final PluginType pluginType = PluginType.MEDIA_PROCESS;
-      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultNonEmpty);
-      mockMvc
-          .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
-              .header("Authorization", BEARER + MOCK_VALID_TOKEN))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.evolutionSteps", hasSize(2)))
-          .andExpect(jsonPath("$.evolutionSteps[0].workflowExecutionId", is(step1.getWorkflowExecutionId())))
-          .andExpect(jsonPath("$.evolutionSteps[0].pluginType", is(step1.getPluginType().name())))
-          .andExpect(jsonPath("$.evolutionSteps[0].finishedTime", is(simpleDateFormat.format(step1.getFinishedTime().getTime()))))
-          .andExpect(jsonPath("$.evolutionSteps[1].workflowExecutionId", is(step2.getWorkflowExecutionId())))
-          .andExpect(jsonPath("$.evolutionSteps[1].pluginType", is(step2.getPluginType().name())))
-          .andExpect(jsonPath("$.evolutionSteps[1].finishedTime", is(simpleDateFormat.format(step2.getFinishedTime().getTime()))));
+    // Test happy flow with non-empty evolution
+    final PluginType pluginType = PluginType.MEDIA_PROCESS;
+    when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultNonEmpty);
+    mockMvc
+        .perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+            .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.evolutionSteps", hasSize(2)))
+        .andExpect(jsonPath("$.evolutionSteps[0].workflowExecutionId", is(step1.getWorkflowExecutionId())))
+        .andExpect(jsonPath("$.evolutionSteps[0].pluginType", is(step1.getPluginType().name())))
+        .andExpect(jsonPath("$.evolutionSteps[0].finishedTime", is(simpleDateFormat.format(step1.getFinishedTime().getTime()))))
+        .andExpect(jsonPath("$.evolutionSteps[1].workflowExecutionId", is(step2.getWorkflowExecutionId())))
+        .andExpect(jsonPath("$.evolutionSteps[1].pluginType", is(step2.getPluginType().name())))
+        .andExpect(jsonPath("$.evolutionSteps[1].finishedTime", is(simpleDateFormat.format(step2.getFinishedTime().getTime()))));
 
-      // Test happy flow with empty evolution
-      final VersionEvolution resultEmpty = new VersionEvolution();
-      resultEmpty.setEvolutionSteps(Collections.emptyList());
-      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultEmpty);
-      mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
-              .header("Authorization", BEARER + MOCK_VALID_TOKEN))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.evolutionSteps", hasSize(0)));
+    // Test happy flow with empty evolution
+    final VersionEvolution resultEmpty = new VersionEvolution();
+    resultEmpty.setEvolutionSteps(Collections.emptyList());
+    when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenReturn(resultEmpty);
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.evolutionSteps", hasSize(0)));
 
-      // Test for bad input
-      when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenThrow(new NoWorkflowExecutionFoundException(""));
-      mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
-              .header("Authorization", BEARER + MOCK_VALID_TOKEN))
-          .andExpect(status().isNotFound());
+    // Test for bad input
+    when(orchestratorService.getRecordEvolutionForVersion(TestObjectFactory.EXECUTIONID, pluginType)).thenThrow(
+        new NoWorkflowExecutionFoundException(""));
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+               .header("Authorization", BEARER + MOCK_VALID_TOKEN))
+           .andExpect(status().isNotFound());
 
-      // Test for unauthorized user
-      when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
-      mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
-              .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
-          .andExpect(status().isForbidden());
-    }
+    // Test for unauthorized user
+    when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
+    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_WORKFLOWS_EVOLUTION, TestObjectFactory.EXECUTIONID, pluginType)
+               .header("Authorization", BEARER + MOCK_INVALID_TOKEN))
+           .andExpect(status().isForbidden());
+  }
 }

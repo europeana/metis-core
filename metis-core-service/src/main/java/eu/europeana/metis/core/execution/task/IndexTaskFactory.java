@@ -6,13 +6,16 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -22,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <T> The type of {@link EngineTask} created by this factory.
  */
 public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
-    AbstractInternalEngineTaskFactory<S, T> {
+    AbstractIntermediateEngineTaskFactory<S, T> {
 
   /**
    * Constructor.
@@ -39,8 +42,11 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
 
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
-    Map<EngineTaskKey, String> params = getIndexPluginParameters();
-    return createInternalEngineTask(datasetId, engineDatasetId, previousTaskId, params);
+    Map<EngineTaskKey, String> pluginParameters = getIndexPluginParameters();
+    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
+        plugin.getPluginMetadata().getExecutablePluginType());
+    fullBatchJobType.ifPresent(batchJobType -> pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
+    return createInternalEngineTask(datasetId, engineDatasetId, previousTaskId, pluginParameters);
   }
 
   private @NotNull Map<EngineTaskKey, String> getIndexPluginParameters() {

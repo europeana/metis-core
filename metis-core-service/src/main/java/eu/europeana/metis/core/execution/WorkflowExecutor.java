@@ -267,12 +267,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
     @Getter
     private Instant lastProgressChange = Instant.now();
-    private int expected;
-    private int processed;
-    private int deleted;
-    private int ignored;
-    private int errors;
-    private int total;
+    private long expected;
+    private long processed;
+    private long deleted;
+    private long ignored;
+    private long errors;
+    private long total;
 
     void updateFrom(AbstractExecutablePlugin<?> plugin) {
       lastProgressChange = Instant.now();

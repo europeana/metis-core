@@ -16,6 +16,7 @@ public record OaiHarvestInputDataEndpoint(
     String set,
     String metadataPrefix,
     Date from,
-    Date until) implements InputDataEndpoint {
+    Date until,
+    Integer stepSize) implements HarvestInputDataEndpoint {
 
 }

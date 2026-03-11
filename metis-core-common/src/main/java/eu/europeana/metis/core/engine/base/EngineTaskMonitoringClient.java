@@ -3,6 +3,7 @@ package eu.europeana.metis.core.engine.base;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.util.List;
 
@@ -15,12 +16,13 @@ public interface EngineTaskMonitoringClient {
   /**
    * Retrieves the progress of a specific task running in the engine.
    *
-   * @param topologyName The name of the topology associated with the task.
-   * @param taskId The unique identifier of the task whose progress is to be retrieved.
+   * @param topologyName the name of the topology associated with the task.
+   * @param taskId the unique identifier of the task whose progress is to be retrieved.
+   * @param pluginType the plugin type associated with the task
    * @return An instance of {@link EngineTaskProgress} containing details about the task's progress.
    * @throws ExternalTaskException If an error occurs while accessing the external resource.
    */
-  EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId) throws ExternalTaskException;
+  EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, ExecutablePluginType pluginType) throws ExternalTaskException;
 
   /**
    * Retrieves a list of data item statuses based on the specified parameters.

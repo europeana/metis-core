@@ -31,6 +31,7 @@
     <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
 
     <!--Internal-->
+    <version.metis-sandbox-common>12-SNAPSHOT</version.metis-sandbox-common>
     <version.ecloud>15</version.ecloud>
     <version.metis-common>19-SNAPSHOT</version.metis-common>
     <version.metis-framework>17-SNAPSHOT</version.metis-framework>
@@ -121,11 +122,6 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
         <version>${version.commons.text}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-collections4</artifactId>
-        <version>${version.commons-collections4}</version>
       </dependency>
       <dependency>
         <groupId>eu.europeana.corelib</groupId>
@@ -411,41 +407,6 @@
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>${version.xerces}</version>
-        <exclusions>
-          <exclusion>
-            <artifactId>xml-apis</artifactId>
-            <groupId>xml-apis</groupId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>io.gdcc</groupId>
-        <artifactId>xoai-service-provider</artifactId>
-        <version>${version.gdcc.xoai}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <!-- Tomcat tries to set a SAX feature not supported by this SAX parser. -->
-          <exclusion>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>woodstox-core-asl</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>wstx-asl</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

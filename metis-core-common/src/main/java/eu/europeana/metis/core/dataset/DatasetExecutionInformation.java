@@ -15,23 +15,23 @@ public class DatasetExecutionInformation {
 
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
   private Date lastPreviewDate;
-  private int lastPreviewRecords;
+  private long lastPreviewRecords;
   private boolean lastPreviewRecordsReadyForViewing;
-  private int totalPreviewRecords;
+  private long totalPreviewRecords;
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
   private Date firstPublishedDate;
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
   private Date lastPublishedDate;
-  private int lastPublishedRecords;
+  private long lastPublishedRecords;
   private boolean lastPublishedRecordsReadyForViewing;
-  private int totalPublishedRecords;
+  private long totalPublishedRecords;
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
   private Date lastDepublishedDate;
-  private int lastDepublishedRecords;
+  private long lastDepublishedRecords;
   private PublicationStatus publicationStatus;
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
   private Date lastHarvestedDate;
-  private int lastHarvestedRecords;
+  private long lastHarvestedRecords;
 
   public DatasetExecutionInformation() {
     //Required for json serialization
@@ -45,11 +45,11 @@ public class DatasetExecutionInformation {
     this.lastPreviewDate = lastPreviewDate == null ? null : new Date(lastPreviewDate.getTime());
   }
 
-  public int getLastPreviewRecords() {
+  public long getLastPreviewRecords() {
     return lastPreviewRecords;
   }
 
-  public void setLastPreviewRecords(int lastPreviewRecords) {
+  public void setLastPreviewRecords(long lastPreviewRecords) {
     this.lastPreviewRecords = lastPreviewRecords;
   }
 
@@ -61,11 +61,11 @@ public class DatasetExecutionInformation {
     this.lastPreviewRecordsReadyForViewing = lastPreviewRecordsReadyForViewing;
   }
 
-  public int getTotalPreviewRecords() {
+  public long getTotalPreviewRecords() {
     return totalPreviewRecords;
   }
 
-  public void setTotalPreviewRecords(int totalPreviewRecords) {
+  public void setTotalPreviewRecords(long totalPreviewRecords) {
     this.totalPreviewRecords = totalPreviewRecords;
   }
 
@@ -87,11 +87,11 @@ public class DatasetExecutionInformation {
         lastPublishedDate == null ? null : new Date(lastPublishedDate.getTime());
   }
 
-  public int getLastPublishedRecords() {
+  public long getLastPublishedRecords() {
     return lastPublishedRecords;
   }
 
-  public void setLastPublishedRecords(int lastPublishedRecords) {
+  public void setLastPublishedRecords(long lastPublishedRecords) {
     this.lastPublishedRecords = lastPublishedRecords;
   }
 
@@ -103,11 +103,11 @@ public class DatasetExecutionInformation {
     this.lastPublishedRecordsReadyForViewing = lastPublishedRecordsReadyForViewing;
   }
 
-  public int getTotalPublishedRecords() {
+  public long getTotalPublishedRecords() {
     return totalPublishedRecords;
   }
 
-  public void setTotalPublishedRecords(int totalPublishedRecords) {
+  public void setTotalPublishedRecords(long totalPublishedRecords) {
     this.totalPublishedRecords = totalPublishedRecords;
   }
 
@@ -120,11 +120,11 @@ public class DatasetExecutionInformation {
         lastDepublishedDate == null ? null : new Date(lastDepublishedDate.getTime());
   }
 
-  public int getLastDepublishedRecords() {
+  public long getLastDepublishedRecords() {
     return lastDepublishedRecords;
   }
 
-  public void setLastDepublishedRecords(int lastDepublishedRecords) {
+  public void setLastDepublishedRecords(long lastDepublishedRecords) {
     this.lastDepublishedRecords = lastDepublishedRecords;
   }
 
@@ -145,11 +145,11 @@ public class DatasetExecutionInformation {
         lastHarvestedDate == null ? null : new Date(lastHarvestedDate.getTime());
   }
 
-  public int getLastHarvestedRecords() {
+  public long getLastHarvestedRecords() {
     return lastHarvestedRecords;
   }
 
-  public void setLastHarvestedRecords(int lastHarvestedRecords) {
+  public void setLastHarvestedRecords(long lastHarvestedRecords) {
     this.lastHarvestedRecords = lastHarvestedRecords;
   }
 

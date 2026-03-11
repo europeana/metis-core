@@ -9,6 +9,25 @@
   </parent>
   <artifactId>metis-core-common</artifactId>
   <dependencies>
+    <dependency>
+      <groupId>eu.europeana.metis</groupId>
+      <artifactId>metis-sandbox-common</artifactId>
+      <version>${version.metis-sandbox-common}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-jdbc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- Submodules -->
     <!-- Owned -->
     <dependency>

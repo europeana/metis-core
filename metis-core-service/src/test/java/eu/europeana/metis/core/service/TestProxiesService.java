@@ -280,9 +280,9 @@ class TestProxiesService {
     PaginatedRecordsResponse listOfFileContentsFromPluginExecution = proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             executablePluginType, null, numberOfRecords);
-    assertEquals(record.getXmlRecord(),
-        listOfFileContentsFromPluginExecution.getRecords().getFirst().getXmlRecord());
-    assertEquals(ecloudId, listOfFileContentsFromPluginExecution.getRecords().getFirst().getEcloudId());
+    assertEquals(record.xmlRecord(),
+        listOfFileContentsFromPluginExecution.getRecords().getFirst().xmlRecord());
+    assertEquals(ecloudId, listOfFileContentsFromPluginExecution.getRecords().getFirst().ecloudId());
 
     // Test exception.
     doThrow(ExternalTaskException.class).when(engineTaskClient)
@@ -350,7 +350,7 @@ class TestProxiesService {
     assertNotNull(result);
     assertNotNull(result.getRecords());
     assertEquals(listOfIds.getIds().size(), result.getRecords().size());
-    assertEquals(listOfIds.getIds(), result.getRecords().stream().map(Record::getEcloudId).toList());
+    assertEquals(listOfIds.getIds(), result.getRecords().stream().map(Record::ecloudId).toList());
 
     // Check that the call also works for an empty list
     listOfIds.setIds(Collections.emptyList());

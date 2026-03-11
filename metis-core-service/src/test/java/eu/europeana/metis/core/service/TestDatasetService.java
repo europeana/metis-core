@@ -358,7 +358,7 @@ class TestDatasetService {
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(datasetXslt);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
-    listOfRecords.getFirst().setXmlRecord("invalid xml");
+    listOfRecords.set(0, new Record("id", "invalid xml"));
 
     String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
         Collections.singletonList(datasetXslt.getId().toString()));
@@ -372,9 +372,9 @@ class TestDatasetService {
     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
     Document doc;
-    assertFalse(records.getFirst().getXmlRecord().contains("edm:ProvidedCHO")); //First record is invalid
+    assertFalse(records.getFirst().xmlRecord().contains("edm:ProvidedCHO")); //First record is invalid
     for (int i = 1; i < records.size(); i++) {
-      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).getXmlRecord())));
+      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).xmlRecord())));
       assertEquals(1, doc.getElementsByTagName("edm:ProvidedCHO").getLength());
       assertTrue(doc.getElementsByTagName("edm:ProvidedCHO").item(0).getAttributes()
                     .getNamedItem("rdf:about").getTextContent().contains(Integer.toString(i)));
@@ -413,7 +413,7 @@ class TestDatasetService {
     DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
     Document doc;
     for (int i = 0; i < records.size(); i++) {
-      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).getXmlRecord())));
+      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).xmlRecord())));
       assertEquals(1, doc.getElementsByTagName("edm:ProvidedCHO").getLength());
       assertTrue(doc.getElementsByTagName("edm:ProvidedCHO").item(0).getAttributes()
                     .getNamedItem("rdf:about").getTextContent().contains(Integer.toString(i)));

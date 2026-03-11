@@ -8,11 +8,14 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import eu.europeana.metis.utils.DepublicationReason;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,6 +45,10 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
     Map<EngineTaskKey, String> pluginParameters = getDepublishPluginParameters(datasetId);
+    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
+        plugin.getPluginMetadata().getExecutablePluginType());
+    fullBatchJobType.ifPresent(batchJobType -> pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
+    pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineDatasetId);
     return createDepublishEngineTask(engineDatasetId, pluginParameters);
   }
 

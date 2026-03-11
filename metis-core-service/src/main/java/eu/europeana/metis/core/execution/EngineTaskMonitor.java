@@ -1,18 +1,18 @@
 package eu.europeana.metis.core.execution;
 
 import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
+import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
+import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskClient;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.exception.ExternalTaskException;
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Monitors and manages the execution of a task in a processing engine.
@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be managed by the engine.
  */
+@Slf4j
 public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
@@ -38,28 +38,48 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   }
 
   /**
-   * Monitors and retrieves the progress of an external task associated with the plugin.
-   * Updates the execution progress based on the retrieved task information.
+   * Monitors and retrieves the progress of an external task associated with the plugin. Updates the execution progress based on
+   * the retrieved task information.
    *
    * @return An instance of {@link EngineTaskProgress} containing the progress details of the external task.
    * @throws ExternalTaskException If an error occurs while interacting with the external resource.
    */
   public EngineTaskProgress monitor() throws ExternalTaskException {
-    LOGGER.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
+    log.info("Requesting progress information for externalTaskId: {}", plugin.getExternalTaskId());
     EngineTaskProgress engineTaskProgress = engineTaskClient.getEngineTaskProgress(
-        plugin.getTopologyName(), plugin.getExternalTaskId());
-    LOGGER.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
+        plugin.getTopologyName(), plugin.getExternalTaskId(), plugin.getPluginMetadata().getExecutablePluginType());
+    log.info("Task information received for externalTaskId: {}", plugin.getExternalTaskId());
     updateExecutionProgress(engineTaskProgress);
     return engineTaskProgress;
   }
 
   void updateExecutionProgress(EngineTaskProgress engineTaskProgress) {
+    //Differentiate between Ecloud and Sandbox engine task clients due to current discrepancies
+    if (engineTaskClient instanceof EcloudEngineTaskClient) {
+      updateExecutionProgressEcloud(engineTaskProgress);
+    } else if (engineTaskClient instanceof SandboxEngineTaskClient) {
+      updateExecutionProgressSandbox(engineTaskProgress);
+    }
+  }
 
+  private void updateExecutionProgressSandbox(EngineTaskProgress engineTaskProgress) {
+    //todo: We further need to update the ExecutionProgress entity to support the new counters
+    ExecutionProgress executionProgress = plugin.getExecutionProgress();
+    executionProgress.setExpectedRecords(engineTaskProgress.getExpectedRecords());
+    executionProgress.setProcessedRecords(engineTaskProgress.getProcessedRecords());
+    executionProgress.setDeletedRecords(engineTaskProgress.getDeletedRecords());
+    executionProgress.setIgnoredRecords(engineTaskProgress.getIgnoredRecords());
+    executionProgress.setErrors(engineTaskProgress.getFailRecords() + engineTaskProgress.getFailDepublishRecords());
+    executionProgress.recalculateProgressPercentage();
+    executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
+  }
+
+  private void updateExecutionProgressEcloud(EngineTaskProgress engineTaskProgress) {
     // Calculate the various counts.
     // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
-    int expectedRecordCount;
-    int processedRecordCount;
-    int deletedRecordCount;
+    long expectedRecordCount;
+    long processedRecordCount;
+    long deletedRecordCount;
 
     switch (plugin.getPluginMetadata()) {
       case
@@ -98,7 +118,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
       }
     }
 
-    int errorCount = engineTaskProgress.getProcessedErrors() + engineTaskProgress.getDeletedErrors();
+    long errorCount = engineTaskProgress.getProcessedErrors() + engineTaskProgress.getDeletedErrors();
     // Update the execution progress.
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(expectedRecordCount);
@@ -117,8 +137,9 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
    * @throws ExternalTaskException If an error occurs while attempting to cancel the task.
    */
   public void cancel(String cancelledById) throws ExternalTaskException {
-    LOGGER.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
+    log.info("Cancel execution for externalTaskId: {}", plugin.getExternalTaskId());
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name().equals(cancelledById) ? "Cancelled By System" : "Cancelled By User";
-    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), plugin.getExternalTaskId(), message);
+    engineTaskClient.cancelEngineTask(plugin.getTopologyName(), plugin.getExternalTaskId(), message,
+        plugin.getPluginMetadata().getExecutablePluginType());
   }
 }

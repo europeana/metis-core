@@ -244,10 +244,10 @@ class TestProxiesController {
                .contentType(MediaType.APPLICATION_JSON)
                .content(""))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.getEcloudId())))
-           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.getXmlRecord())))
-           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.getEcloudId())))
-           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.getXmlRecord())));
+           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.ecloudId())))
+           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.xmlRecord())))
+           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.ecloudId())))
+           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.xmlRecord())));
   }
   // TODO: add tests for lookupIdFromUISClient
 
@@ -260,7 +260,7 @@ class TestProxiesController {
     final Record record2 = new Record("ID 2", "content 2");
     final RecordsResponse output = new RecordsResponse(Arrays.asList(record1, record2));
     final List<String> expectedInput = Stream.concat(Stream.of("UNKNOWN ID"),
-        output.getRecords().stream().map(Record::getEcloudId)).toList();
+        output.getRecords().stream().map(Record::ecloudId)).toList();
 
     // Test happy flow with non-empty ID list
     final ExecutablePluginType pluginType = ExecutablePluginType.MEDIA_PROCESS;
@@ -279,10 +279,10 @@ class TestProxiesController {
                .content("{\"ids\":[\"" + String.join("\",\"", expectedInput) + "\"]}"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.records", hasSize(2)))
-           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.getEcloudId())))
-           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.getXmlRecord())))
-           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.getEcloudId())))
-           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.getXmlRecord())));
+           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.ecloudId())))
+           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.xmlRecord())))
+           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.ecloudId())))
+           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.xmlRecord())));
 
     // Test happy flow with empty ID list
     final RecordsResponse emptyOutput = new RecordsResponse(Collections.emptyList());

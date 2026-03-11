@@ -10,6 +10,7 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
@@ -20,8 +21,10 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -31,7 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <T> The type of {@link EngineTask} created by this factory.
  */
 public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
-    AbstractInternalEngineTaskFactory<S, T> {
+    AbstractIntermediateEngineTaskFactory<S, T> {
 
   /**
    * Constructor.
@@ -48,6 +51,9 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
     Map<EngineTaskKey, String> pluginParameters = getProcessPluginParameters();
+    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
+        plugin.getPluginMetadata().getExecutablePluginType());
+    fullBatchJobType.ifPresent(batchJobType -> pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
     return createInternalEngineTask(datasetId, engineDatasetId, previousTaskId, pluginParameters);
   }
 

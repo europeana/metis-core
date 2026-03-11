@@ -27,7 +27,6 @@
     </extension>
     <method v="2">
       <option name="Make" enabled="true" />
-      <option name="LaunchBrowser.Before.Run" url="http://localhost:8080/metis-core" />
     </method>
   </configuration>
 </component>

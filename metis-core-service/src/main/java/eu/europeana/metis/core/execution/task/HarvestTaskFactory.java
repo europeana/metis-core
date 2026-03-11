@@ -2,21 +2,23 @@ package eu.europeana.metis.core.execution.task;
 
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDataRevision;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDefaultTaskParametersHarvest;
-import static java.util.Objects.requireNonNullElseGet;
 
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
+import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,8 +29,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends AbstractEngineTaskFactory<S, T> {
 
-  private final EngineTaskClient<S, T> engineTaskClient;
+  //We will change this when we support it
+  private static final int STEP_SIZE = 1;
   private final AbstractExecutablePlugin<?> plugin;
+  private final EngineTaskClient<S, T> engineTaskClient;
 
   /**
    * Constructor.
@@ -51,27 +55,25 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
   }
 
   private @NotNull PluginHarvestParameters getPluginHarvestParameters() {
-    boolean incrementalHarvest;
-    OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters = null;
-    String targetUrl;
-    switch (plugin.getPluginMetadata()) {
-      case OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata -> {
-        incrementalHarvest = oaipmhHarvestPluginMetadata.isIncrementalHarvest();
-        targetUrl = oaipmhHarvestPluginMetadata.getUrl();
-        oaiHarvestInputDataParameters = new OaiHarvestInputDataEndpoint(
-            oaipmhHarvestPluginMetadata.getUrl(),
-            oaipmhHarvestPluginMetadata.getSetSpec(),
-            oaipmhHarvestPluginMetadata.getMetadataFormat(),
-            oaipmhHarvestPluginMetadata.getFromDate(),
-            oaipmhHarvestPluginMetadata.getUntilDate());
-      }
-      case HTTPHarvestPluginMetadata httpHarvestPluginMetadata -> {
-        incrementalHarvest = httpHarvestPluginMetadata.isIncrementalHarvest();
-        targetUrl = httpHarvestPluginMetadata.getUrl();
-      }
-      default -> throw new IllegalStateException("Unexpected value: " + plugin);
-    }
-    return new PluginHarvestParameters(targetUrl, incrementalHarvest, oaiHarvestInputDataParameters);
+    return switch (plugin.getPluginMetadata()) {
+      case OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata ->
+          new PluginHarvestParameters(oaipmhHarvestPluginMetadata.isIncrementalHarvest(),
+              new OaiHarvestInputDataEndpoint(
+                  oaipmhHarvestPluginMetadata.getUrl(),
+                  oaipmhHarvestPluginMetadata.getSetSpec(),
+                  oaipmhHarvestPluginMetadata.getMetadataFormat(),
+                  oaipmhHarvestPluginMetadata.getFromDate(),
+                  oaipmhHarvestPluginMetadata.getUntilDate(),
+                  STEP_SIZE)
+          );
+      case HTTPHarvestPluginMetadata httpHarvestPluginMetadata ->
+          new PluginHarvestParameters(httpHarvestPluginMetadata.isIncrementalHarvest(),
+              new HttpHarvestInputDataEndpoint(
+                  httpHarvestPluginMetadata.getUrl(),
+                  STEP_SIZE)
+          );
+      default -> throw new IllegalStateException("Unexpected value: " + plugin.getPluginMetadata());
+    };
   }
 
   private @NotNull T createHarvestEngineTask(String datasetId, String engineDatasetId,
@@ -79,22 +81,23 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
     final String dataLocation = getDataLocation(engineDatasetId);
     final Map<EngineTaskKey, String> basicTaskParameters =
         createDefaultTaskParametersHarvest(
-            datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
+            engineDatasetId, datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
             engineTaskClient.getEngineTaskSettings().getProvider());
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
+    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
+        plugin.getPluginMetadata().getExecutablePluginType());
+    fullBatchJobType.ifPresent(batchJobType -> allParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
 
     final DataRevision outputDataRevision = createDataRevision(
         plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
 
-    final InputDataEndpoint inputDataEndpoint =
-        requireNonNullElseGet(pluginHarvestParameters.oaiHarvestInputDataParameters(),
-            () -> new HttpHarvestInputDataEndpoint(pluginHarvestParameters.targetUrl()));
-    return engineTaskClient.createEngineTask(allParameters, inputDataEndpoint, outputDataRevision);
+    final HarvestInputDataEndpoint harvestInputDataEndpoint = pluginHarvestParameters.harvestInputDataEndpoint();
+    return engineTaskClient.createEngineTask(allParameters, harvestInputDataEndpoint, outputDataRevision);
   }
 
-  private record PluginHarvestParameters(String targetUrl, boolean incrementalHarvest,
-                                         OaiHarvestInputDataEndpoint oaiHarvestInputDataParameters) {
+  private record PluginHarvestParameters(boolean incrementalHarvest,
+                                         HarvestInputDataEndpoint harvestInputDataEndpoint) {
 
   }
 }
