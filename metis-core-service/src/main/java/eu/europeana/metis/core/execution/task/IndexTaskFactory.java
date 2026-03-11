@@ -15,6 +15,7 @@ import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,10 +43,9 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
     Map<EngineTaskKey, String> pluginParameters = getIndexPluginParameters();
-    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginMetadata().getExecutablePluginType());
-    if (fullBatchJobType != null) {
-      pluginParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
-    }
+    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
+        plugin.getPluginMetadata().getExecutablePluginType());
+    fullBatchJobType.ifPresent(batchJobType -> pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
     return createInternalEngineTask(datasetId, engineDatasetId, previousTaskId, pluginParameters);
   }
 

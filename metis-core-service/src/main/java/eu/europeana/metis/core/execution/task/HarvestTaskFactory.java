@@ -18,6 +18,7 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -84,10 +85,9 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
             engineTaskClient.getEngineTaskSettings().getProvider());
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
-    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(plugin.getPluginMetadata().getExecutablePluginType());
-    if (fullBatchJobType != null) {
-      allParameters.put(EngineTaskKey.JOB_NAME, fullBatchJobType.name());
-    }
+    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
+        plugin.getPluginMetadata().getExecutablePluginType());
+    fullBatchJobType.ifPresent(batchJobType -> allParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
 
     final DataRevision outputDataRevision = createDataRevision(
         plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());

@@ -91,7 +91,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   @Override
   public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
-    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(executablePluginType));
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(executablePluginType).orElseThrow();
     try {
       SandboxTaskProgress sandboxTaskProgress =
           restClient.get()
@@ -111,7 +111,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   @Override
   public void cancelEngineTask(String topologyName, String taskId, String message, ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
-    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(executablePluginType));
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(executablePluginType).orElseThrow();
     try {
       restClient.post()
                 .uri(uriBuilder -> uriBuilder
@@ -158,7 +158,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
       ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
-    FullBatchJobType fullBatchJobType = requireNonNull(PluginTypeToBatchJobMapper.map(executablePluginType));
+    FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(executablePluginType).orElseThrow();
     try {
       String recordXml =
           restClient.get()
