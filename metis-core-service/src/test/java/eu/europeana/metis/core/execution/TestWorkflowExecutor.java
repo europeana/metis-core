@@ -529,7 +529,7 @@ class TestWorkflowExecutor {
     executor.call();
     verify(plugin).setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
     verify(plugin).setFailMessage(anyString());
-    verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), any());
+    verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), anyString(), any(ExecutablePluginType.class));
     assertNotEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
   }
