@@ -26,11 +26,19 @@ import eu.europeana.metis.core.user.User.UserBuilder;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.MediaProcessPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.NormalizationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
@@ -100,6 +108,45 @@ public class TestObjectFactory {
     return workflow;
   }
 
+  public static WorkflowExecution createWorkflowExecutionObject(ExecutablePluginType executablePluginType) {
+    Dataset dataset = createDataset(DATASETNAME);
+    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    AbstractExecutablePlugin executablePlugin = createExecutablePlugin(executablePluginType);
+    abstractMetisPlugins.add(executablePlugin);
+
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setNextExecutablePluginType(executablePluginType);
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setMetisPlugins(abstractMetisPlugins);
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecution.setCreatedDate(new Date());
+
+    return workflowExecution;
+  }
+
+  public static AbstractExecutablePlugin createExecutablePlugin(ExecutablePluginType type) {
+    return ExecutablePluginFactory.createPlugin(defaultMetadata(type));
+  }
+
+  private static ExecutablePluginMetadata defaultMetadata(ExecutablePluginType type) {
+    return switch (type) {
+      case HTTP_HARVEST -> new HTTPHarvestPluginMetadata();
+      case OAIPMH_HARVEST -> new OaipmhHarvestPluginMetadata();
+      case ENRICHMENT -> new EnrichmentPluginMetadata();
+      case MEDIA_PROCESS -> new MediaProcessPluginMetadata();
+      case LINK_CHECKING -> new LinkCheckingPluginMetadata();
+      case VALIDATION_EXTERNAL -> new ValidationExternalPluginMetadata();
+      case TRANSFORMATION -> new TransformationPluginMetadata();
+      case VALIDATION_INTERNAL -> new ValidationInternalPluginMetadata();
+      case NORMALIZATION -> new NormalizationPluginMetadata();
+      case PREVIEW -> new IndexToPreviewPluginMetadata();
+      case PUBLISH -> new IndexToPublishPluginMetadata();
+      case DEPUBLISH -> new DepublishPluginMetadata();
+    };
+  }
+
   /**
    * Create dummy workflow execution
    *
@@ -116,6 +163,7 @@ public class TestObjectFactory {
     abstractMetisPlugins.add(validationExternalPlugin);
 
     WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setMetisPlugins(abstractMetisPlugins);

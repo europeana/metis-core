@@ -84,6 +84,8 @@ public class WorkflowExecutionFactory {
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setMetisPlugins(workflowPlugins.stream().map(AbstractMetisPlugin.class::cast).toList());
+    workflowExecution.setNextExecutablePluginType(
+        ExecutablePluginType.getExecutablePluginFromPluginType(workflowPlugins.getFirst().getPluginType()));
     return workflowExecution;
   }
 

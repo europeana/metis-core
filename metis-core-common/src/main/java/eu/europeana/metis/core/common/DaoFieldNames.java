@@ -17,6 +17,7 @@ public enum DaoFieldNames {
   WORKFLOW_STATUS("workflowStatus"),
   PLUGIN_STATUS("pluginStatus"),
   PLUGIN_TYPE("pluginType"),
+  NEXT_EXECUTABLE_PLUGIN_TYPE("nextExecutablePluginType"),
   METIS_PLUGINS("metisPlugins"),
   CREATED_DATE("createdDate"),
   STARTED_DATE("startedDate"),

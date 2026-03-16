@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.execution;
 
-import static java.lang.Thread.currentThread;
-
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
@@ -24,15 +22,12 @@ import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * This class is a {@link Callable} class that accepts a {@link WorkflowExecution}. It starts that WorkflowExecution given to it
@@ -44,8 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Slf4j
-public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask>
-    implements Callable<Pair<WorkflowExecution, Boolean>> {
+public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask> implements Callable<WorkflowExecution> {
 
   private static final String EXECUTION_ERROR_PREFIX = "Execution of external task presented with an error. ";
   private static final String MONITOR_ERROR_PREFIX = "An error occurred while monitoring the external task. ";
@@ -54,13 +48,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   protected static final int MAX_CANCEL_OR_MONITOR_FAILURES = 10;
 
-  private final SemaphoresPerPluginManager semaphoresPerPluginManager;
+  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowPostProcessor workflowPostProcessor;
   private final Duration monitorCheckInterval;
   private final Duration periodOfNoProcessedRecordsChange;
   private final EngineTaskClient<S, T> engineTaskClient;
-  private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
   private final PluginExecutor<S, T> pluginExecutor;
   private WorkflowExecution workflowExecution;
 
@@ -71,10 +64,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
    * @param workflowExecutorSettings The settings instance containing configuration values and dependencies required for
    * execution, such as semaphores, DAOs, and post-processing utilities.
    */
-  public WorkflowExecutor(WorkflowExecution workflowExecution,
-      WorkflowExecutorSettings<S, T> workflowExecutorSettings) {
+  public WorkflowExecutor(WorkflowExecution workflowExecution, WorkflowExecutorSettings<S, T> workflowExecutorSettings) {
     this.workflowExecution = workflowExecution;
-    this.semaphoresPerPluginManager = workflowExecutorSettings.semaphoresPerPluginManager();
     this.workflowExecutionDao = workflowExecutorSettings.workflowExecutionDao();
     this.workflowPostProcessor = workflowExecutorSettings.workflowPostProcessor();
     this.engineTaskClient = workflowExecutorSettings.engineTaskClient();
@@ -86,181 +77,73 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   @Override
-  public Pair<WorkflowExecution, Boolean> call() {
-    // Perform the work - run the workflow.
-    log.info("workflowExecutionId: {}- Starting workflow execution", workflowExecution.getId());
-    final Pair<Date, Boolean> didPluginRunDatePair = runWorkflowExecution();
-    final Boolean anyPluginRan = handleWorkflowCompletion(didPluginRunDatePair);
+  public WorkflowExecution call() {
+    AbstractExecutablePlugin<?> plugin = findPluginToExecute();
 
-    // The only full update is used here. The rest of the execution uses partial updates to avoid
-    // losing the cancelling state field
+    if (plugin == null) {
+      log.warn("workflowExecutionId: {} - No runnable plugin found", workflowExecution.getId());
+      return workflowExecution;
+    }
+
+    runPlugin(plugin);
+    handlePluginCompletion(plugin);
     workflowExecutionDao.update(workflowExecution);
-    return new ImmutablePair<>(workflowExecution, anyPluginRan);
+    return workflowExecution;
   }
 
-  /**
-   * Will determine from which plugin of the workflow to start execution from and will iterate through the plugins of the workflow
-   * and run them one by one.
-   * <p>It returns a {@link Pair} of a finished {@link Date} and a {@link Boolean} flag.
-   * <ul>
-   *   <li>
-   *     The Date represents the finished date of the workflow or null if it did not finish
-   *     as expected. That can happen if an error occurred or some plugin was not permitted to
-   *     run.
-   *   </li>
-   *   <li>
-   *     The Boolean flag represents true if all plugins were allowed to run or false if one of
-   *     the plugins was not allowed to run.
-   *   </li>
-   * </ul>
-   * </p>
-   *
-   * @return The pair of date and boolean flag
-   */
-  private Pair<Date, Boolean> runWorkflowExecution() {
-
-    // Find the first plugin to continue execution from
-    int firstPluginPositionToStart = getFirstPluginPositionToStart();
-
-    boolean anyPluginRan = false;
-    boolean continueNextPlugin = true;
-    List<AbstractMetisPlugin> metisPlugins = workflowExecution.getMetisPlugins();
-    // One by one start the plugins of the workflow
-    for (int i = firstPluginPositionToStart; i < metisPlugins.size() && continueNextPlugin; i++) {
-      final AbstractMetisPlugin<?> plugin = metisPlugins.get(i);
-
-      //Run plugin if available space
-      boolean didPluginRun = runMetisPluginWithSemaphoreAllocation(i, plugin);
-      anyPluginRan |= didPluginRun;
-      continueNextPlugin = shouldContinueNextPlugin(plugin, didPluginRun);
-    }
-
-    // Compute the finished date
-    final AbstractMetisPlugin<?> lastPlugin = metisPlugins.getLast();
-    final Date finishDate;
-    if (lastPlugin.getPluginStatus() == PluginStatus.FINISHED) {
-      finishDate = lastPlugin.getFinishedDate();
-    } else {
-      finishDate = null;
-    }
-    return new ImmutablePair<>(finishDate, anyPluginRan);
-  }
-
-  private boolean shouldContinueNextPlugin(AbstractMetisPlugin<?> plugin, boolean didPluginRun) {
-    boolean notInterrupted = !currentThread().isInterrupted();
-    boolean notFailed = plugin.getPluginStatus() != PluginStatus.FAILED;
-    boolean cancelling = workflowExecutionDao.isCancelling(workflowExecution.getId());
-    boolean pluginFinished = plugin.getFinishedDate() != null;
-    boolean notCancellingOrPluginFinished = !cancelling || pluginFinished;
-
-    return notInterrupted && didPluginRun && notFailed && notCancellingOrPluginFinished;
-  }
-
-  private Boolean handleWorkflowCompletion(Pair<Date, Boolean> anyPluginRanDatePair) {
-    final Date finishDate = anyPluginRanDatePair.getLeft();
-    final Boolean anyPluginRan = anyPluginRanDatePair.getRight();
-
-    // Process the results if we were not interrupted
-    if (!currentThread().isInterrupted()) {
-      if (finishDate == null && workflowExecutionDao.isCancelling(workflowExecution.getId())) {
-        // If the workflow was canceled before it had the chance to finish, we cancel all remaining plugins.
-        workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
-        // Make sure the cancelledBy information is not lost
-        String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString()).getCancelledBy();
-        workflowExecution.setCancelledBy(cancelledBy);
-        log.info("workflowExecutionId: {} - Cancelled running workflow execution", workflowExecution.getId());
-      } else if (finishDate == null && anyPluginRan) {
-        // Workflow stopped midway (a plugin failed, was cancelled, or monitoring stopped)
-        workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
-      } else if (finishDate == null) {
-        log.info("workflowExecution: {} - Stop workflow execution a plugin was not allowed to run", workflowExecution.getId());
-      } else {
-        // If the workflow finished successfully, we record this.
-        workflowExecution.setFinishedDate(finishDate);
-        workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-        workflowExecution.setCancelling(false);
-        log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
-      }
-    }
-    return anyPluginRan;
-  }
-
-  private int getFirstPluginPositionToStart() {
-    int firstPluginPositionToStart = 0;
-    List<AbstractMetisPlugin> metisPlugins = workflowExecution.getMetisPlugins();
-    for (int i = 0; i < metisPlugins.size(); i++) {
-      AbstractMetisPlugin<?> metisPlugin = metisPlugins.get(i);
-      if (metisPlugin.getPluginStatus() == PluginStatus.INQUEUE
-          || metisPlugin.getPluginStatus() == PluginStatus.RUNNING
-          || metisPlugin.getPluginStatus() == PluginStatus.CLEANING
-          || metisPlugin.getPluginStatus() == PluginStatus.PENDING
-          || metisPlugin.getPluginStatus() == PluginStatus.IDENTIFYING_DELETED_RECORDS) {
-        firstPluginPositionToStart = i;
-        break;
-      }
-    }
-    return firstPluginPositionToStart;
-  }
-
-  /**
-   * Tries to acquire a semaphore permission corresponding to the provided plugin's type.
-   * <ol>
-   *   <li>If semaphore permission granted then there is space for that plugin and the plugin
-   *   starts</li>
-   *   <li>If semaphore permission NOT granted then the plugin did not run and a false flag is
-   *   sent back as a return result</li>
-   * </ol>
-   *
-   * @param i the index of the plugin in the list of plugins inside the workflow execution
-   * @param plugin the provided plugin to run
-   * @return true if there was space for the plugin to run, false otherwise
-   */
-  private boolean runMetisPluginWithSemaphoreAllocation(int i, AbstractMetisPlugin<?> plugin) {
-    // Sanity check
-    if (plugin == null) {
-      throw new IllegalStateException("Plugin cannot be null.");
-    }
-    // Check the plugin: it has to be executable
-    AbstractExecutablePlugin<?> executablePlugin = expectExecutablePlugin(plugin);
-
-    final ExecutablePluginType executablePluginType = ExecutablePluginType
-        .getExecutablePluginFromPluginType(executablePlugin.getPluginType());
-    if (executablePluginType == null) {
-      throw new IllegalStateException("Plugin type cannot be null.");
-    }
-
-    //Try to acquire semaphore and run the plugin. Remember to release.
-    boolean acquired = semaphoresPerPluginManager.tryAcquireForExecutablePluginType(executablePluginType);
-    if (acquired) {
-      try {
-        log.debug("workflowExecutionId: {}, executablePluginType: {} - Acquired semaphore",
-            workflowExecution.getId(), executablePluginType);
-        final Date startDateToUse = i == 0 ? workflowExecution.getStartedDate() : new Date();
-        boolean startedSuccessfully = pluginExecutor.execute(executablePlugin, startDateToUse, workflowExecution);
-        if (startedSuccessfully) {
-          periodicCheckingLoop(executablePlugin, workflowExecution.getDatasetId());
-        } else {
-          log.debug("Plugin execution attempted but failed immediately");
-        }
-      } finally {
-        semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
-        log.debug("workflowExecutionId: {}, executablePluginType: {} - Released semaphore",
-            workflowExecution.getId(), executablePluginType);
-      }
-    }
-    return acquired;
-  }
-
-  private AbstractExecutablePlugin<?> expectExecutablePlugin(AbstractMetisPlugin<?> plugin) {
-    if (plugin == null) {
+  private AbstractExecutablePlugin<?> findPluginToExecute() {
+    ExecutablePluginType expectedType = workflowExecution.getNextExecutablePluginType();
+    if (expectedType == null) {
       return null;
     }
-    if (plugin instanceof AbstractExecutablePlugin<?> abstractExecutablePlugin) {
-      return abstractExecutablePlugin;
+
+    for (AbstractMetisPlugin<?> plugin : workflowExecution.getMetisPlugins()) {
+      if (plugin instanceof AbstractExecutablePlugin<?> executablePlugin
+          && ExecutablePluginType.getExecutablePluginFromPluginType(executablePlugin.getPluginType()) == expectedType
+          && executablePlugin.getPluginStatus().isRunnable()) {
+        return executablePlugin;
+      }
     }
-    throw new IllegalStateException(String.format(
-        "workflowExecutionId: %s, pluginId: %s - Found plugin that is not an executable plugin.",
-        workflowExecution.getId(), plugin.getId()));
+    return null;
+  }
+
+  private void runPlugin(AbstractExecutablePlugin<?> plugin) {
+    final Date startDateToUse = workflowExecution.getStartedDate() == null ? new Date() : workflowExecution.getStartedDate();
+    boolean startedSuccessfully = pluginExecutor.execute(plugin, startDateToUse, workflowExecution);
+    if (startedSuccessfully) {
+      periodicCheckingLoop(plugin, workflowExecution.getDatasetId());
+    }
+  }
+
+  private void handlePluginCompletion(AbstractExecutablePlugin<?> plugin) {
+    boolean cancelling = workflowExecutionDao.isCancelling(workflowExecution.getId());
+
+    if (cancelling && plugin.getPluginStatus().isRunnable()) {
+      workflowExecutionHelper.setWorkflowAndAllQualifiedPluginsToCancelled(workflowExecution);
+      String cancelledBy = workflowExecutionDao.getById(workflowExecution.getId().toString()).getCancelledBy();
+      workflowExecution.setCancelledBy(cancelledBy);
+      log.info("workflowExecutionId: {} - Cancelled workflow execution", workflowExecution.getId());
+      return;
+    }
+
+    if (plugin.getPluginStatus() == PluginStatus.FAILED) {
+      workflowExecutionHelper.checkAndSetAllRunningAndInqueuePluginsToCancelledIfOnePluginHasFailed(workflowExecution);
+      log.info("workflowExecutionId: {} - Workflow execution failed", workflowExecution.getId());
+      return;
+    }
+
+    if (plugin.getPluginStatus() == PluginStatus.FINISHED) {
+      workflowExecutionHelper.moveToNextPlugin(workflowExecution);
+      if (workflowExecution.getNextExecutablePluginType() == null) {
+        workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
+        workflowExecution.setFinishedDate(plugin.getFinishedDate());
+        log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
+      } else {
+        workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+        workflowExecution.setClaimedByInstance(null);
+        log.info("workflowExecutionId: {} - Plugin finished, workflow returned to queue", workflowExecution.getId());
+      }
+    }
   }
 
   private static class ProgressState {
@@ -298,7 +181,6 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       return Duration.between(lastProgressChange, Instant.now());
     }
   }
-
 
   private void periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
     final EngineTaskMonitor<S, T> engineTaskMonitor = new EngineTaskMonitor<>(plugin, engineTaskClient);
@@ -414,15 +296,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, progressState)) {
       // Update workflowExecution first, to retrieve cancelling information from db
       workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
-
       engineTaskMonitor.cancel(workflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }
 
-  private boolean applyPostProcessing(EngineTaskProgress engineTaskProgress,
-      AbstractExecutablePlugin<?> plugin,
-      String datasetId) {
+  private boolean applyPostProcessing(
+      EngineTaskProgress engineTaskProgress, AbstractExecutablePlugin<?> plugin, String datasetId) {
     boolean processingAppliedOrNotRequired = true;
     if (engineTaskProgress.getEngineTaskState() == EngineTaskState.PROCESSED) {
       try {
@@ -446,33 +326,26 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin, ProgressState progressState) {
-    // A plugin with a CLEANING state is NOT cancellable, it will be when the state is updated
-    final boolean notCleaningAndCancelling =
-        plugin.getPluginStatus() != PluginStatus.CLEANING
-            && workflowExecutionDao.isCancelling(workflowExecution.getId());
-    // A cleaning or a pending task should not be canceled by exceeding the minute cap
-    final boolean notCleaningOrPending = plugin.getPluginStatus() != PluginStatus.CLEANING
-        && plugin.getPluginStatus() != PluginStatus.PENDING;
-    final boolean isMinuteCapExceeded = isMinuteCapOverWithoutChangeInProcessedRecords(plugin, progressState);
-    return (notCleaningAndCancelling || (notCleaningOrPending && isMinuteCapExceeded));
+    if (workflowExecutionDao.isCancelling(workflowExecution.getId())
+        && plugin.getPluginStatus().isCancellable()) {
+      return true;
+    }
+    return plugin.getPluginStatus().isCancellable() && hasExceededNoProgressTimeout(plugin, progressState);
   }
 
-  private boolean isMinuteCapOverWithoutChangeInProcessedRecords(AbstractExecutablePlugin<?> plugin,
-      ProgressState progressState) {
-    //If CLEANING is in progress, then just reset the values to be sure and return false. Or if we have progress
-    if (plugin.getPluginStatus() == PluginStatus.CLEANING
-        || plugin.getPluginStatus() == PluginStatus.PENDING
-        || progressState.hasChanged(plugin)) {
+  private boolean hasExceededNoProgressTimeout(
+      AbstractExecutablePlugin<?> plugin, ProgressState progressState) {
+    if (progressState.hasChanged(plugin)) {
       progressState.updateFrom(plugin);
       return false;
     }
 
-    final boolean isMinuteCapOverWithoutChangeInProcessedRecords =
+    final boolean hasExceededTimeout =
         progressState.timeSinceLastChange().compareTo(periodOfNoProcessedRecordsChange) >= 0;
-    if (isMinuteCapOverWithoutChangeInProcessedRecords) {
+    if (hasExceededTimeout) {
       workflowExecutionDao.setCancellingStateSystem(workflowExecution);
     }
-    return isMinuteCapOverWithoutChangeInProcessedRecords;
+    return hasExceededTimeout;
   }
 
   private void preparePluginStateAndFinishedDate(AbstractExecutablePlugin<?> plugin,

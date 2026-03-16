@@ -8,15 +8,15 @@ import dev.morphia.annotations.Index;
 import dev.morphia.annotations.IndexOptions;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.utils.CommonStringValues;
-import org.bson.types.ObjectId;
-import tools.jackson.databind.annotation.JsonSerialize;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.bson.types.ObjectId;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Is the structure where the combined plugins of harvesting and the other plugins will be stored.
@@ -57,6 +57,7 @@ public class WorkflowExecution implements HasMongoObjectId {
   private String startedBy;
   private String claimedByInstance;
   private boolean cancelling;
+  private ExecutablePluginType nextExecutablePluginType;
 
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date createdDate;
@@ -81,6 +82,14 @@ public class WorkflowExecution implements HasMongoObjectId {
   @Override
   public void setId(ObjectId id) {
     this.id = id;
+  }
+
+  public ExecutablePluginType getNextExecutablePluginType() {
+    return nextExecutablePluginType;
+  }
+
+  public void setNextExecutablePluginType(ExecutablePluginType nextExecutablePluginType) {
+    this.nextExecutablePluginType = nextExecutablePluginType;
   }
 
   public boolean isCancelling() {
