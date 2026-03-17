@@ -453,10 +453,10 @@ class TestWorkflowExecutor {
     workflowExecutor.call();
 
     ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
-    verify(workflowExecutionDao, times(1)).update(workflowExecutionArgumentCaptor.capture());
-    WorkflowExecution captorValue = workflowExecutionArgumentCaptor.getValue();
-    assertEquals(WorkflowStatus.CANCELLED, captorValue.getWorkflowStatus());
-    assertEquals(PluginStatus.CANCELLED, captorValue.getMetisPlugins().getFirst().getPluginStatus());
+    verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
+    WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
+    assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(PluginStatus.CANCELLED, lastWorkflowExecutionUpdate.getMetisPlugins().getFirst().getPluginStatus());
     assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
   }
 
@@ -492,13 +492,11 @@ class TestWorkflowExecutor {
         new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     workflowExecutor.call();
 
-    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor
-        .forClass(WorkflowExecution.class);
-    verify(workflowExecutionDao, times(1)).update(workflowExecutionArgumentCaptor.capture());
-    assertEquals(WorkflowStatus.CANCELLED,
-        workflowExecutionArgumentCaptor.getValue().getWorkflowStatus());
-    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(),
-        workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
+    WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
+    assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
   }
 
   @Test

@@ -79,6 +79,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   public WorkflowExecution call() {
     if (workflowExecution.getStartedDate() == null) {
       workflowExecution.setStartedDate(new Date());
+      workflowExecutionDao.update(workflowExecution);
     }
     AbstractExecutablePlugin<?> plugin = findPluginToExecute();
 
@@ -134,7 +135,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       workflowExecutionHelper.moveToNextPlugin(workflowExecution);
       if (workflowExecution.getNextExecutablePluginType() == null) {
         workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-        workflowExecution.setFinishedDate(plugin.getFinishedDate());
+        workflowExecution.setFinishedDate(new Date());
         log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
       } else {
         workflowExecution.setClaimedByInstance(null);
@@ -206,9 +207,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         applyRuntimePluginState(plugin, engineTaskProgress);
       } catch (ExternalTaskException | RuntimeException e) {
         if (e.getCause() instanceof UnrecoverableExternalTaskException) {
-          log.warn(String
-              .format("workflowExecutionId: %s, pluginType: %s - UnrecoverableExternalTaskException"
-                  + " occurred. Setting task state failed ", workflowExecution.getId(), plugin.getPluginType()), e);
+          log.warn("workflowExecutionId: {}, pluginType: {} - UnrecoverableExternalTaskException occurred. "
+              + "Setting task state failed.", workflowExecution.getId(), plugin.getPluginType(), e);
           // Set the plugin to FAILED and return immediately
           plugin.setFinishedDate(null);
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
@@ -249,11 +249,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   private void handleRecoverableMonitorFailure(AbstractExecutablePlugin<?> plugin, Exception e,
       int consecutiveCancelOrMonitorFailures) {
-    log.warn(String.format(
-        "workflowExecutionId: %s, pluginType: %s - Monitoring of external task failed %s "
-            + "consecutive times. After exceeding %s retries, pending status will be set",
-        workflowExecution.getId(), plugin.getPluginType(), consecutiveCancelOrMonitorFailures,
-        MAX_CANCEL_OR_MONITOR_FAILURES), e);
+    log.warn("workflowExecutionId: {}, pluginType: {} - Monitoring of external task failed {} consecutive times. "
+            + "After exceeding {} retries, pending status will be set",
+        workflowExecution.getId(), plugin.getPluginType(), consecutiveCancelOrMonitorFailures, MAX_CANCEL_OR_MONITOR_FAILURES, e);
     if (consecutiveCancelOrMonitorFailures >= MAX_CANCEL_OR_MONITOR_FAILURES) {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.PENDING);
     }
