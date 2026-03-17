@@ -4,7 +4,6 @@ import static com.mongodb.client.model.Sorts.ascending;
 import static eu.europeana.metis.core.common.DaoFieldNames.CLAIMED_BY_INSTANCE;
 import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.NEXT_EXECUTABLE_PLUGIN_TYPE;
-import static eu.europeana.metis.core.common.DaoFieldNames.STARTED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.UPDATED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.WORKFLOW_STATUS;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
@@ -70,7 +69,7 @@ public class WorkflowExecutionClaimDao {
 
     List<Supplier<WorkflowExecution>> claimSuppliers = List.of(
         () -> tryClaimStaleRunning(dateNow, modifyOptions, staleBefore, executablePluginType),
-        () -> tryClaimNewInqueue(dateNow, modifyOptions, executablePluginType));
+        () -> tryClaimInqueueOrRunning(dateNow, modifyOptions, executablePluginType));
 
     return claimSuppliers.stream().map(Supplier::get).filter(Objects::nonNull).findFirst().orElse(null);
   }
@@ -91,18 +90,17 @@ public class WorkflowExecutionClaimDao {
     return tryClaim(filters, modifyOptions, updateOperators);
   }
 
-  private WorkflowExecution tryClaimNewInqueue(Date dateNow, ModifyOptions modifyOptions,
+  private WorkflowExecution tryClaimInqueueOrRunning(Date dateNow, ModifyOptions modifyOptions,
       ExecutablePluginType executablePluginType) {
     Filter[] filters = {
-        Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.INQUEUE),
+        Filters.in(WORKFLOW_STATUS.getFieldName(), List.of(WorkflowStatus.INQUEUE, WorkflowStatus.RUNNING)),
         Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), null),
         Filters.eq(NEXT_EXECUTABLE_PLUGIN_TYPE.getFieldName(), executablePluginType)
     };
     UpdateOperator[] updateOperators = {
         UpdateOperators.set(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
         UpdateOperators.set(CLAIMED_BY_INSTANCE.getFieldName(), morphiaDatastoreProvider.getInstanceId()),
-        UpdateOperators.set(UPDATED_DATE.getFieldName(), dateNow),
-        UpdateOperators.set(STARTED_DATE.getFieldName(), dateNow)
+        UpdateOperators.set(UPDATED_DATE.getFieldName(), dateNow)
     };
     return tryClaim(filters, modifyOptions, updateOperators);
   }

@@ -57,16 +57,15 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    * Prepares the plugin metadata and submits it.
    *
    * @param plugin the {@link AbstractExecutablePlugin} instance to be executed
-   * @param startDateToUse the {@link Date} to be used as the starting reference for execution
    * @param workflowExecution the {@link WorkflowExecution} object representing the current workflow execution context
    * @return true if the plugin execution was successful, false otherwise
    */
-  public boolean execute(AbstractExecutablePlugin<?> plugin, Date startDateToUse, WorkflowExecution workflowExecution) {
+  public boolean execute(AbstractExecutablePlugin<?> plugin, WorkflowExecution workflowExecution) {
     EngineTaskSubmitter<S, T> engineTaskSubmitter = new EngineTaskSubmitter<>(plugin, engineTaskClient);
     try {
       preparePredecessorMetadata(plugin, workflowExecution);
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);
-      submitIfNotStarted(plugin, workflowExecution, startDateToUse, engineTaskSubmitter);
+      submitIfNotStarted(plugin, workflowExecution, engineTaskSubmitter);
     } catch (ExternalTaskException | RuntimeException e) {
       log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin failed", workflowExecution.getId(),
           plugin.getPluginType()), e);
@@ -82,11 +81,11 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   }
 
   private void submitIfNotStarted(AbstractExecutablePlugin<?> plugin,
-      WorkflowExecution workflowExecution, Date startDateToUse, EngineTaskSubmitter<S, T> engineTaskSubmitter)
+      WorkflowExecution workflowExecution, EngineTaskSubmitter<S, T> engineTaskSubmitter)
       throws ExternalTaskException {
     if (isBlank(plugin.getExternalTaskId())) {
-      if (plugin.getPluginStatus() == PluginStatus.INQUEUE) {
-        plugin.setStartedDate(startDateToUse);
+      if (plugin.getStartedDate() == null) {
+        plugin.setStartedDate(new Date());
       }
 
       engineTaskSubmitter.submit(

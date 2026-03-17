@@ -12,7 +12,6 @@ public enum PluginStatus {
   RUNNING(Category.RUNNABLE),
   IDENTIFYING_DELETED_RECORDS(Category.RUNNABLE),
   PENDING(Category.RUNNABLE),
-
   FINISHED(Category.TERMINAL),
   CANCELLED(Category.TERMINAL),
   FAILED(Category.TERMINAL);

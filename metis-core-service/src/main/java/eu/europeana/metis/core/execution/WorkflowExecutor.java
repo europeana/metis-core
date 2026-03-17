@@ -77,6 +77,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   @Override
   public WorkflowExecution call() {
+    if (workflowExecution.getStartedDate() == null) {
+      workflowExecution.setStartedDate(new Date());
+    }
     AbstractExecutablePlugin<?> plugin = findPluginToExecute();
 
     if (plugin == null) {
@@ -104,8 +107,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private void runPlugin(AbstractExecutablePlugin<?> plugin) {
-    final Date startDateToUse = workflowExecution.getStartedDate() == null ? new Date() : workflowExecution.getStartedDate();
-    boolean startedSuccessfully = pluginExecutor.execute(plugin, startDateToUse, workflowExecution);
+    boolean startedSuccessfully = pluginExecutor.execute(plugin, workflowExecution);
     if (startedSuccessfully) {
       periodicCheckingLoop(plugin, workflowExecution.getDatasetId());
     }
@@ -135,7 +137,6 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         workflowExecution.setFinishedDate(plugin.getFinishedDate());
         log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
       } else {
-        workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
         workflowExecution.setClaimedByInstance(null);
         log.info("workflowExecutionId: {} - Plugin finished, workflow returned to queue", workflowExecution.getId());
       }
