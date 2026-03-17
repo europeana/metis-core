@@ -3,11 +3,17 @@ package eu.europeana.metis.core.workflow.plugins;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * This abstract class is the base implementation of {@link ExecutablePluginMetadata} for index
- * tasks. All executable index plugins should inherit from it.
+ * This abstract class is the base implementation of {@link ExecutablePluginMetadata} for index tasks. All executable index
+ * plugins should inherit from it.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePluginMetadata {
 
   private boolean preserveTimestamps;
@@ -16,40 +22,13 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   private boolean incrementalIndexing; // Default: false (i.e. full processing)
   private Date harvestDate;
 
-  protected AbstractIndexPluginMetadata() {
-    //Required for json serialization
-  }
-
-  public boolean isPreserveTimestamps() {
-    return preserveTimestamps;
-  }
-
-  public void setPreserveTimestamps(boolean preserveTimestamps) {
-    this.preserveTimestamps = preserveTimestamps;
-  }
-
-  public boolean isPerformRedirects() {
-    return performRedirects;
-  }
-
-  public void setPerformRedirects(boolean performRedirects) {
-    this.performRedirects = performRedirects;
-  }
-
   public List<String> getDatasetIdsToRedirectFrom() {
     return new ArrayList<>(datasetIdsToRedirectFrom);
   }
 
   public void setDatasetIdsToRedirectFrom(List<String> datasetIdsToRedirectFrom) {
-    this.datasetIdsToRedirectFrom = datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(datasetIdsToRedirectFrom);
-  }
-
-  public boolean isIncrementalIndexing() {
-    return incrementalIndexing;
-  }
-
-  public void setIncrementalIndexing(boolean incrementalIndexing) {
-    this.incrementalIndexing = incrementalIndexing;
+    this.datasetIdsToRedirectFrom =
+        datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(datasetIdsToRedirectFrom);
   }
 
   public Date getHarvestDate() {

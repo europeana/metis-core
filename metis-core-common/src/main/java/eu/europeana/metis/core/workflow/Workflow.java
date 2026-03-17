@@ -12,6 +12,8 @@ import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.types.ObjectId;
 import tools.jackson.databind.annotation.JsonSerialize;
 
@@ -21,6 +23,8 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @Entity
 @Indexes(@Index(fields = {@Field("datasetId")}, options = @IndexOptions(unique = true)))
 @JsonPropertyOrder({"id", "datasetId", "metisPluginMetadata"})
+@Getter
+@Setter
 public class Workflow implements HasMongoObjectId {
 
   @Id
@@ -28,24 +32,6 @@ public class Workflow implements HasMongoObjectId {
   private ObjectId id;
   private String datasetId;
   private List<AbstractExecutablePluginMetadata> metisPluginsMetadata = new ArrayList<>();
-
-  @Override
-  public ObjectId getId() {
-    return id;
-  }
-
-  @Override
-  public void setId(ObjectId id) {
-    this.id = id;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
 
   public List<AbstractExecutablePluginMetadata> getMetisPluginsMetadata() {
     return metisPluginsMetadata != null? new ArrayList<>(metisPluginsMetadata) : null;
