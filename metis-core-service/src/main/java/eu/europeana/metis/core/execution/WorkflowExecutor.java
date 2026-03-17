@@ -95,13 +95,13 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private AbstractExecutablePlugin<?> findPluginToExecute() {
-    ExecutablePluginType expectedType = workflowExecution.getNextExecutablePluginType();
-    if (expectedType == null) {
+    ExecutablePluginType nextExecutablePluginType = workflowExecution.getNextExecutablePluginType();
+    if (nextExecutablePluginType == null) {
       return null;
     }
 
     return workflowExecutionHelper.getExecutablePlugins(workflowExecution).stream()
-                                  .filter(p -> p.getPluginMetadata().getExecutablePluginType() == expectedType)
+                                  .filter(p -> p.getPluginMetadata().getExecutablePluginType() == nextExecutablePluginType)
                                   .filter(p -> p.getPluginStatus().isRunnable())
                                   .findFirst()
                                   .orElse(null);

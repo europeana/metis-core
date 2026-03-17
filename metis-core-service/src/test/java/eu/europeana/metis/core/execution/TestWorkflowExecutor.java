@@ -3,6 +3,7 @@ package eu.europeana.metis.core.execution;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -527,5 +528,43 @@ class TestWorkflowExecutor {
     verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), anyString(), any(ExecutablePluginType.class));
     assertNotEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
+  }
+
+  @Test
+  void call_noNextExecutablePluginType_returnsImmediately() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setNextExecutablePluginType(null);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    executor.call();
+    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
+  }
+
+  @Test
+  void call_notMatchingNextExecutablePluginType_returnsImmediately() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.PREVIEW);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    executor.call();
+    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
+  }
+
+  @Test
+  void sleepMonitorInterval_whenThreadAlreadyInterrupted_gracefullyExit() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor = new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+
+    Thread.currentThread().interrupt();
+    WorkflowExecution result = executor.call();
+
+    assertNotNull(result);
+    assertTrue(Thread.currentThread().isInterrupted());
+    verify(workflowExecutionDao, atMost(1)).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(2)).update(workflowExecution);
   }
 }
