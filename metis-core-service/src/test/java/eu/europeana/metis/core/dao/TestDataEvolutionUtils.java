@@ -196,7 +196,7 @@ class TestDataEvolutionUtils {
       assertSame(recentPredecessorPlugin, withoutErrorsResult.getPlugin());
       assertEquals(predecessorExecution.getId().toString(), withoutErrorsResult.getExecutionId());
 
-      // Test when root plugin doesn't match
+      // Test when the root plugin doesn't match
       final AbstractExecutablePlugin<?> otherRootPlugin = mock(AbstractExecutablePlugin.class);
       final String otherRootPluginId = "other root plugin ID";
       when(otherRootPlugin.getId()).thenReturn(otherRootPluginId);
@@ -230,7 +230,7 @@ class TestDataEvolutionUtils {
     final List<AbstractMetisPlugin<?>> plugins = new ArrayList<>();
     plugins.add(new ReindexToPreviewPlugin(new ReindexToPreviewPluginMetadata()));
 
-    // Add finished plugin of the wrong type.
+    // Add a finished plugin of the wrong type.
     final AbstractMetisPlugin<?> pluginOfWrongType =
         ExecutablePluginFactory.createPlugin(new TransformationPluginMetadata());
     pluginOfWrongType.setPluginStatus(PluginStatus.FINISHED);
@@ -246,7 +246,7 @@ class TestDataEvolutionUtils {
     lastCandidate.setPluginStatus(PluginStatus.FINISHED);
     plugins.add(lastCandidate);
 
-    // Add non-finished plugin of the right type.
+    // Add a non-finished plugin of the right type.
     final AbstractMetisPlugin<?> pluginOfWrongStatus =
         ExecutablePluginFactory.createPlugin(new EnrichmentPluginMetadata());
     pluginOfWrongStatus.setPluginStatus(PluginStatus.CANCELLED);
@@ -261,12 +261,12 @@ class TestDataEvolutionUtils {
         DataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.MEDIA_PROCESS, workflowExecution));
 
-    // Execute the call for plugin type not requiring predecessor
+    // Execute the call for a plugin type not requiring a predecessor
     assertNull(
         DataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.HTTP_HARVEST, workflowExecution));
 
-    // Execute the call for failed result
+    // Execute the call for a failed result
     assertThrows(IllegalArgumentException.class,
         () -> DataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.PUBLISH, workflowExecution));
@@ -374,7 +374,7 @@ class TestDataEvolutionUtils {
     when(metadata.getRevisionTimestampPreviousPlugin()).thenReturn(previousDate);
     AbstractMetisPlugin<?> result = mock(AbstractMetisPlugin.class);
     when(result.getPluginType()).thenReturn(type);
-    when(result.getPluginMetadata()).thenReturn(metadata);
+    when((AbstractMetisPluginMetadata) result.getPluginMetadata()).thenReturn(metadata);
     return result;
   }
 
