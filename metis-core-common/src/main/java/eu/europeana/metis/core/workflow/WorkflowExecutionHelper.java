@@ -95,6 +95,13 @@ public class WorkflowExecutionHelper {
     }
   }
 
+  /**
+   * Retrieves a list of executable plugins from the specified workflow execution. Filters the plugins from the workflow execution
+   * to include only those that are instances of {@link AbstractExecutablePlugin}.
+   *
+   * @param workflowExecution The workflow execution containing the plugins to be filtered.
+   * @return A list of {@link AbstractExecutablePlugin} instances that are executable plugins.
+   */
   public List<AbstractExecutablePlugin<?>> getExecutablePlugins(WorkflowExecution workflowExecution) {
     return workflowExecution.getMetisPlugins().stream()
                             .filter(AbstractExecutablePlugin.class::isInstance)
