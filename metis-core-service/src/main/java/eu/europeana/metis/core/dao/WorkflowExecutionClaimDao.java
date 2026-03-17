@@ -63,7 +63,7 @@ public class WorkflowExecutionClaimDao {
     Date staleBefore = Date.from(now.minus(staleLeniency));
 
     ModifyOptions modifyOptions = new ModifyOptions()
-        .sort(ascending(CREATED_DATE.getFieldName()))
+        .sort(ascending(UPDATED_DATE.getFieldName(), CREATED_DATE.getFieldName()))
         .returnDocument(ReturnDocument.AFTER)
         .upsert(false);
 

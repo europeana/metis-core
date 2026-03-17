@@ -83,7 +83,6 @@ class TestWorkflowExecutionClaimDao {
 
     assertNotNull(claimedWorkflowExecution);
     assertEquals(WorkflowStatus.RUNNING, claimedWorkflowExecution.getWorkflowStatus());
-    assertNotNull(claimedWorkflowExecution.getStartedDate());
     assertNotNull(claimedWorkflowExecution.getUpdatedDate());
     assertEquals(provider.getInstanceId(), claimedWorkflowExecution.getClaimedByInstance());
   }

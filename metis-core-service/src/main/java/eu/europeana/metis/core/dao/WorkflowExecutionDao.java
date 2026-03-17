@@ -64,6 +64,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -605,32 +608,13 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * <p>Annotation {@link Entity} required so that morphia can handle the aggregations.</p>
    */
   @Entity
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
   public static class ExecutionDatasetPair {
 
     private Dataset dataset;
     private WorkflowExecution execution;
-
-    public ExecutionDatasetPair() {
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param dataset The dataset.
-     * @param execution The execution.
-     */
-    public ExecutionDatasetPair(Dataset dataset, WorkflowExecution execution) {
-      this.dataset = dataset;
-      this.execution = execution;
-    }
-
-    public Dataset getDataset() {
-      return dataset;
-    }
-
-    public WorkflowExecution getExecution() {
-      return execution;
-    }
   }
 
   /**

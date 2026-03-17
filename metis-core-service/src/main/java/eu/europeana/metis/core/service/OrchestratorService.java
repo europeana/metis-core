@@ -371,7 +371,9 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else {
         workflowExecution.setStartedBy(userId);
       }
-      workflowExecution.setCreatedDate(new Date());
+      Date now = new Date();
+      workflowExecution.setCreatedDate(now);
+      workflowExecution.setUpdatedDate(now);
       objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
     } finally {
       executionDatasetIdLock.unlock();
