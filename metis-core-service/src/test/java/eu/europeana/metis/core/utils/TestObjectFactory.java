@@ -110,7 +110,7 @@ public class TestObjectFactory {
 
   public static WorkflowExecution createWorkflowExecutionObject(ExecutablePluginType executablePluginType) {
     Dataset dataset = createDataset(DATASETNAME);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     AbstractExecutablePlugin executablePlugin = createExecutablePlugin(executablePluginType);
     abstractMetisPlugins.add(executablePlugin);
 
@@ -154,7 +154,7 @@ public class TestObjectFactory {
    */
   public static WorkflowExecution createWorkflowExecutionObject() {
     Dataset dataset = createDataset(DATASETNAME);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
     abstractMetisPlugins.add(oaipmhHarvestPlugin);

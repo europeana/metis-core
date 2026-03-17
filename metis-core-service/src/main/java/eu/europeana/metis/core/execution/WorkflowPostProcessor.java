@@ -217,7 +217,7 @@ public class WorkflowPostProcessor {
         .nonNull(latestSuccessfulPlugin.getPlugin())) {
       final WorkflowExecution workflowExecutionToUpdate = workflowExecutionDao
           .getById(latestSuccessfulPlugin.getExecutionId());
-      final Optional<AbstractMetisPlugin> metisPluginWithType = workflowExecutionHelper
+      final Optional<AbstractMetisPlugin<?>> metisPluginWithType = workflowExecutionHelper
           .getMetisPluginWithType(workflowExecutionToUpdate, latestSuccessfulPlugin.getPlugin().getPluginType());
       if (metisPluginWithType.isPresent()) {
         metisPluginWithType.get().setDataStatus(DataStatus.DELETED);

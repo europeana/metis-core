@@ -103,6 +103,8 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
    *   <li>The associated plugin type is removed from the mapping of futures to plugin types.</li>
    *   <li>The associated semaphore for the respective plugin type is released to allow new tasks for that type.</li>
    * </ul>
+   * <p>
+   * Safe to call multiple times (idempotent).
    *
    * @throws InterruptedException if the thread is interrupted while waiting for the completion of tasks.
    */

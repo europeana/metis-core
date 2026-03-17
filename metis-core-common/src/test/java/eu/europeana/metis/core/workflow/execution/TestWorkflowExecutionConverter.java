@@ -118,7 +118,7 @@ class TestWorkflowExecutionConverter {
   }
 
   private void assertMetisPluginsEqual(WorkflowExecution workflowExecution, WorkflowExecutionDTO workflowExecutionDTO) {
-    List<AbstractMetisPlugin> abstractMetisPlugins = workflowExecution.getMetisPlugins();
+    List<AbstractMetisPlugin<?>> abstractMetisPlugins = workflowExecution.getMetisPlugins();
     List<MetisPluginDTO> metisPluginDTOS = workflowExecutionDTO.getMetisPlugins();
 
     assertEquals(abstractMetisPlugins.size(), metisPluginDTOS.size());

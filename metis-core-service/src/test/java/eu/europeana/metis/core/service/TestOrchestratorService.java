@@ -746,14 +746,14 @@ class TestOrchestratorService {
     firstPublishPlugin.setExecutionProgress(executionProgress);
     final WorkflowExecution executionWithFirstPublishPlugin = TestObjectFactory
         .createWorkflowExecutionObject();
-    final List<AbstractMetisPlugin> metisPluginsFirstPublish = executionWithFirstPublishPlugin
+    final List<AbstractMetisPlugin<?>> metisPluginsFirstPublish = executionWithFirstPublishPlugin
         .getMetisPlugins();
     metisPluginsFirstPublish.add(firstPublishPlugin);
     executionWithFirstPublishPlugin.setMetisPlugins(metisPluginsFirstPublish);
 
     final WorkflowExecution executionWithLastPublishPlugin = TestObjectFactory
         .createWorkflowExecutionObject();
-    final List<AbstractMetisPlugin> metisPluginsLastPublish = executionWithLastPublishPlugin
+    final List<AbstractMetisPlugin<?>> metisPluginsLastPublish = executionWithLastPublishPlugin
         .getMetisPlugins();
     metisPluginsLastPublish.add(lastPublishPlugin);
     executionWithLastPublishPlugin.setMetisPlugins(metisPluginsLastPublish);
@@ -772,7 +772,7 @@ class TestOrchestratorService {
     final WorkflowExecution workflowExecutionObject = TestObjectFactory
         .createWorkflowExecutionObject();
     workflowExecutionObject.setWorkflowStatus(WorkflowStatus.RUNNING);
-    final List<AbstractMetisPlugin> metisPlugins = workflowExecutionObject.getMetisPlugins();
+    final List<AbstractMetisPlugin<?>> metisPlugins = workflowExecutionObject.getMetisPlugins();
     final AbstractExecutablePlugin cleaningPublishPlugin = ExecutablePluginFactory
         .createPlugin(new IndexToPublishPluginMetadata());
     cleaningPublishPlugin.setPluginStatus(PluginStatus.CLEANING);

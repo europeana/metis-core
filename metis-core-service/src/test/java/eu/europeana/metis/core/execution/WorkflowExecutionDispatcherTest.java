@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -24,7 +23,6 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.CountDownLatch;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -71,14 +69,13 @@ class WorkflowExecutionDispatcherTest {
   @Test
   void pollAndSubmit_submitsAtMostMaxBatch() {
     Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
-    CountDownLatch blockLatch = new CountDownLatch(1);
     for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
       var stubbing = when(workflowExecutionClaimDao.claimNextExecution(any(), eq(pluginType)));
 
       for (int i = 0; i < PLUGIN_CONCURRENCY; i++) {
         WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject(pluginType);
         stubbing = stubbing.thenReturn(workflowExecution);
-        executors.add(blockingExecutor(workflowExecution, blockLatch));
+        executors.add(mockExecutor(workflowExecution));
       }
       stubbing.thenReturn(null);
     }
@@ -89,27 +86,19 @@ class WorkflowExecutionDispatcherTest {
     workflowExecutionDispatcher.pollAndSubmit(); //First set of plugins
     workflowExecutionDispatcher.pollAndSubmit(); //Second set of plugins (fill up the concurrency)
     workflowExecutionDispatcher.pollAndSubmit(); //Third set of plugins (should not get any more executions)
-    // Wait until executors started
-    await().atMost(Duration.ofSeconds(5))
-           .untilAsserted(() ->
-               executors.forEach(executor ->
-                   verify(executor, atLeastOnce()).call()
-               )
-           );
-
     for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
+      verify(semaphoresPerPluginManager, times(PLUGIN_CONCURRENCY + 1)).tryAcquireForExecutablePluginType(pluginType);
       verify(workflowExecutionClaimDao, times(PLUGIN_CONCURRENCY)).claimNextExecution(any(), eq(pluginType));
     }
     verify(workflowExecutionClaimDao, times(CORE_POOL_SIZE)).claimNextExecution(any(), any());
     verifyNoMoreInteractions(workflowExecutionClaimDao);
 
-    // Now allow executors to finish
-    blockLatch.countDown();
-    await().atMost(Duration.ofSeconds(5)).untilAsserted(workflowExecutionDispatcher::cleanup);
-
-    for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
-      verify(semaphoresPerPluginManager, times(PLUGIN_CONCURRENCY)).releaseForPluginType(pluginType);
-    }
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      workflowExecutionDispatcher.cleanup();
+      for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
+        verify(semaphoresPerPluginManager, times(PLUGIN_CONCURRENCY)).releaseForPluginType(pluginType);
+      }
+    });
   }
 
   @Test
@@ -131,7 +120,7 @@ class WorkflowExecutionDispatcherTest {
   }
 
   @Test
-  void cleanup_swallowsExecutionException() throws InterruptedException {
+  void cleanup_swallowsExecutionException() {
     Queue<WorkflowExecutor<EngineTaskSettings, EngineTask>> executors = new ArrayDeque<>();
 
     WorkflowExecution workflowExecution1 = TestObjectFactory.createWorkflowExecutionObject(ExecutablePluginType.OAIPMH_HARVEST);
@@ -146,10 +135,16 @@ class WorkflowExecutionDispatcherTest {
     WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> workflowExecutionDispatcher =
         createDispatcherWithStub(executors, semaphoresPerPluginManager);
     workflowExecutionDispatcher.pollAndSubmit();
-    workflowExecutionDispatcher.cleanup();
 
-    verify(semaphoresPerPluginManager, times(1)).releaseForPluginType(ExecutablePluginType.OAIPMH_HARVEST);
-    verify(semaphoresPerPluginManager, times(1)).releaseForPluginType(ExecutablePluginType.HTTP_HARVEST);
+    for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
+      verify(semaphoresPerPluginManager, times(1)).tryAcquireForExecutablePluginType(pluginType);
+    }
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      workflowExecutionDispatcher.cleanup();
+      for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
+        verify(semaphoresPerPluginManager, times(1)).releaseForPluginType(pluginType);
+      }
+    });
   }
 
   private WorkflowExecutionDispatcher<EngineTaskSettings, EngineTask> createDispatcherWithStub(
@@ -190,25 +185,6 @@ class WorkflowExecutionDispatcherTest {
     threadPoolTaskExecutor.setThreadNamePrefix("workflowExecutorPool-");
     threadPoolTaskExecutor.initialize();
     return threadPoolTaskExecutor;
-  }
-
-  private WorkflowExecutor<EngineTaskSettings, EngineTask> blockingExecutor(
-      WorkflowExecution workflowExecution, CountDownLatch blockLatch) {
-
-    @SuppressWarnings("unchecked")
-    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
-        mock(WorkflowExecutor.class);
-
-    try {
-      when(executor.call()).thenAnswer(invocation -> {
-        blockLatch.await();
-        return workflowExecution;
-      });
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-    return executor;
   }
 
   private WorkflowExecutor<EngineTaskSettings, EngineTask> mockExecutor(WorkflowExecution workflowExecution) {

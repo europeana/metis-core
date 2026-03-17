@@ -20,7 +20,7 @@ public class WorkflowExecutionHelper {
    * @param pluginType The type of the plugin we are looking for.
    * @return The plugin.
    */
-  public Optional<AbstractMetisPlugin> getMetisPluginWithType(WorkflowExecution workflowExecution, PluginType pluginType) {
+  public Optional<AbstractMetisPlugin<?>> getMetisPluginWithType(WorkflowExecution workflowExecution, PluginType pluginType) {
     return workflowExecution.getMetisPlugins().stream().filter(plugin -> plugin.getPluginType() == pluginType)
                             .findFirst();
   }
@@ -58,8 +58,16 @@ public class WorkflowExecutionHelper {
     }
   }
 
+  /**
+   * Determines the next executable plugin within the workflow and updates the workflow's {@code nextExecutablePluginType}
+   * accordingly. If no plugin with the {@code PluginStatus.INQUEUE} status exists, the {@code nextExecutablePluginType} is set to
+   * {@code null}.
+   *
+   * @param workflowExecution The workflow execution containing the list of plugins to evaluate and update the next executable
+   * plugin type.
+   */
   public void moveToNextPlugin(WorkflowExecution workflowExecution) {
-    List<AbstractMetisPlugin> plugins = workflowExecution.getMetisPlugins();
+    List<AbstractMetisPlugin<?>> plugins = workflowExecution.getMetisPlugins();
     AbstractExecutablePlugin<?> nextPlugin = null;
     for (AbstractMetisPlugin<?> plugin : plugins) {
       if (plugin instanceof AbstractExecutablePlugin<?> executablePlugin
@@ -80,10 +88,18 @@ public class WorkflowExecutionHelper {
   }
 
   private void setAllQualifiedPluginsToCancelled(WorkflowExecution workflowExecution) {
-    for (AbstractMetisPlugin metisPlugin : workflowExecution.getMetisPlugins()) {
+    for (AbstractMetisPlugin<?> metisPlugin : workflowExecution.getMetisPlugins()) {
       if (metisPlugin.getPluginStatus().isRunnable()) {
         metisPlugin.setPluginStatusAndResetFailMessage(PluginStatus.CANCELLED);
       }
     }
+  }
+
+  public List<AbstractExecutablePlugin<?>> getExecutablePlugins(WorkflowExecution workflowExecution) {
+    return workflowExecution.getMetisPlugins().stream()
+                            .filter(AbstractExecutablePlugin.class::isInstance)
+                            .map(AbstractExecutablePlugin.class::cast)
+                            .<AbstractExecutablePlugin<?>>map(p -> p)
+                            .toList();
   }
 }

@@ -8,6 +8,7 @@ import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflow;
 import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowFromNormalization;
 import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
 import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -94,9 +95,11 @@ class TestRedirection {
     final WorkflowExecution workflowExecution =
         workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor);
 
-    final AbstractMetisPlugin<IndexToPublishPluginMetadata> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
+    final AbstractMetisPlugin<?> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
         workflowExecution, PluginType.PUBLISH).get();
-    assertTrue(abstractMetisPlugin.getPluginMetadata().isPerformRedirects());
+    IndexToPublishPluginMetadata indexToPublishPluginMetadata =
+        assertInstanceOf(IndexToPublishPluginMetadata.class, abstractMetisPlugin.getPluginMetadata());
+    assertTrue(indexToPublishPluginMetadata.isPerformRedirects());
   }
 
   @Test
@@ -127,8 +130,10 @@ class TestRedirection {
     final WorkflowExecution workflowExecution =
         workflowExecutionFactory.createWorkflowExecution(workflow, dataset, predecessor);
 
-    final AbstractMetisPlugin<IndexToPublishPluginMetadata> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
+    final AbstractMetisPlugin<?> abstractMetisPlugin = workflowExecutionHelper.getMetisPluginWithType(
         workflowExecution, PluginType.PUBLISH).get();
-    assertTrue(abstractMetisPlugin.getPluginMetadata().isPerformRedirects());
+    IndexToPublishPluginMetadata indexToPublishPluginMetadata =
+        assertInstanceOf(IndexToPublishPluginMetadata.class, abstractMetisPlugin.getPluginMetadata());
+    assertTrue(indexToPublishPluginMetadata.isPerformRedirects());
   }
 }

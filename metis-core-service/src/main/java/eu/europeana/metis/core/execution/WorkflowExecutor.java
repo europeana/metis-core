@@ -12,7 +12,6 @@ import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
@@ -97,14 +96,11 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       return null;
     }
 
-    for (AbstractMetisPlugin<?> plugin : workflowExecution.getMetisPlugins()) {
-      if (plugin instanceof AbstractExecutablePlugin<?> executablePlugin
-          && ExecutablePluginType.getExecutablePluginFromPluginType(executablePlugin.getPluginType()) == expectedType
-          && executablePlugin.getPluginStatus().isRunnable()) {
-        return executablePlugin;
-      }
-    }
-    return null;
+    return workflowExecutionHelper.getExecutablePlugins(workflowExecution).stream()
+                                  .filter(p -> p.getPluginMetadata().getExecutablePluginType() == expectedType)
+                                  .filter(p -> p.getPluginStatus().isRunnable())
+                                  .findFirst()
+                                  .orElse(null);
   }
 
   private void runPlugin(AbstractExecutablePlugin<?> plugin) {
@@ -326,8 +322,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin, ProgressState progressState) {
-    if (workflowExecutionDao.isCancelling(workflowExecution.getId())
-        && plugin.getPluginStatus().isCancellable()) {
+    if (workflowExecutionDao.isCancelling(workflowExecution.getId()) && plugin.getPluginStatus().isCancellable()) {
       return true;
     }
     return plugin.getPluginStatus().isCancellable() && hasExceededNoProgressTimeout(plugin, progressState);
