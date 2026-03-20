@@ -7,13 +7,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import dev.morphia.annotations.Entity;
 import eu.europeana.metis.utils.CommonStringValues;
 import java.util.Date;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * This abstract class is the base implementation of {@link MetisPluginMetadata} and all other
- * plugins should inherit from it.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-06-01
+ * This abstract class is the base implementation of {@link MetisPluginMetadata} and all other plugins should inherit from it.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.EXISTING_PROPERTY, property = "pluginType")
 @JsonSubTypes({
@@ -30,23 +29,14 @@ import java.util.Date;
     @JsonSubTypes.Type(value = IndexToPublishPluginMetadata.class, name = "PUBLISH")
 })
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public abstract class AbstractMetisPluginMetadata implements MetisPluginMetadata {
 
   private String revisionNamePreviousPlugin;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date revisionTimestampPreviousPlugin;
-
-  protected AbstractMetisPluginMetadata() {
-  }
-
-  @Override
-  public String getRevisionNamePreviousPlugin() {
-    return revisionNamePreviousPlugin;
-  }
-
-  public void setRevisionNamePreviousPlugin(String revisionNamePreviousPlugin) {
-    this.revisionNamePreviousPlugin = revisionNamePreviousPlugin;
-  }
 
   @Override
   public Date getRevisionTimestampPreviousPlugin() {

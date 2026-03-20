@@ -3,6 +3,7 @@ package eu.europeana.metis.core.execution;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -91,7 +92,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -140,7 +141,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -188,7 +189,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -233,7 +234,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -274,7 +275,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -331,7 +332,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -376,11 +377,11 @@ class TestWorkflowExecutor {
   @Test
   void callExecutionInRUNNINGState() throws ExternalTaskException {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
-    oaipmhHarvestPlugin.setPluginStatus(PluginStatus.FINISHED);
+    oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     oaipmhHarvestPlugin.setStartedDate(new Date());
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -388,6 +389,7 @@ class TestWorkflowExecutor {
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setStartedDate(oaipmhHarvestPlugin.getStartedDate());
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
@@ -427,12 +429,13 @@ class TestWorkflowExecutor {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
     final ObjectId objectId = new ObjectId();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(objectId);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
@@ -443,23 +446,19 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
-    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any()))
-        .thenReturn(droppedProgress);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(droppedProgress);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
 
-    when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
-        .thenReturn(workflowExecution);
-
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
-        workflowExecutorSettings);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     workflowExecutor.call();
 
-    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor
-        .forClass(WorkflowExecution.class);
-    verify(workflowExecutionDao, times(1)).update(workflowExecutionArgumentCaptor.capture());
-    assertEquals(WorkflowStatus.CANCELLED,
-        workflowExecutionArgumentCaptor.getValue().getWorkflowStatus());
-    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(),
-        workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
+    WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
+    assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(PluginStatus.CANCELLED, lastWorkflowExecutionUpdate.getMetisPlugins().getFirst().getPluginStatus());
+    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
   }
 
   @Test
@@ -468,13 +467,15 @@ class TestWorkflowExecutor {
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    oaipmhHarvestPlugin.setStartedDate(new Date());
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
     final ObjectId objectId = new ObjectId();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(objectId);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
@@ -485,23 +486,18 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any()))
-        .thenReturn(currentlyProcessingProgress);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(currentlyProcessingProgress);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
 
-    when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
-        .thenReturn(workflowExecution);
-
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
-        workflowExecutorSettings);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     workflowExecutor.call();
 
-    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor
-        .forClass(WorkflowExecution.class);
-    verify(workflowExecutionDao, times(1)).update(workflowExecutionArgumentCaptor.capture());
-    assertEquals(WorkflowStatus.CANCELLED,
-        workflowExecutionArgumentCaptor.getValue().getWorkflowStatus());
-    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(),
-        workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
+    WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
+    assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
   }
 
   @Test
@@ -510,7 +506,7 @@ class TestWorkflowExecutor {
     OaipmhHarvestPluginMetadata metadata = new OaipmhHarvestPluginMetadata();
     plugin.setPluginMetadata(metadata);
 
-    ArrayList<AbstractMetisPlugin> plugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> plugins = new ArrayList<>();
     plugins.add(plugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -532,5 +528,43 @@ class TestWorkflowExecutor {
     verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), anyString(), any(ExecutablePluginType.class));
     assertNotEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
+  }
+
+  @Test
+  void call_noNextExecutablePluginType_returnsImmediately() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setNextExecutablePluginType(null);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    executor.call();
+    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
+  }
+
+  @Test
+  void call_notMatchingNextExecutablePluginType_returnsImmediately() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.PREVIEW);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    executor.call();
+    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
+  }
+
+  @Test
+  void sleepMonitorInterval_whenThreadAlreadyInterrupted_gracefullyExit() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor = new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+
+    Thread.currentThread().interrupt();
+    WorkflowExecution result = executor.call();
+
+    assertNotNull(result);
+    assertTrue(Thread.currentThread().isInterrupted());
+    verify(workflowExecutionDao, atMost(1)).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(2)).update(workflowExecution);
   }
 }

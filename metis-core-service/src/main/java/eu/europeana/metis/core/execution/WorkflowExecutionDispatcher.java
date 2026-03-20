@@ -4,13 +4,15 @@ import eu.europeana.metis.core.dao.WorkflowExecutionClaimDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,99 +29,99 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
 
   private final WorkflowExecutorSettings<S, T> workflowExecutorSettings;
   private final WorkflowExecutionClaimDao workflowExecutionClaimDao;
-  private final ThreadPoolExecutor threadPoolExecutor;
-  private final ExecutorCompletionService<Pair<WorkflowExecution, Boolean>> completionService;
+  private final SemaphoresPerPluginManager semaphoresPerPluginManager;
+  private final ExecutorCompletionService<WorkflowExecution> completionService;
+  private final Map<Future<WorkflowExecution>, ExecutablePluginType> pluginTypeByFuture = new ConcurrentHashMap<>();
   private final Duration failsafeLeniency;
 
   /**
    * Constructor.
    *
-   * @param workflowExecutorSettings the settings that manage the execution of workflows, including
-   *                                        semaphores, workflow execution DAO, workflow post-processor, and engine task client
+   * @param workflowExecutorSettings the settings that manage the execution of workflows, including semaphores, workflow execution
+   * DAO, workflow post-processor, and engine task client
    * @param threadPoolExecutor the thread pool executor used to manage concurrent execution of workflows
    * @param workflowExecutionClaimDao the DAO responsible for claiming workflow executions for processing
    * @param failsafeLeniency the duration allowed for failsafe operations to complete without interruption
    */
-  public WorkflowExecutionDispatcher(WorkflowExecutorSettings<S, T> workflowExecutorSettings, ThreadPoolExecutor threadPoolExecutor,
+  public WorkflowExecutionDispatcher(WorkflowExecutorSettings<S, T> workflowExecutorSettings,
+      ThreadPoolExecutor threadPoolExecutor,
       WorkflowExecutionClaimDao workflowExecutionClaimDao, Duration failsafeLeniency) {
+    this.semaphoresPerPluginManager = workflowExecutorSettings.semaphoresPerPluginManager();
     this.workflowExecutorSettings = workflowExecutorSettings;
     this.workflowExecutionClaimDao = workflowExecutionClaimDao;
-    this.threadPoolExecutor = threadPoolExecutor;
     this.failsafeLeniency = failsafeLeniency;
     this.completionService = new ExecutorCompletionService<>(threadPoolExecutor);
   }
 
   /**
-   * Polls for workflow executions and submits them for processing.
+   * Polls for the next eligible workflow execution task and submits it for processing.
    * <p>
-   * This method interacts with the {@code workflowExecutionDao} to claim the next available workflow execution. It claims up to a
-   * maximum of {@code MAX_CLAIM_BATCH} executions in a single invocation. Each claimed execution is submitted for processing
-   * using the {@code submitExecution} method.
+   * This method iterates over all available {@link ExecutablePluginType} values and performs the following steps:
+   * <ul>
+   *   <li>Attempts to acquire the semaphore for the specific plugin type using {@code semaphoresPerPluginManager} to ensure concurrency limits.</li>
+   *   <li>Claims the next workflow execution from the {@link WorkflowExecutionClaimDao} for the plugin type.</li>
+   *   <li>If no workflow execution is claimed, releases the semaphore for the plugin type.</li>
+   *   <li>If a workflow execution is successfully claimed, submits the workflow execution task for processing.</li>
+   * </ul>
    */
   public void pollAndSubmit() {
-    int availableSlots = getAvailableSlots();
-
-    while (availableSlots > 0) {
-      WorkflowExecution execution = workflowExecutionClaimDao.claimNextExecution(failsafeLeniency);
-      if (execution == null) {
-        return;
-      }
-      submitExecution(execution);
-      availableSlots--;
-    }
-  }
-
-  private int getAvailableSlots() {
-    return threadPoolExecutor.getMaximumPoolSize() - threadPoolExecutor.getActiveCount();
-  }
-
-  private void submitExecution(WorkflowExecution workflowExecution) {
-    WorkflowExecutor<S, T> workflowExecutor = createExecutor(workflowExecution, workflowExecutorSettings);
-    completionService.submit(workflowExecutor);
-  }
-
-  WorkflowExecutor<S, T> createExecutor(
-      WorkflowExecution workflowExecution, WorkflowExecutorSettings<S, T> workflowExecutorSettings) {
-    return new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
-  }
-
-  /**
-   * Cleans up completed tasks from the internal completion service and updates the thread counter.
-   * <p>
-   * This method polls the {@code completionService} for tasks that have completed execution. For each completed task, the thread
-   * counter is decremented, and the task's result is processed using the {@code checkCollectedWorkflowExecution} method. Any
-   * resulting exceptions during the processing of tasks are logged.
-   *
-   * @throws InterruptedException if the thread is interrupted while waiting for task completion.
-   */
-  public void cleanup() throws InterruptedException {
-    Future<Pair<WorkflowExecution, Boolean>> userWorkflowExecutionFuture;
-    while ((userWorkflowExecutionFuture = completionService.poll()) != null) {
-      try {
-        Pair<WorkflowExecution, Boolean> result = userWorkflowExecutionFuture.get();
-        checkCollectedWorkflowExecution(result);
-      } catch (ExecutionException e) {
-        LOGGER.warn("Exception occurred in Future task", e);
-      }
-    }
-  }
-
-  private void checkCollectedWorkflowExecution(
-      Pair<WorkflowExecution, Boolean> workflowExecutionRanFlagPair) {
-    final WorkflowExecution workflowExecution = workflowExecutionRanFlagPair.getLeft();
-    if (workflowExecution != null) {
-      boolean wasExecutionClaimedAndAnyPluginRan = workflowExecutionRanFlagPair.getRight();
-      //If a plugin did not run, we are sending it back to queue so another instance can pick it up
-      if (wasExecutionClaimedAndAnyPluginRan) {
-        LOGGER.info("workflowExecutionId: {} - Task finished", workflowExecution.getId());
-      } else {
-        LOGGER.info("workflowExecutionId: {} - Sent to queue because execution could "
-            + "not be claimed or plugin could not run in this instance", workflowExecution.getId());
-        if (!workflowExecutionClaimDao.requeue(workflowExecution)) {
-          LOGGER.warn("Could not requeue workflowExecutionId: {}", workflowExecution.getId());
+    for (ExecutablePluginType pluginType : ExecutablePluginType.values()) {
+      if (semaphoresPerPluginManager.tryAcquireForExecutablePluginType(pluginType)) {
+        WorkflowExecution workflowExecution = workflowExecutionClaimDao.claimNextExecution(failsafeLeniency, pluginType);
+        if (workflowExecution == null) {
+          semaphoresPerPluginManager.releaseForPluginType(pluginType);
+        } else {
+          submitExecution(workflowExecution, pluginType);
         }
       }
     }
   }
+
+  private void submitExecution(WorkflowExecution workflowExecution, ExecutablePluginType executablePluginType) {
+    try {
+      WorkflowExecutor<S, T> workflowExecutor = createExecutor(workflowExecution, workflowExecutorSettings);
+      Future<WorkflowExecution> future = completionService.submit(workflowExecutor);
+      pluginTypeByFuture.put(future, executablePluginType);
+    } catch (RuntimeException e) {
+      semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
+      throw e;
+    }
+  }
+
+  WorkflowExecutor<S, T> createExecutor(
+      WorkflowExecution workflowExecution,
+      WorkflowExecutorSettings<S, T> workflowExecutorSettings) {
+    return new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+  }
+
+  /**
+   * Cleans up completed workflow execution tasks.
+   * <p>
+   * This method processes all completed tasks from the CompletionService queue. For each task:
+   * <ul>
+   *   <li>The result of the task is obtained, logging its completion or handling any execution exceptions.</li>
+   *   <li>The associated plugin type is removed from the mapping of futures to plugin types.</li>
+   *   <li>The associated semaphore for the respective plugin type is released to allow new tasks for that type.</li>
+   * </ul>
+   * <p>
+   * Safe to call multiple times (idempotent).
+   *
+   * @throws InterruptedException if the thread is interrupted while waiting for the completion of tasks.
+   */
+  public void cleanup() throws InterruptedException {
+    Future<WorkflowExecution> future;
+    while ((future = completionService.poll()) != null) {
+      ExecutablePluginType pluginType = pluginTypeByFuture.remove(future);
+      try {
+        WorkflowExecution execution = future.get();
+        LOGGER.info("workflowExecutionId: {} - Task finished", execution.getId());
+      } catch (ExecutionException e) {
+        LOGGER.warn("Exception occurred in Future task for pluginType {}", pluginType, e);
+      } finally {
+        semaphoresPerPluginManager.releaseForPluginType(pluginType);
+      }
+    }
+  }
+
 }
 

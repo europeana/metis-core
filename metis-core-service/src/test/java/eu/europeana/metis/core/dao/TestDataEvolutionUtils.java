@@ -1,5 +1,23 @@
 package eu.europeana.metis.core.dao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.Pagination;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ResultList;
@@ -52,24 +70,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 class TestDataEvolutionUtils {
 
@@ -142,7 +142,7 @@ class TestDataEvolutionUtils {
       Set<ExecutablePluginType> predecessorTypes, ExecutablePluginType enforcedPluginType)
       throws PluginExecutionNotAllowed {
     // Create some objects.
-    final AbstractExecutablePlugin rootPlugin = mock(AbstractExecutablePlugin.class);
+    final AbstractExecutablePlugin<?> rootPlugin = mock(AbstractExecutablePlugin.class);
     final String rootPluginId = "root plugin ID";
     when(rootPlugin.getId()).thenReturn(rootPluginId);
     final WorkflowExecution rootExecution = new WorkflowExecution();
@@ -154,11 +154,11 @@ class TestDataEvolutionUtils {
 
     // Mock the DAO for the objects just created.
     int counter = 1;
-    AbstractExecutablePlugin recentPredecessorPlugin = null;
+    AbstractExecutablePlugin<?> recentPredecessorPlugin = null;
     boolean needsValidPredecessor =
             metadata.getExecutablePluginType() != ExecutablePluginType.DEPUBLISH;
     for (ExecutablePluginType predecessorType : predecessorTypes) {
-      final AbstractExecutablePlugin predecessorPlugin = ExecutablePluginFactory
+      final AbstractExecutablePlugin<?> predecessorPlugin = ExecutablePluginFactory
           .createPlugin(metadata);
       predecessorPlugin.setExecutionProgress(new ExecutionProgress());
       predecessorPlugin.getExecutionProgress().setProcessedRecords(1);
@@ -196,8 +196,8 @@ class TestDataEvolutionUtils {
       assertSame(recentPredecessorPlugin, withoutErrorsResult.getPlugin());
       assertEquals(predecessorExecution.getId().toString(), withoutErrorsResult.getExecutionId());
 
-      // Test when root plugin doesn't match
-      final AbstractExecutablePlugin otherRootPlugin = mock(AbstractExecutablePlugin.class);
+      // Test when the root plugin doesn't match
+      final AbstractExecutablePlugin<?> otherRootPlugin = mock(AbstractExecutablePlugin.class);
       final String otherRootPluginId = "other root plugin ID";
       when(otherRootPlugin.getId()).thenReturn(otherRootPluginId);
       when(dataEvolutionUtils.compileVersionEvolution(recentPredecessorPlugin, predecessorExecution))
@@ -227,27 +227,27 @@ class TestDataEvolutionUtils {
   void testComputePredecessorPluginForWorkflowExecution() {
 
     // Add non executable plugin.
-    final List<AbstractMetisPlugin> plugins = new ArrayList<>();
+    final List<AbstractMetisPlugin<?>> plugins = new ArrayList<>();
     plugins.add(new ReindexToPreviewPlugin(new ReindexToPreviewPluginMetadata()));
 
-    // Add finished plugin of the wrong type.
-    final AbstractMetisPlugin pluginOfWrongType =
+    // Add a finished plugin of the wrong type.
+    final AbstractMetisPlugin<?> pluginOfWrongType =
         ExecutablePluginFactory.createPlugin(new TransformationPluginMetadata());
     pluginOfWrongType.setPluginStatus(PluginStatus.FINISHED);
     plugins.add(pluginOfWrongType);
 
     // Add two finished plugins of the right type.
-    final AbstractMetisPlugin firstCandidate =
+    final AbstractMetisPlugin<?> firstCandidate =
         ExecutablePluginFactory.createPlugin(new EnrichmentPluginMetadata());
     firstCandidate.setPluginStatus(PluginStatus.FINISHED);
     plugins.add(firstCandidate);
-    final AbstractMetisPlugin lastCandidate =
+    final AbstractMetisPlugin<?> lastCandidate =
         ExecutablePluginFactory.createPlugin(new EnrichmentPluginMetadata());
     lastCandidate.setPluginStatus(PluginStatus.FINISHED);
     plugins.add(lastCandidate);
 
-    // Add non-finished plugin of the right type.
-    final AbstractMetisPlugin pluginOfWrongStatus =
+    // Add a non-finished plugin of the right type.
+    final AbstractMetisPlugin<?> pluginOfWrongStatus =
         ExecutablePluginFactory.createPlugin(new EnrichmentPluginMetadata());
     pluginOfWrongStatus.setPluginStatus(PluginStatus.CANCELLED);
     plugins.add(pluginOfWrongStatus);
@@ -261,12 +261,12 @@ class TestDataEvolutionUtils {
         DataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.MEDIA_PROCESS, workflowExecution));
 
-    // Execute the call for plugin type not requiring predecessor
+    // Execute the call for a plugin type not requiring a predecessor
     assertNull(
         DataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.HTTP_HARVEST, workflowExecution));
 
-    // Execute the call for failed result
+    // Execute the call for a failed result
     assertThrows(IllegalArgumentException.class,
         () -> DataEvolutionUtils
             .computePredecessorPlugin(ExecutablePluginType.PUBLISH, workflowExecution));
@@ -277,9 +277,9 @@ class TestDataEvolutionUtils {
 
     // Create two workflow executions with three plugins and link them together
     final String datasetId = "dataset ID";
-    final AbstractExecutablePlugin plugin1 = mock(AbstractExecutablePlugin.class);
-    final AbstractExecutablePlugin plugin2 = mock(AbstractExecutablePlugin.class);
-    final AbstractExecutablePlugin plugin3 = mock(AbstractExecutablePlugin.class);
+    final AbstractExecutablePlugin<?> plugin1 = mock(AbstractExecutablePlugin.class);
+    final AbstractExecutablePlugin<?> plugin2 = mock(AbstractExecutablePlugin.class);
+    final AbstractExecutablePlugin<?> plugin3 = mock(AbstractExecutablePlugin.class);
     final WorkflowExecution execution1 = createWorkflowExecution(datasetId, plugin1);
     final WorkflowExecution execution2 = createWorkflowExecution(datasetId, plugin2, plugin3);
     doReturn(null).when(dataEvolutionUtils).getPreviousExecutionAndPlugin(plugin1, datasetId);
@@ -314,7 +314,7 @@ class TestDataEvolutionUtils {
   }
 
   private static WorkflowExecution createWorkflowExecution(String datasetId,
-      AbstractMetisPlugin... plugins) {
+      AbstractMetisPlugin<?>... plugins) {
     final WorkflowExecution result = new WorkflowExecution();
     result.setId(new ObjectId());
     result.setDatasetId(datasetId);
@@ -331,8 +331,8 @@ class TestDataEvolutionUtils {
     final PluginType previousPluginType = PluginType.OAIPMH_HARVEST;
     final Date previousPluginTime = new Date();
     final WorkflowExecution previousExecution = spy(new WorkflowExecution());
-    final AbstractMetisPlugin previousPlugin = createMetisPlugin(previousPluginType, null, null);
-    final AbstractMetisPlugin plugin = createMetisPlugin(pluginType, previousPluginType,
+    final AbstractMetisPlugin<?> previousPlugin = createMetisPlugin(previousPluginType, null, null);
+    final AbstractMetisPlugin<?> plugin = createMetisPlugin(pluginType, previousPluginType,
         previousPluginTime);
 
     // Test the absence of one or both of the pointers to a previous execution.
@@ -365,16 +365,16 @@ class TestDataEvolutionUtils {
     assertSame(previousPlugin, result.getLeft());
   }
 
-  private static AbstractMetisPlugin createMetisPlugin(PluginType type, PluginType previousType,
+  private static AbstractMetisPlugin<?> createMetisPlugin(PluginType type, PluginType previousType,
       Date previousDate) {
     AbstractMetisPluginMetadata metadata = mock(AbstractMetisPluginMetadata.class);
     when(metadata.getPluginType()).thenReturn(type);
     when(metadata.getRevisionNamePreviousPlugin())
         .thenReturn(previousType == null ? null : previousType.name());
     when(metadata.getRevisionTimestampPreviousPlugin()).thenReturn(previousDate);
-    AbstractMetisPlugin result = mock(AbstractMetisPlugin.class);
+    AbstractMetisPlugin<?> result = mock(AbstractMetisPlugin.class);
     when(result.getPluginType()).thenReturn(type);
-    when(result.getPluginMetadata()).thenReturn(metadata);
+    when((AbstractMetisPluginMetadata) result.getPluginMetadata()).thenReturn(metadata);
     return result;
   }
 

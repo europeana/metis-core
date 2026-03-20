@@ -7,14 +7,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import dev.morphia.annotations.Entity;
 import eu.europeana.metis.utils.CommonStringValues;
 import java.util.Date;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * This abstract class is the base implementation of {@link MetisPlugin} and all other plugins
- * should inherit from it.
+ * This abstract class is the base implementation of {@link MetisPlugin} and all other plugins should inherit from it.
  *
  * @param <M> The type of the plugin metadata that this plugin represents.
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-06-01
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.EXISTING_PROPERTY, property = "pluginType")
 @JsonSubTypes({
@@ -31,9 +32,13 @@ import java.util.Date;
     @JsonSubTypes.Type(value = IndexToPublishPlugin.class, name = "PUBLISH")
 })
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public abstract class AbstractMetisPlugin<M extends AbstractMetisPluginMetadata> implements
     MetisPlugin {
 
+  @Setter(AccessLevel.NONE)
   protected PluginType pluginType;
   private String id;
 
@@ -47,15 +52,6 @@ public abstract class AbstractMetisPlugin<M extends AbstractMetisPluginMetadata>
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
   private Date finishedDate;
   private M pluginMetadata;
-
-
-  /**
-   * Required by (de)serialization in db.
-   * <p>It is not to be used manually</p>
-   */
-  protected AbstractMetisPlugin() {
-    //Required by (de)serialization in db
-  }
 
   /**
    * Constructor with provided pluginType
@@ -74,38 +70,6 @@ public abstract class AbstractMetisPlugin<M extends AbstractMetisPluginMetadata>
    */
   AbstractMetisPlugin(PluginType pluginType, M pluginMetadata) {
     this.pluginType = pluginType;
-    this.pluginMetadata = pluginMetadata;
-  }
-
-  @Override
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  @Override
-  public PluginType getPluginType() {
-    return pluginType;
-  }
-
-  @Override
-  public DataStatus getDataStatus() {
-    return dataStatus;
-  }
-
-  public void setDataStatus(DataStatus dataStatus) {
-    this.dataStatus = dataStatus;
-  }
-
-  @Override
-  public M getPluginMetadata() {
-    return pluginMetadata;
-  }
-
-  public void setPluginMetadata(M pluginMetadata) {
     this.pluginMetadata = pluginMetadata;
   }
 
@@ -145,18 +109,6 @@ public abstract class AbstractMetisPlugin<M extends AbstractMetisPluginMetadata>
     this.finishedDate = finishedDate == null ? null : new Date(finishedDate.getTime());
   }
 
-  @Override
-  public PluginStatus getPluginStatus() {
-    return pluginStatus;
-  }
-
-  /**
-   * @param pluginStatus {@link PluginStatus}
-   */
-  public void setPluginStatus(PluginStatus pluginStatus) {
-    this.pluginStatus = pluginStatus;
-  }
-
   /**
    * This method sets the plugin status and also clears the fail message.
    *
@@ -165,14 +117,5 @@ public abstract class AbstractMetisPlugin<M extends AbstractMetisPluginMetadata>
   public void setPluginStatusAndResetFailMessage(PluginStatus pluginStatus) {
     setPluginStatus(pluginStatus);
     setFailMessage(null);
-  }
-
-  @Override
-  public String getFailMessage() {
-    return failMessage;
-  }
-
-  public void setFailMessage(String failMessage) {
-    this.failMessage = failMessage;
   }
 }

@@ -9,9 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public enum ExecutablePluginType {
 
-  HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
-
   OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST, ExecutablePluginTypeGroup.HARVEST),
+
+  HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
 
   ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.CURATE),
 
