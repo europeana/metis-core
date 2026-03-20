@@ -23,12 +23,12 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   private Date harvestDate;
 
   public List<String> getDatasetIdsToRedirectFrom() {
-    return new ArrayList<>(datasetIdsToRedirectFrom);
+    return List.copyOf(datasetIdsToRedirectFrom);
   }
 
   public void setDatasetIdsToRedirectFrom(List<String> datasetIdsToRedirectFrom) {
     this.datasetIdsToRedirectFrom =
-        datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(datasetIdsToRedirectFrom);
+        datasetIdsToRedirectFrom == null ? List.of() : List.copyOf(datasetIdsToRedirectFrom);
   }
 
   public Date getHarvestDate() {

@@ -100,11 +100,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       return null;
     }
 
-    return workflowExecutionHelper.getExecutablePlugins(workflowExecution).stream()
-                                  .filter(p -> p.getPluginMetadata().getExecutablePluginType() == nextExecutablePluginType)
-                                  .filter(p -> p.getPluginStatus().isRunnable())
-                                  .findFirst()
-                                  .orElse(null);
+    return workflowExecutionHelper
+        .getExecutablePlugins(workflowExecution).stream()
+        .filter(plugin -> plugin.getPluginMetadata().getExecutablePluginType() == nextExecutablePluginType)
+        .filter(plugin -> plugin.getPluginStatus().isRunnable())
+        .findFirst()
+        .orElse(null);
   }
 
   private void runPlugin(AbstractExecutablePlugin<?> plugin) {
