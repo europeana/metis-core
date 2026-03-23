@@ -4,6 +4,7 @@ import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProp
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -22,6 +23,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
   @Autowired
   public WebMvcConfig(MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     this.metisCoreConfigurationProperties = metisCoreConfigurationProperties;
+  }
+
+  @Override
+  public void addViewControllers(ViewControllerRegistry registry) {
+    registry.addRedirectViewController("/", "/v3/api-docs");
   }
 
   @Override

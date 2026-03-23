@@ -8,11 +8,11 @@ import static eu.europeana.metis.utils.RestEndpoints.DATASETS_XSLT_XSLTID;
 import static eu.europeana.metis.utils.RestEndpoints.DEPUBLISH_REASONS;
 import static java.util.Objects.requireNonNull;
 
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.security.UserInformationClaimsExtractorFilter;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.security.KeycloakJwtGrantedAuthoritiesConverter;
 import java.util.List;
-import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -65,6 +65,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(registry -> registry
                     .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
+                    .requestMatchers(HttpMethod.GET,
+                        "/",
+                        "/v3/api-docs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, DATASETS_XSLT_DEFAULT).permitAll()
                     .requestMatchers(HttpMethod.POST, DATASETS_XSLT_DEFAULT)
                     .hasAnyRole(buildResourceRoles(resourceNames, List.of(ADMIN.toString())))
@@ -72,8 +75,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, DEPUBLISH_REASONS).permitAll()
                     .requestMatchers("/**")
                     .hasAnyRole(buildResourceRoles(resourceNames, List.of(ADMIN.toString(), DATA_OFFICER.toString())))
-                    .anyRequest().denyAll())
-                .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCacheIfExists), BearerTokenAuthenticationFilter.class)
+                    .anyRequest().denyAll()
+                )
+                .addFilterAfter(new UserInformationClaimsExtractorFilter(userService::insertToInMemoryCacheIfExists),
+                    BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2Configurer -> oauth2Configurer
                     .jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(keycloakJwtGrantedAuthoritiesConverter)
                     )

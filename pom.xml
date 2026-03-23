@@ -40,6 +40,7 @@
 
     <!--External-->
     <version.spring.boot>4.0.1</version.spring.boot>
+    <version.springdoc-openapi-starter-webmvc-api>2.8.14</version.springdoc-openapi-starter-webmvc-api>
     <version.javax.annotation>2.1.1</version.javax.annotation>
     <version.morphia.core>2.5.2</version.morphia.core>
     <version.embedded.mongo>4.24.0</version.embedded.mongo>
