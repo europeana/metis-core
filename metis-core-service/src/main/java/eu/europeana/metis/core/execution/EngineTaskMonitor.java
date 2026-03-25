@@ -67,8 +67,8 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(engineTaskProgress.getExpectedRecords());
     executionProgress.setProcessedRecords(engineTaskProgress.getProcessedRecords());
-    executionProgress.setDeletedRecords(engineTaskProgress.getDeletedRecords());
-    executionProgress.setIgnoredRecords(engineTaskProgress.getIgnoredRecords());
+    executionProgress.setDeletedRecords(engineTaskProgress.getProcessedDepublishRecords());
+    executionProgress.setIgnoredRecords(engineTaskProgress.getUnchangedRecords());
     executionProgress.setErrors(engineTaskProgress.getFailRecords() + engineTaskProgress.getFailDepublishRecords());
     executionProgress.recalculateProgressPercentage();
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
@@ -88,8 +88,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
         //deletedRecordsCount never used
         //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
         expectedRecordCount = engineTaskProgress.getExpectedRecords();
-        processedRecordCount =
-            engineTaskProgress.getProcessedRecords() + engineTaskProgress.getIgnoredRecords();
+        processedRecordCount = engineTaskProgress.getProcessedRecords() + engineTaskProgress.getIgnoredRecords();
         deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount();
       }
       case AbstractHarvestPluginMetadata ignored -> {
