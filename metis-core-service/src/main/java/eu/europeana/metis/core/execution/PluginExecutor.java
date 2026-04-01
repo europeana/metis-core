@@ -84,10 +84,8 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       WorkflowExecution workflowExecution, EngineTaskSubmitter<S, T> engineTaskSubmitter)
       throws ExternalTaskException {
     if (isBlank(plugin.getExternalTaskId())) {
-      if (plugin.getStartedDate() == null) {
-        plugin.setStartedDate(new Date());
-      }
-
+      plugin.setStartedDate(new Date());
+      plugin.setPluginStatus(PluginStatus.RUNNING);
       engineTaskSubmitter.submit(
           workflowExecution.getDatasetId(),
           workflowExecution.getEcloudDatasetId(),

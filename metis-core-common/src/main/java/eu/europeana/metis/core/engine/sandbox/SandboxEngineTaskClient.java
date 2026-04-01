@@ -229,6 +229,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
     engineTaskProgress.setFailRecords(sandboxTaskProgress.failRecords());
     engineTaskProgress.setWarningRecords(sandboxTaskProgress.warningRecords());
     engineTaskProgress.setDuplicateRecords(sandboxTaskProgress.duplicateRecords());
+    engineTaskProgress.setUnchangedRecords(sandboxTaskProgress.unchangedRecords());
     engineTaskProgress.setExpectedDepublishRecords(sandboxTaskProgress.expectedDepublishRecords());
     engineTaskProgress.setSuccessDepublishRecords(sandboxTaskProgress.successDepublishRecords());
     engineTaskProgress.setFailDepublishRecords(sandboxTaskProgress.failDepublishRecords());

@@ -83,6 +83,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     engineTaskProgress.setFailRecords(0);
     engineTaskProgress.setWarningRecords(0);
     engineTaskProgress.setDuplicateRecords(0);
+    engineTaskProgress.setUnchangedRecords(0);
     engineTaskProgress.setExpectedDepublishRecords(0);
     engineTaskProgress.setSuccessDepublishRecords(0);
     engineTaskProgress.setFailDepublishRecords(0);
