@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
+
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
@@ -13,14 +15,11 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,10 +34,10 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Proxies Controller which encapsulates functionality that has to be proxied to an external resource.
  */
+@Slf4j
 @RestController
 public class ProxiesController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int NUMBER_OF_RECORDS = 5;
   private final ProxiesService proxiesService;
 
@@ -75,12 +74,9 @@ public class ProxiesController {
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam(value = "from") int from,
       @RequestParam(value = "to") int to) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(
-          "Requesting proxy call task logs for topologyName: {}, externalTaskId: {}, from: {}, to: {}",
-          topologyName, externalTaskId, from, to);
-    }
+    log.atInfo().log(
+        "Requesting proxy call task logs for topologyName: {}, externalTaskId: {}, from: {}, to: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId), from, to);
     return proxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
   }
 
@@ -103,13 +99,9 @@ public class ProxiesController {
   public Map<String, Boolean> existsExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    externalTaskId = StringEscapeUtils.escapeJava(externalTaskId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(
-          "Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
-          topologyName, externalTaskId);
-    }
+    log.atInfo().log(
+        "Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return Collections.singletonMap("existsExternalTaskReport",
         proxiesService.existsExternalTaskReport(topologyName, externalTaskId));
   }
@@ -137,10 +129,8 @@ public class ProxiesController {
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Requesting proxy call task reports for topologyName: {}, externalTaskId: {}", topologyName, externalTaskId);
-    }
+    log.atInfo().log("Requesting proxy call task reports for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getExternalTaskReport(topologyName, externalTaskId, idsPerError);
   }
 
@@ -164,10 +154,8 @@ public class ProxiesController {
   public RecordStatisticsDTO getExternalTaskStatistics(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}", topologyName, externalTaskId);
-    }
+    log.atInfo().log("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getExternalTaskStatistics(topologyName, externalTaskId);
   }
 
@@ -194,11 +182,8 @@ public class ProxiesController {
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("nodePath") String nodePath) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
-          topologyName, externalTaskId);
-    }
+    log.atInfo().log("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
 
