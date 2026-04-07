@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.security.AuthenticationUtils.getUserId;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
@@ -28,7 +29,6 @@ import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
-import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,8 +116,7 @@ public class DatasetController {
       throws GenericMetisException {
     datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
     if (LOGGER.isInfoEnabled()) {
-      final String datasetId = StringEscapeUtils.escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId());
-      LOGGER.info("Dataset with datasetId {} updated", datasetId);
+      LOGGER.info("Dataset with datasetId {} updated", escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId()));
     }
   }
 
@@ -136,10 +135,9 @@ public class DatasetController {
   @DeleteMapping(value = RestEndpoints.DATASETS_DATASETID)
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteDataset(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     datasetService.deleteDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' deleted", datasetId);
+      LOGGER.info("Dataset with datasetId '{}' deleted", escapeJava(datasetId));
     }
   }
 
@@ -160,11 +158,9 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public DatasetDTO getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
-
     DatasetDTO storedDataset = datasetService.getDatasetByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' found", datasetId);
+      LOGGER.info("Dataset with datasetId '{}' found", escapeJava(datasetId));
     }
     return storedDataset;
   }
@@ -186,10 +182,9 @@ public class DatasetController {
   @GetMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DatasetXslt getDatasetXsltByDatasetId(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(datasetId);
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", datasetId, datasetXslt.getId());
+      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", escapeJava(datasetId), datasetXslt.getId());
     }
     return datasetXslt;
   }

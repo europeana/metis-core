@@ -1,10 +1,11 @@
 package eu.europeana.metis.core.rest.controller;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
-import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
@@ -19,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -74,8 +74,7 @@ public class ProxiesController {
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam(value = "from") int from,
       @RequestParam(value = "to") int to) throws GenericMetisException {
-    log.atInfo().log(
-        "Requesting proxy call task logs for topologyName: {}, externalTaskId: {}, from: {}, to: {}",
+    log.info("Requesting proxy call task logs for topologyName: {}, externalTaskId: {}, from: {}, to: {}",
         escapeJava(topologyName), escapeJava(externalTaskId), from, to);
     return proxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
   }
@@ -99,8 +98,7 @@ public class ProxiesController {
   public Map<String, Boolean> existsExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
-    log.atInfo().log(
-        "Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
+    log.info("Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
         escapeJava(topologyName), escapeJava(externalTaskId));
     return Collections.singletonMap("existsExternalTaskReport",
         proxiesService.existsExternalTaskReport(topologyName, externalTaskId));
@@ -129,7 +127,7 @@ public class ProxiesController {
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
-    log.atInfo().log("Requesting proxy call task reports for topologyName: {}, externalTaskId: {}",
+    log.info("Requesting proxy call task reports for topologyName: {}, externalTaskId: {}",
         escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getExternalTaskReport(topologyName, externalTaskId, idsPerError);
   }
@@ -154,7 +152,7 @@ public class ProxiesController {
   public RecordStatisticsDTO getExternalTaskStatistics(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
-    log.atInfo().log("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}",
+    log.info("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}",
         escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getExternalTaskStatistics(topologyName, externalTaskId);
   }
@@ -182,7 +180,7 @@ public class ProxiesController {
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("nodePath") String nodePath) throws GenericMetisException {
-    log.atInfo().log("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
+    log.info("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
         escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
@@ -213,7 +211,7 @@ public class ProxiesController {
       @RequestParam(value = "nextPage", required = false) String nextPage
   ) throws GenericMetisException {
     return proxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId, pluginType,
-        StringUtils.isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
+        isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
   }
 
   /**

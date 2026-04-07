@@ -23,11 +23,9 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.lang.invoke.MethodHandles;
 import java.util.Date;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
@@ -50,10 +48,10 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>The {@link OrchestratorService} has control on how to orchestrate different components of the
  * system</p>
  */
+@Slf4j
 @RestController
 public class OrchestratorController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final OrchestratorService orchestratorService;
 
   /**
@@ -67,7 +65,7 @@ public class OrchestratorController {
   }
 
   private static void logPaging(ResponseListWrapper<?> responseListWrapper, int nextPage) {
-    LOGGER.debug("Batch of: {} workflowExecutions returned, using batch nextPage: {}",
+    log.debug("Batch of: {} workflowExecutions returned, using batch nextPage: {}",
         responseListWrapper.getListSize(), nextPage);
   }
 
@@ -138,9 +136,7 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteWorkflow(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     orchestratorService.deleteWorkflow(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Workflow with datasetId '{}' deleted", escapeJava(datasetId));
-    }
+    log.info("Workflow with datasetId '{}' deleted", escapeJava(datasetId));
   }
 
   /**
@@ -158,9 +154,7 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.OK)
   public Workflow getWorkflow(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     Workflow workflow = orchestratorService.getWorkflow(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Workflow with datasetId '{}' found", escapeJava(datasetId));
-    }
+    log.info("Workflow with datasetId '{}' found", escapeJava(datasetId));
     return workflow;
   }
 
@@ -202,9 +196,7 @@ public class OrchestratorController {
     final String userId = getUserId(jwtPrincipal);
     WorkflowExecutionDTO workflowExecutionDTO = orchestratorService
         .addWorkflowInQueueOfWorkflowExecutions(datasetId, null, enforcedPredecessorType, userId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution for datasetId '{}' added to queue", escapeJava(datasetId));
-    }
+    log.info("WorkflowExecution for datasetId '{}' added to queue", escapeJava(datasetId));
     return workflowExecutionDTO;
   }
 
@@ -228,9 +220,7 @@ public class OrchestratorController {
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     orchestratorService.cancelWorkflowExecution(executionId, userId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution for executionId '{}' is cancelling", escapeJava(executionId));
-    }
+    log.info("WorkflowExecution for executionId '{}' is cancelling", escapeJava(executionId));
   }
 
   /**
@@ -250,9 +240,8 @@ public class OrchestratorController {
   public WorkflowExecutionDTO getWorkflowExecutionByExecutionId(
       @PathVariable("executionId") String executionId) throws GenericMetisException {
     WorkflowExecutionDTO workflowExecutionDTO = orchestratorService.getWorkflowExecutionDTOByExecutionId(executionId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("WorkflowExecution with executionId '{}' {} found.", escapeJava(executionId), workflowExecutionDTO == null ? "not " : "");
-    }
+    log.info("WorkflowExecution with executionId '{}' {} found.", escapeJava(executionId),
+          workflowExecutionDTO == null ? "not " : "");
     return workflowExecutionDTO;
   }
 
@@ -306,9 +295,9 @@ public class OrchestratorController {
         .getLatestFinishedPluginByDatasetIdIfPluginTypeAllowedForExecution(datasetId,
             pluginType, enforcedPredecessorType);
     if (latestFinishedPluginWorkflowExecutionByDatasetId == null) {
-      LOGGER.info("PluginType allowed by default");
+      log.info("PluginType allowed by default");
     } else {
-      LOGGER.info("Latest Plugin WorkflowExecution with id '{}' found",
+      log.info("Latest Plugin WorkflowExecution with id '{}' found",
           latestFinishedPluginWorkflowExecutionByDatasetId.getId());
     }
     return latestFinishedPluginWorkflowExecutionByDatasetId;
@@ -330,9 +319,7 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.OK)
   public DatasetExecutionInformation getDatasetExecutionInformation(
       @PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.debug("Requesting dataset execution information for datasetId: {}", escapeJava(datasetId));
-    }
+    log.debug("Requesting dataset execution information for datasetId: {}", escapeJava(datasetId));
     return orchestratorService.getDatasetExecutionInformation(datasetId);
   }
 
@@ -462,9 +449,7 @@ public class OrchestratorController {
       produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public ExecutionHistory getDatasetExecutionHistory(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.debug("Requesting dataset execution history for datasetId: {}", escapeJava(datasetId));
-    }
+    log.debug("Requesting dataset execution history for datasetId: {}", escapeJava(datasetId));
     return orchestratorService.getDatasetExecutionHistory(datasetId);
   }
 
@@ -485,9 +470,7 @@ public class OrchestratorController {
   @ResponseStatus(HttpStatus.OK)
   public PluginsWithDataAvailability getExecutablePluginsWithDataAvailability(
       @PathVariable("executionId") String executionId) throws GenericMetisException {
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.debug("Requesting plugins with data availability for executionId: {}", escapeJava(executionId));
-    }
+    log.debug("Requesting plugins with data availability for executionId: {}", escapeJava(executionId));
     return orchestratorService.getExecutablePluginsWithDataAvailability(executionId);
   }
 

@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.security.AuthenticationUtils.getUserId;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -14,13 +15,10 @@ import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -40,10 +38,10 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Controller for calls related to depublish record ids.
  */
+@Slf4j
 @RestController
 public class DepublishRecordIdController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final DepublishRecordIdService depublishRecordIdService;
 
   /**
@@ -72,12 +70,9 @@ public class DepublishRecordIdController {
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     final int added = depublishRecordIdService
         .addRecordIdsToBeDepublished(datasetId, recordIdsInSeparateLines);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("{} Depublish record ids added to dataset with datasetId: {}", added, datasetId);
-    }
+    log.info("{} Depublish record ids added to dataset with datasetId: {}", added, escapeJava(datasetId));
   }
 
   /**
@@ -120,11 +115,8 @@ public class DepublishRecordIdController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deletePendingRecordIds(@PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     final Long removedRecordIds = depublishRecordIdService.deletePendingRecordIds(datasetId, recordIdsInSeparateLines);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("{} Depublish record ids removed from database with datasetId: {}", removedRecordIds, datasetId);
-    }
+    log.info("{} Depublish record ids removed from database with datasetId: {}", removedRecordIds, escapeJava(datasetId));
   }
 
   /**
