@@ -27,10 +27,8 @@ import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.lang.invoke.MethodHandles;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -50,10 +48,10 @@ import org.springframework.web.bind.annotation.RestController;
  * Contains all the calls that are related to Datasets.
  * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
  */
+@Slf4j
 @RestController
 public class DatasetController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final DatasetService datasetService;
 
   /**
@@ -87,7 +85,7 @@ public class DatasetController {
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     DatasetDTO createdDataset = datasetService.createDataset(userId, datasetDTO);
-    LOGGER.info("Dataset with datasetId: {}, datasetName: {} created", createdDataset.getDatasetId(),
+    log.info("Dataset with datasetId: {}, datasetName: {} created", createdDataset.getDatasetId(),
         createdDataset.getDatasetName());
     return createdDataset;
   }
@@ -115,9 +113,7 @@ public class DatasetController {
   public void updateDataset(@RequestBody DatasetXsltStringWrapper datasetXsltStringWrapper)
       throws GenericMetisException {
     datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId {} updated", escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId()));
-    }
+    log.info("Dataset with datasetId {} updated", escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId()));
   }
 
   /**
@@ -136,9 +132,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteDataset(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     datasetService.deleteDatasetByDatasetId(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' deleted", escapeJava(datasetId));
-    }
+    log.info("Dataset with datasetId '{}' deleted", escapeJava(datasetId));
   }
 
   /**
@@ -159,9 +153,7 @@ public class DatasetController {
   public DatasetDTO getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
     DatasetDTO storedDataset = datasetService.getDatasetByDatasetId(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' found", escapeJava(datasetId));
-    }
+    log.info("Dataset with datasetId '{}' found", escapeJava(datasetId));
     return storedDataset;
   }
 
@@ -183,9 +175,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public DatasetXslt getDatasetXsltByDatasetId(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", escapeJava(datasetId), datasetXslt.getId());
-    }
+    log.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", escapeJava(datasetId), datasetXslt.getId());
     return datasetXslt;
   }
 
@@ -208,7 +198,7 @@ public class DatasetController {
   public String getXsltByXsltId(@PathVariable("xsltId") String xsltId)
       throws GenericMetisException {
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByXsltId(xsltId);
-    LOGGER.info("XSLT with xsltId '{}' found", datasetXslt.getId());
+    log.info("XSLT with xsltId '{}' found", datasetXslt.getId());
     return datasetXslt.getXslt();
   }
 
@@ -232,7 +222,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.CREATED)
   public DatasetXslt createDefaultXslt(@RequestBody String xsltString) {
     DatasetXslt defaultDatasetXslt = datasetService.createDefaultXslt(xsltString);
-    LOGGER.info("New default xslt created with xsltId: {}", defaultDatasetXslt.getId());
+    log.info("New default xslt created with xsltId: {}", defaultDatasetXslt.getId());
     return defaultDatasetXslt;
   }
 
@@ -253,7 +243,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public String getLatestDefaultXslt() throws GenericMetisException {
     DatasetXslt datasetXslt = datasetService.getLatestDefaultXslt();
-    LOGGER.info("Default XSLT with xsltId '{}' found", datasetXslt.getId());
+    log.info("Default XSLT with xsltId '{}' found", datasetXslt.getId());
     return datasetXslt.getXslt();
   }
 
@@ -334,7 +324,7 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public DatasetDTO getByDatasetName(@PathVariable("datasetName") String datasetName) throws GenericMetisException {
     DatasetDTO dataset = datasetService.getDatasetByDatasetName(datasetName);
-    LOGGER.info("Dataset with datasetName '{}' found", dataset.getDatasetName());
+    log.info("Dataset with datasetName '{}' found", dataset.getDatasetName());
     return dataset;
   }
 
@@ -367,8 +357,7 @@ public class DatasetController {
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByProvider(provider, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 
@@ -401,8 +390,7 @@ public class DatasetController {
             datasetService
                 .getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 
@@ -435,8 +423,7 @@ public class DatasetController {
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByDataProvider(dataProvider, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 
@@ -499,7 +486,7 @@ public class DatasetController {
     responseListWrapper.setResultsAndLastPage(
         datasetService.searchDatasetsBasedOnSearchString(searchString, nextPage),
         datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 }
