@@ -215,16 +215,6 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
     EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
     engineTaskProgress.setExpectedRecords(sandboxTaskProgress.expectedRecords());
     engineTaskProgress.setProcessedRecords(sandboxTaskProgress.processedRecords());
-    engineTaskProgress.setDeletedRecords(sandboxTaskProgress.successDepublishRecords());
-    engineTaskProgress.setIgnoredRecords(sandboxTaskProgress.unchangedRecords());
-    engineTaskProgress.setProcessedErrors(sandboxTaskProgress.failRecords());
-    engineTaskProgress.setPostProcessedRecordsCount(0);
-    engineTaskProgress.setDeletedErrors(sandboxTaskProgress.failDepublishRecords());
-    EngineTaskState engineTaskState = convertToEngineTaskState(sandboxTaskProgress.sandboxTaskState());
-    engineTaskProgress.setEngineTaskState(engineTaskState);
-    engineTaskProgress.setEngineTaskStateInfo("");
-
-    //Unused upcoming new counters
     engineTaskProgress.setSuccessRecords(sandboxTaskProgress.successRecords());
     engineTaskProgress.setFailRecords(sandboxTaskProgress.failRecords());
     engineTaskProgress.setWarningRecords(sandboxTaskProgress.warningRecords());
@@ -234,6 +224,10 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
     engineTaskProgress.setSuccessDepublishRecords(sandboxTaskProgress.successDepublishRecords());
     engineTaskProgress.setFailDepublishRecords(sandboxTaskProgress.failDepublishRecords());
     engineTaskProgress.setProcessedDepublishRecords(sandboxTaskProgress.processedDepublishRecords());
+
+    EngineTaskState engineTaskState = convertToEngineTaskState(sandboxTaskProgress.sandboxTaskState());
+    engineTaskProgress.setEngineTaskState(engineTaskState);
+    engineTaskProgress.setEngineTaskStateInfo("");
     return engineTaskProgress;
   }
 

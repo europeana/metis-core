@@ -148,10 +148,10 @@ class TestEcloudEngineTaskClient {
 
     assertEquals(taskInfo.getExpectedRecords(), engineTaskProgress.getExpectedRecords());
     assertEquals(taskInfo.getProcessedRecords(), engineTaskProgress.getProcessedRecords());
-    assertEquals(taskInfo.getSuccessDepublishRecords(), engineTaskProgress.getDeletedRecords());
-    assertEquals(taskInfo.getUnchangedRecords(), engineTaskProgress.getIgnoredRecords());
-    assertEquals(taskInfo.getFailRecords(), engineTaskProgress.getProcessedErrors());
-    assertEquals(taskInfo.getFailDepublishRecords(), engineTaskProgress.getDeletedErrors());
+    assertEquals(taskInfo.getSuccessDepublishRecords(), engineTaskProgress.getSuccessDepublishRecords());
+    assertEquals(taskInfo.getUnchangedRecords(), engineTaskProgress.getUnchangedRecords());
+    assertEquals(taskInfo.getFailRecords(), engineTaskProgress.getFailRecords());
+    assertEquals(taskInfo.getFailDepublishRecords(), engineTaskProgress.getFailDepublishRecords());
     assertEquals(EngineTaskState.valueOf(taskInfo.getEngineTaskState().name()), engineTaskProgress.getEngineTaskState());
     assertEquals(taskInfo.getEngineTaskStateInfo(), engineTaskProgress.getEngineTaskStateInfo());
   }

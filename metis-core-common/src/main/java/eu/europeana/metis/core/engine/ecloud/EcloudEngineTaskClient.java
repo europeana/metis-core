@@ -69,16 +69,6 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
     engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecords());
     engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecords());
-    engineTaskProgress.setDeletedRecords(taskInfo.getSuccessDepublishRecords());
-    engineTaskProgress.setIgnoredRecords(taskInfo.getUnchangedRecords());
-    engineTaskProgress.setProcessedErrors(taskInfo.getFailRecords());
-    engineTaskProgress.setPostProcessedRecordsCount(0);
-    engineTaskProgress.setDeletedErrors(taskInfo.getFailDepublishRecords());
-    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getEngineTaskState().name());
-    engineTaskProgress.setEngineTaskState(engineTaskState);
-    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getEngineTaskStateInfo());
-
-    //Unused upcoming new counters
     engineTaskProgress.setSuccessRecords(taskInfo.getSuccessRecords());
     engineTaskProgress.setFailRecords(taskInfo.getFailRecords());
     engineTaskProgress.setWarningRecords(taskInfo.getWarningRecords());
@@ -89,6 +79,9 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
     engineTaskProgress.setFailDepublishRecords(taskInfo.getFailDepublishRecords());
     engineTaskProgress.setProcessedDepublishRecords(taskInfo.getProcessedDepublishRecords());
 
+    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getEngineTaskState().name());
+    engineTaskProgress.setEngineTaskState(engineTaskState);
+    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getEngineTaskStateInfo());
     return engineTaskProgress;
   }
 
