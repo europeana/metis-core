@@ -32,7 +32,7 @@
 
     <!--Internal-->
     <version.metis-sandbox-common>12-SNAPSHOT</version.metis-sandbox-common>
-    <version.ecloud>15</version.ecloud>
+    <version.ecloud>16-SNAPSHOT</version.ecloud>
     <version.metis-common>19-SNAPSHOT</version.metis-common>
     <version.metis-framework>17-SNAPSHOT</version.metis-framework>
     <version.metis-schema>13</version.metis-schema>

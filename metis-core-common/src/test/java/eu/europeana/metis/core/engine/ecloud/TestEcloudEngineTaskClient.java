@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.engine.ecloud;
 
+import static eu.europeana.cloud.common.model.dps.EngineTaskState.PROCESSED;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -22,7 +23,6 @@ import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorInfo;
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.cloud.common.model.dps.TaskInfo;
-import eu.europeana.cloud.common.model.dps.TaskState;
 import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
@@ -133,27 +133,27 @@ class TestEcloudEngineTaskClient {
   @Test
   void getEngineTaskProgress() throws Exception {
     TaskInfo taskInfo = new TaskInfo();
-    taskInfo.setExpectedRecordsNumber(100);
-    taskInfo.setProcessedRecordsCount(100);
-    taskInfo.setDeletedRecordsCount(1);
-    taskInfo.setIgnoredRecordsCount(2);
-    taskInfo.setProcessedErrorsCount(3);
-    taskInfo.setDeletedErrorsCount(5);
-    taskInfo.setState(TaskState.PROCESSED);
-    taskInfo.setStateDescription("stateDescription");
+    taskInfo.setExpectedRecords(100);
+    taskInfo.setSuccessRecords(100);
+    taskInfo.setSuccessDepublishRecords(1);
+    taskInfo.setUnchangedRecords(2);
+    taskInfo.setFailRecords(3);
+    taskInfo.setFailDepublishRecords(5);
+    taskInfo.setEngineTaskState(PROCESSED);
+    taskInfo.setEngineTaskStateInfo("stateDescription");
 
     when(dpsClient.getTaskProgress(TOPOLOGY_NAME, 1L)).thenReturn(taskInfo);
 
     EngineTaskProgress engineTaskProgress = ecloudEngineTaskClient.getEngineTaskProgress(TOPOLOGY_NAME, "1", null);
 
-    assertEquals(taskInfo.getExpectedRecordsNumber(), engineTaskProgress.getExpectedRecords());
-    assertEquals(taskInfo.getProcessedRecordsCount(), engineTaskProgress.getProcessedRecords());
-    assertEquals(taskInfo.getDeletedRecordsCount(), engineTaskProgress.getDeletedRecords());
-    assertEquals(taskInfo.getIgnoredRecordsCount(), engineTaskProgress.getIgnoredRecords());
-    assertEquals(taskInfo.getProcessedErrorsCount(), engineTaskProgress.getProcessedErrors());
-    assertEquals(taskInfo.getDeletedErrorsCount(), engineTaskProgress.getDeletedErrors());
-    assertEquals(EngineTaskState.valueOf(taskInfo.getState().name()), engineTaskProgress.getEngineTaskState());
-    assertEquals(taskInfo.getStateDescription(), engineTaskProgress.getEngineTaskStateInfo());
+    assertEquals(taskInfo.getExpectedRecords(), engineTaskProgress.getExpectedRecords());
+    assertEquals(taskInfo.getProcessedRecords(), engineTaskProgress.getProcessedRecords());
+    assertEquals(taskInfo.getSuccessDepublishRecords(), engineTaskProgress.getDeletedRecords());
+    assertEquals(taskInfo.getUnchangedRecords(), engineTaskProgress.getIgnoredRecords());
+    assertEquals(taskInfo.getFailRecords(), engineTaskProgress.getProcessedErrors());
+    assertEquals(taskInfo.getFailDepublishRecords(), engineTaskProgress.getDeletedErrors());
+    assertEquals(EngineTaskState.valueOf(taskInfo.getEngineTaskState().name()), engineTaskProgress.getEngineTaskState());
+    assertEquals(taskInfo.getEngineTaskStateInfo(), engineTaskProgress.getEngineTaskStateInfo());
   }
 
   @Test
