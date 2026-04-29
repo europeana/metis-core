@@ -18,7 +18,6 @@ import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -75,39 +74,6 @@ class TestProxiesService {
     reset(workflowExecutionDao);
     reset(engineTaskClient);
     reset(proxiesService);
-  }
-
-  @Test
-  void getExternalTaskLogs() throws Exception {
-    List<DataItemStatus> dataItemStatusList = TestObjectFactory.createExternalRecordStatusList();
-
-    when(engineTaskClient.getDataItemStatuses(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100)).thenReturn(dataItemStatusList);
-    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    proxiesService.getExternalTaskLogs(Topology.OAIPMH_HARVEST.getTopologyName(),
-        EXTERNAL_TASK_ID, 1, 100);
-    assertEquals(2, dataItemStatusList.size());
-  }
-
-  @Test
-  void getExternalTaskLogs_NoExecutionException() {
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(null);
-    assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
-        .getExternalTaskLogs(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100));
-  }
-
-  @Test
-  void getExternalTaskLogs_ExternalTaskException() throws Exception {
-    when(engineTaskClient
-        .getDataItemStatuses(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100)).thenThrow(new ExternalTaskException(""));
-    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    assertThrows(ExternalTaskException.class, () -> proxiesService
-        .getExternalTaskLogs(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100));
   }
 
   @Test
