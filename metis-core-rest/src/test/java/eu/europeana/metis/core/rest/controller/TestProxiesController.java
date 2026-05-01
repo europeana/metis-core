@@ -19,9 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
-import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
@@ -92,26 +91,6 @@ class TestProxiesController {
     reset(proxiesService);
     reset(jwtDecoder);
     reset(userService);
-  }
-
-  @Test
-  void getExternalTaskLogs() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
-
-    int from = 1;
-    int to = 100;
-    List<DataItemStatus> dataItemStatuses = TestObjectFactory.createExternalRecordStatusList();
-    when(proxiesService.getExternalTaskLogs(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, from, to)).thenReturn(dataItemStatuses);
-
-    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS,
-               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("from", Integer.toString(from))
-               .param("to", Integer.toString(to))
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(""))
-           .andExpect(status().isOk());
   }
 
   @Test

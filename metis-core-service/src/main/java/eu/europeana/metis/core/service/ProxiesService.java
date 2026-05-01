@@ -10,7 +10,6 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -64,28 +63,6 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     this.workflowExecutionDao = workflowExecutionDao;
     this.datasetDao = datasetDao;
     this.dataEvolutionUtils = new DataEvolutionUtils(this.workflowExecutionDao);
-  }
-
-  /**
-   * Get logs from a specific topology task paged.
-   *
-   * @param topologyName the topology name of the task
-   * @param externalTaskId the task identifier
-   * @param from integer to start getting logs from
-   * @param to integer until where logs should be received
-   * @return the list of logs
-   * @throws GenericMetisException can be one of:
-   * <ul>
-   * <li>{@link DpsException} if an error occurred while retrieving the logs from the external
-   * resource</li>
-   * <li>{@link NoWorkflowExecutionFoundException} if no
-   * workflow execution exists for the provided external task identifier</li>
-   * </ul>
-   */
-  public List<DataItemStatus> getExternalTaskLogs(String topologyName, String externalTaskId, int from, int to)
-      throws GenericMetisException {
-    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    return engineTaskClient.getDataItemStatuses(topologyName, externalTaskId, from, to);
   }
 
   /**

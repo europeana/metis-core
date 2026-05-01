@@ -3,7 +3,6 @@ package eu.europeana.metis.core.rest.controller;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -17,7 +16,6 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,34 +47,6 @@ public class ProxiesController {
   @Autowired
   public ProxiesController(ProxiesService proxiesService) {
     this.proxiesService = proxiesService;
-  }
-
-  /**
-   * Get logs from a specific topology task paged.
-   *
-   * @param topologyName the topology name of the task
-   * @param externalTaskId the task identifier
-   * @param from integer to start getting logs from
-   * @param to integer until where logs should be received
-   * @return the list of logs
-   * @throws GenericMetisException can be one of:
-   * <ul>
-   * <li>{@link eu.europeana.cloud.service.dps.exception.DpsException} if an error occurred while
-   * retrieving the logs from the external resource</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
-   * workflow execution exists for the provided external task identifier</li>
-   * </ul>
-   */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {MediaType.APPLICATION_JSON_VALUE})
-  @ResponseStatus(HttpStatus.OK)
-  public List<DataItemStatus> getExternalTaskLogs(
-      @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") String externalTaskId,
-      @RequestParam(value = "from") int from,
-      @RequestParam(value = "to") int to) throws GenericMetisException {
-    log.info("Requesting proxy call task logs for topologyName: {}, externalTaskId: {}, from: {}, to: {}",
-        escapeJava(topologyName), escapeJava(externalTaskId), from, to);
-    return proxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
   }
 
   /**
