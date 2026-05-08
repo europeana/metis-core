@@ -32,11 +32,11 @@
 
     <!--Internal-->
     <version.metis-sandbox-common>12-SNAPSHOT</version.metis-sandbox-common>
-    <version.ecloud>15</version.ecloud>
-    <version.metis-common>19-SNAPSHOT</version.metis-common>
-    <version.metis-framework>17-SNAPSHOT</version.metis-framework>
-    <version.metis-schema>13</version.metis-schema>
-    <version.corelib>2.17.6</version.corelib>
+    <version.ecloud>17-SNAPSHOT</version.ecloud>
+    <version.metis-common>20-SNAPSHOT</version.metis-common>
+    <version.metis-framework>18-SNAPSHOT</version.metis-framework>
+    <version.metis-schema>15-SNAPSHOT</version.metis-schema>
+    <version.corelib>2.17.8-SNAPSHOT</version.corelib>
 
     <!--External-->
     <version.spring.boot>4.0.4</version.spring.boot>
