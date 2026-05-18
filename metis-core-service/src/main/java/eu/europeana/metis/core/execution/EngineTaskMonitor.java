@@ -4,12 +4,8 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
-import eu.europeana.metis.core.engine.ecloud.EcloudEngineTaskClient;
-import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskClient;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
-import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.exception.ExternalTaskException;
 import lombok.extern.slf4j.Slf4j;
@@ -54,77 +50,13 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   }
 
   void updateExecutionProgress(EngineTaskProgress engineTaskProgress) {
-    //Differentiate between Ecloud and Sandbox engine task clients due to current discrepancies
-    if (engineTaskClient instanceof EcloudEngineTaskClient) {
-      updateExecutionProgressEcloud(engineTaskProgress);
-    } else if (engineTaskClient instanceof SandboxEngineTaskClient) {
-      updateExecutionProgressSandbox(engineTaskProgress);
-    }
-  }
-
-  private void updateExecutionProgressSandbox(EngineTaskProgress engineTaskProgress) {
     //todo: We further need to update the ExecutionProgress entity to support the new counters
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(engineTaskProgress.getExpectedRecords());
     executionProgress.setProcessedRecords(engineTaskProgress.getProcessedRecords());
-    executionProgress.setDeletedRecords(engineTaskProgress.getProcessedDepublishRecords());
+    executionProgress.setDeletedRecords(engineTaskProgress.getSuccessDepublishRecords());
     executionProgress.setIgnoredRecords(engineTaskProgress.getUnchangedRecords());
     executionProgress.setErrors(engineTaskProgress.getFailRecords() + engineTaskProgress.getFailDepublishRecords());
-    executionProgress.recalculateProgressPercentage();
-    executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
-  }
-
-  private void updateExecutionProgressEcloud(EngineTaskProgress engineTaskProgress) {
-    // Calculate the various counts.
-    // The expectedRecordsNumber we get from ecloud is dynamic and can change during execution.
-    long expectedRecordCount;
-    long processedRecordCount;
-    long deletedRecordCount;
-
-    switch (plugin.getPluginMetadata()) {
-      case
-          AbstractHarvestPluginMetadata abstractHarvestPluginMetadata when abstractHarvestPluginMetadata.isIncrementalHarvest() -> {
-        //Incremental Harvest
-        //deletedRecordsCount never used
-        //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-        expectedRecordCount = engineTaskProgress.getExpectedRecords();
-        processedRecordCount = engineTaskProgress.getProcessedRecords() + engineTaskProgress.getIgnoredRecords();
-        deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount();
-      }
-      case AbstractHarvestPluginMetadata ignored -> {
-        //Full Harvest
-        //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-        //deletedRecordsCount is always 0
-        expectedRecordCount = engineTaskProgress.getExpectedRecords();
-        processedRecordCount = engineTaskProgress.getProcessedRecords();
-        deletedRecordCount = engineTaskProgress.getDeletedRecords();
-      }
-      case AbstractIndexPluginMetadata abstractIndexPluginMetadata when !abstractIndexPluginMetadata.isIncrementalIndexing() -> {
-        //Full Indexing
-        //ignoredRecordsCount never used
-        //expectedPostProcessedRecordsNumber and postProcessedRecordsCount represent deleted records
-        //The deletedRecordsCount is always 0
-        expectedRecordCount = engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
-        processedRecordCount = engineTaskProgress.getProcessedRecords();
-        deletedRecordCount = engineTaskProgress.getPostProcessedRecordsCount() + engineTaskProgress.getDeletedRecords();
-      }
-      case null, default -> {
-        //Other plugins including incremental indexing
-        //expectedPostProcessedRecordsNumber, postProcessedRecordsCount and ignoredRecordsCount not used
-        expectedRecordCount = engineTaskProgress.getExpectedRecords() - engineTaskProgress.getDeletedRecords();
-        processedRecordCount = engineTaskProgress.getProcessedRecords();
-        deletedRecordCount = engineTaskProgress.getDeletedRecords();
-      }
-    }
-
-    long errorCount = engineTaskProgress.getProcessedErrors() + engineTaskProgress.getDeletedErrors();
-    // Update the execution progress.
-    ExecutionProgress executionProgress = plugin.getExecutionProgress();
-    executionProgress.setExpectedRecords(expectedRecordCount);
-    executionProgress.setProcessedRecords(processedRecordCount);
-    executionProgress.setDeletedRecords(deletedRecordCount);
-    executionProgress.setIgnoredRecords(engineTaskProgress.getIgnoredRecords());
-    executionProgress.setErrors(errorCount);
     executionProgress.recalculateProgressPercentage();
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
   }

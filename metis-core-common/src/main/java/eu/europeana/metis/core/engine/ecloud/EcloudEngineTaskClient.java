@@ -67,28 +67,21 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
 
   private static EngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
     EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
-    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
-    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
-    engineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
-    engineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
-    engineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
-    engineTaskProgress.setPostProcessedRecordsCount(taskInfo.getPostProcessedRecordsCount());
-    engineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
-    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
+    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecords());
+    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecords());
+    engineTaskProgress.setSuccessRecords(taskInfo.getSuccessRecords());
+    engineTaskProgress.setFailRecords(taskInfo.getFailRecords());
+    engineTaskProgress.setWarningRecords(taskInfo.getWarningRecords());
+    engineTaskProgress.setDuplicateRecords(taskInfo.getDuplicateRecords());
+    engineTaskProgress.setUnchangedRecords(taskInfo.getUnchangedRecords());
+    engineTaskProgress.setExpectedDepublishRecords(taskInfo.getExpectedDepublishRecords());
+    engineTaskProgress.setSuccessDepublishRecords(taskInfo.getSuccessDepublishRecords());
+    engineTaskProgress.setFailDepublishRecords(taskInfo.getFailDepublishRecords());
+    engineTaskProgress.setProcessedDepublishRecords(taskInfo.getProcessedDepublishRecords());
+
+    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getEngineTaskState().name());
     engineTaskProgress.setEngineTaskState(engineTaskState);
-    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getStateDescription());
-
-    //Unused upcoming new counters
-    engineTaskProgress.setSuccessRecords(0);
-    engineTaskProgress.setFailRecords(0);
-    engineTaskProgress.setWarningRecords(0);
-    engineTaskProgress.setDuplicateRecords(0);
-    engineTaskProgress.setUnchangedRecords(0);
-    engineTaskProgress.setExpectedDepublishRecords(0);
-    engineTaskProgress.setSuccessDepublishRecords(0);
-    engineTaskProgress.setFailDepublishRecords(0);
-    engineTaskProgress.setProcessedDepublishRecords(0);
-
+    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getEngineTaskStateInfo());
     return engineTaskProgress;
   }
 
