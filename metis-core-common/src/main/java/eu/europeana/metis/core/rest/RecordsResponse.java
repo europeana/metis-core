@@ -5,9 +5,6 @@ import java.util.List;
 
 /**
  * Class that encapsulates a list of {@link Record} objects.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-02-26
  */
 public class RecordsResponse {
 
