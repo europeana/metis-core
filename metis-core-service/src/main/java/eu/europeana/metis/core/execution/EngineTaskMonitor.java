@@ -59,6 +59,15 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
     executionProgress.setErrors(engineTaskProgress.getFailRecords() + engineTaskProgress.getFailDepublishRecords());
     executionProgress.recalculateProgressPercentage();
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
+    executionProgress.setSuccessRecords(engineTaskProgress.getSuccessRecords());
+    executionProgress.setFailRecords(engineTaskProgress.getFailRecords());
+    executionProgress.setWarningRecords(engineTaskProgress.getWarningRecords());
+    executionProgress.setDuplicateRecords(engineTaskProgress.getDuplicateRecords());
+    executionProgress.setUnchangedRecords(engineTaskProgress.getUnchangedRecords());
+    executionProgress.setExpectedDepublishRecords(engineTaskProgress.getExpectedDepublishRecords());
+    executionProgress.setSuccessDepublishRecords(engineTaskProgress.getSuccessDepublishRecords());
+    executionProgress.setFailDepublishRecords(engineTaskProgress.getFailDepublishRecords());
+    executionProgress.setProcessedDepublishRecords(engineTaskProgress.getProcessedDepublishRecords());
   }
 
   /**

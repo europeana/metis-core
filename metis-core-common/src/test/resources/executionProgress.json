@@ -6,5 +6,14 @@
   "deletedRecords": 0,
   "errors": 0,
   "status": "PROCESSED",
-  "totalDatabaseRecords": 100
+  "totalDatabaseRecords": 100,
+  "successRecords" : 90,
+  "failRecords" : 10,
+  "warningRecords" : 10,
+  "unchangedRecords" : 20,
+  "duplicateRecords" : 5,
+  "processedDepublishRecords" : 2,
+  "expectedDepublishRecords" : 2,
+  "successDepublishRecords" : 2,
+  "failDepublishRecords" : 0
 }

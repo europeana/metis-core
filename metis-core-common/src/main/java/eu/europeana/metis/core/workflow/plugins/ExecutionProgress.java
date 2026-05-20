@@ -38,6 +38,16 @@ public class ExecutionProgress {
   // The total records in the database, not used to capture progress but the final result(post process check)
   private int totalDatabaseRecords = -1;
 
+  private long successRecords;
+  private long failRecords;
+  private long warningRecords;
+  private long duplicateRecords;
+  private long unchangedRecords;
+  private long expectedDepublishRecords;
+  private long successDepublishRecords;
+  private long failDepublishRecords;
+  private long processedDepublishRecords;
+
   /**
    * Recalculates the progress percentage based on the expected and processed records. The progress percentage is computed as the
    * ratio of processed and deleted records to the sum of expected and deleted records, scaled to a percentage. If the expected
