@@ -25,9 +25,6 @@ class TestExecutionProgressConverter {
     assertEquals(executionProgress.getExpectedRecords(), executionProgressDTO.getExpectedRecords());
     assertEquals(executionProgress.getProcessedRecords(), executionProgressDTO.getProcessedRecords());
     assertEquals(executionProgress.getProgressPercentage(), executionProgressDTO.getProgressPercentage());
-    assertEquals(executionProgress.getIgnoredRecords(), executionProgressDTO.getIgnoredRecords());
-    assertEquals(executionProgress.getDeletedRecords(), executionProgressDTO.getDeletedRecords());
-    assertEquals(executionProgress.getErrors(), executionProgressDTO.getErrors());
     assertEquals(executionProgress.getStatus(), executionProgressDTO.getStatus());
     assertEquals(executionProgress.getTotalDatabaseRecords(), executionProgressDTO.getTotalDatabaseRecords());
     assertEquals(executionProgress.getSuccessRecords(), executionProgressDTO.getSuccessRecords());

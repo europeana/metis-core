@@ -209,10 +209,16 @@ public class TestRedirectionBase {
     executionProgress.setExpectedRecords(1);
     executionProgress.setProcessedRecords(1);
     executionProgress.setProgressPercentage(100);
-    executionProgress.setIgnoredRecords(0);
-    executionProgress.setDeletedRecords(0);
-    executionProgress.setErrors(0);
     executionProgress.setTotalDatabaseRecords(-1);
+    executionProgress.setSuccessRecords(1);
+    executionProgress.setFailRecords(0);
+    executionProgress.setWarningRecords(0);
+    executionProgress.setDuplicateRecords(0);
+    executionProgress.setUnchangedRecords(0);
+    executionProgress.setExpectedDepublishRecords(0);
+    executionProgress.setSuccessDepublishRecords(0);
+    executionProgress.setFailDepublishRecords(0);
+    executionProgress.setProcessedDepublishRecords(0);
     return executionProgress;
   }
 

@@ -65,7 +65,7 @@ class TestWorkflowValidationUtils {
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
-    predecessor.getExecutionProgress().setErrors(0);
+    predecessor.getExecutionProgress().setFailRecords(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
                                                           .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 
@@ -137,7 +137,7 @@ class TestWorkflowValidationUtils {
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
-    predecessor.getExecutionProgress().setErrors(0);
+    predecessor.getExecutionProgress().setFailRecords(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
                                                           .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 
@@ -174,7 +174,7 @@ class TestWorkflowValidationUtils {
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
-    predecessor.getExecutionProgress().setErrors(0);
+    predecessor.getExecutionProgress().setFailRecords(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
                                                           .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 

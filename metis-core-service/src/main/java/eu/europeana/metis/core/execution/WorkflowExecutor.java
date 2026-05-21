@@ -151,28 +151,19 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     private Instant lastProgressChange = Instant.now();
     private long expected;
     private long processed;
-    private long deleted;
-    private long ignored;
-    private long errors;
     private long total;
 
     void updateFrom(AbstractExecutablePlugin<?> plugin) {
       lastProgressChange = Instant.now();
       this.processed = plugin.getExecutionProgress().getProcessedRecords();
-      this.deleted = plugin.getExecutionProgress().getDeletedRecords();
       this.expected = plugin.getExecutionProgress().getExpectedRecords();
-      this.ignored = plugin.getExecutionProgress().getIgnoredRecords();
-      this.errors = plugin.getExecutionProgress().getErrors();
       this.total = plugin.getExecutionProgress().getTotalDatabaseRecords();
     }
 
     boolean hasChanged(AbstractExecutablePlugin<?> plugin) {
       var progress = plugin.getExecutionProgress();
       return processed != progress.getProcessedRecords()
-          || deleted != progress.getDeletedRecords()
           || expected != progress.getExpectedRecords()
-          || ignored != progress.getIgnoredRecords()
-          || errors != progress.getErrors()
           || total != progress.getTotalDatabaseRecords();
     }
 
