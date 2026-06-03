@@ -4,13 +4,13 @@
   "progressPercentage": 100,
   "status": "PROCESSED",
   "totalDatabaseRecords": 100,
-  "successRecords" : 90,
-  "failRecords" : 10,
+  "successRecords" : 85,
+  "failRecords" : 5,
   "warningRecords" : 10,
-  "unchangedRecords" : 20,
+  "unchangedRecords" : 5,
   "duplicateRecords" : 5,
-  "processedDepublishRecords" : 2,
-  "expectedDepublishRecords" : 2,
-  "successDepublishRecords" : 2,
-  "failDepublishRecords" : 0
+  "processedDepublishRecords" : 5,
+  "expectedDepublishRecords" : 5,
+  "successDepublishRecords" : 3,
+  "failDepublishRecords" : 2
 }

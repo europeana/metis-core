@@ -46,6 +46,8 @@ public class ExecutionProgress {
    */
   public void recalculateProgressPercentage() {
     this.progressPercentage = this.expectedRecords == 0 ? 0
-        : (int) Math.round(PERCENTAGE_SCALE * ((double) this.processedRecords / this.expectedRecords ));
+        : (int) Math.round(PERCENTAGE_SCALE * ((double)
+                                               (this.processedRecords + this.processedDepublishRecords) /
+                                               (this.expectedRecords + this.expectedDepublishRecords) ));
   }
 }

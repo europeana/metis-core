@@ -34,15 +34,15 @@ public class TestExecutionProgressUtils {
   public static final String STATUS_VALUE = EngineTaskState.PROCESSED.name();
   public static final int TOTAL_DATABASE_RECORDS_VALUE = 100;
 
-  public static final int  SUCCESS_RECORDS_VALUE = 90;
-  public static final int  FAIL_RECORDS_VALUE = 10;
+  public static final int  SUCCESS_RECORDS_VALUE = 85;
+  public static final int  FAIL_RECORDS_VALUE = 5;
   public static final int  WARNING_RECORDS_VALUE = 10;
   public static final int  DUPLICATE_RECORDS_VALUE = 5;
-  public static final int  UNCHANGED_RECORDS_VALUE = 20;
-  public static final int  EXPECTED_DEPUBLISH_RECORDS_VALUE = 2;
-  public static final int  SUCCESS_DEPUBLISH_RECORDS_VALUE = 2;
-  public static final int  FAIL_DEPUBLISH_RECORDS_VALUE = 0;
-  public static final int  PROCESSED_DEPUBLISH_RECORDS_VALUE = 2;
+  public static final int  UNCHANGED_RECORDS_VALUE = 5;
+  public static final int  EXPECTED_DEPUBLISH_RECORDS_VALUE = 5;
+  public static final int  SUCCESS_DEPUBLISH_RECORDS_VALUE = 3;
+  public static final int  FAIL_DEPUBLISH_RECORDS_VALUE = 2;
+  public static final int  PROCESSED_DEPUBLISH_RECORDS_VALUE = 5;
 
   static ExecutionProgressDTO getExecutionProgressDTOUsingSetters() {
     ExecutionProgressDTO executionProgressDTO = new ExecutionProgressDTO();
