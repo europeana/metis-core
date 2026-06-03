@@ -22,6 +22,15 @@ public class ExecutionProgress {
   // The percentage: the division of the actual and expected number of processed records.
   private long progressPercentage;
 
+  // The number of processed records so far that are to be ignored for follow-up tasks.
+  private long ignoredRecords;
+
+  // The number of deleted records processed so far.
+  private long deletedRecords;
+
+  // The number of errors encountered so far.
+  private long errors;
+
   // The current state of the task.
   private String status;
 

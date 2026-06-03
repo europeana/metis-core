@@ -214,7 +214,7 @@ public class DataEvolutionUtils {
   private static Boolean pluginHasSuccessfulRecords(PluginWithExecutionId<ExecutablePlugin> plugin) {
     final ExecutionProgress executionProgress = plugin.getPlugin().getExecutionProgress();
     return Optional.ofNullable(executionProgress)
-                   .map(progress -> progress.getProcessedRecords() > progress.getSuccessRecords() || progress.getSuccessDepublishRecords() > 0)
+                   .map(progress -> progress.getProcessedRecords() > progress.getFailRecords() || progress.getSuccessDepublishRecords() > 0)
                    .orElse(Boolean.FALSE);
   }
 

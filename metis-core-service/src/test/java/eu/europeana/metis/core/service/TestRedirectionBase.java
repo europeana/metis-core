@@ -209,6 +209,9 @@ public class TestRedirectionBase {
     executionProgress.setExpectedRecords(1);
     executionProgress.setProcessedRecords(1);
     executionProgress.setProgressPercentage(100);
+    executionProgress.setIgnoredRecords(0);
+    executionProgress.setDeletedRecords(0);
+    executionProgress.setErrors(0);
     executionProgress.setTotalDatabaseRecords(-1);
     executionProgress.setSuccessRecords(1);
     executionProgress.setFailRecords(0);
