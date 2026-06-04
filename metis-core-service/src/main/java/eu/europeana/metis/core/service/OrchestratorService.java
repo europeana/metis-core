@@ -642,7 +642,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       executionInfo.setLastHarvestedDate(lastHarvestPlugin.getFinishedDate());
       executionInfo.setLastHarvestedRecords(
           lastHarvestPlugin.getExecutionProgress().getProcessedRecords() - lastHarvestPlugin
-              .getExecutionProgress().getErrors());
+              .getExecutionProgress().getFailRecords());
     }
     final Date now = new Date();
     setPreviewInformation(executionInfo, lastExecutablePreviewPlugin, lastPreviewPlugin,
@@ -765,9 +765,9 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     boolean hasDeletedRecords = false;
     if (Objects.nonNull(executablePlugin)) {
       recordCount = executablePlugin.getExecutionProgress().getProcessedRecords()
-          - executablePlugin.getExecutionProgress().getErrors();
+          - executablePlugin.getExecutionProgress().getFailRecords();
       totalRecordCount = executablePlugin.getExecutionProgress().getTotalDatabaseRecords();
-      hasDeletedRecords = executablePlugin.getExecutionProgress().getDeletedRecords() > 0;
+      hasDeletedRecords = executablePlugin.getExecutionProgress().getSuccessDepublishRecords() > 0;
     }
     lastRecordsSetter.accept(recordCount);
     totalRecordsSetter.accept(totalRecordCount);

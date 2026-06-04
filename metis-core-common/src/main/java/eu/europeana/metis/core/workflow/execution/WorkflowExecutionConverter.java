@@ -100,7 +100,7 @@ public final class WorkflowExecutionConverter {
                                                        .map(ExecutablePluginMetadata::getExecutablePluginType)
                                                        .map(NO_XML_PREVIEW_TYPES::contains).orElse(Boolean.TRUE);
       result = dataIsValid && !pluginHasBlacklistedType && progress != null
-          && progress.getProcessedRecords() > progress.getErrors();
+          && progress.getProcessedRecords() > progress.getFailRecords();
     } else {
       result = false;
     }

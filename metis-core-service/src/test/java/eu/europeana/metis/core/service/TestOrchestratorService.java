@@ -812,12 +812,12 @@ class TestOrchestratorService {
     assertEquals(lastPublishPlugin.getFinishedDate(), executionInfo.getLastPublishedDate());
 
     assertEquals(
-        oaipmhHarvestPlugin.getExecutionProgress().getProcessedRecords() - oaipmhHarvestPlugin.getExecutionProgress().getErrors(),
+        oaipmhHarvestPlugin.getExecutionProgress().getProcessedRecords() - oaipmhHarvestPlugin.getExecutionProgress().getFailRecords(),
         executionInfo.getLastHarvestedRecords());
-    assertEquals(previewPlugin.getExecutionProgress().getProcessedRecords() - previewPlugin.getExecutionProgress().getErrors(),
+    assertEquals(previewPlugin.getExecutionProgress().getProcessedRecords() - previewPlugin.getExecutionProgress().getFailRecords(),
         executionInfo.getLastPreviewRecords());
     assertEquals(
-        lastPublishPlugin.getExecutionProgress().getProcessedRecords() - lastPublishPlugin.getExecutionProgress().getErrors(),
+        lastPublishPlugin.getExecutionProgress().getProcessedRecords() - lastPublishPlugin.getExecutionProgress().getFailRecords(),
         executionInfo.getLastPublishedRecords());
 
     assertEquals(previewReadyForViewing, executionInfo.isLastPreviewRecordsReadyForViewing());
@@ -829,7 +829,7 @@ class TestOrchestratorService {
     // Create execution progress object
     ExecutionProgress executionProgress = new ExecutionProgress();
     executionProgress.setProcessedRecords(processedRecords);
-    executionProgress.setErrors(errors);
+    executionProgress.setFailRecords(errors);
     return executionProgress;
   }
 
@@ -848,7 +848,7 @@ class TestOrchestratorService {
     when(plugin2.getPluginType()).thenReturn(PluginType.TRANSFORMATION);
     when(plugin2.getPluginMetadata()).thenReturn(new TransformationPluginMetadata());
     progress2.setProcessedRecords(10);
-    progress2.setErrors(10);
+    progress2.setFailRecords(10);
     when(plugin2.getExecutionProgress()).thenReturn(progress2);
     final AbstractExecutablePlugin<MediaProcessPluginMetadata> plugin3 = mock(AbstractExecutablePlugin.class);
     when(plugin3.getPluginType()).thenReturn(PluginType.MEDIA_PROCESS);
@@ -909,7 +909,7 @@ class TestOrchestratorService {
     when(plugin2.getPluginType()).thenReturn(PluginType.TRANSFORMATION);
     when(plugin2.getPluginMetadata()).thenReturn(new TransformationPluginMetadata());
     progress2.setProcessedRecords(10);
-    progress2.setErrors(10);
+    progress2.setFailRecords(10);
     when(plugin2.getExecutionProgress()).thenReturn(progress2);
     final AbstractExecutablePlugin<MediaProcessPluginMetadata> plugin3 = mock(AbstractExecutablePlugin.class);
     when(plugin3.getPluginType()).thenReturn(PluginType.MEDIA_PROCESS);

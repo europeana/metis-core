@@ -169,11 +169,11 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     boolean hasChanged(AbstractExecutablePlugin<?> plugin) {
       var progress = plugin.getExecutionProgress();
       return processed != progress.getProcessedRecords()
-          || deleted != progress.getDeletedRecords()
-          || expected != progress.getExpectedRecords()
-          || ignored != progress.getIgnoredRecords()
-          || errors != progress.getErrors()
-          || total != progress.getTotalDatabaseRecords();
+              || deleted != progress.getDeletedRecords()
+              || expected != progress.getExpectedRecords()
+              || ignored != progress.getIgnoredRecords()
+              || errors != progress.getErrors()
+              || total != progress.getTotalDatabaseRecords();
     }
 
     Duration timeSinceLastChange() {

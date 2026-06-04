@@ -2,20 +2,38 @@ package eu.europeana.metis.core.workflow.execution;
 
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DELETED_RECORDS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DELETED_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DUPLICATE_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DUPLICATE_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.ERRORS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.ERRORS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_DEPUBLISH_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_DEPUBLISH_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_RECORDS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.FAIL_DEPUBLISH_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.FAIL_DEPUBLISH_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.FAIL_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.FAIL_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.IGNORED_RECORDS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.IGNORED_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROCESSED_DEPUBLISH_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROCESSED_DEPUBLISH_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROCESSED_RECORDS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROCESSED_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROGRESS_PERCENTAGE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROGRESS_PERCENTAGE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.STATUS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.STATUS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.SUCCESS_DEPUBLISH_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.SUCCESS_DEPUBLISH_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.SUCCESS_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.SUCCESS_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.TOTAL_DATABASE_RECORDS;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.TOTAL_DATABASE_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.UNCHANGED_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.UNCHANGED_RECORDS_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.WARNING_RECORDS;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.WARNING_RECORDS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressDTOUsingSetters;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -70,6 +88,15 @@ class TestExecutionProgressDTO {
     assertEquals(ERRORS_VALUE, executionProgressDTO.getErrors());
     assertEquals(STATUS_VALUE, executionProgressDTO.getStatus());
     assertEquals(TOTAL_DATABASE_RECORDS_VALUE, executionProgressDTO.getTotalDatabaseRecords());
+    assertEquals(SUCCESS_RECORDS_VALUE, executionProgressDTO.getSuccessRecords());
+    assertEquals(FAIL_RECORDS_VALUE, executionProgressDTO.getFailRecords());
+    assertEquals(WARNING_RECORDS_VALUE, executionProgressDTO.getWarningRecords());
+    assertEquals(DUPLICATE_RECORDS_VALUE, executionProgressDTO.getDuplicateRecords());
+    assertEquals(UNCHANGED_RECORDS_VALUE, executionProgressDTO.getUnchangedRecords());
+    assertEquals(EXPECTED_DEPUBLISH_RECORDS_VALUE, executionProgressDTO.getExpectedDepublishRecords());
+    assertEquals(SUCCESS_DEPUBLISH_RECORDS_VALUE, executionProgressDTO.getSuccessDepublishRecords());
+    assertEquals(FAIL_DEPUBLISH_RECORDS_VALUE, executionProgressDTO.getFailDepublishRecords());
+    assertEquals(PROCESSED_DEPUBLISH_RECORDS_VALUE, executionProgressDTO.getProcessedDepublishRecords());
   }
 
   private void assertExecutionProgressDTO(String jsonOutput) {
@@ -81,5 +108,14 @@ class TestExecutionProgressDTO {
     TestSerializationUtils.assertFieldEquals(jsonOutput, ERRORS, ERRORS_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, STATUS, STATUS_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, SUCCESS_RECORDS, SUCCESS_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, FAIL_RECORDS, FAIL_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, WARNING_RECORDS, WARNING_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, DUPLICATE_RECORDS, DUPLICATE_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, UNCHANGED_RECORDS, UNCHANGED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, EXPECTED_DEPUBLISH_RECORDS, EXPECTED_DEPUBLISH_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, SUCCESS_DEPUBLISH_RECORDS, SUCCESS_DEPUBLISH_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, FAIL_DEPUBLISH_RECORDS, FAIL_DEPUBLISH_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PROCESSED_DEPUBLISH_RECORDS, PROCESSED_DEPUBLISH_RECORDS_VALUE);
   }
 }

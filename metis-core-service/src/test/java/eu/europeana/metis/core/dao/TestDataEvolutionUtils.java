@@ -163,6 +163,7 @@ class TestDataEvolutionUtils {
       predecessorPlugin.setExecutionProgress(new ExecutionProgress());
       predecessorPlugin.getExecutionProgress().setProcessedRecords(1);
       predecessorPlugin.getExecutionProgress().setErrors(0);
+      predecessorPlugin.getExecutionProgress().setFailRecords(0);
       predecessorPlugin.setFinishedDate(new Date(counter));
       when(workflowExecutionDao.getLatestSuccessfulExecutablePlugin(DATASET_ID,
           Collections.singleton(predecessorType), needsValidPredecessor)).thenReturn(
@@ -213,6 +214,7 @@ class TestDataEvolutionUtils {
 
       // Test with errors
       recentPredecessorPlugin.getExecutionProgress().setErrors(1);
+      recentPredecessorPlugin.getExecutionProgress().setFailRecords(1);
       assertThrows(PluginExecutionNotAllowed.class, () -> dataEvolutionUtils.computePredecessorPlugin(
           metadata.getExecutablePluginType(), enforcedPluginType, DATASET_ID));
 

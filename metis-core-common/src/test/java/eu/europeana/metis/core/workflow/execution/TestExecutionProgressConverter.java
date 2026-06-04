@@ -30,5 +30,14 @@ class TestExecutionProgressConverter {
     assertEquals(executionProgress.getErrors(), executionProgressDTO.getErrors());
     assertEquals(executionProgress.getStatus(), executionProgressDTO.getStatus());
     assertEquals(executionProgress.getTotalDatabaseRecords(), executionProgressDTO.getTotalDatabaseRecords());
+    assertEquals(executionProgress.getSuccessRecords(), executionProgressDTO.getSuccessRecords());
+    assertEquals(executionProgress.getFailRecords(), executionProgressDTO.getFailRecords());
+    assertEquals(executionProgress.getWarningRecords(), executionProgressDTO.getWarningRecords());
+    assertEquals(executionProgress.getDuplicateRecords(), executionProgressDTO.getDuplicateRecords());
+    assertEquals(executionProgress.getUnchangedRecords(), executionProgressDTO.getUnchangedRecords());
+    assertEquals(executionProgress.getExpectedDepublishRecords(), executionProgressDTO.getExpectedDepublishRecords());
+    assertEquals(executionProgress.getSuccessDepublishRecords(), executionProgressDTO.getSuccessDepublishRecords());
+    assertEquals(executionProgress.getFailDepublishRecords(), executionProgressDTO.getFailDepublishRecords());
+    assertEquals(executionProgress.getProcessedDepublishRecords(), executionProgressDTO.getProcessedDepublishRecords());
   }
 }

@@ -16,7 +16,16 @@
     "deletedRecords": 0,
     "errors": 0,
     "status": "PROCESSED",
-    "totalDatabaseRecords": 100
+    "totalDatabaseRecords": 100,
+    "successRecords" : 85,
+    "failRecords" : 5,
+    "warningRecords" : 10,
+    "unchangedRecords" : 5,
+    "duplicateRecords" : 5,
+    "processedDepublishRecords" : 5,
+    "expectedDepublishRecords" : 5,
+    "successDepublishRecords" : 3,
+    "failDepublishRecords" : 2
   },
   "topologyName": "topologyName",
   "canDisplayRawXml": true,

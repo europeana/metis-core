@@ -15,6 +15,15 @@ public class PluginProgressView {
   private long deletedRecords;
   private long errors;
   private long progressPercentage;
+  private long successRecords;
+  private long failRecords;
+  private long warningRecords;
+  private long duplicateRecords;
+  private long unchangedRecords;
+  private long expectedDepublishRecords;
+  private long successDepublishRecords;
+  private long failDepublishRecords;
+  private long processedDepublishRecords;
 
   PluginProgressView() {
   }
@@ -27,6 +36,15 @@ public class PluginProgressView {
       this.deletedRecords = progress.getDeletedRecords();
       this.errors = progress.getErrors();
       this.progressPercentage = progress.getProgressPercentage();
+      this.successRecords = progress.getSuccessRecords();
+      this.failRecords = progress.getFailRecords();
+      this.warningRecords = progress.getWarningRecords();
+      this.duplicateRecords = progress.getDuplicateRecords();
+      this.unchangedRecords = progress.getUnchangedRecords();
+      this.expectedDepublishRecords = progress.getExpectedDepublishRecords();
+      this.successDepublishRecords = progress.getSuccessDepublishRecords();
+      this.failDepublishRecords = progress.getFailDepublishRecords();
+      this.processedDepublishRecords = progress.getProcessedDepublishRecords();
     }
   }
 }

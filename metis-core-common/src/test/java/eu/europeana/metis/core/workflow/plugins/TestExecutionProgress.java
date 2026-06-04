@@ -1,22 +1,6 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DELETED_RECORDS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.DELETED_RECORDS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.ERRORS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.ERRORS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_RECORDS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_RECORDS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.IGNORED_RECORDS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.IGNORED_RECORDS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROCESSED_RECORDS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROCESSED_RECORDS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROGRESS_PERCENTAGE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.PROGRESS_PERCENTAGE_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.STATUS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.STATUS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.TOTAL_DATABASE_RECORDS;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.TOTAL_DATABASE_RECORDS_VALUE;
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -30,6 +14,28 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 class TestExecutionProgress {
+
+  private void assertExecutionProgress(ExecutionProgress executionProgress) {
+    assertEquals(EXPECTED_RECORDS_VALUE, executionProgress.getExpectedRecords());
+    assertEquals(PROCESSED_RECORDS_VALUE, executionProgress.getProcessedRecords());
+    assertEquals(PROGRESS_PERCENTAGE_VALUE, executionProgress.getProgressPercentage());
+    assertEquals(IGNORED_RECORDS_VALUE, executionProgress.getIgnoredRecords());
+    assertEquals(DELETED_RECORDS_VALUE, executionProgress.getDeletedRecords());
+    assertEquals(ERRORS_VALUE, executionProgress.getErrors());
+    assertEquals(STATUS_VALUE, executionProgress.getStatus());
+    assertEquals(TOTAL_DATABASE_RECORDS_VALUE, executionProgress.getTotalDatabaseRecords());
+  }
+
+  private void assertExecutionProgress(String jsonOutput) {
+    TestSerializationUtils.assertFieldEquals(jsonOutput, EXPECTED_RECORDS, EXPECTED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PROCESSED_RECORDS, PROCESSED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, PROGRESS_PERCENTAGE, PROGRESS_PERCENTAGE_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, IGNORED_RECORDS, IGNORED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, DELETED_RECORDS, DELETED_RECORDS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ERRORS, ERRORS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, STATUS, STATUS_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
+  }
 
   @Test
   void testGetters() {
@@ -62,27 +68,4 @@ class TestExecutionProgress {
     assertNotNull(deserializedExecutionProgress);
     assertExecutionProgress(deserializedExecutionProgress);
   }
-
-  private void assertExecutionProgress(ExecutionProgress executionProgress) {
-    assertEquals(EXPECTED_RECORDS_VALUE, executionProgress.getExpectedRecords());
-    assertEquals(PROCESSED_RECORDS_VALUE, executionProgress.getProcessedRecords());
-    assertEquals(PROGRESS_PERCENTAGE_VALUE, executionProgress.getProgressPercentage());
-    assertEquals(IGNORED_RECORDS_VALUE, executionProgress.getIgnoredRecords());
-    assertEquals(DELETED_RECORDS_VALUE, executionProgress.getDeletedRecords());
-    assertEquals(ERRORS_VALUE, executionProgress.getErrors());
-    assertEquals(STATUS_VALUE, executionProgress.getStatus());
-    assertEquals(TOTAL_DATABASE_RECORDS_VALUE, executionProgress.getTotalDatabaseRecords());
-  }
-
-  private void assertExecutionProgress(String jsonOutput) {
-    TestSerializationUtils.assertFieldEquals(jsonOutput, EXPECTED_RECORDS, EXPECTED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, PROCESSED_RECORDS, PROCESSED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, PROGRESS_PERCENTAGE, PROGRESS_PERCENTAGE_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, IGNORED_RECORDS, IGNORED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, DELETED_RECORDS, DELETED_RECORDS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, ERRORS, ERRORS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, STATUS, STATUS_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, TOTAL_DATABASE_RECORDS, TOTAL_DATABASE_RECORDS_VALUE);
-  }
-
 }
