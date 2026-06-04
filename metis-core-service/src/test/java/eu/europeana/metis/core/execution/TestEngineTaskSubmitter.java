@@ -52,6 +52,8 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingLevel;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPlugin;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
@@ -161,6 +163,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     return Stream.of(
         arguments(new OaipmhHarvestPlugin(), new OaipmhHarvestPluginMetadata(), null),
         arguments(new HTTPHarvestPlugin(), new HTTPHarvestPluginMetadata(), null),
+        arguments(new TransformationExternalPlugin(), new TransformationExternalPluginMetadata(), PluginType.OAIPMH_HARVEST),
         arguments(new ValidationExternalPlugin(), new ValidationExternalPluginMetadata(), PluginType.OAIPMH_HARVEST),
         arguments(new TransformationPlugin(), new TransformationPluginMetadata(), PluginType.VALIDATION_EXTERNAL),
         arguments(new ValidationInternalPlugin(), new ValidationInternalPluginMetadata(), PluginType.TRANSFORMATION),

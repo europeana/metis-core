@@ -12,6 +12,7 @@ import java.util.Date;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = OaipmhHarvestPluginMetadata.class, name = "OAIPMH_HARVEST"),
     @JsonSubTypes.Type(value = HTTPHarvestPluginMetadata.class, name = "HTTP_HARVEST"),
+    @JsonSubTypes.Type(value = TransformationExternalPluginMetadata.class, name = "TRANSFORMATION_EXTERNAL"),
     @JsonSubTypes.Type(value = ValidationExternalPluginMetadata.class, name = "VALIDATION_EXTERNAL"),
     @JsonSubTypes.Type(value = TransformationPluginMetadata.class, name = "TRANSFORMATION"),
     @JsonSubTypes.Type(value = ValidationInternalPluginMetadata.class, name = "VALIDATION_INTERNAL"),

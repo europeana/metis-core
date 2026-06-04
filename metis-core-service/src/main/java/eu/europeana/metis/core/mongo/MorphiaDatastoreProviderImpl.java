@@ -45,6 +45,8 @@ import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPublishPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPlugin;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
@@ -152,6 +154,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(OaipmhHarvestPlugin.class);
     mapper.getEntityModel(ReindexToPreviewPlugin.class);
     mapper.getEntityModel(ReindexToPublishPlugin.class);
+    mapper.getEntityModel(TransformationExternalPlugin.class);
     mapper.getEntityModel(TransformationPlugin.class);
     mapper.getEntityModel(ValidationExternalPlugin.class);
     mapper.getEntityModel(ValidationInternalPlugin.class);
@@ -171,6 +174,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(OaipmhHarvestPluginMetadata.class);
     mapper.getEntityModel(ReindexToPreviewPluginMetadata.class);
     mapper.getEntityModel(ReindexToPublishPluginMetadata.class);
+    mapper.getEntityModel(TransformationExternalPluginMetadata.class);
     mapper.getEntityModel(TransformationPluginMetadata.class);
     mapper.getEntityModel(ValidationExternalPluginMetadata.class);
     mapper.getEntityModel(ValidationInternalPluginMetadata.class);

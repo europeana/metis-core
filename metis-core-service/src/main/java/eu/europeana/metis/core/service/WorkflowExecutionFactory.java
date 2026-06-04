@@ -22,6 +22,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
@@ -95,7 +96,9 @@ public class WorkflowExecutionFactory {
       List<ExecutablePluginType> typesInWorkflowBeforeThisPlugin) throws BadContentException {
 
     // Add some extra configuration to the plugin metadata depending on the type.
-    if (pluginMetadata instanceof TransformationPluginMetadata transformationPluginMetadata) {
+    if (pluginMetadata instanceof TransformationExternalPluginMetadata transformationExternalPluginMetadata) {
+      setupXsltContentForTransformationExternalPluginMetadata(dataset, transformationExternalPluginMetadata);
+    } else if (pluginMetadata instanceof TransformationPluginMetadata transformationPluginMetadata) {
       setupXsltIdForPluginMetadata(dataset, transformationPluginMetadata);
     } else if (pluginMetadata instanceof ValidationExternalPluginMetadata validationExternalPluginMetadata) {
       this.setupValidationExternalForPluginMetadata(validationExternalPluginMetadata, getValidationExternalProperties());
@@ -133,6 +136,24 @@ public class WorkflowExecutionFactory {
     metadata.setUrlOfSchemasZip(validationProperties.urlOfSchemasZip());
     metadata.setSchemaRootPath(validationProperties.schemaRootPath());
     metadata.setSchematronRootPath(validationProperties.schematronRootPath());
+  }
+
+  private void setupXsltContentForTransformationExternalPluginMetadata(Dataset dataset,
+      TransformationExternalPluginMetadata pluginMetadata) {
+    //todo: update content to retrieve from database.
+    pluginMetadata.setXslt("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<xsl:stylesheet version=\"1.0\"\n"
+        + "    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n"
+        + "\n"
+        + "  <xsl:output method=\"xml\" indent=\"yes\"/>\n"
+        + "\n"
+        + "  <xsl:template match=\"@*|node()\">\n"
+        + "    <xsl:copy>\n"
+        + "      <xsl:apply-templates select=\"@*|node()\"/>\n"
+        + "    </xsl:copy>\n"
+        + "  </xsl:template>\n"
+        + "\n"
+        + "</xsl:stylesheet>");
   }
 
   private void setupXsltIdForPluginMetadata(Dataset dataset,

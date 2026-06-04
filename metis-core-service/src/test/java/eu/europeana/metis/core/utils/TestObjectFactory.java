@@ -40,6 +40,7 @@ import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.MediaProcessPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.NormalizationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
@@ -121,6 +122,7 @@ public class TestObjectFactory {
       case ENRICHMENT -> new EnrichmentPluginMetadata();
       case MEDIA_PROCESS -> new MediaProcessPluginMetadata();
       case LINK_CHECKING -> new LinkCheckingPluginMetadata();
+      case TRANSFORMATION_EXTERNAL -> new TransformationExternalPluginMetadata();
       case VALIDATION_EXTERNAL -> new ValidationExternalPluginMetadata();
       case TRANSFORMATION -> new TransformationPluginMetadata();
       case VALIDATION_INTERNAL -> new ValidationInternalPluginMetadata();

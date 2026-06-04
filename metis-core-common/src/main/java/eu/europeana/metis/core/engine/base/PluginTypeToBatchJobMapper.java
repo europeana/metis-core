@@ -31,7 +31,7 @@ public final class PluginTypeToBatchJobMapper {
           case OAIPMH_HARVEST -> FullBatchJobType.HARVEST_OAI;
           case VALIDATION_EXTERNAL -> FullBatchJobType.VALIDATE_EXTERNAL;
           case VALIDATION_INTERNAL -> FullBatchJobType.VALIDATE_INTERNAL;
-          //Transformation External is not supported yet.
+          case TRANSFORMATION_EXTERNAL -> FullBatchJobType.TRANSFORM_EXTERNAL;
           case TRANSFORMATION -> FullBatchJobType.TRANSFORM_INTERNAL;
           case NORMALIZATION -> FullBatchJobType.NORMALIZE;
           case ENRICHMENT -> FullBatchJobType.ENRICH;

@@ -34,7 +34,7 @@ import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.SimpleIntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
@@ -87,7 +87,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new IntermediateInputDataEndpoint("http://internal.url", "",
+    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "",
         new DataRevision("name", "provider", new Date(), false));
     DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
     EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint,
@@ -98,7 +98,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask_throws() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new IntermediateInputDataEndpoint("http://internal.url", "",
+    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "",
         new DataRevision("name", "provider", new Date(), false));
     DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
