@@ -29,7 +29,7 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.SAMPLE_SIZE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMATRON_LOCATION;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMA_NAME;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_DATABASE;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_CONTENT;
+import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
@@ -176,7 +176,7 @@ public final class EngineTaskParametersConfigurator {
    */
   public static Map<EngineTaskKey, String> createTransformationExternalParameters(String xslt) {
     Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
-    parameters.put(XSLT_CONTENT, xslt);
+    parameters.put(XSLT, xslt);
     return parameters;
   }
 
