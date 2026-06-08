@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
@@ -380,7 +381,7 @@ public class TestObjectFactory {
    * @return the created dataset xslt
    */
   public static DatasetXslt createXslt(Dataset dataset) {
-    DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(),
+    DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(), XsltType.INTERNAL,
         """
             <?xml version="1.0" encoding="UTF-8"?>
             <xsl:stylesheet version="2.0"

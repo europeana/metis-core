@@ -57,6 +57,7 @@ public class DatasetDTO {
   private PublicationFitness publicationFitness;
   private String notes;
   private String xsltId;
+  private String xsltIdExternal;
 
   public DatasetDTO() {
     //Required for json serialization
@@ -87,6 +88,7 @@ public class DatasetDTO {
    * @param publicationFitness the publication fitness of the dataset
    * @param notes the notes associated with the dataset
    * @param xsltId the ID of the XSLT associated with the dataset
+   * @param xsltIdExternal the ID of the external XSLT associated with the dataset
    */
   public DatasetDTO(
       String id,
@@ -110,7 +112,8 @@ public class DatasetDTO {
       String description,
       PublicationFitness publicationFitness,
       String notes,
-      String xsltId
+      String xsltId,
+      String xsltIdExternal
   ) {
     this.id = id;
     this.ecloudDatasetId = ecloudDatasetId;
@@ -135,6 +138,7 @@ public class DatasetDTO {
     this.publicationFitness = publicationFitness;
     this.notes = notes;
     this.xsltId = xsltId;
+    this.xsltIdExternal = xsltIdExternal;
   }
 
   public String getId() {
@@ -314,6 +318,14 @@ public class DatasetDTO {
 
   public void setXsltId(String xsltId) {
     this.xsltId = xsltId;
+  }
+
+  public String getXsltIdExternal() {
+    return xsltIdExternal;
+  }
+
+  public void setXsltIdExternal(String xsltIdExternal) {
+    this.xsltIdExternal = xsltIdExternal;
   }
 }
 

@@ -10,6 +10,7 @@ public class DatasetXsltStringWrapper {
 
   private DatasetDTO dataset;
   private String xslt;
+  private String xsltExternal;
 
   public DatasetXsltStringWrapper() {
     //Required for json serialization
@@ -20,10 +21,12 @@ public class DatasetXsltStringWrapper {
    *
    * @param dataset {@link DatasetDTO}
    * @param xslt the String representation of the xslt text
+   * @param xsltExternal the String representation of the external xslt text
    */
-  public DatasetXsltStringWrapper(DatasetDTO dataset, String xslt) {
+  public DatasetXsltStringWrapper(DatasetDTO dataset, String xslt, String xsltExternal) {
     this.dataset = dataset;
     this.xslt = xslt;
+    this.xsltExternal = xsltExternal;
   }
 
   public DatasetDTO getDataset() {
@@ -40,5 +43,13 @@ public class DatasetXsltStringWrapper {
 
   public void setXslt(String xslt) {
     this.xslt = xslt;
+  }
+
+  public String getXsltExternal() {
+    return xsltExternal;
+  }
+
+  public void setXsltExternal(String xsltExternal) {
+    this.xsltExternal = xsltExternal;
   }
 }

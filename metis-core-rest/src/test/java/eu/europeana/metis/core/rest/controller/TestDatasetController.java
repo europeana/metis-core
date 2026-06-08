@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,7 @@ import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.dataset.DatasetXsltStringWrapper;
 import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -175,7 +177,7 @@ class TestDatasetController {
         when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
         DatasetXsltStringWrapper datasetXsltStringWrapper = new DatasetXsltStringWrapper(datasetDTO,
-                "<xslt attribute:\"value\"></xslt>");
+                "<xslt attribute:\"value\"></xslt>", null);
         mockMvc.perform(put("/datasets")
                         .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                         .accept(MediaType.APPLICATION_JSON)
@@ -183,7 +185,8 @@ class TestDatasetController {
                         .content(TestUtils.convertObjectToJsonBytes(datasetXsltStringWrapper)))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
-        verify(datasetService, times(1)).updateDataset(any(DatasetDTO.class), anyString());
+        verify(datasetService, times(1)).updateDataset(any(DatasetDTO.class), anyString(),
+            isNull());
     }
 
     @Test
@@ -194,7 +197,8 @@ class TestDatasetController {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TestUtils.convertObjectToJsonBytes(datasetDTO)))
                 .andExpect(status().isUnauthorized());
-        verify(datasetService, times(0)).updateDataset(any(DatasetDTO.class), anyString());
+        verify(datasetService, times(0)).updateDataset(any(DatasetDTO.class), anyString(),
+            anyString());
     }
 
     @Test
@@ -207,7 +211,8 @@ class TestDatasetController {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TestUtils.convertObjectToJsonBytes(datasetDTO)))
                 .andExpect(status().isForbidden());
-        verify(datasetService, times(0)).updateDataset(any(DatasetDTO.class), anyString());
+        verify(datasetService, times(0)).updateDataset(any(DatasetDTO.class), anyString(),
+            anyString());
     }
 
     @Test
@@ -215,10 +220,10 @@ class TestDatasetController {
         when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
         DatasetXsltStringWrapper datasetXsltStringWrapper = new DatasetXsltStringWrapper(datasetDTO,
-                "<xslt attribute:\"value\"></xslt>");
+                "<xslt attribute:\"value\"></xslt>", null);
 
         doThrow(new NoDatasetFoundException("Does not exist")).when(datasetService)
-                .updateDataset(any(DatasetDTO.class), anyString());
+                .updateDataset(any(DatasetDTO.class), anyString(), isNull());
         mockMvc.perform(put("/datasets")
                         .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                         .accept(MediaType.APPLICATION_JSON)
@@ -226,7 +231,8 @@ class TestDatasetController {
                         .content(TestUtils.convertObjectToJsonBytes(datasetXsltStringWrapper)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorMessage", is("Does not exist")));
-        verify(datasetService, times(1)).updateDataset(any(DatasetDTO.class), anyString());
+        verify(datasetService, times(1)).updateDataset(any(DatasetDTO.class), anyString(),
+            isNull());
     }
 
     @Test
@@ -234,9 +240,9 @@ class TestDatasetController {
         when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
         DatasetXsltStringWrapper datasetXsltStringWrapper = new DatasetXsltStringWrapper(datasetDTO,
-                "<xslt attribute:\"value\"></xslt>");
+                "<xslt attribute:\"value\"></xslt>", null);
         doThrow(new BadContentException("Bad Content")).when(datasetService)
-                .updateDataset(any(DatasetDTO.class), anyString());
+                .updateDataset(any(DatasetDTO.class), anyString(), isNull());
         mockMvc.perform(put("/datasets")
                         .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                         .accept(MediaType.APPLICATION_JSON)
@@ -246,7 +252,7 @@ class TestDatasetController {
                 .andExpect(jsonPath("$.errorMessage", is("Bad Content")));
 
         verify(datasetService, times(1))
-                .updateDataset(any(DatasetDTO.class), anyString());
+                .updateDataset(any(DatasetDTO.class), anyString(), isNull());
     }
 
     @Test
@@ -360,7 +366,7 @@ class TestDatasetController {
     void getDatasetXsltByDatasetId() throws Exception {
         when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
         when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID))).thenReturn(xsltObject);
         mockMvc.perform(get("/datasets/{datasetId}/xslt", TestObjectFactory.DATASETID)
@@ -411,7 +417,7 @@ class TestDatasetController {
     @Test
     void getDatasetXsltByDatasetIdUnauthenticated() throws Exception {
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
 
         when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
@@ -427,7 +433,7 @@ class TestDatasetController {
     void getDatasetXsltByDatasetIdInvalidUser() throws Exception {
         when(jwtDecoder.decode(MOCK_INVALID_TOKEN)).thenReturn(jwtUtils.getInvalidRoleJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
 
         when(datasetService.getDatasetXsltByDatasetId(Integer.toString(TestObjectFactory.DATASETID)))
@@ -443,7 +449,7 @@ class TestDatasetController {
     @Test
     void getXsltByXsltId() throws Exception {
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
 
         when(datasetService.getDatasetXsltByXsltId(TestObjectFactory.XSLTID))
@@ -480,7 +486,7 @@ class TestDatasetController {
     void createDefaultXslt() throws Exception {
         when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getAdminJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
         xsltObject.setId(new ObjectId(TestObjectFactory.XSLTID));
 
@@ -498,7 +504,7 @@ class TestDatasetController {
     @Test
     void createDefaultXslt_Unauthenticated() throws Exception {
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
         xsltObject.setId(new ObjectId(TestObjectFactory.XSLTID));
 
@@ -512,7 +518,7 @@ class TestDatasetController {
     void createDefaultXslt_Unauthorized() throws Exception {
         when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
         xsltObject.setId(new ObjectId(TestObjectFactory.XSLTID));
 
@@ -526,7 +532,7 @@ class TestDatasetController {
     @Test
     void getLatestDefaultXslt() throws Exception {
         DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(),
+        DatasetXslt xsltObject = new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL,
                 "<xslt attribute:\"value\"></xslt>");
 
         when(datasetService.getLatestDefaultXslt()).thenReturn(xsltObject);

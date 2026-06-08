@@ -112,7 +112,8 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void updateDataset(@RequestBody DatasetXsltStringWrapper datasetXsltStringWrapper)
       throws GenericMetisException {
-    datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
+    datasetService.updateDataset(
+        datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt(), datasetXsltStringWrapper.getXsltExternal());
     log.info("Dataset with datasetId {} updated", escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId()));
   }
 

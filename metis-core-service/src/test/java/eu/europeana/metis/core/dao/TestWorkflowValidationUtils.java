@@ -44,14 +44,16 @@ class TestWorkflowValidationUtils {
   private static final String DATASET_ID = Integer.toString(TestObjectFactory.DATASETID);
   private static WorkflowValidationUtils validationUtils;
   private static DepublishRecordIdDao depublishRecordIdDao;
+  private static DatasetXsltDao datasetXsltDao;
   private static DataEvolutionUtils dataEvolutionUtils;
   private static final ExecutablePluginType predecessorType = ExecutablePluginType.OAIPMH_HARVEST;
 
   @BeforeAll
   static void prepare() {
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
+    datasetXsltDao = mock(DatasetXsltDao.class);
     dataEvolutionUtils = mock(DataEvolutionUtils.class);
-    validationUtils = spy(new WorkflowValidationUtils(depublishRecordIdDao, dataEvolutionUtils));
+    validationUtils = spy(new WorkflowValidationUtils(depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils));
   }
 
   @AfterEach

@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.dataset.DepublishRecordId;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -119,7 +120,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
       try (final InputStream inputStream = defaultTransformationSupplier.get()) {
         final String defaultTransformationAsString = IOUtils
             .toString(inputStream, StandardCharsets.UTF_8.name());
-        final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID,
+        final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID, XsltType.DEFAULT,
             defaultTransformationAsString);
         datasetXsltDao.create(defaultTransformation);
       }

@@ -6,7 +6,7 @@ package eu.europeana.metis.core.workflow.plugins;
 public class TransformationExternalPluginMetadata extends AbstractExecutablePluginMetadata {
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.TRANSFORMATION_EXTERNAL;
-  private String xslt;
+  private String xsltId;
 
   public TransformationExternalPluginMetadata() {
     //Required for json serialization
@@ -17,11 +17,11 @@ public class TransformationExternalPluginMetadata extends AbstractExecutablePlug
     return pluginType;
   }
 
-  public String getXslt() {
-    return xslt;
+  public String getXsltId() {
+    return xsltId;
   }
 
-  public void setXslt(String xslt) {
-    this.xslt = xslt;
+  public void setXsltId(String xsltId) {
+    this.xsltId = xsltId;
   }
 }

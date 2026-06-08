@@ -7,10 +7,9 @@ import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
+import java.util.Date;
 import org.bson.types.ObjectId;
 import tools.jackson.databind.annotation.JsonSerialize;
-
-import java.util.Date;
 
 /**
  * A wrapper class with metadata about an xslt and the xslt as a string field.
@@ -20,7 +19,7 @@ import java.util.Date;
 @Indexes({
     @Index(fields = {@Field("datasetId")}),
     @Index(fields = {@Field("createdDate")}),
-    @Index(fields = {@Field("datasetId"), @Field("createdDate")})
+    @Index(fields = {@Field("datasetId"), @Field("xsltType"), @Field("createdDate")})
 })
 //@formatter:on
 public class DatasetXslt {
@@ -32,6 +31,7 @@ public class DatasetXslt {
   private ObjectId id;
 
   private String datasetId;
+  private XsltType xsltType;
   private String xslt;
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
   private Date createdDate;
@@ -45,10 +45,12 @@ public class DatasetXslt {
    * current date to it.
    *
    * @param datasetId the datasetId that this class is related to
+   * @param xsltType the type of the xslt
    * @param xslt the raw xslt
    */
-  public DatasetXslt(String datasetId, String xslt) {
+  public DatasetXslt(String datasetId, XsltType xsltType, String xslt) {
     this.datasetId = datasetId;
+    this.xsltType = xsltType;
     this.xslt = xslt;
     this.createdDate = new Date();
   }
@@ -60,7 +62,7 @@ public class DatasetXslt {
    * @param xslt the raw xslt
    */
   public DatasetXslt(String xslt) {
-    this(DEFAULT_DATASET_ID, xslt);
+    this(DEFAULT_DATASET_ID, XsltType.DEFAULT, xslt);
   }
 
   public ObjectId getId() {
@@ -79,6 +81,14 @@ public class DatasetXslt {
     this.datasetId = datasetId;
   }
 
+  public XsltType getXsltType() {
+    return xsltType;
+  }
+
+  public void setXsltType(XsltType xsltType) {
+    this.xsltType = xsltType;
+  }
+
   public String getXslt() {
     return xslt;
   }
@@ -93,5 +103,11 @@ public class DatasetXslt {
 
   public void setCreatedDate(Date createdDate) {
     this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
+  }
+
+  public enum XsltType {
+    DEFAULT,
+    EXTERNAL,
+    INTERNAL
   }
 }

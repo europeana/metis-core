@@ -97,9 +97,9 @@ public class WorkflowExecutionFactory {
 
     // Add some extra configuration to the plugin metadata depending on the type.
     if (pluginMetadata instanceof TransformationExternalPluginMetadata transformationExternalPluginMetadata) {
-      setupXsltContentForTransformationExternalPluginMetadata(dataset, transformationExternalPluginMetadata);
+      setupTransformationExternalPluginMetadata(dataset, transformationExternalPluginMetadata);
     } else if (pluginMetadata instanceof TransformationPluginMetadata transformationPluginMetadata) {
-      setupXsltIdForPluginMetadata(dataset, transformationPluginMetadata);
+      setupTransformationPluginMetadata(dataset, transformationPluginMetadata);
     } else if (pluginMetadata instanceof ValidationExternalPluginMetadata validationExternalPluginMetadata) {
       this.setupValidationExternalForPluginMetadata(validationExternalPluginMetadata, getValidationExternalProperties());
     } else if (pluginMetadata instanceof ValidationInternalPluginMetadata validationInternalPluginMetadata) {
@@ -138,25 +138,15 @@ public class WorkflowExecutionFactory {
     metadata.setSchematronRootPath(validationProperties.schematronRootPath());
   }
 
-  private void setupXsltContentForTransformationExternalPluginMetadata(Dataset dataset,
+  private void setupTransformationExternalPluginMetadata(Dataset dataset,
       TransformationExternalPluginMetadata pluginMetadata) {
-    //todo: update content to retrieve from database.
-    pluginMetadata.setXslt("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        + "<xsl:stylesheet version=\"1.0\"\n"
-        + "    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n"
-        + "\n"
-        + "  <xsl:output method=\"xml\" indent=\"yes\"/>\n"
-        + "\n"
-        + "  <xsl:template match=\"@*|node()\">\n"
-        + "    <xsl:copy>\n"
-        + "      <xsl:apply-templates select=\"@*|node()\"/>\n"
-        + "    </xsl:copy>\n"
-        + "  </xsl:template>\n"
-        + "\n"
-        + "</xsl:stylesheet>");
+    DatasetXslt xsltObject = datasetXsltDao.getById(dataset.getXsltIdExternal().toString());
+    if (xsltObject != null && StringUtils.isNotEmpty(xsltObject.getXslt())) {
+      pluginMetadata.setXsltId(xsltObject.getId().toString());
+    }
   }
 
-  private void setupXsltIdForPluginMetadata(Dataset dataset,
+  private void setupTransformationPluginMetadata(Dataset dataset,
       TransformationPluginMetadata pluginMetadata) {
     DatasetXslt xsltObject;
     if (pluginMetadata.isCustomXslt()) {

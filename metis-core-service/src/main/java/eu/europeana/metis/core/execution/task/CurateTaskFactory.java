@@ -7,6 +7,8 @@ import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurat
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createValidationExternalParameters;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createValidationInternalParameters;
 
+import eu.europeana.metis.core.dao.DatasetXsltDao;
+import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -27,6 +29,7 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -38,6 +41,8 @@ import org.jetbrains.annotations.NotNull;
 public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
     AbstractIntermediateEngineTaskFactory<S, T> {
 
+  private final DatasetXsltDao datasetXsltDao;
+
   /**
    * Constructor.
    *
@@ -45,9 +50,11 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
    * interactions
    * @param plugin an instance of {@code AbstractExecutablePlugin}, representing the plugin providing configuration and metadata
    * for the associated task
+   * @param datasetXsltDao the DAO for retrieving dataset XSLT information
    */
-  public CurateTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin) {
+  public CurateTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin, DatasetXsltDao datasetXsltDao) {
     super(engineTaskClient, plugin);
+    this.datasetXsltDao = datasetXsltDao;
   }
 
   @Override
@@ -77,7 +84,8 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
         createSimpleIntermediateInputDataEndpoint(previousTaskId, genericIntermediateTaskContext);
     return switch (plugin.getPluginMetadata()) {
       case TransformationExternalPluginMetadata transformationExternalPluginMetadata -> {
-        String xslt = transformationExternalPluginMetadata.getXslt();
+        String xsltId = transformationExternalPluginMetadata.getXsltId();
+        String xslt = Optional.ofNullable(datasetXsltDao.getById(xsltId)).map(DatasetXslt::getXslt).orElse(null);
         yield new CurateTaskContext(
             createTransformationExternalParameters(xslt),
             new TransformExternalInputDataEndpoint(

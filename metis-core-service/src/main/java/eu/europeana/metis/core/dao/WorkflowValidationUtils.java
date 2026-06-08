@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.dao;
 
+import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
@@ -14,6 +15,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.util.CollectionUtils;
 
@@ -34,17 +37,20 @@ import org.springframework.util.CollectionUtils;
 public class WorkflowValidationUtils {
 
   private final DepublishRecordIdDao depublishRecordIdDao;
+  private final DatasetXsltDao datasetXsltDao;
   private final DataEvolutionUtils dataEvolutionUtils;
 
   /**
    * Constructor.
    *
    * @param depublishRecordIdDao the depublication record id dao
+   * @param datasetXsltDao the dataset xslt dao
    * @param dataEvolutionUtils The utilities class for sorting out data evolution
    */
   public WorkflowValidationUtils(DepublishRecordIdDao depublishRecordIdDao,
-      DataEvolutionUtils dataEvolutionUtils) {
+      DatasetXsltDao datasetXsltDao, DataEvolutionUtils dataEvolutionUtils) {
     this.depublishRecordIdDao = depublishRecordIdDao;
+    this.datasetXsltDao = datasetXsltDao;
     this.dataEvolutionUtils = dataEvolutionUtils;
   }
 
@@ -100,6 +106,8 @@ public class WorkflowValidationUtils {
           "There are enabled plugins of which the type could not be determined.");
     }
 
+    validateTransformExternalPlugin(workflow.getDatasetId(), enabledPlugins);
+
     // Validate dataset/record depublication
     validateDepublishPlugin(workflow.getDatasetId(), enabledPlugins);
 
@@ -144,6 +152,23 @@ public class WorkflowValidationUtils {
             enforcedPredecessorType, workflow.getDatasetId());
   }
 
+  private void validateTransformExternalPlugin(String datasetId, List<AbstractExecutablePluginMetadata> enabledPlugins)
+      throws BadContentException {
+    Optional<TransformationExternalPluginMetadata> plugin =
+        enabledPlugins.stream()
+                      .filter(p -> p.getExecutablePluginType().toPluginType() == PluginType.TRANSFORMATION_EXTERNAL)
+                      .map(TransformationExternalPluginMetadata.class::cast)
+                      .findFirst();
+
+    if (plugin.isPresent()) {
+      DatasetXslt xsltObject = datasetXsltDao.getLatestXsltForDatasetId(datasetId);
+
+      if (xsltObject == null || StringUtils.isBlank(xsltObject.getXslt())) {
+        throw new BadContentException("XSLT cannot be null or empty for dataset: " + datasetId);
+      }
+    }
+  }
+
   private void validateAndTrimHarvestParameters(String datasetId,
       Iterable<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
     for (AbstractExecutablePluginMetadata pluginMetadata : enabledPlugins) {
@@ -160,9 +185,9 @@ public class WorkflowValidationUtils {
         httpHarvestPluginMetadata.setUrl(validateUrl(httpHarvestPluginMetadata.getUrl()).toString());
       }
       if (pluginMetadata instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata &&
-              abstractHarvestPluginMetadata.isIncrementalHarvest() && !isIncrementalHarvestingAllowed(datasetId)) {
-          throw new BadContentException("Can't perform incremental harvesting for this dataset.");
-        }
+          abstractHarvestPluginMetadata.isIncrementalHarvest() && !isIncrementalHarvestingAllowed(datasetId)) {
+        throw new BadContentException("Can't perform incremental harvesting for this dataset.");
+      }
     }
   }
 

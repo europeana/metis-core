@@ -164,7 +164,7 @@ class TestDatasetService {
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
     datasetService.updateDataset(datasetDTO,
-        TestObjectFactory.createXslt(TestObjectFactory.createDataset(datasetDTO.getDatasetName())).getXslt());
+        TestObjectFactory.createXslt(TestObjectFactory.createDataset(datasetDTO.getDatasetName())).getXslt(), null);
 
     ArgumentCaptor<Dataset> dataSetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
     verify(datasetDao, times(1)).update(dataSetArgumentCaptor.capture());
@@ -183,7 +183,7 @@ class TestDatasetService {
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
-    datasetService.updateDataset(datasetDTO, null);
+    datasetService.updateDataset(datasetDTO, null, null);
 
     ArgumentCaptor<Dataset> dataSetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
     verify(datasetDao, times(1)).update(dataSetArgumentCaptor.capture());
@@ -199,7 +199,7 @@ class TestDatasetService {
     Dataset storedDataset = TestObjectFactory.createDataset(String.format("%s%s", TestObjectFactory.DATASETNAME, 10));
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(new Dataset());
-    assertThrows(DatasetAlreadyExistsException.class, () -> datasetService.updateDataset(datasetDTO, null));
+    assertThrows(DatasetAlreadyExistsException.class, () -> datasetService.updateDataset(datasetDTO, null, null));
   }
 
   @Test
@@ -208,7 +208,7 @@ class TestDatasetService {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(dataset);
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn("ObjectId");
-    assertThrows(BadContentException.class, () -> datasetService.updateDataset(datasetDTO, null));
+    assertThrows(BadContentException.class, () -> datasetService.updateDataset(datasetDTO, null, null));
   }
 
   @Test
@@ -216,7 +216,7 @@ class TestDatasetService {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenThrow(
         new NoDatasetFoundException(datasetDTO.getDatasetId()));
-    assertThrows(NoDatasetFoundException.class, () -> datasetService.updateDataset(datasetDTO, null));
+    assertThrows(NoDatasetFoundException.class, () -> datasetService.updateDataset(datasetDTO, null, null));
   }
 
   @Test

@@ -257,6 +257,7 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
    * @param semaphoresPerPluginManager Manages semaphores for controlling access to plugins.
    * @param workflowExecutionDao Data access object for managing workflow executions.
    * @param workflowPostProcessor Post-processor for workflow execution-related actions.
+   * @param datasetXsltDao Data access object for managing dataset XSLTs.
    * @param engineTaskClient Client for interactions with data processing services.
    * @param metisCoreConfigurationProperties Core configuration properties for the system.
    * @return A configured instance of WorkflowExecutorManager.
@@ -266,12 +267,13 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
       SemaphoresPerPluginManager semaphoresPerPluginManager,
       WorkflowExecutionDao workflowExecutionDao,
       WorkflowPostProcessor workflowPostProcessor,
+      DatasetXsltDao datasetXsltDao,
       EngineTaskClient<S, T> engineTaskClient,
       MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
     return new WorkflowExecutorSettings<>(
         Duration.ofSeconds(metisCoreConfigurationProperties.dpsMonitorCheckIntervalInSeconds()),
         Duration.ofMinutes(metisCoreConfigurationProperties.periodOfNoProcessedRecordsChangeInMinutes()),
-        semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, engineTaskClient);
+        semaphoresPerPluginManager, workflowExecutionDao, workflowPostProcessor, datasetXsltDao, engineTaskClient);
   }
 
   /**
@@ -310,9 +312,9 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
   }
 
   @Bean
-  WorkflowValidationUtils getWorkflowValidationUtils(DataEvolutionUtils dataEvolutionUtils,
-      DepublishRecordIdDao depublishRecordIdDao) {
-    return new WorkflowValidationUtils(depublishRecordIdDao, dataEvolutionUtils);
+  WorkflowValidationUtils getWorkflowValidationUtils(
+      DepublishRecordIdDao depublishRecordIdDao, DatasetXsltDao datasetXsltDao, DataEvolutionUtils dataEvolutionUtils) {
+    return new WorkflowValidationUtils(depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils);
   }
 
   /**

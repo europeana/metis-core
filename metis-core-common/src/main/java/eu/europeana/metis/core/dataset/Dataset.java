@@ -78,6 +78,8 @@ public class Dataset implements HasMongoObjectId {
 
   @JsonSerialize(using = ObjectIdSerializer.class)
   private ObjectId xsltId;
+  @JsonSerialize(using = ObjectIdSerializer.class)
+  private ObjectId xsltIdExternal;
 
   @Override
   public ObjectId getId() {
@@ -234,4 +236,13 @@ public class Dataset implements HasMongoObjectId {
   public void setXsltId(ObjectId xsltId) {
     this.xsltId = xsltId;
   }
+
+  public ObjectId getXsltIdExternal() {
+    return xsltIdExternal;
+  }
+
+  public void setXsltIdExternal(ObjectId xsltIdExternal) {
+    this.xsltIdExternal = xsltIdExternal;
+  }
+
 }

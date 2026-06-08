@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dataset.DatasetConverter;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
@@ -142,6 +143,7 @@ public class DatasetService {
    *
    * @param datasetDTO the provided dataset with the changes and the datasetId included in the {@link Dataset}
    * @param xsltString the text of the String representation
+   * @param xsltExternal
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
@@ -149,7 +151,7 @@ public class DatasetService {
    * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists.</li>
    * </ul>
    */
-  public void updateDataset(DatasetDTO datasetDTO, String xsltString)
+  public void updateDataset(DatasetDTO datasetDTO, String xsltString, String xsltExternal)
       throws GenericMetisException {
 
     // Find existing dataset and check authentication.
@@ -182,8 +184,16 @@ public class DatasetService {
       datasetDTO.setXsltId(ofNullable(storedDataset.getXsltId()).map(ObjectId::toString).orElse(null));
     } else {
       cleanDatasetXslt(storedDataset.getXsltId());
-      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), xsltString)).getId();
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL, xsltString)).getId();
       datasetDTO.setXsltId(xsltId.toString());
+    }
+
+    if (xsltExternal == null) {
+      datasetDTO.setXsltIdExternal(ofNullable(storedDataset.getXsltIdExternal()).map(ObjectId::toString).orElse(null));
+    } else {
+      cleanDatasetXslt(storedDataset.getXsltIdExternal());
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), XsltType.EXTERNAL, xsltExternal)).getId();
+      datasetDTO.setXsltIdExternal(xsltId.toString());
     }
 
     // Update the dataset
