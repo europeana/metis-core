@@ -1,13 +1,12 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
-import java.util.Date;
+import java.time.Instant;
 import org.bson.types.ObjectId;
 import tools.jackson.databind.annotation.JsonSerialize;
 
@@ -33,16 +32,14 @@ public class DatasetXslt {
   private String datasetId;
   private XsltType xsltType;
   private String xslt;
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date createdDate;
+  private Instant createdDate;
 
   public DatasetXslt() {
     //Required for json serialization
   }
 
   /**
-   * Constructor with required parameters for a dataset-specific XSLT. When created it assigns the
-   * current date to it.
+   * Constructor with required parameters for a dataset-specific XSLT. When created it assigns the current date to it.
    *
    * @param datasetId the datasetId that this class is related to
    * @param xsltType the type of the xslt
@@ -52,12 +49,11 @@ public class DatasetXslt {
     this.datasetId = datasetId;
     this.xsltType = xsltType;
     this.xslt = xslt;
-    this.createdDate = new Date();
+    this.createdDate = Instant.now();
   }
 
   /**
-   * Constructor with required parameters for a default XSLT. When created it assigns the current
-   * date to it.
+   * Constructor with required parameters for a default XSLT. When created it assigns the current date to it.
    *
    * @param xslt the raw xslt
    */
@@ -97,14 +93,24 @@ public class DatasetXslt {
     this.xslt = xslt;
   }
 
-  public Date getCreatedDate() {
-    return createdDate == null ? null : new Date(createdDate.getTime());
+  public Instant getCreatedDate() {
+    return createdDate;
   }
 
-  public void setCreatedDate(Date createdDate) {
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
+  public void setCreatedDate(Instant createdDate) {
+    this.createdDate = createdDate;
   }
 
+  /**
+   * Represents the type of XSLT.
+   * <p>
+   * Types:
+   * <ul>
+   *   <li>DEFAULT: Represents the default configuration or fallback XSLT.</li>
+   *   <li>EXTERNAL: Represents an XSLT for transformation to EDM EXTERNAL.</li>
+   *   <li>INTERNAL: Represents an XSLT for transformation to EDM INTERNAL.</li>
+   * </ul>
+   */
   public enum XsltType {
     DEFAULT,
     EXTERNAL,

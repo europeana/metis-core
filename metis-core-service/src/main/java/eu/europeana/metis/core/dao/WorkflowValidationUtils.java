@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.dao;
 
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
@@ -161,7 +162,7 @@ public class WorkflowValidationUtils {
                       .findFirst();
 
     if (plugin.isPresent()) {
-      DatasetXslt xsltObject = datasetXsltDao.getLatestXsltForDatasetId(datasetId);
+      DatasetXslt xsltObject = datasetXsltDao.getLatestXsltForDatasetId(datasetId, XsltType.EXTERNAL);
 
       if (xsltObject == null || StringUtils.isBlank(xsltObject.getXslt())) {
         throw new BadContentException("XSLT cannot be null or empty for dataset: " + datasetId);
