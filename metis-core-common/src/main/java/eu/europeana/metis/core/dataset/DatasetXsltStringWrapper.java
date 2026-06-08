@@ -1,11 +1,13 @@
 package eu.europeana.metis.core.dataset;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Used to send over HTTP the dataset with it's corresponding xslt.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-02-28
  */
+@Getter
+@Setter
 public class DatasetXsltStringWrapper {
 
   private DatasetDTO dataset;
@@ -26,30 +28,6 @@ public class DatasetXsltStringWrapper {
   public DatasetXsltStringWrapper(DatasetDTO dataset, String xslt, String xsltExternal) {
     this.dataset = dataset;
     this.xslt = xslt;
-    this.xsltExternal = xsltExternal;
-  }
-
-  public DatasetDTO getDataset() {
-    return dataset;
-  }
-
-  public void setDataset(DatasetDTO dataset) {
-    this.dataset = dataset;
-  }
-
-  public String getXslt() {
-    return xslt;
-  }
-
-  public void setXslt(String xslt) {
-    this.xslt = xslt;
-  }
-
-  public String getXsltExternal() {
-    return xsltExternal;
-  }
-
-  public void setXsltExternal(String xsltExternal) {
     this.xsltExternal = xsltExternal;
   }
 }

@@ -8,6 +8,8 @@ import eu.europeana.metis.core.common.LanguageDeserializer;
 import eu.europeana.metis.core.common.LanguageSerializer;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
+import lombok.Getter;
+import lombok.Setter;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
 
@@ -21,6 +23,8 @@ import java.util.List;
  * This class encapsulates the metadata and other relevant information about a dataset.
  */
 //TODO: 2025-03-10 - MET-6415 - Abstract this class in smaller components.
+@Getter
+@Setter
 public class DatasetDTO {
 
   private String id;
@@ -141,95 +145,6 @@ public class DatasetDTO {
     this.xsltIdExternal = xsltIdExternal;
   }
 
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  // Getters and setters
-  public String getEcloudDatasetId() {
-    return ecloudDatasetId;
-  }
-
-  public void setEcloudDatasetId(String ecloudDatasetId) {
-    this.ecloudDatasetId = ecloudDatasetId;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
-
-  public String getDatasetName() {
-    return datasetName;
-  }
-
-  public void setDatasetName(String datasetName) {
-    this.datasetName = datasetName;
-  }
-
-  public String getProvider() {
-    return provider;
-  }
-
-  public void setProvider(String provider) {
-    this.provider = provider;
-  }
-
-  public String getDataProvider() {
-    return dataProvider;
-  }
-
-  public void setDataProvider(String dataProvider) {
-    this.dataProvider = dataProvider;
-  }
-
-  public String getIntermediateProvider() {
-    return intermediateProvider;
-  }
-
-  public void setIntermediateProvider(String intermediateProvider) {
-    this.intermediateProvider = intermediateProvider;
-  }
-
-  public String getCreatedByUserId() {
-    return createdByUserId;
-  }
-
-  public void setCreatedByUserId(String createdByUserId) {
-    this.createdByUserId = createdByUserId;
-  }
-
-  public String getCreatedByUserName() {
-    return createdByUserName;
-  }
-
-  public void setCreatedByUserName(String createdByUserName) {
-    this.createdByUserName = createdByUserName;
-  }
-
-  public String getCreatedByFirstName() {
-    return createdByFirstName;
-  }
-
-  public void setCreatedByFirstName(String createdByFirstName) {
-    this.createdByFirstName = createdByFirstName;
-  }
-
-  public String getCreatedByLastName() {
-    return createdByLastName;
-  }
-
-  public void setCreatedByLastName(String createdByLastName) {
-    this.createdByLastName = createdByLastName;
-  }
-
   public Date getCreatedDate() {
     return createdDate == null ? null : new Date(createdDate.getTime());
   }
@@ -254,78 +169,6 @@ public class DatasetDTO {
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(
             datasetIdsToRedirectFrom);
-  }
-
-  public String getReplacedBy() {
-    return replacedBy;
-  }
-
-  public void setReplacedBy(String replacedBy) {
-    this.replacedBy = replacedBy;
-  }
-
-  public String getReplaces() {
-    return replaces;
-  }
-
-  public void setReplaces(String replaces) {
-    this.replaces = replaces;
-  }
-
-  public Country getCountry() {
-    return country;
-  }
-
-  public void setCountry(Country country) {
-    this.country = country;
-  }
-
-  public Language getLanguage() {
-    return language;
-  }
-
-  public void setLanguage(Language language) {
-    this.language = language;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public PublicationFitness getPublicationFitness() {
-    return publicationFitness;
-  }
-
-  public void setPublicationFitness(PublicationFitness publicationFitness) {
-    this.publicationFitness = publicationFitness;
-  }
-
-  public String getNotes() {
-    return notes;
-  }
-
-  public void setNotes(String notes) {
-    this.notes = notes;
-  }
-
-  public String getXsltId() {
-    return xsltId;
-  }
-
-  public void setXsltId(String xsltId) {
-    this.xsltId = xsltId;
-  }
-
-  public String getXsltIdExternal() {
-    return xsltIdExternal;
-  }
-
-  public void setXsltIdExternal(String xsltIdExternal) {
-    this.xsltIdExternal = xsltIdExternal;
   }
 }
 

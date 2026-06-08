@@ -7,20 +7,22 @@ import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import java.time.Instant;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.types.ObjectId;
 import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * A wrapper class with metadata about an xslt and the xslt as a string field.
  */
-//@formatter:off
 @Entity
 @Indexes({
     @Index(fields = {@Field("datasetId")}),
     @Index(fields = {@Field("createdDate")}),
     @Index(fields = {@Field("datasetId"), @Field("xsltType"), @Field("createdDate")})
 })
-//@formatter:on
+@Getter
+@Setter
 public class DatasetXslt {
 
   public static final String DEFAULT_DATASET_ID = "-1";
@@ -59,46 +61,6 @@ public class DatasetXslt {
    */
   public DatasetXslt(String xslt) {
     this(DEFAULT_DATASET_ID, XsltType.DEFAULT, xslt);
-  }
-
-  public ObjectId getId() {
-    return id;
-  }
-
-  public void setId(ObjectId id) {
-    this.id = id;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
-
-  public XsltType getXsltType() {
-    return xsltType;
-  }
-
-  public void setXsltType(XsltType xsltType) {
-    this.xsltType = xsltType;
-  }
-
-  public String getXslt() {
-    return xslt;
-  }
-
-  public void setXslt(String xslt) {
-    this.xslt = xslt;
-  }
-
-  public Instant getCreatedDate() {
-    return createdDate;
-  }
-
-  public void setCreatedDate(Instant createdDate) {
-    this.createdDate = createdDate;
   }
 
   /**
