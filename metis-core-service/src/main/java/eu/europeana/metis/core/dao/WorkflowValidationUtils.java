@@ -3,6 +3,7 @@ package eu.europeana.metis.core.dao;
 import eu.europeana.metis.core.dataset.DatasetXslt;
 import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
+import eu.europeana.metis.core.engine.base.EngineType;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
@@ -14,6 +15,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
@@ -37,6 +39,7 @@ import org.springframework.util.CollectionUtils;
  */
 public class WorkflowValidationUtils {
 
+  private final EngineType engineType;
   private final DepublishRecordIdDao depublishRecordIdDao;
   private final DatasetXsltDao datasetXsltDao;
   private final DataEvolutionUtils dataEvolutionUtils;
@@ -44,12 +47,14 @@ public class WorkflowValidationUtils {
   /**
    * Constructor.
    *
+   * @param engineType the engine type
    * @param depublishRecordIdDao the depublication record id dao
    * @param datasetXsltDao the dataset xslt dao
    * @param dataEvolutionUtils The utilities class for sorting out data evolution
    */
-  public WorkflowValidationUtils(DepublishRecordIdDao depublishRecordIdDao,
+  public WorkflowValidationUtils(EngineType engineType, DepublishRecordIdDao depublishRecordIdDao,
       DatasetXsltDao datasetXsltDao, DataEvolutionUtils dataEvolutionUtils) {
+    this.engineType = engineType;
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.datasetXsltDao = datasetXsltDao;
     this.dataEvolutionUtils = dataEvolutionUtils;
@@ -108,18 +113,10 @@ public class WorkflowValidationUtils {
     }
 
     validateTransformExternalPlugin(workflow.getDatasetId(), enabledPlugins);
-
-    // Validate dataset/record depublication
     validateDepublishPlugin(workflow.getDatasetId(), enabledPlugins);
-
-    // Validate and normalize the harvest parameters of harvest plugins (even if not enabled)
     validateAndTrimHarvestParameters(workflow.getDatasetId(), enabledPlugins);
-
-    // Check that first plugin is not link checking (except if it is the only plugin)
-    if (enabledPlugins.size() > 1
-        && enabledPlugins.getFirst().getPluginType() == PluginType.LINK_CHECKING) {
-      throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
-    }
+    validateLinkChecking(enabledPlugins);
+    validateIndexToPublishPlugin(enabledPlugins);
 
     // Make sure that all enabled plugins (except the first) have a predecessor within the workflow.
     final EnumSet<ExecutablePluginType> previousTypesInWorkflow = EnumSet
@@ -153,6 +150,31 @@ public class WorkflowValidationUtils {
             enforcedPredecessorType, workflow.getDatasetId());
   }
 
+  private void validateIndexToPublishPlugin(List<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
+    Optional<IndexToPublishPluginMetadata> pluginMetadata =
+        enabledPlugins.stream()
+                      .filter(p -> p.getExecutablePluginType().toPluginType() == PluginType.PUBLISH)
+                      .map(IndexToPublishPluginMetadata.class::cast)
+                      .findFirst();
+
+    if (pluginMetadata.isPresent() && engineType == EngineType.SANDBOX) {
+      throw new BadContentException("Index to publish plugins are not supported for METIS-SANDBOX");
+    }
+  }
+
+  private void validateLinkChecking(List<AbstractExecutablePluginMetadata> enabledPlugins)
+      throws PluginExecutionNotAllowed, BadContentException {
+    // Check that first plugin is not link checking (except if it is the only plugin)
+    boolean isFirstPluginLinkChecking = enabledPlugins.getFirst().getPluginType() == PluginType.LINK_CHECKING;
+    if (isFirstPluginLinkChecking && enabledPlugins.size() > 1) {
+      throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
+    }
+
+    if (isFirstPluginLinkChecking && engineType == EngineType.SANDBOX) {
+      throw new BadContentException("Link Checking plugins are not supported for METIS-SANDBOX");
+    }
+  }
+
   private void validateTransformExternalPlugin(String datasetId, List<AbstractExecutablePluginMetadata> enabledPlugins)
       throws BadContentException {
     Optional<TransformationExternalPluginMetadata> plugin =
@@ -162,6 +184,9 @@ public class WorkflowValidationUtils {
                       .findFirst();
 
     if (plugin.isPresent()) {
+      if (engineType == EngineType.ECLOUD) {
+        throw new BadContentException("Transformation external plugins are not supported for E-Cloud");
+      }
       DatasetXslt xsltObject = datasetXsltDao.getLatestXsltForDatasetId(datasetId, XsltType.EXTERNAL);
 
       if (xsltObject == null || StringUtils.isBlank(xsltObject.getXslt())) {
@@ -216,6 +241,10 @@ public class WorkflowValidationUtils {
     if (enabledPlugins.size() > 1 && depublishPluginMetadata.isPresent()) {
       throw new BadContentException(
           "If DEPUBLISH plugin enabled, no other enabled plugins are allowed.");
+    }
+    
+    if (depublishPluginMetadata.isPresent() && engineType == EngineType.SANDBOX) {
+      throw new BadContentException("Record depublication is not supported for METIS-SANDBOX");
     }
 
     // If record depublication requested, check if there are pending record ids in the db

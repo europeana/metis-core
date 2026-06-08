@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.rest.config.properties;
 
+import eu.europeana.metis.core.engine.base.EngineType;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -32,12 +33,4 @@ public record MetisCoreConfigurationProperties(
     List<String> allowedCorsHosts
 ) {
 
-  /**
-   * Enum representing types of engines available for configuration.
-   */
-  public enum EngineType {
-    ECLOUD,
-    SANDBOX,
-    MOCK;
-  }
 }

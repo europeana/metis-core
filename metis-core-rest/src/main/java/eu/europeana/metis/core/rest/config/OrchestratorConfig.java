@@ -313,8 +313,10 @@ public class OrchestratorConfig<S extends EngineTaskSettings, T extends EngineTa
 
   @Bean
   WorkflowValidationUtils getWorkflowValidationUtils(
-      DepublishRecordIdDao depublishRecordIdDao, DatasetXsltDao datasetXsltDao, DataEvolutionUtils dataEvolutionUtils) {
-    return new WorkflowValidationUtils(depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils);
+      DepublishRecordIdDao depublishRecordIdDao, DatasetXsltDao datasetXsltDao,
+      DataEvolutionUtils dataEvolutionUtils, MetisCoreConfigurationProperties metisCoreConfigurationProperties) {
+    return new WorkflowValidationUtils(
+        metisCoreConfigurationProperties.engineType(), depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils);
   }
 
   /**

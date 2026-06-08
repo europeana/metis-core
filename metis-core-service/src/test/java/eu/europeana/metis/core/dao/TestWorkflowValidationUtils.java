@@ -16,6 +16,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
+import eu.europeana.metis.core.engine.base.EngineType;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
@@ -53,7 +54,7 @@ class TestWorkflowValidationUtils {
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
     datasetXsltDao = mock(DatasetXsltDao.class);
     dataEvolutionUtils = mock(DataEvolutionUtils.class);
-    validationUtils = spy(new WorkflowValidationUtils(depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils));
+    validationUtils = spy(new WorkflowValidationUtils(EngineType.ECLOUD, depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils));
   }
 
   @AfterEach
