@@ -32,9 +32,9 @@ public class PluginProgressView {
     if (progress != null) {
       this.expectedRecords = progress.getExpectedRecords();
       this.processedRecords = progress.getProcessedRecords();
-      this.ignoredRecords = progress.getIgnoredRecords();
-      this.deletedRecords = progress.getDeletedRecords();
-      this.errors = progress.getErrors();
+      this.ignoredRecords = progress.getUnchangedRecords();
+      this.deletedRecords = progress.getSuccessDepublishRecords();
+      this.errors = progress.getFailRecords() + progress.getFailDepublishRecords();
       this.progressPercentage = progress.getProgressPercentage();
       this.successRecords = progress.getSuccessRecords();
       this.failRecords = progress.getFailRecords();
