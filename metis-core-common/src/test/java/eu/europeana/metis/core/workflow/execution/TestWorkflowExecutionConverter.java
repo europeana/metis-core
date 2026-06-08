@@ -113,7 +113,6 @@ class TestWorkflowExecutionConverter {
     AbstractExecutablePlugin<?> plugin = ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     plugin.setDataStatus(DataStatus.VALID);
     plugin.getExecutionProgress().setProcessedRecords(0);
-    plugin.getExecutionProgress().setErrors(1);
     plugin.getExecutionProgress().setFailRecords(1);
     assertFalse(WorkflowExecutionConverter.canDisplayRawXml(plugin));
   }

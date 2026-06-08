@@ -71,9 +71,6 @@ public class TestExecutionProgressUtils {
     executionProgress.setExpectedRecords(EXPECTED_RECORDS_VALUE);
     executionProgress.setProcessedRecords(PROCESSED_RECORDS_VALUE);
     executionProgress.setProgressPercentage(PROGRESS_PERCENTAGE_VALUE);
-    executionProgress.setIgnoredRecords(IGNORED_RECORDS_VALUE);
-    executionProgress.setDeletedRecords(DELETED_RECORDS_VALUE);
-    executionProgress.setErrors(ERRORS_VALUE);
     executionProgress.setStatus(STATUS_VALUE);
     executionProgress.setTotalDatabaseRecords(TOTAL_DATABASE_RECORDS_VALUE);
     executionProgress.setSuccessRecords(SUCCESS_RECORDS_VALUE);

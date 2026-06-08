@@ -151,28 +151,31 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     private Instant lastProgressChange = Instant.now();
     private long expected;
     private long processed;
-    private long deleted;
-    private long ignored;
-    private long errors;
+    private long successDepublish;
+    private long unchanged;
+    private long failedRecords;
+    private long failedDepublishRecords;
     private long total;
 
     void updateFrom(AbstractExecutablePlugin<?> plugin) {
       lastProgressChange = Instant.now();
       this.processed = plugin.getExecutionProgress().getProcessedRecords();
-      this.deleted = plugin.getExecutionProgress().getDeletedRecords();
+      this.successDepublish = plugin.getExecutionProgress().getSuccessDepublishRecords();
       this.expected = plugin.getExecutionProgress().getExpectedRecords();
-      this.ignored = plugin.getExecutionProgress().getIgnoredRecords();
-      this.errors = plugin.getExecutionProgress().getErrors();
+      this.unchanged = plugin.getExecutionProgress().getUnchangedRecords();
+      this.failedRecords = plugin.getExecutionProgress().getFailRecords();
+      this.failedDepublishRecords = plugin.getExecutionProgress().getFailDepublishRecords();
       this.total = plugin.getExecutionProgress().getTotalDatabaseRecords();
     }
 
     boolean hasChanged(AbstractExecutablePlugin<?> plugin) {
       var progress = plugin.getExecutionProgress();
       return processed != progress.getProcessedRecords()
-              || deleted != progress.getDeletedRecords()
+              || successDepublish != progress.getSuccessDepublishRecords()
               || expected != progress.getExpectedRecords()
-              || ignored != progress.getIgnoredRecords()
-              || errors != progress.getErrors()
+              || unchanged != progress.getUnchangedRecords()
+              || failedRecords != progress.getFailRecords()
+              || failedDepublishRecords != progress.getFailDepublishRecords()
               || total != progress.getTotalDatabaseRecords();
     }
 
