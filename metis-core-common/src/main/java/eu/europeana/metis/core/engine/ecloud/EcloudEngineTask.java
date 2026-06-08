@@ -15,6 +15,7 @@ import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoi
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -75,8 +76,8 @@ public class EcloudEngineTask extends EngineTask {
     OAIPMHHarvestingDetails oaipmhHarvestingDetails = new OAIPMHHarvestingDetails();
     oaipmhHarvestingDetails.setSet(oaiHarvestInputDataParameters.set());
     oaipmhHarvestingDetails.setSchema(oaiHarvestInputDataParameters.metadataPrefix());
-    oaipmhHarvestingDetails.setDateFrom(oaiHarvestInputDataParameters.from());
-    oaipmhHarvestingDetails.setDateUntil(oaiHarvestInputDataParameters.until());
+    oaipmhHarvestingDetails.setDateFrom(Date.from(oaiHarvestInputDataParameters.from()));
+    oaipmhHarvestingDetails.setDateUntil(Date.from(oaiHarvestInputDataParameters.until()));
     dpsTask.setHarvestingDetails(oaipmhHarvestingDetails);
   }
 

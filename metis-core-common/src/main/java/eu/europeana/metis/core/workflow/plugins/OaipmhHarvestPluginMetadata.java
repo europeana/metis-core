@@ -2,7 +2,7 @@ package eu.europeana.metis.core.workflow.plugins;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import eu.europeana.metis.utils.CommonStringValues;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * OAIPMH Harvest Plugin Metadata.
@@ -15,9 +15,9 @@ public class OaipmhHarvestPluginMetadata extends AbstractHarvestPluginMetadata {
   private String setSpec;
   private boolean incrementalHarvest; // Default: false (i.e. full harvest)
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date fromDate;
+  private Instant fromDate;
   @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date untilDate;
+  private Instant untilDate;
   //If useDefaultIdentifiers == true then this is the prefix to be trimmed from the OAI Header Identifier
   private String identifierPrefixRemoval;
 
@@ -58,12 +58,12 @@ public class OaipmhHarvestPluginMetadata extends AbstractHarvestPluginMetadata {
     return incrementalHarvest;
   }
 
-  public Date getFromDate() {
-    return fromDate == null ? null : new Date(fromDate.getTime());
+  public Instant getFromDate() {
+    return fromDate;
   }
 
-  public void setFromDate(Date fromDate) {
-    this.fromDate = fromDate == null ? null : new Date(fromDate.getTime());
+  public void setFromDate(Instant fromDate) {
+    this.fromDate = fromDate;
   }
 
   public String getIdentifierPrefixRemoval() {
@@ -74,12 +74,12 @@ public class OaipmhHarvestPluginMetadata extends AbstractHarvestPluginMetadata {
     this.identifierPrefixRemoval = identifierPrefixRemoval;
   }
 
-  public Date getUntilDate() {
-    return untilDate == null ? null : new Date(untilDate.getTime());
+  public Instant getUntilDate() {
+    return untilDate;
   }
 
-  public void setUntilDate(Date untilDate) {
-    this.untilDate = untilDate == null ? null : new Date(untilDate.getTime());
+  public void setUntilDate(Instant untilDate) {
+    this.untilDate = untilDate;
   }
 
   @Override

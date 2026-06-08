@@ -16,8 +16,8 @@ import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskKey;
 import eu.europeana.metis.sandbox.common.task.input.SimpleIntermediateInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.TransformExternalInputMetadataRequest;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -67,7 +67,7 @@ public class SandboxEngineTask extends EngineTask {
 
   private void setInputDataLocation() {
     InputMetadataRequest inputMetadataRequest = switch (this.inputDataEndpoint) {
-      case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Date from, Date until, Integer stepSize) ->
+      case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
           new OaiHarvestInputMetadataRequest(url, set, metadataPrefix, from, until, stepSize);
       case HttpHarvestInputDataEndpoint(String url, Integer stepSize) -> new HttpHarvestInputMetadataRequest(url, stepSize);
       case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, DataRevision inputRevision) ->
