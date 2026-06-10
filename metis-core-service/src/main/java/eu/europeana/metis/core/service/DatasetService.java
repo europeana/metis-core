@@ -142,8 +142,8 @@ public class DatasetService {
    * Update an already existent dataset.
    *
    * @param datasetDTO the provided dataset with the changes and the datasetId included in the {@link Dataset}
-   * @param xsltString the text of the String representation
-   * @param xsltExternal
+   * @param xsltInternal the xslt to be used for internal transformation
+   * @param xsltExternal the xslt to be used for external transformation
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
@@ -151,7 +151,7 @@ public class DatasetService {
    * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists.</li>
    * </ul>
    */
-  public void updateDataset(DatasetDTO datasetDTO, String xsltString, String xsltExternal)
+  public void updateDataset(DatasetDTO datasetDTO, String xsltInternal, String xsltExternal)
       throws GenericMetisException {
 
     // Find existing dataset and check authentication.
@@ -180,11 +180,11 @@ public class DatasetService {
 
     verifyReferencesToOldDatasetIds(datasetDTO);
 
-    if (xsltString == null) {
+    if (xsltInternal == null) {
       datasetDTO.setXsltId(ofNullable(storedDataset.getXsltId()).map(ObjectId::toString).orElse(null));
     } else {
       cleanDatasetXslt(storedDataset.getXsltId());
-      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL, xsltString)).getId();
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL, xsltInternal)).getId();
       datasetDTO.setXsltId(xsltId.toString());
     }
 
@@ -435,8 +435,8 @@ public class DatasetService {
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
-   * @param records the list of {@link Record} for which {@link Record#getXmlRecord()} returns a non-null value
-   * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
+   * @param records the list of {@link Record} for which {@link Record#xmlRecord()} returns a non-null value
+   * @return a list of {@link Record}s with {@link Record#xmlRecord()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>

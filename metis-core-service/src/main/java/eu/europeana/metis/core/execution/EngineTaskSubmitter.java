@@ -37,6 +37,7 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
    *
    * @param plugin AbstractExecutablePlugin instance used to execute the plugin logic.
    * @param engineTaskClient EngineTaskClient instance used to manage and interact with engine tasks.
+   * @param datasetXsltDao DatasetXsltDao instance used to retrieve dataset-specific XSLT data.
    */
   public EngineTaskSubmitter(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient,
       DatasetXsltDao datasetXsltDao) {
