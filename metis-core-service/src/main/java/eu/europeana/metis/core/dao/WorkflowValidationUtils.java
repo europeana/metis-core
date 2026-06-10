@@ -112,11 +112,11 @@ public class WorkflowValidationUtils {
           "There are enabled plugins of which the type could not be determined.");
     }
 
+    validateAndNormalizeHarvestParameters(workflow.getDatasetId(), enabledPlugins);
     validateTransformExternalPlugin(workflow.getDatasetId(), enabledPlugins);
-    validateDepublishPlugin(workflow.getDatasetId(), enabledPlugins);
-    validateAndTrimHarvestParameters(workflow.getDatasetId(), enabledPlugins);
-    validateLinkChecking(enabledPlugins);
     validateIndexToPublishPlugin(enabledPlugins);
+    validateDepublishPlugin(workflow.getDatasetId(), enabledPlugins);
+    validateLinkChecking(enabledPlugins);
 
     // Make sure that all enabled plugins (except the first) have a predecessor within the workflow.
     final EnumSet<ExecutablePluginType> previousTypesInWorkflow = EnumSet
@@ -151,13 +151,8 @@ public class WorkflowValidationUtils {
   }
 
   private void validateIndexToPublishPlugin(List<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
-    Optional<IndexToPublishPluginMetadata> pluginMetadata =
-        enabledPlugins.stream()
-                      .filter(p -> p.getExecutablePluginType().toPluginType() == PluginType.PUBLISH)
-                      .map(IndexToPublishPluginMetadata.class::cast)
-                      .findFirst();
-
-    if (pluginMetadata.isPresent() && engineType == EngineType.SANDBOX) {
+    final boolean hasIndexToPublishPlugin = enabledPlugins.stream().anyMatch(IndexToPublishPluginMetadata.class::isInstance);
+    if (hasIndexToPublishPlugin && engineType == EngineType.SANDBOX) {
       throw new BadContentException("Index to publish plugins are not supported for METIS-SANDBOX");
     }
   }
@@ -177,13 +172,10 @@ public class WorkflowValidationUtils {
 
   private void validateTransformExternalPlugin(String datasetId, List<AbstractExecutablePluginMetadata> enabledPlugins)
       throws BadContentException {
-    Optional<TransformationExternalPluginMetadata> plugin =
-        enabledPlugins.stream()
-                      .filter(p -> p.getExecutablePluginType().toPluginType() == PluginType.TRANSFORMATION_EXTERNAL)
-                      .map(TransformationExternalPluginMetadata.class::cast)
-                      .findFirst();
+    final boolean hasTransformationExternalPlugin = enabledPlugins.stream().anyMatch(
+        TransformationExternalPluginMetadata.class::isInstance);
 
-    if (plugin.isPresent()) {
+    if (hasTransformationExternalPlugin) {
       if (engineType == EngineType.ECLOUD) {
         throw new BadContentException("Transformation external plugins are not supported for E-Cloud");
       }
@@ -195,7 +187,7 @@ public class WorkflowValidationUtils {
     }
   }
 
-  private void validateAndTrimHarvestParameters(String datasetId,
+  private void validateAndNormalizeHarvestParameters(String datasetId,
       Iterable<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
     for (AbstractExecutablePluginMetadata pluginMetadata : enabledPlugins) {
       if (pluginMetadata instanceof OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata) {
@@ -206,8 +198,7 @@ public class WorkflowValidationUtils {
             : oaipmhHarvestPluginMetadata.getMetadataFormat().trim());
         oaipmhHarvestPluginMetadata.setSetSpec(
             oaipmhHarvestPluginMetadata.getSetSpec() == null ? null : oaipmhHarvestPluginMetadata.getSetSpec().trim());
-      }
-      if (pluginMetadata instanceof HTTPHarvestPluginMetadata httpHarvestPluginMetadata) {
+      } else if (pluginMetadata instanceof HTTPHarvestPluginMetadata httpHarvestPluginMetadata) {
         httpHarvestPluginMetadata.setUrl(validateUrl(httpHarvestPluginMetadata.getUrl()).toString());
       }
       if (pluginMetadata instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata &&
@@ -231,18 +222,16 @@ public class WorkflowValidationUtils {
   private void validateDepublishPlugin(String datasetId,
       List<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
     // If depublish requested, make sure it's the only plugin in the workflow
-    final Optional<DepublishPluginMetadata> depublishPluginMetadata = enabledPlugins.stream()
-                                                                                    .filter(plugin ->
-                                                                                        plugin.getExecutablePluginType()
-                                                                                              .toPluginType()
-                                                                                            == PluginType.DEPUBLISH)
-                                                                                    .map(DepublishPluginMetadata.class::cast)
-                                                                                    .findFirst();
+    final Optional<DepublishPluginMetadata> depublishPluginMetadata =
+        enabledPlugins.stream()
+                      .filter(DepublishPluginMetadata.class::isInstance)
+                      .map(DepublishPluginMetadata.class::cast)
+                      .findFirst();
     if (enabledPlugins.size() > 1 && depublishPluginMetadata.isPresent()) {
       throw new BadContentException(
           "If DEPUBLISH plugin enabled, no other enabled plugins are allowed.");
     }
-    
+
     if (depublishPluginMetadata.isPresent() && engineType == EngineType.SANDBOX) {
       throw new BadContentException("Record depublication is not supported for METIS-SANDBOX");
     }
