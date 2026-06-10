@@ -151,31 +151,43 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     private Instant lastProgressChange = Instant.now();
     private long expected;
     private long processed;
-    private long successDepublish;
+    private long success;
+    private long failed;
+    private long warning;
+    private long duplicate;
     private long unchanged;
-    private long failedRecords;
-    private long failedDepublishRecords;
+    private long successDepublish;
+    private long failDepulish;
+    private long processedDepublish;
     private long total;
 
     void updateFrom(AbstractExecutablePlugin<?> plugin) {
       lastProgressChange = Instant.now();
-      this.processed = plugin.getExecutionProgress().getProcessedRecords();
-      this.successDepublish = plugin.getExecutionProgress().getSuccessDepublishRecords();
       this.expected = plugin.getExecutionProgress().getExpectedRecords();
+      this.processed = plugin.getExecutionProgress().getProcessedRecords();
+      this.success = plugin.getExecutionProgress().getSuccessRecords();
+      this.failed = plugin.getExecutionProgress().getFailRecords();
+      this.warning = plugin.getExecutionProgress().getWarningRecords();
+      this.duplicate = plugin.getExecutionProgress().getDuplicateRecords();
       this.unchanged = plugin.getExecutionProgress().getUnchangedRecords();
-      this.failedRecords = plugin.getExecutionProgress().getFailRecords();
-      this.failedDepublishRecords = plugin.getExecutionProgress().getFailDepublishRecords();
+      this.successDepublish = plugin.getExecutionProgress().getSuccessDepublishRecords();
+      this.failDepulish = plugin.getExecutionProgress().getFailDepublishRecords();
+      this.processedDepublish = plugin.getExecutionProgress().getProcessedDepublishRecords();
       this.total = plugin.getExecutionProgress().getTotalDatabaseRecords();
     }
 
     boolean hasChanged(AbstractExecutablePlugin<?> plugin) {
       var progress = plugin.getExecutionProgress();
-      return processed != progress.getProcessedRecords()
-              || successDepublish != progress.getSuccessDepublishRecords()
-              || expected != progress.getExpectedRecords()
+      return  expected != progress.getExpectedRecords()
+              || processed != progress.getProcessedRecords()
+              || success != progress.getSuccessRecords()
+              || failed != progress.getFailRecords()
+              || warning != progress.getWarningRecords()
+              || duplicate != progress.getDuplicateRecords()
               || unchanged != progress.getUnchangedRecords()
-              || failedRecords != progress.getFailRecords()
-              || failedDepublishRecords != progress.getFailDepublishRecords()
+              || successDepublish != progress.getSuccessDepublishRecords()
+              || failDepulish != progress.getFailDepublishRecords()
+              || processedDepublish != progress.getProcessedDepublishRecords()
               || total != progress.getTotalDatabaseRecords();
     }
 
