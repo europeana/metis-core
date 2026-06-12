@@ -72,7 +72,8 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     this.periodOfNoProcessedRecordsChange = workflowExecutorSettings.noChangeInProcessedRecordsTimeout();
     this.pluginExecutor = new PluginExecutor<>(
         workflowExecutorSettings.engineTaskClient(),
-        workflowExecutorSettings.workflowExecutionDao());
+        workflowExecutorSettings.workflowExecutionDao(),
+        workflowExecutorSettings.datasetXsltDao());
   }
 
   @Override

@@ -3,7 +3,7 @@ package eu.europeana.metis.core.workflow.plugins;
 /**
  * Transformation Plugin.
  */
-public class TransformationPlugin extends AbstractExecutablePlugin<TransformationPluginMetadata> {
+public class TransformationExternalPlugin extends AbstractExecutablePlugin<TransformationExternalPluginMetadata> {
 
   private final String topologyName = Topology.TRANSFORMATION.getTopologyName();
 
@@ -11,9 +11,9 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the
    * plugin.
    */
-  public TransformationPlugin() {
+  public TransformationExternalPlugin() {
     //Required for json serialization
-    super(PluginType.TRANSFORMATION);
+    super(PluginType.TRANSFORMATION_EXTERNAL);
   }
 
   /**
@@ -22,8 +22,8 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
    *
    * @param pluginMetadata The plugin metadata.
    */
-  TransformationPlugin(TransformationPluginMetadata pluginMetadata) {
-    super(PluginType.TRANSFORMATION, pluginMetadata);
+  TransformationExternalPlugin(TransformationExternalPluginMetadata pluginMetadata) {
+    super(PluginType.TRANSFORMATION_EXTERNAL, pluginMetadata);
   }
 
   /**

@@ -26,6 +26,7 @@ public enum DaoFieldNames {
   PLUGIN_METADATA("pluginMetadata"),
   EXTERNAL_TASK_ID("externalTaskId"),
   XSLT_ID("xsltId"),
+  XSLT_TYPE("xsltType"),
   CLAIMED_BY_INSTANCE("claimedByInstance");
 
   private final String fieldName;

@@ -19,6 +19,8 @@ public enum ExecutablePluginType {
 
   LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.CURATE),
 
+  TRANSFORMATION_EXTERNAL(PluginType.TRANSFORMATION_EXTERNAL, ExecutablePluginTypeGroup.CURATE),
+
   VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.CURATE),
 
   TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.CURATE),

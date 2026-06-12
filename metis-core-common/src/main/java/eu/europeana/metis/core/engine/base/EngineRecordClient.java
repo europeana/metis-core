@@ -48,7 +48,8 @@ public interface EngineRecordClient {
    * @return the retrieved Record object matching the provided criteria
    * @throws ExternalTaskException if there is an error while retrieving the record
    */
-  Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp, ExecutablePluginType pluginType) throws ExternalTaskException;
+  Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
+      ExecutablePluginType pluginType) throws ExternalTaskException;
 
   /**
    * Retrieves a list of published record identifiers for a given dataset.

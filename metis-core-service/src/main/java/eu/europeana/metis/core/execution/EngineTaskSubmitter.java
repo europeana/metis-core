@@ -2,6 +2,7 @@ package eu.europeana.metis.core.execution;
 
 import static java.lang.String.format;
 
+import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
@@ -36,8 +37,10 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
    *
    * @param plugin AbstractExecutablePlugin instance used to execute the plugin logic.
    * @param engineTaskClient EngineTaskClient instance used to manage and interact with engine tasks.
+   * @param datasetXsltDao DatasetXsltDao instance used to retrieve dataset-specific XSLT data.
    */
-  public EngineTaskSubmitter(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient) {
+  public EngineTaskSubmitter(AbstractExecutablePlugin<?> plugin, EngineTaskClient<S, T> engineTaskClient,
+      DatasetXsltDao datasetXsltDao) {
     this.plugin = plugin;
     this.engineTaskClient = engineTaskClient;
 
@@ -47,7 +50,7 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
 
     this.engineTaskFactory = switch (executablePluginTypeGroup) {
       case HARVEST -> new HarvestTaskFactory<>(engineTaskClient, plugin);
-      case CURATE -> new CurateTaskFactory<>(engineTaskClient, plugin);
+      case CURATE -> new CurateTaskFactory<>(engineTaskClient, plugin, datasetXsltDao);
       case INDEX -> new IndexTaskFactory<>(engineTaskClient, plugin);
       case DEPUBLISH -> new DepublishTaskFactory<>(engineTaskClient, plugin);
     };

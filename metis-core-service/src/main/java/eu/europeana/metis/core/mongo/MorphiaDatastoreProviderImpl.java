@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetIdSequence;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.dataset.DepublishRecordId;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
@@ -45,6 +46,8 @@ import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPublishPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPlugin;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
@@ -117,7 +120,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
       try (final InputStream inputStream = defaultTransformationSupplier.get()) {
         final String defaultTransformationAsString = IOUtils
             .toString(inputStream, StandardCharsets.UTF_8.name());
-        final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID,
+        final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID, XsltType.DEFAULT,
             defaultTransformationAsString);
         datasetXsltDao.create(defaultTransformation);
       }
@@ -152,6 +155,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(OaipmhHarvestPlugin.class);
     mapper.getEntityModel(ReindexToPreviewPlugin.class);
     mapper.getEntityModel(ReindexToPublishPlugin.class);
+    mapper.getEntityModel(TransformationExternalPlugin.class);
     mapper.getEntityModel(TransformationPlugin.class);
     mapper.getEntityModel(ValidationExternalPlugin.class);
     mapper.getEntityModel(ValidationInternalPlugin.class);
@@ -171,6 +175,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(OaipmhHarvestPluginMetadata.class);
     mapper.getEntityModel(ReindexToPreviewPluginMetadata.class);
     mapper.getEntityModel(ReindexToPublishPluginMetadata.class);
+    mapper.getEntityModel(TransformationExternalPluginMetadata.class);
     mapper.getEntityModel(TransformationPluginMetadata.class);
     mapper.getEntityModel(ValidationExternalPluginMetadata.class);
     mapper.getEntityModel(ValidationInternalPluginMetadata.class);

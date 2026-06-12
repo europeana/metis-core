@@ -2,6 +2,7 @@ package eu.europeana.metis.core.execution;
 
 import static java.util.Objects.requireNonNull;
 
+import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
@@ -22,6 +23,7 @@ public record WorkflowExecutorSettings<S extends EngineTaskSettings, T extends E
     SemaphoresPerPluginManager semaphoresPerPluginManager,
     WorkflowExecutionDao workflowExecutionDao,
     WorkflowPostProcessor workflowPostProcessor,
+    DatasetXsltDao datasetXsltDao,
     EngineTaskClient<S, T> engineTaskClient
 ) {
 

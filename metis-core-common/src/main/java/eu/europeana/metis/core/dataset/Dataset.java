@@ -15,6 +15,8 @@ import eu.europeana.metis.core.common.LanguageSerializer;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.utils.Country;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.types.ObjectId;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
@@ -35,6 +37,8 @@ import java.util.List;
     @Index(fields = {@Field("intermediateProvider")}),
     @Index(fields = {@Field("dataProvider")}),
     @Index(fields = {@Field("createdByUserId")})})
+@Getter
+@Setter
 public class Dataset implements HasMongoObjectId {
 
   /**
@@ -78,6 +82,8 @@ public class Dataset implements HasMongoObjectId {
 
   @JsonSerialize(using = ObjectIdSerializer.class)
   private ObjectId xsltId;
+  @JsonSerialize(using = ObjectIdSerializer.class)
+  private ObjectId xsltIdExternal;
 
   @Override
   public ObjectId getId() {
@@ -87,62 +93,6 @@ public class Dataset implements HasMongoObjectId {
   @Override
   public void setId(ObjectId id) {
     this.id = id;
-  }
-
-  public String getEcloudDatasetId() {
-    return ecloudDatasetId;
-  }
-
-  public void setEcloudDatasetId(String ecloudDatasetId) {
-    this.ecloudDatasetId = ecloudDatasetId;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
-
-  public String getDatasetName() {
-    return datasetName;
-  }
-
-  public void setDatasetName(String datasetName) {
-    this.datasetName = datasetName;
-  }
-
-  public String getProvider() {
-    return provider;
-  }
-
-  public void setProvider(String provider) {
-    this.provider = provider;
-  }
-
-  public String getIntermediateProvider() {
-    return intermediateProvider;
-  }
-
-  public void setIntermediateProvider(String intermediateProvider) {
-    this.intermediateProvider = intermediateProvider;
-  }
-
-  public String getDataProvider() {
-    return dataProvider;
-  }
-
-  public void setDataProvider(String dataProvider) {
-    this.dataProvider = dataProvider;
-  }
-
-  public String getCreatedByUserId() {
-    return createdByUserId;
-  }
-
-  public void setCreatedByUserId(String createdByUserId) {
-    this.createdByUserId = createdByUserId;
   }
 
   public Date getCreatedDate() {
@@ -169,69 +119,5 @@ public class Dataset implements HasMongoObjectId {
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(
             datasetIdsToRedirectFrom);
-  }
-
-  public String getReplacedBy() {
-    return replacedBy;
-  }
-
-  public void setReplacedBy(String replacedBy) {
-    this.replacedBy = replacedBy;
-  }
-
-  public String getReplaces() {
-    return replaces;
-  }
-
-  public void setReplaces(String replaces) {
-    this.replaces = replaces;
-  }
-
-  public Country getCountry() {
-    return country;
-  }
-
-  public void setCountry(Country country) {
-    this.country = country;
-  }
-
-  public Language getLanguage() {
-    return language;
-  }
-
-  public void setLanguage(Language language) {
-    this.language = language;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public PublicationFitness getPublicationFitness() {
-    return publicationFitness;
-  }
-
-  public void setPublicationFitness(PublicationFitness publicationFitness) {
-    this.publicationFitness = publicationFitness;
-  }
-
-  public String getNotes() {
-    return notes;
-  }
-
-  public void setNotes(String notes) {
-    this.notes = notes;
-  }
-
-  public ObjectId getXsltId() {
-    return xsltId;
-  }
-
-  public void setXsltId(ObjectId xsltId) {
-    this.xsltId = xsltId;
   }
 }

@@ -9,6 +9,7 @@ public enum EngineTaskKey {
   ENGINE_DATASET_ID,
   JOB_NAME,
 
+  XSLT,
   //Ecloud
   /**
    * URL of the XSLT transformation content

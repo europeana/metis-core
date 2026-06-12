@@ -44,6 +44,7 @@ public final class DatasetConverter {
     dataset.setPublicationFitness(datasetDTO.getPublicationFitness());
     dataset.setNotes(datasetDTO.getNotes());
     dataset.setXsltId(Optional.ofNullable(datasetDTO.getXsltId()).map(ObjectId::new).orElse(null));
+    dataset.setXsltIdExternal(Optional.ofNullable(datasetDTO.getXsltIdExternal()).map(ObjectId::new).orElse(null));
 
     return dataset;
   }
@@ -78,7 +79,8 @@ public final class DatasetConverter {
         dataset.getDescription(),
         dataset.getPublicationFitness(),
         dataset.getNotes(),
-        Optional.ofNullable(dataset.getXsltId()).map(ObjectId::toString).orElse(null)
+        Optional.ofNullable(dataset.getXsltId()).map(ObjectId::toString).orElse(null),
+        Optional.ofNullable(dataset.getXsltIdExternal()).map(ObjectId::toString).orElse(null)
     );
   }
 }

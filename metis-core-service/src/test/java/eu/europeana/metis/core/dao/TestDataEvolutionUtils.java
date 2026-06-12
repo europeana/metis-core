@@ -52,6 +52,7 @@ import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
@@ -108,8 +109,10 @@ class TestDataEvolutionUtils {
     // Test the actual predecessor types without enforcing a predecessor type.
     testComputePredecessorPlugin(new OaipmhHarvestPluginMetadata(), Collections.emptySet(), null);
     testComputePredecessorPlugin(new HTTPHarvestPluginMetadata(), Collections.emptySet(), null);
-    testComputePredecessorPlugin(new ValidationExternalPluginMetadata(),
+    testComputePredecessorPlugin(new TransformationExternalPluginMetadata(),
         DataEvolutionUtils.getHarvestPluginGroup(), null);
+    testComputePredecessorPlugin(new ValidationExternalPluginMetadata(),
+        DataEvolutionUtils.getHarvestAndTransformationPluginGroup(), null);
     testComputePredecessorPlugin(new TransformationPluginMetadata(),
         EnumSet.of(ExecutablePluginType.VALIDATION_EXTERNAL), null);
     testComputePredecessorPlugin(new ValidationInternalPluginMetadata(),

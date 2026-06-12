@@ -29,6 +29,7 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.SAMPLE_SIZE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMATRON_LOCATION;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMA_NAME;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_DATABASE;
+import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
@@ -164,6 +165,18 @@ public final class EngineTaskParametersConfigurator {
     parameters.put(SCHEMA_NAME, urlOfSchemasZip);
     parameters.put(ROOT_LOCATION, schemaRootPath);
     parameters.put(SCHEMATRON_LOCATION, schematronRootPath);
+    return parameters;
+  }
+
+  /**
+   * Creates a map of transformation external parameters.
+   *
+   * @param xslt the XSLT content
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  public static Map<EngineTaskKey, String> createTransformationExternalParameters(String xslt) {
+    Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(XSLT, xslt);
     return parameters;
   }
 

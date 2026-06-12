@@ -21,6 +21,7 @@ import lombok.Setter;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = OaipmhHarvestPlugin.class, name = "OAIPMH_HARVEST"),
     @JsonSubTypes.Type(value = HTTPHarvestPlugin.class, name = "HTTP_HARVEST"),
+    @JsonSubTypes.Type(value = TransformationExternalPlugin.class, name = "TRANSFORMATION_EXTERNAL"),
     @JsonSubTypes.Type(value = ValidationInternalPlugin.class, name = "VALIDATION_INTERNAL"),
     @JsonSubTypes.Type(value = TransformationPlugin.class, name = "TRANSFORMATION"),
     @JsonSubTypes.Type(value = ValidationExternalPlugin.class, name = "VALIDATION_EXTERNAL"),

@@ -2,6 +2,7 @@ package eu.europeana.metis.core.dao;
 
 import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.XSLT_TYPE;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
 
 import com.mongodb.client.result.DeleteResult;
@@ -12,6 +13,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.filters.Filter;
 import dev.morphia.query.filters.Filters;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProvider;
 import java.lang.invoke.MethodHandles;
 import java.util.Optional;
@@ -103,11 +105,12 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
    * @param datasetId the dataset identifier
    * @return the {@link DatasetXslt} object
    */
-  DatasetXslt getLatestXsltForDatasetId(String datasetId) {
+  DatasetXslt getLatestXsltForDatasetId(String datasetId, XsltType xsltType) {
     FindOptions findOptions = new FindOptions().sort(Sort.descending("createdDate"));
     return retryableExternalRequestForNetworkExceptions(
         () -> morphiaDatastoreProvider.getDatastore().find(DatasetXslt.class, findOptions)
                                       .filter(Filters.eq(DATASET_ID.getFieldName(), datasetId))
+                                      .filter(Filters.eq(XSLT_TYPE.getFieldName(), xsltType))
                                       .first());
   }
 
@@ -117,6 +120,6 @@ public class DatasetXsltDao implements MetisDao<DatasetXslt, String> {
    * @return the {@link DatasetXslt} object
    */
   public DatasetXslt getLatestDefaultXslt() {
-    return getLatestXsltForDatasetId(DatasetXslt.DEFAULT_DATASET_ID);
+    return getLatestXsltForDatasetId(DatasetXslt.DEFAULT_DATASET_ID, XsltType.DEFAULT);
   }
 }

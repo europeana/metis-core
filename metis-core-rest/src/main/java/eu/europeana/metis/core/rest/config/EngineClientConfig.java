@@ -14,7 +14,7 @@ import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskClient;
 import eu.europeana.metis.core.engine.sandbox.SandboxEngineTaskSettings;
 import eu.europeana.metis.core.rest.config.properties.EngineConfigurationProperties;
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
-import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties.EngineType;
+import eu.europeana.metis.core.engine.base.EngineType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
@@ -59,6 +60,7 @@ class TestWorkflowExecutor {
 
   private static WorkflowExecutionDao workflowExecutionDao;
   private static WorkflowPostProcessor workflowPostProcessor;
+  private static DatasetXsltDao datasetXsltDao;
   private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
   private static WorkflowExecutorSettings<EngineTaskSettings, EngineTask> workflowExecutorSettings;
 
@@ -66,12 +68,13 @@ class TestWorkflowExecutor {
   static void prepare() {
     workflowExecutionDao = Mockito.mock(WorkflowExecutionDao.class);
     workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
+    datasetXsltDao = Mockito.mock(DatasetXsltDao.class);
     engineTaskClient = mock(EngineTaskClient.class);
 
     TestWorkflowExecutor.workflowExecutorSettings = new WorkflowExecutorSettings<>(
         Duration.ofMillis(1), Duration.ofMinutes(10),
         new SemaphoresPerPluginManager(2), workflowExecutionDao,
-        workflowPostProcessor, engineTaskClient);
+        workflowPostProcessor, datasetXsltDao, engineTaskClient);
   }
 
   @BeforeEach

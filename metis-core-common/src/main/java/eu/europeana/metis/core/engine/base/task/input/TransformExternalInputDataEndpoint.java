@@ -1,0 +1,18 @@
+package eu.europeana.metis.core.engine.base.task.input;
+
+import eu.europeana.metis.core.engine.base.DataRevision;
+
+/**
+ * Represents an intermediate input data endpoint that applies an XSLT transformation to external data before it is processed
+ * further.
+ *
+ * @param xslt The XSLT stylesheet used to transform the external data.
+ * @param url The URL of the external input data.
+ * @param sourceExecutionId The identifier of the source execution that generated the external input data.
+ * @param inputRevision The revision of the input data, which provides metadata about the data's version and origin.
+ */
+public record TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId,
+                                                 DataRevision inputRevision)
+    implements IntermediateInputDataEndpoint {
+
+}

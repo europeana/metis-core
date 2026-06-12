@@ -3,6 +3,7 @@ package eu.europeana.metis.core.execution;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
+import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.ExecutedMetisPluginId;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
@@ -38,6 +39,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   private static final String DETAILED_EXCEPTION_FORMAT = "%s%nDetailed exception:%s";
 
   private final EngineTaskClient<S, T> engineTaskClient;
+  private final DatasetXsltDao datasetXsltDao;
   private final WorkflowExecutionDao workflowExecutionDao;
   private final WorkflowExecutionHelper workflowExecutionHelper = new WorkflowExecutionHelper();
 
@@ -47,10 +49,12 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    * @param engineTaskClient the {@link EngineTaskClient} instance used to manage and interact with engine tasks
    * @param workflowExecutionDao the {@link WorkflowExecutionDao} instance used to perform database operations related to workflow
    * executions
+   * @param datasetXsltDao the {@link DatasetXsltDao} instance used to retrieve dataset-specific XSLT configurations
    */
-  public PluginExecutor(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao) {
+  public PluginExecutor(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao, DatasetXsltDao datasetXsltDao) {
     this.engineTaskClient = engineTaskClient;
     this.workflowExecutionDao = workflowExecutionDao;
+    this.datasetXsltDao = datasetXsltDao;
   }
 
   /**
@@ -61,7 +65,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    * @return true if the plugin execution was successful, false otherwise
    */
   public boolean execute(AbstractExecutablePlugin<?> plugin, WorkflowExecution workflowExecution) {
-    EngineTaskSubmitter<S, T> engineTaskSubmitter = new EngineTaskSubmitter<>(plugin, engineTaskClient);
+    EngineTaskSubmitter<S, T> engineTaskSubmitter = new EngineTaskSubmitter<>(plugin, engineTaskClient, datasetXsltDao);
     try {
       preparePredecessorMetadata(plugin, workflowExecution);
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);

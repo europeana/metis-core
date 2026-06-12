@@ -10,10 +10,11 @@ import dev.morphia.Datastore;
 import dev.morphia.DeleteOptions;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.mongo.MorphiaDatastoreProviderImpl;
 import eu.europeana.metis.core.utils.TestObjectFactory;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
-import java.util.Date;
+import java.time.Instant;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -95,18 +96,19 @@ class TestDatasetXsltDao {
   @Test
   void getLatestXsltForDatasetId() {
     final Dataset dataset = TestObjectFactory.createDataset("testName");
+
     final DatasetXslt datasetXslt1 = TestObjectFactory.createXslt(dataset);
-    datasetXslt1.setCreatedDate(new Date(1000));
+    datasetXslt1.setCreatedDate(Instant.ofEpochMilli(1000));
     final DatasetXslt datasetXslt2 = TestObjectFactory.createXslt(dataset);
-    datasetXslt2.setCreatedDate(new Date(2000));
+    datasetXslt2.setCreatedDate(Instant.ofEpochMilli(2000));
     final DatasetXslt datasetXslt3 = TestObjectFactory.createXslt(dataset);
-    datasetXslt3.setCreatedDate(new Date(3000));
+    datasetXslt3.setCreatedDate(Instant.ofEpochMilli(3000));
 
     datasetXsltDao.create(datasetXslt1);
     datasetXsltDao.create(datasetXslt2);
     String xsltId3 = datasetXsltDao.create(datasetXslt3).getId().toString();
     DatasetXslt latestDatasetXsltForDatasetId = datasetXsltDao
-        .getLatestXsltForDatasetId(datasetXslt3.getDatasetId());
+        .getLatestXsltForDatasetId(datasetXslt3.getDatasetId(), XsltType.INTERNAL);
     assertEquals(xsltId3, latestDatasetXsltForDatasetId.getId().toString());
   }
 }

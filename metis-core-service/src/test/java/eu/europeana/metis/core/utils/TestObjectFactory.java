@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
@@ -40,6 +41,7 @@ import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.MediaProcessPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.NormalizationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
@@ -121,6 +123,7 @@ public class TestObjectFactory {
       case ENRICHMENT -> new EnrichmentPluginMetadata();
       case MEDIA_PROCESS -> new MediaProcessPluginMetadata();
       case LINK_CHECKING -> new LinkCheckingPluginMetadata();
+      case TRANSFORMATION_EXTERNAL -> new TransformationExternalPluginMetadata();
       case VALIDATION_EXTERNAL -> new ValidationExternalPluginMetadata();
       case TRANSFORMATION -> new TransformationPluginMetadata();
       case VALIDATION_INTERNAL -> new ValidationInternalPluginMetadata();
@@ -378,7 +381,7 @@ public class TestObjectFactory {
    * @return the created dataset xslt
    */
   public static DatasetXslt createXslt(Dataset dataset) {
-    DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(),
+    DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(), XsltType.INTERNAL,
         """
             <?xml version="1.0" encoding="UTF-8"?>
             <xsl:stylesheet version="2.0"

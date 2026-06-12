@@ -2,9 +2,6 @@ package eu.europeana.metis.core.workflow.plugins;
 
 /**
  * Transformation Plugin Metadata.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-01-29
  */
 public class TransformationPluginMetadata extends AbstractExecutablePluginMetadata {
 

@@ -6,16 +6,14 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
+import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
-import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,30 +40,68 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
 
   @Override
   public T create(String datasetId, String engineDatasetId, String previousTaskId) {
-    Map<EngineTaskKey, String> pluginParameters = getIndexPluginParameters();
-    Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
-        plugin.getPluginMetadata().getExecutablePluginType());
-    fullBatchJobType.ifPresent(batchJobType -> pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
-    return createInternalEngineTask(datasetId, engineDatasetId, previousTaskId, pluginParameters);
+    GenericIntermediateTaskContext genericIntermediateTaskContext = createGenericIntermediateTaskContext(engineDatasetId);
+    IndexTaskContext indexTaskContext = getIndexTaskConfiguration(previousTaskId, genericIntermediateTaskContext);
+    addJobNameParameter(indexTaskContext.pluginParameters());
+    Map<EngineTaskKey, String> allParameters = createAllParameters(
+        engineDatasetId,
+        datasetId,
+        previousTaskId,
+        genericIntermediateTaskContext.inputDataRevision(),
+        genericIntermediateTaskContext.dataLocation(),
+        indexTaskContext.pluginParameters()
+    );
+
+    return createIntermediateEngineTask(
+        allParameters,
+        indexTaskContext.inputDataEndpoint(),
+        genericIntermediateTaskContext.outputDataRevision()
+    );
   }
 
-  private @NotNull Map<EngineTaskKey, String> getIndexPluginParameters() {
-    if (plugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata indexPluginMetadata) {
-      boolean incrementalIndexing = indexPluginMetadata.isIncrementalIndexing();
-      Date harvestDate = indexPluginMetadata.getHarvestDate();
-      boolean preserveTimestamps = indexPluginMetadata.isPreserveTimestamps();
-      List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
-      boolean performRedirects = indexPluginMetadata.isPerformRedirects();
-      final String targetIndexingDatabase;
-      if (plugin instanceof IndexToPreviewPlugin indexToPreviewPlugin) {
-        targetIndexingDatabase = indexToPreviewPlugin.getTargetIndexingDatabase().name();
-      } else {
-        targetIndexingDatabase = ((IndexToPublishPlugin) plugin).getTargetIndexingDatabase().name();
-      }
-      return createIndexParameters(plugin.getStartedDate(), incrementalIndexing,
-          harvestDate, preserveTimestamps, datasetIdsToRedirectFrom, performRedirects, targetIndexingDatabase);
-    } else {
-      throw new IllegalStateException("Unexpected value: " + plugin);
+  private @NotNull IndexTaskContext getIndexTaskConfiguration(
+      String previousTaskId, GenericIntermediateTaskContext genericIntermediateTaskContext
+  ) {
+    if (!(plugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata indexPluginMetadata)) {
+      throw new IllegalStateException("Unexpected value: " + plugin.getPluginMetadata());
     }
+
+    return new IndexTaskContext(
+        createIndexPluginParameters(indexPluginMetadata),
+        createSimpleIntermediateInputDataEndpoint(previousTaskId, genericIntermediateTaskContext)
+    );
+  }
+
+  private @NotNull Map<EngineTaskKey, String> createIndexPluginParameters(AbstractIndexPluginMetadata indexPluginMetadata) {
+
+    String targetIndexingDatabase = switch (plugin) {
+      case IndexToPreviewPlugin indexToPreviewPlugin ->
+          indexToPreviewPlugin.getTargetIndexingDatabase().name();
+      case IndexToPublishPlugin indexToPublishPlugin ->
+          indexToPublishPlugin.getTargetIndexingDatabase().name();
+      default -> throw new IllegalStateException("Unexpected index plugin: " + plugin);
+    };
+
+    boolean incrementalIndexing = indexPluginMetadata.isIncrementalIndexing();
+    Date harvestDate = indexPluginMetadata.getHarvestDate();
+    boolean preserveTimestamps = indexPluginMetadata.isPreserveTimestamps();
+    List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
+    boolean performRedirects = indexPluginMetadata.isPerformRedirects();
+
+    return createIndexParameters(
+        plugin.getStartedDate(),
+        incrementalIndexing,
+        harvestDate,
+        preserveTimestamps,
+        datasetIdsToRedirectFrom,
+        performRedirects,
+        targetIndexingDatabase
+    );
+  }
+
+  private record IndexTaskContext(
+      Map<EngineTaskKey, String> pluginParameters,
+      IntermediateInputDataEndpoint inputDataEndpoint
+  ) {
   }
 }
