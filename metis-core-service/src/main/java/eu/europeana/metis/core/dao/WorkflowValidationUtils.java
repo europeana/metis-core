@@ -125,13 +125,14 @@ public class WorkflowValidationUtils {
 
       // Find the permissible predecessors
       final ExecutablePluginType pluginType = enabledPlugins.get(i).getExecutablePluginType();
+      final ExecutablePluginType previousPluginType = enabledPlugins.get(i - 1).getExecutablePluginType();
       final Set<ExecutablePluginType> permissiblePredecessors = DataEvolutionUtils
           .getPredecessorTypes(pluginType);
 
-      // Check if we have the right predecessor plugin types in the workflow
-      final boolean hasNoPredecessor = !permissiblePredecessors.isEmpty() &&
-          permissiblePredecessors.stream().noneMatch(previousTypesInWorkflow::contains);
-      if (hasNoPredecessor) {
+      final boolean hasInvalidPredecessor =
+          !permissiblePredecessors.isEmpty() && !permissiblePredecessors.contains(previousPluginType);
+
+      if (hasInvalidPredecessor) {
         throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
       }
 
