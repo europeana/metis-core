@@ -41,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends
     AbstractIntermediateEngineTaskFactory<S, T> {
 
+  private static final ThrottlingLevel DEFAULT_MEDIA_THROTTLING_LEVEL = ThrottlingLevel.WEAK;
   private final DatasetXsltDao datasetXsltDao;
 
   /**
@@ -52,7 +53,8 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
    * for the associated task
    * @param datasetXsltDao the DAO for retrieving dataset XSLT information
    */
-  public CurateTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin, DatasetXsltDao datasetXsltDao) {
+  public CurateTaskFactory(EngineTaskClient<S, T> engineTaskClient, AbstractExecutablePlugin<?> plugin,
+      DatasetXsltDao datasetXsltDao) {
     super(engineTaskClient, plugin);
     this.datasetXsltDao = datasetXsltDao;
   }
@@ -96,8 +98,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
             )
         );
       }
-      case ValidationExternalPluginMetadata validationExternalPluginMetadata ->
-          new CurateTaskContext(
+      case ValidationExternalPluginMetadata validationExternalPluginMetadata -> new CurateTaskContext(
           createValidationExternalParameters(
               validationExternalPluginMetadata.getUrlOfSchemasZip(),
               validationExternalPluginMetadata.getSchemaRootPath(),
@@ -133,8 +134,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
       );
       case MediaProcessPluginMetadata mediaProcessPluginMetadata -> {
         ThrottlingValues throttlingValues = engineTaskClient.getEngineTaskSettings().getThrottlingValues();
-        ThrottlingLevel throttlingLevel = mediaProcessPluginMetadata.getThrottlingLevel() == null
-            ? ThrottlingLevel.WEAK
+        ThrottlingLevel throttlingLevel = mediaProcessPluginMetadata.getThrottlingLevel() == null ? DEFAULT_MEDIA_THROTTLING_LEVEL
             : mediaProcessPluginMetadata.getThrottlingLevel();
 
         yield new CurateTaskContext(
