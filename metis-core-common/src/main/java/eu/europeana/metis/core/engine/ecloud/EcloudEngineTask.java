@@ -2,6 +2,7 @@ package eu.europeana.metis.core.engine.ecloud;
 
 import static eu.europeana.cloud.service.dps.InputDataType.DATASET_URLS;
 import static eu.europeana.cloud.service.dps.InputDataType.REPOSITORY_URLS;
+import static java.util.Optional.ofNullable;
 
 import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.service.dps.DpsTask;
@@ -20,16 +21,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a task for the Ecloud processing engine that wraps and transforms
- * task parameters for use in a DPS task.
+ * Represents a task for the Ecloud processing engine that wraps and transforms task parameters for use in a DPS task.
  */
 public class EcloudEngineTask extends EngineTask {
 
   private final DpsTask dpsTask = new DpsTask();
 
   /**
-   * Constructs an EcloudEngineTask with specified task parameters, input data endpoint,
-   * and output data revision. Initializes internal configurations for the task.
+   * Constructs an EcloudEngineTask with specified task parameters, input data endpoint, and output data revision. Initializes
+   * internal configurations for the task.
    *
    * @param parameters Map of EngineTaskKey and String values used to configure the task. Must not be null.
    * @param inputDataEndpoint InputDataEndpoint representing the input data source for the task. Must not be null.
@@ -76,8 +76,8 @@ public class EcloudEngineTask extends EngineTask {
     OAIPMHHarvestingDetails oaipmhHarvestingDetails = new OAIPMHHarvestingDetails();
     oaipmhHarvestingDetails.setSet(oaiHarvestInputDataParameters.set());
     oaipmhHarvestingDetails.setSchema(oaiHarvestInputDataParameters.metadataPrefix());
-    oaipmhHarvestingDetails.setDateFrom(Date.from(oaiHarvestInputDataParameters.from()));
-    oaipmhHarvestingDetails.setDateUntil(Date.from(oaiHarvestInputDataParameters.until()));
+    oaipmhHarvestingDetails.setDateFrom(ofNullable(oaiHarvestInputDataParameters.from()).map(Date::from).orElse(null));
+    oaipmhHarvestingDetails.setDateUntil(ofNullable(oaiHarvestInputDataParameters.until()).map(Date::from).orElse(null));
     dpsTask.setHarvestingDetails(oaipmhHarvestingDetails);
   }
 
