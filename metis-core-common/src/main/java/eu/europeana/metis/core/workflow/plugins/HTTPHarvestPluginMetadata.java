@@ -14,8 +14,6 @@ public class HTTPHarvestPluginMetadata extends AbstractHarvestPluginMetadata {
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.HTTP_HARVEST;
   private String url;
-  private String user;
-  private String password;
   private boolean incrementalHarvest; // Default: false (i.e., full harvest)
 
   @Override

@@ -53,7 +53,6 @@ public class TestRedirectionBase {
   static HTTPHarvestPluginMetadata getHttpHarvestPluginMetadata() {
     final HTTPHarvestPluginMetadata httpHarvestPluginMetadata = new HTTPHarvestPluginMetadata();
     httpHarvestPluginMetadata.setUrl("https://url.org");
-    httpHarvestPluginMetadata.setUser("user");
     httpHarvestPluginMetadata.setIncrementalHarvest(false);
     httpHarvestPluginMetadata.setEnabled(true);
     return httpHarvestPluginMetadata;
