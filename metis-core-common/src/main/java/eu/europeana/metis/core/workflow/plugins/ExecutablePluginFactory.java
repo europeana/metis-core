@@ -67,7 +67,7 @@ public final class ExecutablePluginFactory {
 
     // Perform the creation.
     final AbstractExecutablePlugin plugin = creator.createPlugin(metadata);
-    plugin.setId(new ObjectId().toString() + "-" + plugin.getPluginType().name());
+    plugin.setId(new ObjectId() + "-" + plugin.getPluginType().name());
     plugin.setDataStatus(DataStatus.NOT_YET_GENERATED);
     return plugin;
   }
