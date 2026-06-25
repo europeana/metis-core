@@ -1,18 +1,14 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import lombok.NoArgsConstructor;
+
 /**
  * Normalization Plugin Metadata.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-26
  */
+@NoArgsConstructor
 public class NormalizationPluginMetadata extends AbstractExecutablePluginMetadata {
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.NORMALIZATION;
-
-  public NormalizationPluginMetadata() {
-    //Required for json serialization
-  }
 
   @Override
   public ExecutablePluginType getExecutablePluginType() {

@@ -47,8 +47,8 @@ import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.bson.types.ObjectId;
@@ -111,7 +111,7 @@ public class TestObjectFactory {
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
+    workflowExecution.setCreatedDate(Instant.now());
 
     return workflowExecution;
   }
@@ -160,7 +160,7 @@ public class TestObjectFactory {
     execution.setDatasetId(dataset.getDatasetId());
     execution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     execution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    execution.setCreatedDate(new Date());
+    execution.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     execution.setId(new ObjectId());
     return execution;
   }
@@ -186,7 +186,7 @@ public class TestObjectFactory {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       Dataset dataset = createDataset(String.format("%s%s", DATASETNAME, i));
-      dataset.setId(new ObjectId(new Date(i)));
+      dataset.setId(new ObjectId());
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
       workflowExecution.setId(new ObjectId());
@@ -211,8 +211,8 @@ public class TestObjectFactory {
     ds.setIntermediateProvider(providerId);
     ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
+    ds.setCreatedDate(Instant.now());
+    ds.setUpdatedDate(Instant.now());
     ds.setReplacedBy("replacedBy");
     ds.setReplaces("12345");
     ds.setCountry(Country.GREECE);
@@ -240,8 +240,8 @@ public class TestObjectFactory {
     ds.setIntermediateProvider(providerId);
     ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
+    ds.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+    ds.setUpdatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     ds.setReplacedBy("replacedBy");
     ds.setReplaces("12345");
     ds.setCountry(Country.GREECE);

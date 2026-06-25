@@ -1,5 +1,7 @@
 package eu.europeana.metis.core.workflow.execution;
 
+import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
+
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
@@ -8,11 +10,9 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ReindexToPreviewPlugin;
+import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import org.bson.types.ObjectId;
-
-import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
 
 public class TestMetisPluginUtils {
 
@@ -37,9 +37,9 @@ public class TestMetisPluginUtils {
   public static final PluginStatus PLUGIN_STATUS_VALUE = PluginStatus.RUNNING;
   public static final DataStatus DATA_TATUS_VALUE = DataStatus.VALID;
   public static final String FAIL_MESSAGE_VALUE = "failMessage";
-  public static final Date STARTED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
-  public static final Date UPDATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
-  public static final Date FINISHED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
+  public static final Instant STARTED_DATE_VALUE = zonedDateTime.toInstant();
+  public static final Instant UPDATED_DATE_VALUE = zonedDateTime.toInstant();
+  public static final Instant FINISHED_DATE_VALUE = zonedDateTime.toInstant();
   public static final boolean CAN_DISPLAY_RAW_XML_VALUE = true;
   public static final String EXTERNAL_TASK_ID_VALUE = "externalTaskId";
   public static final ExecutionProgressDTO EXECUTION_PROGRESS_DTO_VALUE = TestExecutionProgressUtils.getExecutionProgressDTOUsingSetters();

@@ -1,6 +1,5 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import eu.europeana.metis.core.common.CountryDeserializer;
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
@@ -8,14 +7,13 @@ import eu.europeana.metis.core.common.LanguageDeserializer;
 import eu.europeana.metis.core.common.LanguageSerializer;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Data Transfer Object (DTO) representing a dataset.
@@ -39,11 +37,8 @@ public class DatasetDTO {
   private String createdByFirstName;
   private String createdByLastName;
 
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date createdDate;
-
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date updatedDate;
+  private Instant createdDate;
+  private Instant updatedDate;
 
   private List<String> datasetIdsToRedirectFrom = new ArrayList<>();
   private String replacedBy;
@@ -106,8 +101,8 @@ public class DatasetDTO {
       String createdByUserName,
       String createdByFirstName,
       String createdByLastName,
-      Date createdDate,
-      Date updatedDate,
+      Instant createdDate,
+      Instant updatedDate,
       List<String> datasetIdsToRedirectFrom,
       String replacedBy,
       String replaces,
@@ -130,8 +125,8 @@ public class DatasetDTO {
     this.createdByUserName = createdByUserName;
     this.createdByFirstName = createdByFirstName;
     this.createdByLastName = createdByLastName;
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
-    this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
+    this.createdDate = createdDate;
+    this.updatedDate = updatedDate;
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(datasetIdsToRedirectFrom);
     this.replacedBy = replacedBy;
@@ -143,22 +138,6 @@ public class DatasetDTO {
     this.notes = notes;
     this.xsltId = xsltId;
     this.xsltIdExternal = xsltIdExternal;
-  }
-
-  public Date getCreatedDate() {
-    return createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public void setCreatedDate(Date createdDate) {
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public Date getUpdatedDate() {
-    return updatedDate == null ? null : new Date(updatedDate.getTime());
-  }
-
-  public void setUpdatedDate(Date updatedDate) {
-    this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
   }
 
   public List<String> getDatasetIdsToRedirectFrom() {

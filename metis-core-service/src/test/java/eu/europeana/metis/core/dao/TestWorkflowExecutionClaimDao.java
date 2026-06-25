@@ -17,7 +17,6 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,7 +92,7 @@ class TestWorkflowExecutionClaimDao {
 
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     workflowExecution.setClaimedByInstance("old-instance");
-    workflowExecution.setUpdatedDate(Date.from(Instant.now().minusSeconds(120)));
+    workflowExecution.setUpdatedDate(Instant.now().minusSeconds(120));
 
     provider.getDatastore().save(workflowExecution);
 
@@ -103,7 +102,7 @@ class TestWorkflowExecutionClaimDao {
     assertNotNull(claimedWorkflowExecution);
     assertEquals(WorkflowStatus.RUNNING, claimedWorkflowExecution.getWorkflowStatus());
     assertEquals(provider.getInstanceId(), claimedWorkflowExecution.getClaimedByInstance());
-    assertTrue(claimedWorkflowExecution.getUpdatedDate().after(workflowExecution.getUpdatedDate()));
+    assertTrue(claimedWorkflowExecution.getUpdatedDate().isAfter(workflowExecution.getUpdatedDate()));
   }
 
   @Test
@@ -117,7 +116,7 @@ class TestWorkflowExecutionClaimDao {
 
     WorkflowExecution staleWorkflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     staleWorkflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
-    staleWorkflowExecution.setUpdatedDate(Date.from(Instant.now().minusSeconds(300)));
+    staleWorkflowExecution.setUpdatedDate(Instant.now().minusSeconds(300));
     staleWorkflowExecution.setClaimedByInstance("old-instance");
 
     provider.getDatastore().save(newInqueue1);
@@ -139,7 +138,7 @@ class TestWorkflowExecutionClaimDao {
 
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     workflowExecution.setClaimedByInstance("instance-a");
-    workflowExecution.setUpdatedDate(new Date());
+    workflowExecution.setUpdatedDate(Instant.now());
 
     provider.getDatastore().save(workflowExecution);
 
@@ -153,11 +152,11 @@ class TestWorkflowExecutionClaimDao {
   void claimNextExecution_shouldClaimOldestFirst() {
     WorkflowExecution olderWorkflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     olderWorkflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    olderWorkflowExecution.setCreatedDate(new Date(1000));
+    olderWorkflowExecution.setCreatedDate(Instant.ofEpochMilli(1000));
 
     WorkflowExecution newerWorkflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     newerWorkflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    newerWorkflowExecution.setCreatedDate(new Date(2000));
+    newerWorkflowExecution.setCreatedDate(Instant.ofEpochMilli(2000));
 
     provider.getDatastore().save(newerWorkflowExecution);
     provider.getDatastore().save(olderWorkflowExecution);

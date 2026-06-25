@@ -3,10 +3,12 @@ package eu.europeana.metis.core.rest;
 import eu.europeana.metis.core.dataset.DepublishRecordId;
 import eu.europeana.metis.utils.DepublicationReason;
 import java.time.Instant;
+import lombok.Getter;
 
 /**
  * An immutable view on the depublish record id.
  */
+@Getter
 public class DepublishRecordIdView {
 
   private final String recordId;
@@ -27,22 +29,6 @@ public class DepublishRecordIdView {
     this.depublicationReason =
         depublishRecordId.getDepublicationReason() == null ? DepublicationReason.LEGACY.toString()
             : depublishRecordId.getDepublicationReason().toString();
-  }
-
-  public String getRecordId() {
-    return recordId;
-  }
-
-  public DepublicationStatus getDepublicationStatus() {
-    return depublicationStatus;
-  }
-
-  public Instant getDepublicationDate() {
-    return depublicationDate;
-  }
-
-  public String getDepublicationReason() {
-    return depublicationReason;
   }
 
   /**

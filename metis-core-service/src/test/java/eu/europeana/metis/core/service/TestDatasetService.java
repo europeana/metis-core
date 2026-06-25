@@ -39,9 +39,9 @@ import eu.europeana.metis.network.NetworkUtil;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -159,7 +159,7 @@ class TestDatasetService {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     datasetDTO.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    storedDataset.setUpdatedDate(new Date(-1000));
+    storedDataset.setUpdatedDate(Instant.now().minusSeconds(1000));
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
@@ -179,7 +179,7 @@ class TestDatasetService {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     datasetDTO.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    storedDataset.setUpdatedDate(new Date(-1000));
+    storedDataset.setUpdatedDate(Instant.now().minusSeconds(1000));
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);

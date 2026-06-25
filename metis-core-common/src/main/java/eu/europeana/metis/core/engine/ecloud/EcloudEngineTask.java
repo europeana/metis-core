@@ -83,7 +83,7 @@ public class EcloudEngineTask extends EngineTask {
 
   private void setOutputRevision() {
     final Revision revision = new Revision(outputDataRevision.name(), outputDataRevision.providerId(),
-        outputDataRevision.creationTimeStamp(),
+        Date.from(outputDataRevision.creationTimeStamp()),
         outputDataRevision.deleted());
     dpsTask.setOutputRevision(revision);
   }

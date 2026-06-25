@@ -12,7 +12,7 @@ public class TransformationExternalPlugin extends AbstractExecutablePlugin<Trans
    * plugin.
    */
   public TransformationExternalPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.TRANSFORMATION_EXTERNAL);
   }
 
@@ -27,7 +27,7 @@ public class TransformationExternalPlugin extends AbstractExecutablePlugin<Trans
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

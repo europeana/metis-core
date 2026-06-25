@@ -21,7 +21,6 @@ import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -59,8 +58,7 @@ public class WorkflowExecutionClaimDao {
    */
   public WorkflowExecution claimNextExecution(Duration staleLeniency, ExecutablePluginType executablePluginType) {
     Instant now = Instant.now();
-    Date dateNow = Date.from(now);
-    Date staleBefore = Date.from(now.minus(staleLeniency));
+    Instant staleBefore = now.minus(staleLeniency);
 
     ModifyOptions modifyOptions = new ModifyOptions()
         .sort(ascending(UPDATED_DATE.getFieldName(), CREATED_DATE.getFieldName()))
@@ -68,13 +66,13 @@ public class WorkflowExecutionClaimDao {
         .upsert(false);
 
     List<Supplier<WorkflowExecution>> claimSuppliers = List.of(
-        () -> tryClaimStaleRunning(dateNow, modifyOptions, staleBefore, executablePluginType),
-        () -> tryClaimInqueueOrRunning(dateNow, modifyOptions, executablePluginType));
+        () -> tryClaimStaleRunning(now, modifyOptions, staleBefore, executablePluginType),
+        () -> tryClaimInqueueOrRunning(now, modifyOptions, executablePluginType));
 
     return claimSuppliers.stream().map(Supplier::get).filter(Objects::nonNull).findFirst().orElse(null);
   }
 
-  private WorkflowExecution tryClaimStaleRunning(Date dateNow, ModifyOptions modifyOptions, Date staleBefore,
+  private WorkflowExecution tryClaimStaleRunning(Instant dateNow, ModifyOptions modifyOptions, Instant staleBefore,
       ExecutablePluginType executablePluginType) {
     Filter[] filters = {
         Filters.eq(WORKFLOW_STATUS.getFieldName(), WorkflowStatus.RUNNING),
@@ -90,7 +88,7 @@ public class WorkflowExecutionClaimDao {
     return tryClaim(filters, modifyOptions, updateOperators);
   }
 
-  private WorkflowExecution tryClaimInqueueOrRunning(Date dateNow, ModifyOptions modifyOptions,
+  private WorkflowExecution tryClaimInqueueOrRunning(Instant dateNow, ModifyOptions modifyOptions,
       ExecutablePluginType executablePluginType) {
     Filter[] filters = {
         Filters.in(WORKFLOW_STATUS.getFieldName(), List.of(WorkflowStatus.INQUEUE, WorkflowStatus.RUNNING)),

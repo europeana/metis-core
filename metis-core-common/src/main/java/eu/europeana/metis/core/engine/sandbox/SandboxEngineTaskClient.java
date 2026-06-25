@@ -24,7 +24,7 @@ import eu.europeana.metis.sandbox.common.locale.Country;
 import eu.europeana.metis.sandbox.common.locale.Language;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress.SandboxTaskState;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -143,19 +143,19 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Date revisionTimestamp,
+  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Instant revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
     return List.of();
   }
 
   @Override
-  public List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp)
+  public List<Record> getRecords(List<String> recordIds, String revisionName, Instant revisionTimestamp)
       throws ExternalTaskException {
     return List.of();
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Instant revisionTimestamp,
       ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
     FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(executablePluginType).orElseThrow();

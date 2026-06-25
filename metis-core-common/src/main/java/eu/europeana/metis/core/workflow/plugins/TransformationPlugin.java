@@ -12,7 +12,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
    * plugin.
    */
   public TransformationPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.TRANSFORMATION);
   }
 
@@ -27,7 +27,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
@@ -37,22 +38,19 @@ import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.config.SecurityConfig;
-import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
 import eu.europeana.metis.core.rest.controller.advice.RestResponseExceptionHandler;
-import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.core.rest.utils.TestObjectFactory;
 import eu.europeana.metis.core.rest.utils.TestUtils;
 import eu.europeana.metis.core.service.DatasetService;
 import eu.europeana.metis.core.service.UserService;
 import eu.europeana.metis.exception.BadContentException;
+import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.utils.Country;
-
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -964,7 +962,7 @@ class TestDatasetController {
         datasetSearchView1.setDatasetName(TestObjectFactory.DATASETNAME + 1);
         datasetSearchView1.setProvider("provider1");
         datasetSearchView1.setDataProvider("dataProvider1");
-        datasetSearchView1.setLastExecutionDate(new Date());
+        datasetSearchView1.setLastExecutionDate(Instant.now());
         datasetSearchViews.add(datasetSearchView1);
 
         final DatasetSearchView datasetSearchView2 = new DatasetSearchView();
@@ -972,7 +970,7 @@ class TestDatasetController {
         datasetSearchView2.setDatasetName(TestObjectFactory.DATASETNAME + 2);
         datasetSearchView2.setProvider("provider2");
         datasetSearchView2.setDataProvider("dataProvider2");
-        datasetSearchView2.setLastExecutionDate(new Date());
+        datasetSearchView2.setLastExecutionDate(Instant.now());
         datasetSearchViews.add(datasetSearchView2);
 
         return datasetSearchViews;

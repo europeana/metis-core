@@ -11,7 +11,7 @@ public class OaipmhHarvestPlugin extends AbstractExecutablePlugin<OaipmhHarvestP
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the plugin.
    */
   public OaipmhHarvestPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.OAIPMH_HARVEST);
   }
 
@@ -26,7 +26,7 @@ public class OaipmhHarvestPlugin extends AbstractExecutablePlugin<OaipmhHarvestP
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

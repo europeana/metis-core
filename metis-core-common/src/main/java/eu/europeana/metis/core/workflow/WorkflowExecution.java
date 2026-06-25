@@ -1,6 +1,5 @@
 package eu.europeana.metis.core.workflow;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
@@ -11,9 +10,8 @@ import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
-import eu.europeana.metis.utils.CommonStringValues;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -62,48 +60,12 @@ public class WorkflowExecution implements HasMongoObjectId {
   private boolean cancelling;
   private ExecutablePluginType nextExecutablePluginType;
 
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date createdDate;
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date startedDate;
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date updatedDate;
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date finishedDate;
+  private Instant createdDate;
+  private Instant startedDate;
+  private Instant updatedDate;
+  private Instant finishedDate;
 
   private List<AbstractMetisPlugin<?>> metisPlugins = new ArrayList<>();
-
-  public Date getCreatedDate() {
-    return createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public void setCreatedDate(Date createdDate) {
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public Date getStartedDate() {
-    return startedDate == null ? null : new Date(startedDate.getTime());
-  }
-
-  public void setStartedDate(Date startedDate) {
-    this.startedDate = startedDate == null ? null : new Date(startedDate.getTime());
-  }
-
-  public Date getUpdatedDate() {
-    return updatedDate == null ? null : new Date(updatedDate.getTime());
-  }
-
-  public void setUpdatedDate(Date updatedDate) {
-    this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
-  }
-
-  public Date getFinishedDate() {
-    return finishedDate == null ? null : new Date(finishedDate.getTime());
-  }
-
-  public void setFinishedDate(Date finishedDate) {
-    this.finishedDate = finishedDate == null ? null : new Date(finishedDate.getTime());
-  }
 
   public List<AbstractMetisPlugin<?>> getMetisPlugins() {
     return new ArrayList<>(metisPlugins);

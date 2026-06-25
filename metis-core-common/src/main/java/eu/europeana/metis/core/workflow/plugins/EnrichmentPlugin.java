@@ -2,9 +2,6 @@ package eu.europeana.metis.core.workflow.plugins;
 
 /**
  * Enrichment Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-26
  */
 public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginMetadata> {
 
@@ -15,7 +12,7 @@ public class EnrichmentPlugin extends AbstractExecutablePlugin<EnrichmentPluginM
    * plugin.
    */
   public EnrichmentPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.ENRICHMENT);
   }
 

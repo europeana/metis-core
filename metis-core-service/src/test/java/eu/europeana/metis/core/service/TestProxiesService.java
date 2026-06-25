@@ -37,8 +37,8 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -223,7 +223,7 @@ class TestProxiesService {
     // Create execution and plugin
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
     execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(new Date()));
+             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(Instant.now()));
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
     doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
@@ -290,7 +290,7 @@ class TestProxiesService {
     // Create execution and plugin and mock relevant method getting them.
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
     execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(new Date()));
+             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(Instant.now()));
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
     doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,

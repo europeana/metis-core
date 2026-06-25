@@ -15,7 +15,7 @@ public class ValidationInternalPlugin extends AbstractExecutablePlugin<Validatio
    * plugin.
    */
   public ValidationInternalPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.VALIDATION_INTERNAL);
   }
 
@@ -30,7 +30,7 @@ public class ValidationInternalPlugin extends AbstractExecutablePlugin<Validatio
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

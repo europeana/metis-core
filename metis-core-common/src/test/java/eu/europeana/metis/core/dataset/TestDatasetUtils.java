@@ -3,8 +3,8 @@ package eu.europeana.metis.core.dataset;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import org.bson.types.ObjectId;
 
@@ -40,8 +40,8 @@ public class TestDatasetUtils {
   //VALUES
   static final ObjectId OBJECT_ID_VALUE = new ObjectId("67cfeedb4cdf5102acad7395");
   static final ObjectId XSLT_OBJECT_ID_VALUE = new ObjectId("507f191e810c19729de860ea");
-  static final Date CREATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
-  static final Date UPDATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
+  static final Instant CREATED_DATE_VALUE = zonedDateTime.toInstant();
+  static final Instant UPDATED_DATE_VALUE = zonedDateTime.toInstant();
   static final String REDIRECT_ID_1_VALUE = "redirectId1";
   static final String REDIRECT_ID_2_VALUE = "redirectId2";
 

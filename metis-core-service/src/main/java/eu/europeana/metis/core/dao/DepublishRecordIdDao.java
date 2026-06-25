@@ -2,6 +2,7 @@ package eu.europeana.metis.core.dao;
 
 import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
+import static java.util.Optional.ofNullable;
 
 import dev.morphia.DeleteOptions;
 import dev.morphia.UpdateOptions;
@@ -22,7 +23,6 @@ import eu.europeana.metis.exception.BadContentException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -319,7 +319,7 @@ public class DepublishRecordIdDao {
   }
 
   /**
-   * This method marks record ids with the provided {@link DepublicationStatus} and {@link Date} where appropriate.
+   * This method marks record ids with the provided {@link DepublicationStatus} and depublication date where appropriate.
    * <p>A {@link DepublicationStatus#PENDING_DEPUBLICATION} unsets the depublication date</p>
    * <p>A {@link DepublicationStatus#DEPUBLISHED} sets the depublication date with the one
    * provided</p>
@@ -334,7 +334,7 @@ public class DepublishRecordIdDao {
    * {DepublicationStatus#DEPUBLISHED} {@link DepublicationStatus#PENDING_DEPUBLICATION}
    */
   public void markRecordIdsWithDepublicationStatus(String datasetId, Set<String> recordIds,
-      DepublicationStatus depublicationStatus, @Nullable Date depublicationDate, DepublicationReason depublicationReason) {
+      DepublicationStatus depublicationStatus, @Nullable Instant depublicationDate, DepublicationReason depublicationReason) {
 
     // Check correctness of parameters
     if (Objects.isNull(depublicationStatus) || StringUtils.isBlank(datasetId)) {
@@ -358,10 +358,9 @@ public class DepublishRecordIdDao {
 
       // Add the records that are missing.
       final Set<String> recordIdsToAdd = getNonExistingRecordIds(datasetId, recordIds);
-      final Instant depublicationInstant = Optional.ofNullable(depublicationDate)
-                                                   .filter(
-                                                       date -> depublicationStatus != DepublicationStatus.PENDING_DEPUBLICATION)
-                                                   .map(Date::toInstant).orElse(null);
+      final Instant depublicationInstant =
+          ofNullable(depublicationDate).filter(date -> depublicationStatus != DepublicationStatus.PENDING_DEPUBLICATION)
+                                       .orElse(null);
       addRecords(recordIdsToAdd, datasetId, depublicationStatus, depublicationInstant, depublicationReason);
 
       // Compute the records to update - if there are none, we're done.
@@ -391,7 +390,7 @@ public class DepublishRecordIdDao {
     } else {
       updateOperators.add(
           UpdateOperators.set(DepublishRecordId.DEPUBLICATION_DATE_FIELD,
-              depublicationDate == null ? Date.from(Instant.now()) : depublicationDate)
+              depublicationDate == null ? Instant.now() : depublicationDate)
       );
       updateOperators.add(
           UpdateOperators.set(DepublishRecordId.DEPUBLICATION_REASON, depublicationReason)

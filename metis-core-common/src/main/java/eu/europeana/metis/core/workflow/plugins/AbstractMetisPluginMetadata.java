@@ -1,12 +1,10 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import dev.morphia.annotations.Entity;
-import eu.europeana.metis.utils.CommonStringValues;
-import java.util.Date;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,22 +34,10 @@ import lombok.Setter;
 public abstract class AbstractMetisPluginMetadata implements MetisPluginMetadata {
 
   private String revisionNamePreviousPlugin;
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-  private Date revisionTimestampPreviousPlugin;
-
-  @Override
-  public Date getRevisionTimestampPreviousPlugin() {
-    return revisionTimestampPreviousPlugin == null ? null
-        : new Date(revisionTimestampPreviousPlugin.getTime());
-  }
-
-  public void setRevisionTimestampPreviousPlugin(Date revisionTimestampPreviousPlugin) {
-    this.revisionTimestampPreviousPlugin = revisionTimestampPreviousPlugin == null ? null
-        : new Date(revisionTimestampPreviousPlugin.getTime());
-  }
+  private Instant revisionTimestampPreviousPlugin;
 
   /**
-   * For the current plugin, setup the source/previous revision information.
+   * For the current plugin, set up the source/previous revision information.
    *
    * @param predecessor the predecessor plugin that the current plugin is based on. Is not null.
    */

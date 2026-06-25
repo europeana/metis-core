@@ -18,11 +18,11 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -201,7 +201,7 @@ public class DataEvolutionUtils {
       // Sort on finished state, so that the root check occurs as little as possible.
       final Stream<PluginWithExecutionId<ExecutablePlugin>> sortedSuccessfulPlugins = latestSuccessfulPlugins.sorted(
           Comparator.comparing(
-              plugin -> Optional.ofNullable(plugin.getPlugin().getFinishedDate()).orElseGet(() -> new Date(Long.MIN_VALUE)),
+              plugin -> Optional.ofNullable(plugin.getPlugin().getFinishedDate()).orElse(Instant.MIN),
               Comparator.reverseOrder()));
 
       // Find the first plugin that satisfies the root check. If none found, throw exception.

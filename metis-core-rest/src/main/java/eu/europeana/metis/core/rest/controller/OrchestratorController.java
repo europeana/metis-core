@@ -23,7 +23,7 @@ import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -416,8 +416,8 @@ public class OrchestratorController {
   public ResponseListWrapper<ExecutionAndDatasetView> getWorkflowExecutionsOverview(
       @RequestParam(value = "pluginStatus", required = false) Set<PluginStatus> pluginStatuses,
       @RequestParam(value = "pluginType", required = false) Set<PluginType> pluginTypes,
-      @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Date fromDate,
-      @RequestParam(value = "toDate", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Date toDate,
+      @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant fromDate,
+      @RequestParam(value = "toDate", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant toDate,
       @RequestParam(value = "nextPage", required = false, defaultValue = "0") int nextPage,
       @RequestParam(value = "pageCount", required = false, defaultValue = "1") int pageCount)
       throws GenericMetisException {

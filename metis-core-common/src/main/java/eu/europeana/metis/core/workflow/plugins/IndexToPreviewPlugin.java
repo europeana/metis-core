@@ -15,7 +15,7 @@ public class IndexToPreviewPlugin extends AbstractExecutablePlugin<IndexToPrevie
    * Zero argument constructor that initializes the {@link #pluginType} corresponding to the plugin.
    */
   public IndexToPreviewPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     this(null);
   }
 
@@ -37,7 +37,7 @@ public class IndexToPreviewPlugin extends AbstractExecutablePlugin<IndexToPrevie
   /**
    * Get the target indexing database.
    *
-   * @return the target indexing database
+   * @return the target database to index.
    */
   public IndexDatabase getTargetIndexingDatabase() {
     return IndexDatabase.PREVIEW;

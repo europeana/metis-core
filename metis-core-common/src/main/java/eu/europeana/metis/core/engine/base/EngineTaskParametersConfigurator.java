@@ -37,16 +37,15 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -54,6 +53,10 @@ import org.springframework.util.CollectionUtils;
  * indexing.
  */
 public final class EngineTaskParametersConfigurator {
+
+  private static final DateTimeFormatter UTC_DATE_FORMAT =
+      DateTimeFormatter.ofPattern(CommonStringValues.DATE_FORMAT_Z, Locale.ROOT)
+                       .withZone(ZoneOffset.UTC);
 
   private EngineTaskParametersConfigurator() {
   }
@@ -95,7 +98,8 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
-      String engineDatasetId, String datasetId, boolean incrementalHarvest, Date startedDate, String dataLocation, String providerId) {
+      String engineDatasetId, String datasetId, boolean incrementalHarvest, Instant startedDate, String dataLocation,
+      String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
@@ -115,7 +119,7 @@ public final class EngineTaskParametersConfigurator {
    * @param ecloudProvider the identifier of the eCloud provider associated with the revision
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
-  public static DataRevision createDataRevision(PluginType pluginType, Date pluginStartedDate, String ecloudProvider) {
+  public static DataRevision createDataRevision(PluginType pluginType, Instant pluginStartedDate, String ecloudProvider) {
     return new DataRevision(pluginType.name(), ecloudProvider, pluginStartedDate, false);
   }
 
@@ -241,9 +245,9 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createIndexParameters(
-      Date pluginStartedDate,
+      Instant pluginStartedDate,
       boolean incrementalIndexing,
-      Date harvestDate,
+      Instant harvestDate,
       boolean preserveTimestamps,
       List<String> datasetIdsToRedirectFrom,
       boolean performRedirects,
@@ -292,9 +296,7 @@ public final class EngineTaskParametersConfigurator {
     return parameters;
   }
 
-  private static String formatUtcDate(Date date) {
-    DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
-    dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return dateFormat.format(date);
+  private static String formatUtcDate(Instant instant) {
+    return UTC_DATE_FORMAT.format(instant);
   }
 }

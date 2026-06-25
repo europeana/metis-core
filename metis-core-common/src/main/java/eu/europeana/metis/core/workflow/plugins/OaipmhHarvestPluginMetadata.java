@@ -20,11 +20,14 @@ public class OaipmhHarvestPluginMetadata extends AbstractHarvestPluginMetadata {
   private String metadataFormat;
   private String setSpec;
   private boolean incrementalHarvest; // Default: false (i.e., full harvest)
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
+  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT, timezone = "UTC")
   private Instant fromDate;
-  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
+  @JsonFormat(pattern = CommonStringValues.DATE_FORMAT, timezone = "UTC")
   private Instant untilDate;
-  //If useDefaultIdentifiers == true then this is the prefix to be trimmed from the OAI Header Identifier
+  /**
+   * Represents the prefix to be removed from the OAI-PMH header identifier when default identifiers
+   * are used. This is applicable only if the `useDefaultIdentifiers` flag is set to true.
+   */
   private String identifierPrefixRemoval;
 
   @Override

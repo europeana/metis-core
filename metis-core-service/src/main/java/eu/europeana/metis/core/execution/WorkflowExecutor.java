@@ -20,7 +20,6 @@ import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
@@ -79,7 +78,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   @Override
   public WorkflowExecution call() {
     if (workflowExecution.getStartedDate() == null) {
-      workflowExecution.setStartedDate(new Date());
+      workflowExecution.setStartedDate(Instant.now());
       workflowExecutionDao.update(workflowExecution);
     }
     AbstractExecutablePlugin<?> plugin = findPluginToExecute();
@@ -137,7 +136,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       workflowExecutionHelper.moveToNextPlugin(workflowExecution);
       if (workflowExecution.getNextExecutablePluginType() == null) {
         workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-        workflowExecution.setFinishedDate(new Date());
+        workflowExecution.setFinishedDate(Instant.now());
         log.info("workflowExecutionId: {} - Finished workflow execution", workflowExecution.getId());
       } else {
         workflowExecution.setClaimedByInstance(null);
@@ -237,7 +236,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         handleRecoverableMonitorFailure(plugin, e, consecutiveCancelOrMonitorFailures);
 
       } finally {
-        Date now = new Date();
+        Instant now = Instant.now();
         plugin.setUpdatedDate(now);
         workflowExecution.setUpdatedDate(now);
         updateSuccess = workflowExecutionDao.updateMonitorInformation(workflowExecution);
@@ -364,7 +363,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
     switch (engineTaskState) {
       case PROCESSED -> {
-        plugin.setFinishedDate(new Date());
+        plugin.setFinishedDate(Instant.now());
         plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
       }
       case DROPPED -> {

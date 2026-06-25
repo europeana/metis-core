@@ -2,25 +2,28 @@ package eu.europeana.metis.core.rest.execution.overview;
 
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This class represents the vital information on a workflow execution needed for the execution
  * overview.
  */
+@Getter
+@Setter
 public class ExecutionSummaryView {
 
   private String id;
   private WorkflowStatus workflowStatus;
   private boolean cancelling;
 
-  private Date createdDate;
-  private Date startedDate;
-  private Date updatedDate;
-  private Date finishedDate;
+  private Instant createdDate;
+  private Instant startedDate;
+  private Instant updatedDate;
+  private Instant finishedDate;
 
   private List<PluginSummaryView> plugins;
 
@@ -36,38 +39,6 @@ public class ExecutionSummaryView {
     this.updatedDate = execution.getUpdatedDate();
     this.finishedDate = execution.getFinishedDate();
     this.plugins = execution.getMetisPlugins().stream().map(PluginSummaryView::new).toList();
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public WorkflowStatus getWorkflowStatus() {
-    return workflowStatus;
-  }
-
-  public boolean isCancelling() {
-    return cancelling;
-  }
-
-  public Date getCreatedDate() {
-    return Optional.ofNullable(createdDate).map(Date::getTime).map(Date::new).orElse(null);
-  }
-
-  public Date getStartedDate() {
-    return Optional.ofNullable(startedDate).map(Date::getTime).map(Date::new).orElse(null);
-  }
-
-  public Date getUpdatedDate() {
-    return Optional.ofNullable(updatedDate).map(Date::getTime).map(Date::new).orElse(null);
-  }
-
-  public Date getFinishedDate() {
-    return Optional.ofNullable(finishedDate).map(Date::getTime).map(Date::new).orElse(null);
   }
 
   public List<PluginSummaryView> getPlugins() {

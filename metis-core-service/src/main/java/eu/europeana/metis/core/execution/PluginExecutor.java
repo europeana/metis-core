@@ -19,7 +19,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.exception.ExternalTaskException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -88,7 +88,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       WorkflowExecution workflowExecution, EngineTaskSubmitter<S, T> engineTaskSubmitter)
       throws ExternalTaskException {
     if (isBlank(plugin.getExternalTaskId())) {
-      plugin.setStartedDate(new Date());
+      plugin.setStartedDate(Instant.now());
       plugin.setPluginStatus(PluginStatus.RUNNING);
       engineTaskSubmitter.submit(
           workflowExecution.getDatasetId(),
@@ -134,7 +134,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     final boolean incrementalHarvest =
         harvestPlugin.getPluginMetadata() instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata
             && abstractHarvestPluginMetadata.isIncrementalHarvest();
-    final Date harvestDate = harvestPlugin.getStartedDate();
+    final Instant harvestDate = harvestPlugin.getStartedDate();
 
     // Set the information to the indexing plugin.
     if (indexingPlugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata abstractIndexPluginMetadata) {

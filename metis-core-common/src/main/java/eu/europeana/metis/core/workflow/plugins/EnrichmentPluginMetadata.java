@@ -1,18 +1,14 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import lombok.NoArgsConstructor;
+
 /**
  * Enrichment Plugin Metadata.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-29
  */
+@NoArgsConstructor
 public class EnrichmentPluginMetadata extends AbstractExecutablePluginMetadata {
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.ENRICHMENT;
-
-  public EnrichmentPluginMetadata() {
-    //Required for json serialization
-  }
 
   @Override
   public ExecutablePluginType getExecutablePluginType() {

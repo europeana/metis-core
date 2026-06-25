@@ -53,16 +53,15 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.utils.DateUtils;
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -371,7 +370,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else {
         workflowExecution.setStartedBy(userId);
       }
-      Date now = new Date();
+      Instant now = Instant.now();
       workflowExecution.setCreatedDate(now);
       workflowExecution.setUpdatedDate(now);
       objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
@@ -560,7 +559,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
    * @return a list of all the WorkflowExecutions together with the datasets that they belong to.
    */
   public ResponseListWrapper<ExecutionAndDatasetView> getWorkflowExecutionsOverview(Set<PluginStatus> pluginStatuses,
-      Set<PluginType> pluginTypes, Date fromDate, Date toDate, int nextPage, int pageCount) {
+      Set<PluginType> pluginTypes, Instant fromDate, Instant toDate, int nextPage, int pageCount) {
     final Set<String> datasetIds = getAllDatasetIds();
     final ResultList<ExecutionDatasetPair> resultList;
     if (datasetIds == null || !datasetIds.isEmpty()) {
@@ -644,9 +643,8 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
           lastHarvestPlugin.getExecutionProgress().getProcessedRecords() - lastHarvestPlugin
               .getExecutionProgress().getFailRecords());
     }
-    final Date now = new Date();
-    setPreviewInformation(executionInfo, lastExecutablePreviewPlugin, lastPreviewPlugin,
-        isPreviewCleaningOrRunning, now);
+    final Instant now = Instant.now();
+    setPreviewInformation(executionInfo, lastExecutablePreviewPlugin, lastPreviewPlugin, isPreviewCleaningOrRunning, now);
     setPublishInformation(executionInfo, firstPublishPlugin, lastExecutablePublishPlugin,
         lastPublishPlugin, lastExecutableDepublishPlugin, isPublishCleaningOrRunning, now,
         datasetId);
@@ -660,7 +658,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
 
   private void setPreviewInformation(DatasetExecutionInformation executionInfo,
       ExecutablePlugin lastExecutablePreviewPlugin, MetisPlugin lastPreviewPlugin,
-      boolean isPreviewCleaningOrRunning, Date date) {
+      boolean isPreviewCleaningOrRunning, Instant date) {
 
     boolean lastPreviewHasDeletedRecords = computeRecordCountsAndCheckDeletedRecords(lastExecutablePreviewPlugin,
         executionInfo::setLastPreviewRecords, executionInfo::setTotalPreviewRecords);
@@ -687,7 +685,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private void setPublishInformation(DatasetExecutionInformation executionInfo,
       MetisPlugin firstPublishPlugin, ExecutablePlugin lastExecutablePublishPlugin,
       MetisPlugin lastPublishPlugin, ExecutablePlugin lastExecutableDepublishPlugin,
-      boolean isPublishCleaningOrRunning, Date date, String datasetId) {
+      boolean isPublishCleaningOrRunning, Instant date, String datasetId) {
 
     // Set the first publication information
     executionInfo.setFirstPublishedDate(firstPublishPlugin == null ? null : firstPublishPlugin.getFinishedDate());
@@ -774,11 +772,11 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     return hasDeletedRecords;
   }
 
-  private boolean isPreviewOrPublishReadyForViewing(MetisPlugin plugin, Date now) {
+  private boolean isPreviewOrPublishReadyForViewing(MetisPlugin plugin, Instant now) {
     final boolean dataIsValid = !(plugin instanceof ExecutablePlugin executablePlugin)
         || MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID;
-    final boolean enoughTimeHasPassed = getSolrCommitPeriodInMinutes() < DateUtils
-        .calculateDateDifference(plugin.getFinishedDate(), now, TimeUnit.MINUTES);
+    final boolean enoughTimeHasPassed = getSolrCommitPeriodInMinutes() <
+        Duration.between(plugin.getFinishedDate(), now).toMinutes();
     return dataIsValid && enoughTimeHasPassed;
   }
 

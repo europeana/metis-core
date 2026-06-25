@@ -37,11 +37,12 @@ import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
@@ -124,7 +125,7 @@ public class DatasetService {
       datasetDTO.setCreatedByUserId(userId);
       datasetDTO.setId(null);
       datasetDTO.setUpdatedDate(null);
-      datasetDTO.setCreatedDate(new Date());
+      datasetDTO.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
       //Add fake ecloudDatasetId to avoid null errors in the database
       datasetDTO.setEcloudDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
@@ -197,7 +198,7 @@ public class DatasetService {
     }
 
     // Update the dataset
-    datasetDTO.setUpdatedDate(new Date());
+    datasetDTO.setUpdatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     datasetDao.update(DatasetConverter.fromDTO(datasetDTO));
   }
 
@@ -401,8 +402,8 @@ public class DatasetService {
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
-   * @param records the list of {@link Record} for which {@link Record#getXmlRecord()} returns a non-null value
-   * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
+   * @param records the list of {@link Record} for which {@link Record#xmlRecord()} returns a non-null value
+   * @return a list of {@link Record}s with {@link Record#xmlRecord()} ()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
@@ -585,8 +586,7 @@ public class DatasetService {
           datasetSearchView.setProvider(dataset.getProvider());
           datasetSearchView.setDataProvider(dataset.getDataProvider());
           if (latestSuccessfulExecutablePlugin != null) {
-            datasetSearchView
-                .setLastExecutionDate(latestSuccessfulExecutablePlugin.getPlugin().getStartedDate());
+            datasetSearchView.setLastExecutionDate(latestSuccessfulExecutablePlugin.getPlugin().getStartedDate());
           }
           return datasetSearchView;
         }

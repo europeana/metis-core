@@ -4,7 +4,7 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -23,7 +23,7 @@ public interface EngineRecordClient {
    * @return a list of {@link java.lang.Record} objects from the specified dataset and revision
    * @throws ExternalTaskException if an error occurs while retrieving the records
    */
-  List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Date revisionTimestamp,
+  List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Instant revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException;
 
   /**
@@ -35,7 +35,7 @@ public interface EngineRecordClient {
    * @return a list of {@link java.lang.Record} objects corresponding to the provided record identifiers
    * @throws ExternalTaskException if an error occurs during the record retrieval process
    */
-  List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp) throws ExternalTaskException;
+  List<Record> getRecords(List<String> recordIds, String revisionName, Instant revisionTimestamp) throws ExternalTaskException;
 
   /**
    * Retrieves a record based on the provided record identifier, revision name, and timestamp.
@@ -48,7 +48,7 @@ public interface EngineRecordClient {
    * @return the retrieved Record object matching the provided criteria
    * @throws ExternalTaskException if there is an error while retrieving the record
    */
-  Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
+  Record getRecord(String engineDatasetId, String recordId, String revisionName, Instant revisionTimestamp,
       ExecutablePluginType pluginType) throws ExternalTaskException;
 
   /**
