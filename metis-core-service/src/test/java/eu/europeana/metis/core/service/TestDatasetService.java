@@ -131,6 +131,7 @@ class TestDatasetService {
     when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(null);
     when(datasetDao.findNextInSequenceDatasetId()).thenReturn(1);
     when(datasetDao.create(any(Dataset.class))).thenReturn(dataset);
+    when(datasetDao.getById(any(String.class))).thenReturn(dataset);
     when(userService.getUserFromCache(any(String.class))).thenReturn(user);
     datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO);
     ArgumentCaptor<Dataset> datasetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
