@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -13,6 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 public class WorkflowExecutionDTO {
 
   private String id;
@@ -34,10 +36,6 @@ public class WorkflowExecutionDTO {
   private Instant finishedDate;
   private boolean incremental;
   private List<MetisPluginDTO> metisPlugins = new ArrayList<>();
-
-  public WorkflowExecutionDTO() {
-    //Required for json serialization
-  }
 
   @JsonProperty("isIncremental")
   public boolean isIncremental() {

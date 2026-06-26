@@ -31,6 +31,7 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMA_NAME;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_DATABASE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
+import static lombok.AccessLevel.*;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
@@ -46,20 +47,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.NoArgsConstructor;
 import org.springframework.util.CollectionUtils;
 
 /**
  * Configures task parameters for the engine tasks in various contexts, such as harvesting, validation, transformation, and
  * indexing.
  */
+@NoArgsConstructor(access = PRIVATE)
 public final class EngineTaskParametersConfigurator {
 
   private static final DateTimeFormatter UTC_DATE_FORMAT =
       DateTimeFormatter.ofPattern(CommonStringValues.DATE_FORMAT_Z, Locale.ROOT)
                        .withZone(ZoneOffset.UTC);
-
-  private EngineTaskParametersConfigurator() {
-  }
 
   /**
    * Creates a default set of task parameters used for configuring an engine task.

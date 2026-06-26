@@ -24,9 +24,6 @@ public class PluginSummaryView {
   private Instant finishedDate;
   private PluginProgressView progress;
 
-  PluginSummaryView() {
-  }
-
   PluginSummaryView(AbstractMetisPlugin plugin) {
     this.pluginType = plugin.getPluginType();
     this.pluginStatus = plugin.getPluginStatus();

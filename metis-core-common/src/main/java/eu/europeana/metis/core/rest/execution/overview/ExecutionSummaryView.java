@@ -27,9 +27,6 @@ public class ExecutionSummaryView {
 
   private List<PluginSummaryView> plugins;
 
-  ExecutionSummaryView() {
-  }
-
   ExecutionSummaryView(WorkflowExecution execution) {
     this.id = execution.getId().toString();
     this.workflowStatus = execution.getWorkflowStatus();

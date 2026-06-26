@@ -3,8 +3,8 @@ package eu.europeana.metis.core.rest.execution.overview;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.rest.ResponseListWrapper;
-import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
+import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import org.bson.types.ObjectId;
 
 /**
@@ -17,9 +17,6 @@ public class ExecutionAndDatasetView implements HasMongoObjectId {
   private ExecutionSummaryView execution;
   private DatasetSummaryView dataset;
   private ExecutionProgressView executionProgress;
-
-  ExecutionAndDatasetView() {
-  }
 
   /**
    * Constructor.

@@ -2,6 +2,7 @@ package eu.europeana.metis.core.dataset;
 
 import java.time.Instant;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -11,6 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 public class DatasetExecutionInformation {
 
   private Instant lastPreviewDate;
@@ -27,10 +29,6 @@ public class DatasetExecutionInformation {
   private PublicationStatus publicationStatus;
   private Instant lastHarvestedDate;
   private long lastHarvestedRecords;
-
-  public DatasetExecutionInformation() {
-    //Required for json serialization
-  }
 
   /**
    * The status of the dataset with regards to (de)publication.

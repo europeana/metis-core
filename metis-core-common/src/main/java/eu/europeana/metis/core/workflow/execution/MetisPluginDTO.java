@@ -6,6 +6,7 @@ import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import java.time.Instant;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -13,6 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 public class MetisPluginDTO {
 
   private PluginType pluginType;
@@ -28,8 +30,4 @@ public class MetisPluginDTO {
   private String topologyName;
   private boolean canDisplayRawXml;
   private MetisPluginMetadata pluginMetadata;
-
-  public MetisPluginDTO() {
-    //Required for json serialization
-  }
 }
