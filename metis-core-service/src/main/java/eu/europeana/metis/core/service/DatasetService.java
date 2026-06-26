@@ -38,7 +38,6 @@ import eu.europeana.metis.utils.RestEndpoints;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,14 +124,15 @@ public class DatasetService {
       datasetDTO.setCreatedByUserId(userId);
       datasetDTO.setId(null);
       datasetDTO.setUpdatedDate(null);
-      datasetDTO.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+      datasetDTO.setCreatedDate(Instant.now());
       //Add fake ecloudDatasetId to avoid null errors in the database
       datasetDTO.setEcloudDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
       int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
       datasetDTO.setDatasetId(Integer.toString(nextInSequenceDatasetId));
       verifyReferencesToOldDatasetIds(datasetDTO);
-      createdDataset = datasetDao.create(DatasetConverter.fromDTO(datasetDTO));
+      final String objectId = datasetDao.create(DatasetConverter.fromDTO(datasetDTO)).getId().toString();
+      createdDataset = datasetDao.getById(objectId);
     } finally {
       lock.unlock();
     }
@@ -198,7 +198,7 @@ public class DatasetService {
     }
 
     // Update the dataset
-    datasetDTO.setUpdatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+    datasetDTO.setUpdatedDate(Instant.now());
     datasetDao.update(DatasetConverter.fromDTO(datasetDTO));
   }
 
