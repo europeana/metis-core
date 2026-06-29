@@ -6,40 +6,24 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * Contains all Plugin types.
  */
 public enum PluginType {
-
   HTTP_HARVEST,
-
   OAIPMH_HARVEST,
-
   ENRICHMENT,
-
   MEDIA_PROCESS,
-
   LINK_CHECKING,
-
   TRANSFORMATION_EXTERNAL,
-
   VALIDATION_EXTERNAL,
-
   TRANSFORMATION,
-
   VALIDATION_INTERNAL,
-
   NORMALIZATION,
-
   PREVIEW,
-
   PUBLISH,
-
   DEPUBLISH,
-
   REINDEX_TO_PREVIEW,
-
   REINDEX_TO_PUBLISH;
 
   /**
-   * Lookup of a {@link PluginType} enum from a provided enum String representation of the enum
-   * value.
+   * Lookup of a {@link PluginType} enum from a provided enum String representation of the enum value.
    *
    * @param enumName the String representation of an enum value
    * @return the {@link PluginType} that represents the provided value or null if not found

@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.workflow.plugins;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -29,26 +29,39 @@ public interface MetisPlugin {
    */
   MetisPluginMetadata getPluginMetadata();
 
-  /**
-   * @return started {@link Date} of the execution of the plugin
-   */
-  Date getStartedDate();
 
   /**
-   * @return updated {@link Date} of the execution of the plugin
+   * Retrieves the date and time when the plugin execution started.
+   *
+   * @return an {@link Instant} representing the start date and time of the plugin execution
    */
-  Date getUpdatedDate();
+  Instant getStartedDate();
 
   /**
-   * @return finished {@link Date} of the execution of the plugin
+   * Retrieves the date and time when the plugin was last updated.
+   *
+   * @return an {@link Instant} representing the last update date and time of the plugin
    */
-  Date getFinishedDate();
+  Instant getUpdatedDate();
+
+  /**
+   * Retrieves the date and time when the plugin execution finished.
+   *
+   * @return an {@link Instant} representing the finish date and time of the plugin execution
+   */
+  Instant getFinishedDate();
 
   /**
    * @return status {@link PluginStatus} of the execution of the plugin
    */
   PluginStatus getPluginStatus();
 
+  /**
+   * Retrieves the failure message associated with the plugin execution, if any.
+   *
+   * @return a String representing the failure message of the plugin execution, or null if no failure
+   * occurred or no message is available.
+   */
   String getFailMessage();
 
   /**

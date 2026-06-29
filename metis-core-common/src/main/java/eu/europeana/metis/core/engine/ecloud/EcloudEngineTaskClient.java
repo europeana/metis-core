@@ -32,8 +32,8 @@ import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -258,21 +258,21 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Date revisionTimestamp,
+  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Instant revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), engineDatasetId, representationName,
         revisionName, revisionTimestamp, numberOfRecords);
   }
 
   @Override
-  public List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp)
+  public List<Record> getRecords(List<String> recordIds, String revisionName, Instant revisionTimestamp)
       throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), recordIds, revisionName,
         revisionTimestamp);
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Date revisionTimestamp,
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Instant revisionTimestamp,
       ExecutablePluginType pluginType) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), recordId, revisionName,
         revisionTimestamp);

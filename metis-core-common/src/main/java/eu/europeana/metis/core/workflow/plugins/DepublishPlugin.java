@@ -2,9 +2,6 @@ package eu.europeana.metis.core.workflow.plugins;
 
 /**
  * Depublish Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2020-06-16
  */
 public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMetadata> {
 
@@ -15,7 +12,7 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
    * plugin.
    */
   public DepublishPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     this(null);
   }
 
@@ -30,7 +27,7 @@ public class DepublishPlugin extends AbstractExecutablePlugin<DepublishPluginMet
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

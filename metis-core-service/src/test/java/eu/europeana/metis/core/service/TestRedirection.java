@@ -31,7 +31,6 @@ import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
 import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,7 +116,7 @@ class TestRedirection {
         .thenReturn(indexToPublishPluginPluginWithExecutionId);
 
     final ObjectId objectId = new ObjectId();
-    final Workflow workflow = getWorkflow(objectId, getIndexToPublishPluginMetadata(Date.from(Instant.now()),
+    final Workflow workflow = getWorkflow(objectId, getIndexToPublishPluginMetadata(Instant.now(),
         ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
                                                    .orElseThrow()).getPluginMetadata()
                                                                   .getRevisionNamePreviousPlugin(),

@@ -2,11 +2,13 @@ package eu.europeana.metis.core.rest;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import eu.europeana.metis.utils.CommonStringValues;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This class represents the entire execution history for a dataset.
@@ -26,27 +28,13 @@ public class ExecutionHistory {
   /**
    * This class represents one workflow execution.
    */
+  @Getter
+  @Setter
   public static class Execution {
 
     private String workflowExecutionId;
 
-    @JsonFormat(pattern = CommonStringValues.DATE_FORMAT)
-    private Date startedDate;
-
-    public String getWorkflowExecutionId() {
-      return workflowExecutionId;
-    }
-
-    public Date getStartedDate() {
-      return new Date(startedDate.getTime());
-    }
-
-    public void setWorkflowExecutionId(String workflowExecutionId) {
-      this.workflowExecutionId = workflowExecutionId;
-    }
-
-    public void setStartedDate(Date startedDate) {
-      this.startedDate = new Date(startedDate.getTime());
-    }
+    @JsonFormat(pattern = CommonStringValues.DATE_FORMAT, timezone = "UTC")
+    private Instant startedDate;
   }
 }

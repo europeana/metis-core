@@ -1,11 +1,15 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * Link Checking Plugin Metadata.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-05-16
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public class LinkCheckingPluginMetadata extends AbstractExecutablePluginMetadata {
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.LINK_CHECKING;
@@ -13,28 +17,8 @@ public class LinkCheckingPluginMetadata extends AbstractExecutablePluginMetadata
   private boolean performSampling;
   private Integer sampleSize;
 
-  public LinkCheckingPluginMetadata() {
-    //Required for json serialization
-  }
-
   @Override
   public ExecutablePluginType getExecutablePluginType() {
     return pluginType;
-  }
-
-  public void setPerformSampling(Boolean performSampling) {
-    this.performSampling = performSampling;
-  }
-
-  public Integer getSampleSize() {
-    return sampleSize;
-  }
-
-  public void setSampleSize(Integer sampleSize) {
-    this.sampleSize = sampleSize;
-  }
-
-  public boolean getPerformSampling() {
-    return performSampling;
   }
 }

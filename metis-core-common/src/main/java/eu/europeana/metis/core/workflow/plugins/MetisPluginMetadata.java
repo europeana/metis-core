@@ -3,7 +3,7 @@ package eu.europeana.metis.core.workflow.plugins;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * This interface represents plugin metadata
@@ -29,6 +29,6 @@ public interface MetisPluginMetadata {
 
   String getRevisionNamePreviousPlugin();
 
-  Date getRevisionTimestampPreviousPlugin();
+  Instant getRevisionTimestampPreviousPlugin();
 
 }

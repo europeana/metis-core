@@ -2,9 +2,6 @@ package eu.europeana.metis.core.workflow.plugins;
 
 /**
  * Validation External Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-05-24
  */
 public class ValidationExternalPlugin extends AbstractExecutablePlugin<ValidationExternalPluginMetadata> {
 
@@ -31,7 +28,7 @@ public class ValidationExternalPlugin extends AbstractExecutablePlugin<Validatio
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

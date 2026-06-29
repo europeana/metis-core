@@ -29,8 +29,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTask> extends AbstractEngineTaskFactory<S, T> {
 
-  //We will change this when we support it
-  private static final int STEP_SIZE = 1;
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
 
@@ -64,13 +62,13 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
                   oaipmhHarvestPluginMetadata.getMetadataFormat(),
                   oaipmhHarvestPluginMetadata.getFromDate(),
                   oaipmhHarvestPluginMetadata.getUntilDate(),
-                  STEP_SIZE)
+                  oaipmhHarvestPluginMetadata.getStepSize())
           );
       case HTTPHarvestPluginMetadata httpHarvestPluginMetadata ->
           new PluginHarvestParameters(httpHarvestPluginMetadata.isIncrementalHarvest(),
               new HttpHarvestInputDataEndpoint(
                   httpHarvestPluginMetadata.getUrl(),
-                  STEP_SIZE)
+                  httpHarvestPluginMetadata.getStepSize())
           );
       default -> throw new IllegalStateException("Unexpected value: " + plugin.getPluginMetadata());
     };

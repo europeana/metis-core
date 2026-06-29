@@ -19,11 +19,11 @@ import eu.europeana.metis.core.rest.DepublishRecordIdView;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
 import eu.europeana.metis.core.utils.TestObjectFactory;
-import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.mongo.embedded.EmbeddedLocalhostMongo;
+import eu.europeana.metis.utils.DepublicationReason;
 import java.time.Instant;
-import java.util.Date;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -192,16 +192,16 @@ class TestDepublishRecordIdDao {
   void markRecordIdsWithDepublicationStatus_wrong_parametersTest() {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     final Set<String> recordIdsSet = Set.of("1", "2");
-    Date date = Date.from(Instant.now());
+    Instant now = Instant.now();
 
     //Null depublication status
     assertThrows(IllegalArgumentException.class, () -> depublishRecordIdDao
-        .markRecordIdsWithDepublicationStatus(datasetId, recordIdsSet, null, date, DepublicationReason.GENERIC));
+        .markRecordIdsWithDepublicationStatus(datasetId, recordIdsSet, null, now, DepublicationReason.GENERIC));
 
     //Blank dataset id
     assertThrows(IllegalArgumentException.class, () -> depublishRecordIdDao
         .markRecordIdsWithDepublicationStatus(null, recordIdsSet,
-            DepublicationStatus.PENDING_DEPUBLICATION, date, DepublicationReason.GENERIC));
+            DepublicationStatus.PENDING_DEPUBLICATION, now, DepublicationReason.GENERIC));
 
     //Depublished status but date null
     assertThrows(IllegalArgumentException.class, () -> depublishRecordIdDao
@@ -214,7 +214,7 @@ class TestDepublishRecordIdDao {
       throws BadContentException {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     final Set<String> recordIdsSet = Set.of("1", "2");
-    Date date = Date.from(Instant.now());
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     //Create recordIds
     depublishRecordIdDao.createRecordIdsToBeDepublished(datasetId, recordIdsSet);
@@ -228,18 +228,18 @@ class TestDepublishRecordIdDao {
     //Set to DEPUBLISHED
     depublishRecordIdDao
         .markRecordIdsWithDepublicationStatus(datasetId, null, DepublicationStatus.DEPUBLISHED,
-            date, DepublicationReason.GENERIC);
+            now, DepublicationReason.GENERIC);
     //Check stored recordIds
     findAll = depublishRecordIdDao
         .getDepublishRecordIds(datasetId, 0, DepublishRecordIdSortField.DEPUBLICATION_STATE,
             SortDirection.ASCENDING, null);
     assertTrue(findAll.stream().allMatch(depublishRecordIdView ->
         DepublishRecordIdView.DepublicationStatus.DEPUBLISHED == depublishRecordIdView
-            .getDepublicationStatus() && date
-            .equals(Date.from(depublishRecordIdView.getDepublicationDate()))));
+            .getDepublicationStatus() && now
+            .equals(depublishRecordIdView.getDepublicationDate())));
     //Set to PENDING_DEPUBLICATION
     depublishRecordIdDao.markRecordIdsWithDepublicationStatus(datasetId, null,
-        DepublicationStatus.PENDING_DEPUBLICATION, date, DepublicationReason.GENERIC);
+        DepublicationStatus.PENDING_DEPUBLICATION, now, DepublicationReason.GENERIC);
     //Check stored recordIds
     findAll = depublishRecordIdDao
         .getDepublishRecordIds(datasetId, 0, DepublishRecordIdSortField.DEPUBLICATION_STATE,
@@ -255,7 +255,7 @@ class TestDepublishRecordIdDao {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     final Set<String> recordIdsToCreate = Set.of("1", "2", "3");
     final Set<String> recordIdsToUpdate = Set.of("1", "2");
-    Date date = Date.from(Instant.now());
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     //Create recordIds
     depublishRecordIdDao.createRecordIdsToBeDepublished(datasetId, recordIdsToCreate);
@@ -268,18 +268,18 @@ class TestDepublishRecordIdDao {
             .getDepublicationStatus() && null == depublishRecordIdView.getDepublicationDate()));
     //Set to DEPUBLISHED
     depublishRecordIdDao.markRecordIdsWithDepublicationStatus(datasetId, recordIdsToUpdate,
-        DepublicationStatus.DEPUBLISHED, date, DepublicationReason.GENERIC);
+        DepublicationStatus.DEPUBLISHED, now, DepublicationReason.GENERIC);
     //Check stored recordIds
     findAll = depublishRecordIdDao
         .getDepublishRecordIds(datasetId, 0, DepublishRecordIdSortField.DEPUBLICATION_STATE,
             SortDirection.ASCENDING, null);
     assertEquals(2, findAll.stream().filter(depublishRecordIdView ->
         DepublishRecordIdView.DepublicationStatus.DEPUBLISHED == depublishRecordIdView
-            .getDepublicationStatus() && date
-            .equals(Date.from(depublishRecordIdView.getDepublicationDate()))).count());
+            .getDepublicationStatus() && now
+            .equals(depublishRecordIdView.getDepublicationDate())).count());
     //Set to PENDING_DEPUBLICATION
     depublishRecordIdDao.markRecordIdsWithDepublicationStatus(datasetId, recordIdsToUpdate,
-        DepublicationStatus.PENDING_DEPUBLICATION, date, DepublicationReason.GENERIC);
+        DepublicationStatus.PENDING_DEPUBLICATION, now, DepublicationReason.GENERIC);
     //Check stored recordIds
     findAll = depublishRecordIdDao
         .getDepublishRecordIds(datasetId, 0, DepublishRecordIdSortField.DEPUBLICATION_STATE,
@@ -296,13 +296,13 @@ class TestDepublishRecordIdDao {
     final String datasetId = Integer.toString(TestObjectFactory.DATASETID);
     final Set<String> recordIdsToCreate = Set.of("1", "2", "3");
     final Set<String> recordIdsToUpdate = Set.of("4", "5");
-    Date date = Date.from(Instant.now());
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     //Create recordIds
     depublishRecordIdDao.createRecordIdsToBeDepublished(datasetId, recordIdsToCreate);
     //Set to DEPUBLISHED
     depublishRecordIdDao.markRecordIdsWithDepublicationStatus(datasetId, recordIdsToUpdate,
-        DepublicationStatus.DEPUBLISHED, date, DepublicationReason.GENERIC);
+        DepublicationStatus.DEPUBLISHED, now, DepublicationReason.GENERIC);
 
     //Check stored recordIds
     List<DepublishRecordIdView> findAll = depublishRecordIdDao
@@ -314,8 +314,8 @@ class TestDepublishRecordIdDao {
         .count();
     final long depublishedCount = findAll.stream().filter(depublishRecordIdView ->
         DepublishRecordIdView.DepublicationStatus.DEPUBLISHED == depublishRecordIdView
-            .getDepublicationStatus() && date
-            .equals(Date.from(depublishRecordIdView.getDepublicationDate()))).count();
+            .getDepublicationStatus() && now
+            .equals(depublishRecordIdView.getDepublicationDate())).count();
     assertEquals(3, pendingCount);
     assertEquals(2, depublishedCount);
     assertEquals(recordIdsToCreate.size() + recordIdsToUpdate.size(),

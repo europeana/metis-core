@@ -55,10 +55,10 @@ import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.mongo.utils.MorphiaUtils;
 import java.lang.invoke.MethodHandles;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -464,14 +464,14 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    * @return a list of all the WorkflowExecutions found. Is not null.
    */
   public ResultList<ExecutionDatasetPair> getWorkflowExecutionsOverview(Set<String> datasetIds,
-      Set<PluginStatus> pluginStatuses, Set<PluginType> pluginTypes, Date fromDate, Date toDate,
+      Set<PluginStatus> pluginStatuses, Set<PluginType> pluginTypes, Instant fromDate, Instant toDate,
       int nextPage, int pageCount) {
     return getWorkflowExecutionsOverview(datasetIds, pluginStatuses, pluginTypes, fromDate, toDate,
         createPagination(nextPage, pageCount, false));
   }
 
   ResultList<ExecutionDatasetPair> getWorkflowExecutionsOverview(Set<String> datasetIds,
-      Set<PluginStatus> pluginStatuses, Set<PluginType> pluginTypes, Date fromDate, Date toDate,
+      Set<PluginStatus> pluginStatuses, Set<PluginType> pluginTypes, Instant fromDate, Instant toDate,
       Pagination pagination) {
 
     return retryableExternalRequestForNetworkExceptions(() -> {
@@ -511,7 +511,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   }
 
   private Filter createFilter(Set<String> datasetIds, Set<PluginStatus> pluginStatuses,
-      Set<PluginType> pluginTypes, Date fromDate, Date toDate) {
+      Set<PluginType> pluginTypes, Instant fromDate, Instant toDate) {
     List<Filter> elemMatchFilters = new ArrayList<>();
     if (!CollectionUtils.isEmpty(pluginTypes)) {
       elemMatchFilters.add(Filters.in(PLUGIN_TYPE.getFieldName(), pluginTypes));

@@ -144,7 +144,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
       }
       case LinkCheckingPluginMetadata linkCheckingPluginMetadata -> new CurateTaskContext(
           createLinkCheckingParameters(
-              linkCheckingPluginMetadata.getPerformSampling(),
+              linkCheckingPluginMetadata.isPerformSampling(),
               linkCheckingPluginMetadata.getSampleSize()),
           simpleInput
       );

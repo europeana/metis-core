@@ -15,7 +15,7 @@ public class LinkCheckingPlugin extends AbstractExecutablePlugin<LinkCheckingPlu
    * plugin.
    */
   public LinkCheckingPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.LINK_CHECKING);
   }
 

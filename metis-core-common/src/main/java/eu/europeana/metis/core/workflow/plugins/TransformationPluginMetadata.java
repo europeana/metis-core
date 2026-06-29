@@ -1,8 +1,15 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * Transformation Plugin Metadata.
  */
+@Setter
+@Getter
+@NoArgsConstructor
 public class TransformationPluginMetadata extends AbstractExecutablePluginMetadata {
 
   private static final ExecutablePluginType pluginType = ExecutablePluginType.TRANSFORMATION;
@@ -12,52 +19,9 @@ public class TransformationPluginMetadata extends AbstractExecutablePluginMetada
   private String country;
   private String language;
 
-  public TransformationPluginMetadata() {
-    //Required for json serialization
-  }
-
   @Override
   public ExecutablePluginType getExecutablePluginType() {
     return pluginType;
   }
 
-  public boolean isCustomXslt() {
-    return customXslt;
-  }
-
-  public void setCustomXslt(boolean customXslt) {
-    this.customXslt = customXslt;
-  }
-
-  public String getXsltId() {
-    return xsltId;
-  }
-
-  public void setXsltId(String xsltId) {
-    this.xsltId = xsltId;
-  }
-
-  public String getDatasetName() {
-    return datasetName;
-  }
-
-  public void setDatasetName(String datasetName) {
-    this.datasetName = datasetName;
-  }
-
-  public String getCountry() {
-    return country;
-  }
-
-  public void setCountry(String country) {
-    this.country = country;
-  }
-
-  public String getLanguage() {
-    return language;
-  }
-
-  public void setLanguage(String language) {
-    this.language = language;
-  }
 }

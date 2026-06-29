@@ -43,9 +43,9 @@ import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,7 +102,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
@@ -151,7 +151,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
@@ -199,7 +199,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
@@ -244,7 +244,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
@@ -285,7 +285,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
     final ExternalTaskException exception = new ExternalTaskException("Some error",
@@ -342,7 +342,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
@@ -383,7 +383,7 @@ class TestWorkflowExecutor {
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(new Date());
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
@@ -470,7 +470,7 @@ class TestWorkflowExecutor {
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(new Date());
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
     final ObjectId objectId = new ObjectId();
@@ -516,7 +516,7 @@ class TestWorkflowExecutor {
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(plugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doThrow(new ExternalTaskException("Submit failed"))
         .when(engineTaskClient)

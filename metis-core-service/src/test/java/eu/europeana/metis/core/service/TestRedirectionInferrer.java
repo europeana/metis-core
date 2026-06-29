@@ -1,5 +1,16 @@
 package eu.europeana.metis.core.service;
 
+import static eu.europeana.metis.core.service.TestRedirectionBase.getExecutablePluginTypes;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getTestDataset;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
+import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 import eu.europeana.metis.core.dao.DataEvolutionUtils;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
@@ -11,24 +22,12 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static eu.europeana.metis.core.service.TestRedirectionBase.getExecutablePluginTypes;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getTestDataset;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPostReindex;
-import static eu.europeana.metis.core.service.TestRedirectionBase.getWorkflowPreReindex;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TestRedirectionInferrer {
@@ -97,7 +96,7 @@ class TestRedirectionInferrer {
   @Test
   void shouldRedirectsBePerformed_whenLatestSuccessfulPluginButDatasetUpdate_expectRedirect() {
     final Dataset dataset = getTestDataset();
-    dataset.setUpdatedDate(Date.from(Instant.now()));
+    dataset.setUpdatedDate(Instant.now());
     dataset.setDatasetIdsToRedirectFrom(List.of("258"));
     final WorkflowExecution workflowExecution = getWorkflowPostReindex(dataset);
 

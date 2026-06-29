@@ -63,7 +63,7 @@ import eu.europeana.metis.core.workflow.plugins.ValidationInternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.utils.DepublicationReason;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -131,7 +131,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     ValidationExternalPlugin validationExternalPlugin = new ValidationExternalPlugin();
     ValidationExternalPluginMetadata validationExternalPluginMetadata = spy(ValidationExternalPluginMetadata.class);
     validationExternalPlugin.setPluginMetadata(validationExternalPluginMetadata);
-    validationExternalPlugin.setStartedDate(new Date());
+    validationExternalPlugin.setStartedDate(Instant.now());
     when(validationExternalPluginMetadata.getExecutablePluginType()).thenReturn(HTTP_HARVEST);
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter = new EngineTaskSubmitter<>(validationExternalPlugin,
@@ -144,7 +144,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     IndexToPreviewPlugin indexToPreviewPlugin = new IndexToPreviewPlugin();
     IndexToPreviewPluginMetadata indexToPreviewPluginMetadata = spy(IndexToPreviewPluginMetadata.class);
     indexToPreviewPlugin.setPluginMetadata(indexToPreviewPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
+    indexToPreviewPlugin.setStartedDate(Instant.now());
     when(indexToPreviewPluginMetadata.getExecutablePluginType()).thenReturn(VALIDATION_EXTERNAL);
     when(indexToPreviewPluginMetadata.getRevisionNamePreviousPlugin()).thenReturn(VALIDATION_EXTERNAL.name());
 
@@ -158,7 +158,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     OaipmhHarvestPlugin indexToPreviewPlugin = new OaipmhHarvestPlugin();
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = spy(OaipmhHarvestPluginMetadata.class);
     indexToPreviewPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
+    indexToPreviewPlugin.setStartedDate(Instant.now());
     when(oaipmhHarvestPluginMetadata.getExecutablePluginType()).thenReturn(PREVIEW);
     when(oaipmhHarvestPluginMetadata.getRevisionNamePreviousPlugin()).thenReturn(PREVIEW.name());
 
@@ -193,17 +193,17 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     } else if (metadata instanceof MediaProcessPluginMetadata mediaProcessPluginMetadata) {
       mediaProcessPluginMetadata.setThrottlingLevel(throttlingLevel);
     } else if (metadata instanceof IndexToPreviewPluginMetadata pluginMetadata) {
-      pluginMetadata.setHarvestDate(new Date());
+      pluginMetadata.setHarvestDate(Instant.now());
     } else if (metadata instanceof IndexToPublishPluginMetadata pluginMetadata) {
-      pluginMetadata.setHarvestDate(new Date());
+      pluginMetadata.setHarvestDate(Instant.now());
     }
 
     if (!(metadata instanceof AbstractHarvestPluginMetadata)) {
       metadata.setRevisionNamePreviousPlugin(previousType.name());
-      metadata.setRevisionTimestampPreviousPlugin(new Date());
+      metadata.setRevisionTimestampPreviousPlugin(Instant.now());
     }
     plugin.setPluginMetadata(metadata);
-    plugin.setStartedDate(new Date());
+    plugin.setStartedDate(Instant.now());
     return plugin;
   }
 
@@ -237,7 +237,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     DepublishPluginMetadata depublishPluginMetadata = new DepublishPluginMetadata();
     depublishPluginMetadata.setDatasetDepublish(true);
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
+    depublishPlugin.setStartedDate(Instant.now());
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
 
@@ -266,7 +266,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     depublishPluginMetadata.setDatasetDepublish(true);
     depublishPluginMetadata.setDepublicationReason(DepublicationReason.GDPR);
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
+    depublishPlugin.setStartedDate(Instant.now());
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
 
@@ -297,7 +297,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     depublishPluginMetadata.setDatasetDepublish(false);
     depublishPluginMetadata.setRecordIdsToDepublish(Set.of("RecordId1", "RecordId2"));
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
+    depublishPlugin.setStartedDate(Instant.now());
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
 
@@ -325,7 +325,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     DepublishPluginMetadata depublishPluginMetadata = new DepublishPluginMetadata();
     depublishPluginMetadata.setDatasetDepublish(false);
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
+    depublishPlugin.setStartedDate(Instant.now());
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
     assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID),
@@ -337,7 +337,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     OaipmhHarvestPlugin indexToPreviewPlugin = new OaipmhHarvestPlugin();
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = spy(OaipmhHarvestPluginMetadata.class);
     indexToPreviewPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
+    indexToPreviewPlugin.setStartedDate(Instant.now());
     when(oaipmhHarvestPluginMetadata.getExecutablePluginType()).thenReturn(DEPUBLISH);
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
@@ -351,7 +351,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPluginMetadata.setUrl(HARVEST_URL);
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(new Date());
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         new EngineTaskSubmitter<>(oaipmhHarvestPlugin, engineTaskClient, datasetXsltDao);
 

@@ -15,7 +15,7 @@ public class NormalizationPlugin extends AbstractExecutablePlugin<NormalizationP
    * plugin.
    */
   public NormalizationPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.NORMALIZATION);
   }
 

@@ -46,7 +46,7 @@ import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import io.micrometer.common.util.StringUtils;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,8 +88,8 @@ class TestEcloudEngineTaskClient {
   void createEngineTask() {
     Map<EngineTaskKey, String> parameters = Map.of();
     InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "",
-        new DataRevision("name", "provider", new Date(), false));
-    DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
+        new DataRevision("name", "provider", Instant.now(), false));
+    DataRevision outputDataRevision = new DataRevision("name", "provider", Instant.now(), false);
     EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint,
         outputDataRevision);
     assertNotNull(ecloudEngineTask);
@@ -99,8 +99,8 @@ class TestEcloudEngineTaskClient {
   void createEngineTask_throws() {
     Map<EngineTaskKey, String> parameters = Map.of();
     InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "",
-        new DataRevision("name", "provider", new Date(), false));
-    DataRevision outputDataRevision = new DataRevision("name", "provider", new Date(), false);
+        new DataRevision("name", "provider", Instant.now(), false));
+    DataRevision outputDataRevision = new DataRevision("name", "provider", Instant.now(), false);
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint, null));
   }
@@ -348,7 +348,7 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void getRecords_withDatasetId() throws ExternalTaskException {
-    Date now = new Date();
+    Instant now = Instant.now();
     List<Record> records = List.of(new Record(null, null));
     when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), DATASET_ID, REPRESENTATION_NAME,
         REVISION_NAME, now, 1)).thenReturn(records);
@@ -358,7 +358,7 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void getRecords_fromIds() throws ExternalTaskException {
-    Date now = new Date();
+    Instant now = Instant.now();
     List<Record> records = List.of(new Record(null, null));
     when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), List.of("recordId1"), REVISION_NAME,
         now)).thenReturn(records);
@@ -367,7 +367,7 @@ class TestEcloudEngineTaskClient {
 
   @Test
   void getRecord() throws ExternalTaskException {
-    Date now = new Date();
+    Instant now = Instant.now();
     Record records = new Record(null, null);
     when(ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), "recordId", REVISION_NAME,
         now)).thenReturn(records);

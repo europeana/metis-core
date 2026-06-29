@@ -59,11 +59,9 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.security.test.JwtUtils;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
-import java.util.TimeZone;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,13 +98,6 @@ class TestOrchestratorController {
   public TestOrchestratorController(SecurityConfigurationProperties securityConfigurationProperties, ObjectMapper objectMapper) {
     jwtUtils = new JwtUtils(securityConfigurationProperties.resourceNames());
     TestUtils.setObjectMapper(objectMapper);
-  }
-
-  private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-
-  static {
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
 
   @BeforeAll
@@ -471,10 +462,10 @@ class TestOrchestratorController {
   void getDatasetExecutionInformation() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     DatasetExecutionInformation datasetExecutionInformation = new DatasetExecutionInformation();
-    datasetExecutionInformation.setLastHarvestedDate(new Date(1000));
+    datasetExecutionInformation.setLastHarvestedDate(Instant.ofEpochMilli(1000));
     datasetExecutionInformation.setLastHarvestedRecords(100);
-    datasetExecutionInformation.setFirstPublishedDate(new Date(2000));
-    datasetExecutionInformation.setLastPublishedDate(new Date(3000));
+    datasetExecutionInformation.setFirstPublishedDate(Instant.ofEpochMilli(2000));
+    datasetExecutionInformation.setLastPublishedDate(Instant.ofEpochMilli(3000));
     datasetExecutionInformation.setLastPublishedRecords(100);
     when(orchestratorService
         .getDatasetExecutionInformation(Integer.toString(TestObjectFactory.DATASETID)))
@@ -487,13 +478,13 @@ class TestOrchestratorController {
                .content(""))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.lastHarvestedDate",
-               is(simpleDateFormat.format(datasetExecutionInformation.getLastHarvestedDate()))))
+               is(datasetExecutionInformation.getLastHarvestedDate().toString())))
            .andExpect(jsonPath("$.lastHarvestedRecords",
                is((int) datasetExecutionInformation.getLastHarvestedRecords())))
            .andExpect(jsonPath("$.firstPublishedDate",
-               is(simpleDateFormat.format(datasetExecutionInformation.getFirstPublishedDate()))))
+               is(datasetExecutionInformation.getFirstPublishedDate().toString())))
            .andExpect(jsonPath("$.lastPublishedDate",
-               is(simpleDateFormat.format(datasetExecutionInformation.getLastPublishedDate()))))
+               is(datasetExecutionInformation.getLastPublishedDate().toString())))
            .andExpect(jsonPath("$.lastPublishedRecords",
                is((int) datasetExecutionInformation.getLastPublishedRecords())));
   }
@@ -630,10 +621,10 @@ class TestOrchestratorController {
     // Create nonempty history
     final Execution execution1 = new Execution();
     execution1.setWorkflowExecutionId("execution 1");
-    execution1.setStartedDate(new Date(1));
+    execution1.setStartedDate(Instant.ofEpochMilli(1));
     final Execution execution2 = new Execution();
     execution2.setWorkflowExecutionId("execution 2");
-    execution2.setStartedDate(new Date(2));
+    execution2.setStartedDate(Instant.ofEpochMilli(2));
     final ExecutionHistory resultNonEmpty = new ExecutionHistory();
     resultNonEmpty.setExecutions(Arrays.asList(execution1, execution2));
 
@@ -645,9 +636,9 @@ class TestOrchestratorController {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.executions", hasSize(2)))
            .andExpect(jsonPath("$.executions[0].workflowExecutionId", is(execution1.getWorkflowExecutionId())))
-           .andExpect(jsonPath("$.executions[0].startedDate", is(simpleDateFormat.format(execution1.getStartedDate()))))
+           .andExpect(jsonPath("$.executions[0].startedDate", is(execution1.getStartedDate().toString())))
            .andExpect(jsonPath("$.executions[1].workflowExecutionId", is(execution2.getWorkflowExecutionId())))
-           .andExpect(jsonPath("$.executions[1].startedDate", is(simpleDateFormat.format(execution2.getStartedDate()))));
+           .andExpect(jsonPath("$.executions[1].startedDate", is(execution2.getStartedDate().toString())));
 
     // Test happy flow with empty evolution
     final ExecutionHistory resultEmpty = new ExecutionHistory();
@@ -738,11 +729,11 @@ class TestOrchestratorController {
 
     // Create nonempty evolution step
     final VersionEvolutionStep step1 = new VersionEvolutionStep();
-    step1.setFinishedTime(new Date(1));
+    step1.setFinishedTime(Instant.ofEpochMilli(1));
     step1.setPluginType(ExecutablePluginType.OAIPMH_HARVEST);
     step1.setWorkflowExecutionId("execution 1");
     final VersionEvolutionStep step2 = new VersionEvolutionStep();
-    step2.setFinishedTime(new Date(2));
+    step2.setFinishedTime(Instant.ofEpochMilli(2));
     step2.setPluginType(ExecutablePluginType.TRANSFORMATION);
     step2.setWorkflowExecutionId("execution 2");
     final VersionEvolution resultNonEmpty = new VersionEvolution();
@@ -758,10 +749,10 @@ class TestOrchestratorController {
         .andExpect(jsonPath("$.evolutionSteps", hasSize(2)))
         .andExpect(jsonPath("$.evolutionSteps[0].workflowExecutionId", is(step1.getWorkflowExecutionId())))
         .andExpect(jsonPath("$.evolutionSteps[0].pluginType", is(step1.getPluginType().name())))
-        .andExpect(jsonPath("$.evolutionSteps[0].finishedTime", is(simpleDateFormat.format(step1.getFinishedTime().getTime()))))
+        .andExpect(jsonPath("$.evolutionSteps[0].finishedTime", is(step1.getFinishedTime().toString())))
         .andExpect(jsonPath("$.evolutionSteps[1].workflowExecutionId", is(step2.getWorkflowExecutionId())))
         .andExpect(jsonPath("$.evolutionSteps[1].pluginType", is(step2.getPluginType().name())))
-        .andExpect(jsonPath("$.evolutionSteps[1].finishedTime", is(simpleDateFormat.format(step2.getFinishedTime().getTime()))));
+        .andExpect(jsonPath("$.evolutionSteps[1].finishedTime", is(step2.getFinishedTime().toString())));
 
     // Test happy flow with empty evolution
     final VersionEvolution resultEmpty = new VersionEvolution();

@@ -11,7 +11,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -83,7 +83,7 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
     };
 
     boolean incrementalIndexing = indexPluginMetadata.isIncrementalIndexing();
-    Date harvestDate = indexPluginMetadata.getHarvestDate();
+    Instant harvestDate = indexPluginMetadata.getHarvestDate();
     boolean preserveTimestamps = indexPluginMetadata.isPreserveTimestamps();
     List<String> datasetIdsToRedirectFrom = indexPluginMetadata.getDatasetIdsToRedirectFrom();
     boolean performRedirects = indexPluginMetadata.isPerformRedirects();

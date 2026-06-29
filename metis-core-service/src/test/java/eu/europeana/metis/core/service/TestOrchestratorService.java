@@ -81,18 +81,17 @@ import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.utils.DateUtils;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -431,7 +430,7 @@ class TestOrchestratorService {
     OaipmhHarvestPlugin oaipmhHarvestPlugin = (OaipmhHarvestPlugin) ExecutablePluginFactory.createPlugin(
         new OaipmhHarvestPluginMetadata());
     oaipmhHarvestPlugin.setPluginMetadata(new OaipmhHarvestPluginMetadata());
-    oaipmhHarvestPlugin.setStartedDate(new Date());
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
     ExecutionProgress executionProgress = new ExecutionProgress();
     executionProgress.setProcessedRecords(5);
     oaipmhHarvestPlugin.setExecutionProgress(executionProgress);
@@ -687,10 +686,10 @@ class TestOrchestratorService {
   @Test
   void getDatasetExecutionInformation() throws GenericMetisException {
     ExecutionProgress executionProgress = getExecutionProgress(100, 20);
-    final Date longEnoughToBeValidDate = DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 3),
-        TimeUnit.MINUTES);
-    final Date notLongEnoughToBeValidDate = DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 2),
-        TimeUnit.MINUTES);
+    final Instant longEnoughToBeValidDate =
+        Instant.now().minus(Duration.ofMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES + 3));
+    final Instant notLongEnoughToBeValidDate =
+        Instant.now().minus(Duration.ofMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES + 2));
 
     // Create preview plugin
     AbstractExecutablePlugin<IndexToPreviewPluginMetadata> previewPlugin = ExecutablePluginFactory.createPlugin(
@@ -729,8 +728,7 @@ class TestOrchestratorService {
     AbstractExecutablePlugin<?> oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
     oaipmhHarvestPlugin.setFinishedDate(
-        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 5),
-            TimeUnit.MINUTES));
+        Instant.now().minus(Duration.ofMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES + 5)));
     oaipmhHarvestPlugin.setDataStatus(null); // Is default status, means valid.
     oaipmhHarvestPlugin.setExecutionProgress(executionProgress);
 
@@ -738,8 +736,7 @@ class TestOrchestratorService {
     AbstractExecutablePlugin<?> firstPublishPlugin = ExecutablePluginFactory
         .createPlugin(new IndexToPublishPluginMetadata());
     firstPublishPlugin.setFinishedDate(
-        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 4),
-            TimeUnit.MINUTES));
+        Instant.now().minus(Duration.ofMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES + 4)));
     firstPublishPlugin.setDataStatus(null); // Is default status, means valid.
     firstPublishPlugin.setExecutionProgress(executionProgress);
     final WorkflowExecution executionWithFirstPublishPlugin = TestObjectFactory
@@ -760,8 +757,7 @@ class TestOrchestratorService {
     AbstractMetisPlugin<?> reindexToPreviewPlugin = new ReindexToPreviewPlugin(
         new ReindexToPreviewPluginMetadata());
     reindexToPreviewPlugin.setFinishedDate(
-        DateUtils.modifyDateByTimeUnitAmount(new Date(), -(SOLR_COMMIT_PERIOD_IN_MINUTES + 1),
-            TimeUnit.MINUTES));
+        Instant.now().minus(Duration.ofMinutes(SOLR_COMMIT_PERIOD_IN_MINUTES + 1)));
     final WorkflowExecution executionWithReindexToPreview = TestObjectFactory
         .createWorkflowExecutionObject();
     executionWithReindexToPreview.setMetisPlugins(List.of(reindexToPreviewPlugin));
@@ -812,12 +808,15 @@ class TestOrchestratorService {
     assertEquals(lastPublishPlugin.getFinishedDate(), executionInfo.getLastPublishedDate());
 
     assertEquals(
-        oaipmhHarvestPlugin.getExecutionProgress().getProcessedRecords() - oaipmhHarvestPlugin.getExecutionProgress().getFailRecords(),
+        oaipmhHarvestPlugin.getExecutionProgress().getProcessedRecords() - oaipmhHarvestPlugin.getExecutionProgress()
+                                                                                              .getFailRecords(),
         executionInfo.getLastHarvestedRecords());
-    assertEquals(previewPlugin.getExecutionProgress().getProcessedRecords() - previewPlugin.getExecutionProgress().getFailRecords(),
+    assertEquals(
+        previewPlugin.getExecutionProgress().getProcessedRecords() - previewPlugin.getExecutionProgress().getFailRecords(),
         executionInfo.getLastPreviewRecords());
     assertEquals(
-        lastPublishPlugin.getExecutionProgress().getProcessedRecords() - lastPublishPlugin.getExecutionProgress().getFailRecords(),
+        lastPublishPlugin.getExecutionProgress().getProcessedRecords() - lastPublishPlugin.getExecutionProgress()
+                                                                                          .getFailRecords(),
         executionInfo.getLastPublishedRecords());
 
     assertEquals(previewReadyForViewing, executionInfo.isLastPreviewRecordsReadyForViewing());
@@ -838,7 +837,7 @@ class TestOrchestratorService {
 
     // Create plugins
     final AbstractExecutablePlugin<HTTPHarvestPluginMetadata> plugin1 = mock(AbstractExecutablePlugin.class);
-    when(plugin1.getFinishedDate()).thenReturn(new Date());
+    when(plugin1.getFinishedDate()).thenReturn(Instant.now());
     when(plugin1.getPluginType()).thenReturn(PluginType.OAIPMH_HARVEST);
     when(plugin1.getPluginMetadata()).thenReturn(new HTTPHarvestPluginMetadata());
     final ExecutionProgress progress1 = getExecutionProgress(10, 1);
@@ -863,13 +862,13 @@ class TestOrchestratorService {
     reindexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(plugin3.getId());
     reindexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(plugin3.getFinishedDate());
     when(plugin4.getPluginMetadata()).thenReturn(new ReindexToPreviewPluginMetadata());
-    when(plugin4.getFinishedDate()).thenReturn(new Date(4));
+    when(plugin4.getFinishedDate()).thenReturn(Instant.ofEpochMilli(4));
 
     // Create other objects
     final String datasetId = "dataset ID";
     final WorkflowExecution execution1 = createWorkflowExecution(datasetId, plugin1,
         plugin2);
-    execution1.setStartedDate(new Date(12345));
+    execution1.setStartedDate(Instant.ofEpochMilli(12345));
     final WorkflowExecution execution2 = createWorkflowExecution(datasetId, plugin3);
     final WorkflowExecution execution3 = createWorkflowExecution(datasetId, plugin4);
 
@@ -917,7 +916,7 @@ class TestOrchestratorService {
     when(plugin3.getExecutionProgress()).thenReturn(getExecutionProgress(0, 0));
     final ReindexToPreviewPlugin plugin4 = mock(ReindexToPreviewPlugin.class);
     when(plugin4.getPluginType()).thenReturn(PluginType.REINDEX_TO_PUBLISH);
-    when(plugin4.getFinishedDate()).thenReturn(new Date(4));
+    when(plugin4.getFinishedDate()).thenReturn(Instant.ofEpochMilli(4));
 
     // Create other objects
     final String datasetId = "dataset ID";
@@ -965,9 +964,9 @@ class TestOrchestratorService {
 
     // Create two workflow executions with three plugins and link them together
     final String datasetId = "dataset ID";
-    final AbstractExecutablePlugin<?> plugin1 = createMetisPlugin(ExecutablePluginType.OAIPMH_HARVEST, new Date(1));
-    final AbstractExecutablePlugin<?> plugin2 = createMetisPlugin(ExecutablePluginType.TRANSFORMATION, new Date(2));
-    final AbstractExecutablePlugin<?> plugin3 = createMetisPlugin(ExecutablePluginType.MEDIA_PROCESS, new Date(3));
+    final AbstractExecutablePlugin<?> plugin1 = createMetisPlugin(ExecutablePluginType.OAIPMH_HARVEST, Instant.ofEpochMilli(1));
+    final AbstractExecutablePlugin<?> plugin2 = createMetisPlugin(ExecutablePluginType.TRANSFORMATION, Instant.ofEpochMilli(2));
+    final AbstractExecutablePlugin<?> plugin3 = createMetisPlugin(ExecutablePluginType.MEDIA_PROCESS, Instant.ofEpochMilli(3));
     final WorkflowExecution execution1 = createWorkflowExecution(datasetId, plugin1);
     final WorkflowExecution execution2 = createWorkflowExecution(datasetId, plugin2, plugin3);
 
@@ -1015,7 +1014,7 @@ class TestOrchestratorService {
     return workflowExecution;
   }
 
-  private AbstractExecutablePlugin<?> createMetisPlugin(ExecutablePluginType type, Date date) {
+  private AbstractExecutablePlugin<?> createMetisPlugin(ExecutablePluginType type, Instant date) {
     AbstractExecutablePlugin<AbstractExecutablePluginMetadata> result = mock(AbstractExecutablePlugin.class);
     AbstractExecutablePluginMetadata metadata = mock(AbstractExecutablePluginMetadata.class);
     when(metadata.getExecutablePluginType()).thenReturn(type);

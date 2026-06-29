@@ -1,7 +1,7 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,8 +19,8 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   private boolean preserveTimestamps;
   private boolean performRedirects;
   private List<String> datasetIdsToRedirectFrom = new ArrayList<>();
-  private boolean incrementalIndexing; // Default: false (i.e. full processing)
-  private Date harvestDate;
+  private boolean incrementalIndexing; // Default: false (i.e., full processing)
+  private Instant harvestDate;
 
   public List<String> getDatasetIdsToRedirectFrom() {
     return List.copyOf(datasetIdsToRedirectFrom);
@@ -29,13 +29,5 @@ public abstract class AbstractIndexPluginMetadata extends AbstractExecutablePlug
   public void setDatasetIdsToRedirectFrom(List<String> datasetIdsToRedirectFrom) {
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? List.of() : List.copyOf(datasetIdsToRedirectFrom);
-  }
-
-  public Date getHarvestDate() {
-    return harvestDate == null ? null : new Date(harvestDate.getTime());
-  }
-
-  public void setHarvestDate(Date harvestDate) {
-    this.harvestDate = harvestDate == null ? null : new Date(harvestDate.getTime());
   }
 }

@@ -35,8 +35,8 @@ import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -110,7 +110,7 @@ public class TestObjectFactory {
                                                                  WorkflowExecutionConverter.canDisplayRawXml(plugin)))
                                                              .toList());
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecutionDTO.setCreatedDate(new Date());
+    workflowExecutionDTO.setCreatedDate(Instant.now());
 
     return workflowExecutionDTO;
   }
@@ -121,7 +121,7 @@ public class TestObjectFactory {
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
+    workflowExecution.setCreatedDate(Instant.now());
 
     return workflowExecution;
   }
@@ -156,7 +156,7 @@ public class TestObjectFactory {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(String.format("%s%s", DATASETNAME, i)));
-      dataset.setId(new ObjectId(new Date(i)));
+      dataset.setId(new ObjectId());
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
       workflowExecution.setId(new ObjectId());
@@ -181,8 +181,8 @@ public class TestObjectFactory {
     ds.setIntermediateProvider(providerId);
     ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
+    ds.setCreatedDate(Instant.now());
+    ds.setUpdatedDate(Instant.now());
     ds.setReplacedBy("replacedBy");
     ds.setReplaces("12345");
     ds.setCountry(Country.GREECE);

@@ -16,12 +16,14 @@ import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
+import eu.europeana.metis.utils.CommonStringValues;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -38,7 +40,8 @@ import org.slf4j.LoggerFactory;
 public class EcloudEngineDatasetRecordClient {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private final DateFormat pluginDateFormatForEcloud = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US);
+  private static final DateTimeFormatter PLUGIN_DATE_FORMAT_FOR_ECLOUD =
+      DateTimeFormatter.ofPattern(CommonStringValues.DATE_FORMAT, Locale.ROOT).withZone(ZoneOffset.UTC);
   private final DataSetServiceClient dataSetServiceClient;
   private final RecordServiceClient recordServiceClient;
   private final FileServiceClient fileServiceClient;
@@ -90,12 +93,12 @@ public class EcloudEngineDatasetRecordClient {
    * @throws ExternalTaskException If an issue occurs while fetching the records from external services.
    */
   public List<Record> getRecords(String providerId, String engineDatasetId, String representationName, String revisionName,
-      Date revisionTimestamp, int numberOfRecords) throws ExternalTaskException {
+      Instant revisionTimestamp, int numberOfRecords) throws ExternalTaskException {
     final List<CloudTagsResponse> cloudIdsWithDeletedFlagSetToFalse;
     try {
       cloudIdsWithDeletedFlagSetToFalse = dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
           providerId, engineDatasetId, representationName, revisionName,
-          providerId, pluginDateFormatForEcloud.format(revisionTimestamp), numberOfRecords);
+          providerId, PLUGIN_DATE_FORMAT_FOR_ECLOUD.format(revisionTimestamp), numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(format(
           "Getting record list with file content failed. engineDatasetId: %s, representationName: %s, revisionName: %s, revisionTimestamp: %s",
@@ -127,7 +130,7 @@ public class EcloudEngineDatasetRecordClient {
    * @return A list of records that match the provided criteria.
    * @throws ExternalTaskException If an error occurs while retrieving the records.
    */
-  public List<Record> getRecords(String providerId, List<String> recordIds, String revisionName, Date revisionTimestamp)
+  public List<Record> getRecords(String providerId, List<String> recordIds, String revisionName, Instant revisionTimestamp)
       throws ExternalTaskException {
 
     final List<Record> records = new ArrayList<>(recordIds.size());
@@ -149,7 +152,7 @@ public class EcloudEngineDatasetRecordClient {
    * @return The retrieved Record object, or null if no matching record is found.
    * @throws ExternalTaskException If an issue occurs while fetching the record.
    */
-  public Record getRecord(String providerId, String recordId, String revisionName, Date revisionTimestamp)
+  public Record getRecord(String providerId, String recordId, String revisionName, Instant revisionTimestamp)
       throws ExternalTaskException {
     String ecloudId = null;
     try {
@@ -171,12 +174,12 @@ public class EcloudEngineDatasetRecordClient {
     return ecloudId == null ? null : getRecordByEcloudIdAndRevision(providerId, ecloudId, revisionName, revisionTimestamp);
   }
 
-  private Record getRecordByEcloudIdAndRevision(String providerId, String ecloudId, String revisionName, Date revisionTimestamp)
+  private Record getRecordByEcloudIdAndRevision(String providerId, String ecloudId, String revisionName, Instant revisionTimestamp)
       throws ExternalTaskException {
 
     // Get the representation(s) for the given combination of plugin and record ID.
     final List<Representation> representations;
-    final Revision revision = new Revision(revisionName, providerId, revisionTimestamp);
+    final Revision revision = new Revision(revisionName, providerId, Date.from(revisionTimestamp));
     try {
       representations = recordServiceClient
           .getRepresentationsByRevision(ecloudId, MetisPlugin.getRepresentationName(), revision);
