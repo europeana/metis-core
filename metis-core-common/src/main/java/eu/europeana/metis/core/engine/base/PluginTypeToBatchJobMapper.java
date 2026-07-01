@@ -36,10 +36,8 @@ public final class PluginTypeToBatchJobMapper {
           case NORMALIZATION -> FullBatchJobType.NORMALIZE;
           case ENRICHMENT -> FullBatchJobType.ENRICH;
           case MEDIA_PROCESS -> FullBatchJobType.MEDIA;
-
-          //Preview and publish here redo the same thing.
-          case PREVIEW, PUBLISH -> FullBatchJobType.INDEX_PUBLISH;
-          case LINK_CHECKING, DEPUBLISH -> null;
+          case PREVIEW  -> FullBatchJobType.INDEX_PREVIEW;
+          case PUBLISH, LINK_CHECKING, DEPUBLISH -> null;
         });
   }
 }
