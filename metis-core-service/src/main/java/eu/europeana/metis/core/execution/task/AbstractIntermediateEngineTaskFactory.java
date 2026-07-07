@@ -98,11 +98,7 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
 
   protected SimpleIntermediateInputDataEndpoint createSimpleIntermediateInputDataEndpoint(
       String previousTaskId, GenericIntermediateTaskContext taskData) {
-    return new SimpleIntermediateInputDataEndpoint(
-        taskData.dataLocation(),
-        previousTaskId,
-        taskData.inputDataRevision()
-    );
+    return new SimpleIntermediateInputDataEndpoint(taskData.dataLocation(), previousTaskId);
   }
 
   @NotNull

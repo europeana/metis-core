@@ -29,9 +29,8 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.SAMPLE_SIZE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMATRON_LOCATION;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMA_NAME;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_DATABASE;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
-import static lombok.AccessLevel.*;
+import static lombok.AccessLevel.PRIVATE;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
@@ -175,12 +174,15 @@ public final class EngineTaskParametersConfigurator {
   /**
    * Creates a map of transformation external parameters.
    *
-   * @param xslt the XSLT content
+   * @param metisCoreBaseUrl the base URL for the Metis core API
+   * @param xsltId the identifier of the XSLT transformation
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
-  public static Map<EngineTaskKey, String> createTransformationExternalParameters(String xslt) {
+  public static Map<EngineTaskKey, String> createTransformationExternalParameters(
+      String metisCoreBaseUrl, String xsltId) {
     Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
-    parameters.put(XSLT, xslt);
+    parameters.put(XSLT_URL,
+        metisCoreBaseUrl + RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID, Collections.singletonList(xsltId)));
     return parameters;
   }
 
@@ -194,7 +196,7 @@ public final class EngineTaskParametersConfigurator {
    * @param language the language associated with the dataset
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
-  public static Map<EngineTaskKey, String> createTransformationParameters(
+  public static Map<EngineTaskKey, String> createTransformationInternalParameters(
       String metisCoreBaseUrl, String xsltId, String datasetName, String country, String language) {
     Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(XSLT_URL,

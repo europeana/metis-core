@@ -70,9 +70,9 @@ public class SandboxEngineTask extends EngineTask {
       case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
           new OaiHarvestInputMetadataRequest(url, set, metadataPrefix, from, until, stepSize);
       case HttpHarvestInputDataEndpoint(String url, Integer stepSize) -> new HttpHarvestInputMetadataRequest(url, stepSize);
-      case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, DataRevision inputRevision) ->
+      case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId) ->
           new TransformExternalInputMetadataRequest(xslt, sourceExecutionId);
-      case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId, DataRevision inputRevision) ->
+      case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId) ->
           new SimpleIntermediateInputMetadataRequest(sourceExecutionId);
       case DepublishInputDataEndpoint ignored ->
           throw new IllegalArgumentException("DepublishInputDataEndpoint is not supported for sandbox tasks");

@@ -3,7 +3,7 @@ package eu.europeana.metis.core.execution.task;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createLinkCheckingParameters;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createMediaParameters;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createTransformationExternalParameters;
-import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createTransformationParameters;
+import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createTransformationInternalParameters;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createValidationExternalParameters;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createValidationInternalParameters;
 
@@ -89,13 +89,10 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
         String xsltId = transformationExternalPluginMetadata.getXsltId();
         String xslt = Optional.ofNullable(datasetXsltDao.getById(xsltId)).map(DatasetXslt::getXslt).orElse(null);
         yield new CurateTaskContext(
-            createTransformationExternalParameters(xslt),
-            new TransformExternalInputDataEndpoint(
-                xslt,
-                genericIntermediateTaskContext.dataLocation(),
-                previousTaskId,
-                genericIntermediateTaskContext.inputDataRevision()
-            )
+            createTransformationExternalParameters(
+                engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl(),
+                transformationExternalPluginMetadata.getXsltId()),
+            new TransformExternalInputDataEndpoint(xslt, genericIntermediateTaskContext.dataLocation(), previousTaskId)
         );
       }
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> new CurateTaskContext(
@@ -107,7 +104,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
           simpleInput
       );
       case TransformationPluginMetadata transformationPluginMetadata -> new CurateTaskContext(
-          createTransformationParameters(
+          createTransformationInternalParameters(
               engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl(),
               transformationPluginMetadata.getXsltId(),
               transformationPluginMetadata.getDatasetName(),
