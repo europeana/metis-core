@@ -16,6 +16,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.SimpleIntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.TransformExternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.TransformInternalInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
@@ -103,16 +104,20 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
           ),
           simpleInput
       );
-      case TransformationPluginMetadata transformationPluginMetadata -> new CurateTaskContext(
-          createTransformationInternalParameters(
-              engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl(),
-              transformationPluginMetadata.getXsltId(),
-              transformationPluginMetadata.getDatasetName(),
-              transformationPluginMetadata.getCountry(),
-              transformationPluginMetadata.getLanguage()
-          ),
-          simpleInput
-      );
+      case TransformationPluginMetadata transformationPluginMetadata -> {
+        String xsltId = transformationPluginMetadata.getXsltId();
+        String xslt = Optional.ofNullable(datasetXsltDao.getById(xsltId)).map(DatasetXslt::getXslt).orElse(null);
+        yield new CurateTaskContext(
+            createTransformationInternalParameters(
+                engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl(),
+                transformationPluginMetadata.getXsltId(),
+                transformationPluginMetadata.getDatasetName(),
+                transformationPluginMetadata.getCountry(),
+                transformationPluginMetadata.getLanguage()
+            ),
+            new TransformInternalInputDataEndpoint(xslt, genericIntermediateTaskContext.dataLocation(), previousTaskId)
+        );
+      }
       case ValidationInternalPluginMetadata validationInternalPluginMetadata -> new CurateTaskContext(
           createValidationInternalParameters(
               validationInternalPluginMetadata.getUrlOfSchemasZip(),
