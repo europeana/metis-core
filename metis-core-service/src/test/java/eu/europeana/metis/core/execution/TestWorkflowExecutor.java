@@ -18,6 +18,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,7 +54,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
-import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -66,9 +67,9 @@ class TestWorkflowExecutor {
 
   @BeforeAll
   static void prepare() {
-    workflowExecutionDao = Mockito.mock(WorkflowExecutionDao.class);
-    workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
-    datasetXsltDao = Mockito.mock(DatasetXsltDao.class);
+    workflowExecutionDao = mock(WorkflowExecutionDao.class);
+    workflowPostProcessor = mock(WorkflowPostProcessor.class);
+    datasetXsltDao = mock(DatasetXsltDao.class);
     engineTaskClient = mock(EngineTaskClient.class);
 
     TestWorkflowExecutor.workflowExecutorSettings = new WorkflowExecutorSettings<>(
@@ -79,9 +80,9 @@ class TestWorkflowExecutor {
 
   @BeforeEach
   void cleanUp() {
-    Mockito.reset(workflowExecutionDao);
-    Mockito.reset(workflowPostProcessor);
-    Mockito.reset(engineTaskClient);
+    reset(workflowExecutionDao);
+    reset(workflowPostProcessor);
+    reset(engineTaskClient);
 
     EngineTask engineTask = mock(EngineTask.class);
     when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
@@ -90,9 +91,18 @@ class TestWorkflowExecutor {
     when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
 
+  private static EngineTaskProgress createProcessedProgressWithSuccess() {
+    EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
+    engineTaskProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    engineTaskProgress.setExpectedRecords(1);
+    engineTaskProgress.setProcessedRecords(1);
+    engineTaskProgress.setSuccessRecords(1);
+    return engineTaskProgress;
+  }
+
   @Test
   void callNonMockedFieldValue() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -108,8 +118,7 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
@@ -141,7 +150,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_DROPPEDExternalTaskButNotCancelled() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -189,7 +198,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_ConsecutiveMonitorFailures() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -206,8 +215,7 @@ class TestWorkflowExecutor {
     Throwable[] engineTaskException100Times = new Throwable[100];
     Arrays.setAll(engineTaskException100Times, index -> new ExternalTaskException("Some error"));
 
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenThrow(engineTaskException100Times)
@@ -234,7 +242,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_MonitorFailsOnUnrecoverableExternalTaskException() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -275,7 +283,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_ReachPendingState_and_then_finish() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -295,8 +303,7 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenThrow(engineTaskExceptions)
@@ -332,7 +339,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValueCancellingState() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -348,8 +355,7 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
@@ -379,7 +385,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callExecutionInRUNNINGState() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -405,8 +411,7 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
@@ -429,7 +434,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callCancellingStateINQUEUE() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(new OaipmhHarvestPlugin());
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
     ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
@@ -466,7 +471,7 @@ class TestWorkflowExecutor {
 
   @Test
   void callCancellingStateRUNNING() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(new OaipmhHarvestPlugin());
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
@@ -505,7 +510,7 @@ class TestWorkflowExecutor {
 
   @Test
   void call_whenSubmitThrows_thenPluginFailsImmediately_andMonitoringIsNotStarted() throws Exception {
-    OaipmhHarvestPlugin plugin = Mockito.spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPlugin plugin = spy(new OaipmhHarvestPlugin());
     OaipmhHarvestPluginMetadata metadata = new OaipmhHarvestPluginMetadata();
     plugin.setPluginMetadata(metadata);
 
