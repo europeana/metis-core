@@ -364,7 +364,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     switch (engineTaskState) {
       case PROCESSED -> {
         plugin.setFinishedDate(Instant.now());
-        plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
+        if (engineTaskProgress.hasSuccessfulResults()) {
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
+        } else {
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+          plugin.setFailMessage("Plugin finished with no successful records.");
+        }
       }
       case DROPPED -> {
         boolean isNotCancelling = !workflowExecutionDao.isCancelling(workflowExecution.getId());
