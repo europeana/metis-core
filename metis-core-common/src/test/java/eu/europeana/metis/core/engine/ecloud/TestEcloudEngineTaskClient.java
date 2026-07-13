@@ -87,8 +87,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "",
-        new DataRevision("name", "provider", Instant.now(), false));
+    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "");
     DataRevision outputDataRevision = new DataRevision("name", "provider", Instant.now(), false);
     EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint,
         outputDataRevision);
@@ -98,8 +97,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask_throws() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "",
-        new DataRevision("name", "provider", Instant.now(), false));
+    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "");
     DataRevision outputDataRevision = new DataRevision("name", "provider", Instant.now(), false);
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
     assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint, null));

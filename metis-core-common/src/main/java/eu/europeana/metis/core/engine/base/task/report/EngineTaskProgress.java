@@ -24,4 +24,17 @@ public class EngineTaskProgress {
 
   private EngineTaskState engineTaskState;
   private String engineTaskStateInfo;
+
+  /**
+   * Determines whether the task has yielded any successful results.
+   * <p>
+   * A task is considered to have successful results if there are processed records (or processed depublished records), and the
+   * number of successful records (or successful depublished records) is greater than zero.
+   *
+   * @return true if there are both processed records and successful records; false otherwise.
+   */
+  public boolean hasSuccessfulResults() {
+    return (processedRecords > 0 || processedDepublishRecords > 0)
+        && (successRecords > 0 || successDepublishRecords > 0);
+  }
 }

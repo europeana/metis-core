@@ -9,6 +9,7 @@ import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.SimpleIntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.TransformExternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.TransformInternalInputDataEndpoint;
 import eu.europeana.metis.sandbox.common.task.input.HttpHarvestInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.InputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.OaiHarvestInputMetadataRequest;
@@ -16,6 +17,7 @@ import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskKey;
 import eu.europeana.metis.sandbox.common.task.input.SimpleIntermediateInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.TransformExternalInputMetadataRequest;
+import eu.europeana.metis.sandbox.common.task.input.TransformInternalInputMetadataRequest;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -70,9 +72,11 @@ public class SandboxEngineTask extends EngineTask {
       case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
           new OaiHarvestInputMetadataRequest(url, set, metadataPrefix, from, until, stepSize);
       case HttpHarvestInputDataEndpoint(String url, Integer stepSize) -> new HttpHarvestInputMetadataRequest(url, stepSize);
-      case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, DataRevision inputRevision) ->
+      case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId) ->
           new TransformExternalInputMetadataRequest(xslt, sourceExecutionId);
-      case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId, DataRevision inputRevision) ->
+      case TransformInternalInputDataEndpoint(String xslt, String url, String sourceExecutionId) ->
+          new TransformInternalInputMetadataRequest(xslt, sourceExecutionId);
+      case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId) ->
           new SimpleIntermediateInputMetadataRequest(sourceExecutionId);
       case DepublishInputDataEndpoint ignored ->
           throw new IllegalArgumentException("DepublishInputDataEndpoint is not supported for sandbox tasks");

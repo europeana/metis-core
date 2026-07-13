@@ -13,6 +13,7 @@ import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
@@ -20,6 +21,7 @@ import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
@@ -149,46 +151,24 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
     @Getter
     private Instant lastProgressChange = Instant.now();
-    private long expected;
-    private long processed;
-    private long success;
-    private long failed;
-    private long warning;
-    private long duplicate;
-    private long unchanged;
-    private long successDepublish;
-    private long failDepulish;
-    private long processedDepublish;
-    private long total;
+    private ExecutionProgress previousProgress;
 
-    void updateFrom(AbstractExecutablePlugin<?> plugin) {
-      lastProgressChange = Instant.now();
-      this.expected = plugin.getExecutionProgress().getExpectedRecords();
-      this.processed = plugin.getExecutionProgress().getProcessedRecords();
-      this.success = plugin.getExecutionProgress().getSuccessRecords();
-      this.failed = plugin.getExecutionProgress().getFailRecords();
-      this.warning = plugin.getExecutionProgress().getWarningRecords();
-      this.duplicate = plugin.getExecutionProgress().getDuplicateRecords();
-      this.unchanged = plugin.getExecutionProgress().getUnchangedRecords();
-      this.successDepublish = plugin.getExecutionProgress().getSuccessDepublishRecords();
-      this.failDepulish = plugin.getExecutionProgress().getFailDepublishRecords();
-      this.processedDepublish = plugin.getExecutionProgress().getProcessedDepublishRecords();
-      this.total = plugin.getExecutionProgress().getTotalDatabaseRecords();
+    ProgressState(AbstractExecutablePlugin<?> plugin) {
+      updateIfChangedInternal(plugin);
     }
 
-    boolean hasChanged(AbstractExecutablePlugin<?> plugin) {
-      var progress = plugin.getExecutionProgress();
-      return  expected != progress.getExpectedRecords()
-              || processed != progress.getProcessedRecords()
-              || success != progress.getSuccessRecords()
-              || failed != progress.getFailRecords()
-              || warning != progress.getWarningRecords()
-              || duplicate != progress.getDuplicateRecords()
-              || unchanged != progress.getUnchangedRecords()
-              || successDepublish != progress.getSuccessDepublishRecords()
-              || failDepulish != progress.getFailDepublishRecords()
-              || processedDepublish != progress.getProcessedDepublishRecords()
-              || total != progress.getTotalDatabaseRecords();
+    boolean updateIfChanged(AbstractExecutablePlugin<?> plugin) {
+      return updateIfChangedInternal(plugin);
+    }
+
+    private boolean updateIfChangedInternal(AbstractExecutablePlugin<?> plugin) {
+      ExecutionProgress currentProgress = plugin.getExecutionProgress();
+      if (Objects.equals(previousProgress, currentProgress)) {
+        return false;
+      }
+      lastProgressChange = Instant.now();
+      previousProgress = new ExecutionProgress(currentProgress);
+      return true;
     }
 
     Duration timeSinceLastChange() {
@@ -201,8 +181,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
-    ProgressState progressState = new ProgressState();
-    progressState.updateFrom(plugin);
+    ProgressState progressState = new ProgressState(plugin);
     boolean updateSuccess = true;
     while (updateSuccess && isContinueMonitor(engineTaskProgress)) {
       try {
@@ -345,8 +324,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   private boolean hasExceededNoProgressTimeout(
       AbstractExecutablePlugin<?> plugin, ProgressState progressState) {
-    if (progressState.hasChanged(plugin)) {
-      progressState.updateFrom(plugin);
+    if (progressState.updateIfChanged(plugin)) {
       return false;
     }
 
@@ -364,7 +342,12 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     switch (engineTaskState) {
       case PROCESSED -> {
         plugin.setFinishedDate(Instant.now());
-        plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
+        if (plugin.getExecutionProgress().hasSuccessfulResults()) {
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FINISHED);
+        } else {
+          plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+          plugin.setFailMessage("Plugin finished with no successful records.");
+        }
       }
       case DROPPED -> {
         boolean isNotCancelling = !workflowExecutionDao.isCancelling(workflowExecution.getId());
