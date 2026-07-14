@@ -13,6 +13,7 @@
     <module>metis-core-rest</module>
   </modules>
 
+
   <scm>
     <url>https://github.com/europeana/metis-core</url>
     <connection>scm:git:https://github.com/europeana/metis-core</connection>
