@@ -17,31 +17,24 @@ import lombok.Setter;
 public class ExecutionProgress {
 
   private static final double PERCENTAGE_SCALE = 100.0;
-  // The total number of expected records excluding deleted records.
   private long expectedRecords;
-
-  // The total number of records processed so far excluding deleted records and including ignored records if applicable.
   private long processedRecords;
-
-  // The percentage: the division of the actual and expected number of processed records.
   private long progressPercentage;
-
-  // The current state of the task.
-  private String status;
-
-  // TODO: 01/11/2021 The correct values should be updated with a script for the latest preview and publish executions, during release
-  // The total records in the database, not used to capture progress but the final result(post process check)
-  private int totalDatabaseRecords = -1;
-
   private long successRecords;
   private long failRecords;
   private long warningRecords;
   private long duplicateRecords;
   private long unchangedRecords;
+
+  private String status;
+  // TODO: 01/11/2021 The correct values should be updated with a script for the latest preview and publish executions, during release
+  // The total records in the database, not used to capture progress but the final result(post process check)
+  private int totalDatabaseRecords = -1;
+
   private long expectedDepublishRecords;
+  private long processedDepublishRecords;
   private long successDepublishRecords;
   private long failDepublishRecords;
-  private long processedDepublishRecords;
 
   /**
    * Creates a new instance of ExecutionProgress by copying the data from the provided instance.
@@ -52,13 +45,13 @@ public class ExecutionProgress {
     this.expectedRecords = other.expectedRecords;
     this.processedRecords = other.processedRecords;
     this.progressPercentage = other.progressPercentage;
-    this.status = other.status;
     this.totalDatabaseRecords = other.totalDatabaseRecords;
     this.successRecords = other.successRecords;
     this.failRecords = other.failRecords;
     this.warningRecords = other.warningRecords;
     this.duplicateRecords = other.duplicateRecords;
     this.unchangedRecords = other.unchangedRecords;
+    this.status = other.status;
     this.expectedDepublishRecords = other.expectedDepublishRecords;
     this.successDepublishRecords = other.successDepublishRecords;
     this.failDepublishRecords = other.failDepublishRecords;

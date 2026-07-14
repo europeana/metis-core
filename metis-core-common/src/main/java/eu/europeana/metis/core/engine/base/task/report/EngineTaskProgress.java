@@ -17,6 +17,7 @@ public class EngineTaskProgress {
   private long warningRecords;
   private long duplicateRecords;
   private long unchangedRecords;
+
   private long expectedDepublishRecords;
   private long successDepublishRecords;
   private long failDepublishRecords;

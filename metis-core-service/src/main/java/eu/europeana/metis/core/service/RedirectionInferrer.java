@@ -9,17 +9,17 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import lombok.AllArgsConstructor;
 import org.springframework.util.CollectionUtils;
 
+/**
+ * Class responsible for inferring whether redirections should be performed for a given dataset and workflow plugin.
+ */
+@AllArgsConstructor
 public class RedirectionInferrer {
 
   private final WorkflowExecutionDao workflowExecutionDao;
   private final DataEvolutionUtils dataEvolutionUtils;
-
-  public RedirectionInferrer(WorkflowExecutionDao workflowExecutionDao, DataEvolutionUtils dataEvolutionUtils) {
-    this.workflowExecutionDao = workflowExecutionDao;
-    this.dataEvolutionUtils = dataEvolutionUtils;
-  }
 
   /**
    * Determines whether to apply redirection as part of the given plugin. We apply the following heuristics to determining this,
@@ -34,13 +34,13 @@ public class RedirectionInferrer {
    * If this is not the first plugin of its kind:
    * <ol type="a">
    * <li>
-   * If a harvesting occurred after the last plugin of the same kind we assume that the records may
-   * have changed and/or moved and we perform a redirection.
+   * If a harvesting occurred after the last plugin of the same kind, we assume that the records may
+   * have changed and/or moved, and we perform a redirection.
    * </li>
    * <li>
-   * If the dataset properties (which includes the list of datasets to redirect from) have changed
-   * since the last plugin of the same kind we assume that the list of datasets to redirect from may
-   * have changed and we perform a redirection if and only if the dataset properties specify any
+   * If the dataset property (that includes the list of datasets to redirect from) has changed
+   * since the last plugin of the same kind, we assume that the list of datasets to redirect from may
+   * have changed. We perform a redirection if and only if the dataset properties specify any
    * datasets to redirect from.
    * </li>
    * </ol>
