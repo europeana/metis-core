@@ -15,9 +15,6 @@ public class ExecutionProgressDTO {
   private long expectedRecords;
   private long processedRecords;
   private long progressPercentage;
-  private long ignoredRecords;
-  private long deletedRecords;
-  private long errors;
   private String status;
   private long totalDatabaseRecords;
   private long successRecords;
