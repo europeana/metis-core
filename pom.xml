@@ -40,7 +40,7 @@
     <version.corelib>2.17.8-SNAPSHOT</version.corelib>
 
     <!--External-->
-    <version.spring.boot>4.0.4</version.spring.boot>
+    <version.spring.boot>4.1.0</version.spring.boot>
     <version.springdoc-openapi-starter-webmvc-api>2.8.14</version.springdoc-openapi-starter-webmvc-api>
     <version.javax.annotation>2.1.1</version.javax.annotation>
     <version.morphia.core>2.5.2</version.morphia.core>
@@ -432,7 +432,7 @@
     <repository>
       <id>libs-release</id>
       <name>libs-release</name>
-      <url>https://artifactory.eanadev.org/artifactory/libs-release</url>
+      <url>https://artifactory-prod.eanadev.org/artifactory/libs-release</url>
       <releases>
         <enabled>true</enabled>
       </releases>
