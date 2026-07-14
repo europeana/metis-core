@@ -31,10 +31,7 @@
       "executionProgress": {
         "expectedRecords": 0,
         "processedRecords": 0,
-        "ignoredRecords": 0,
-        "deletedRecords": 0,
         "progressPercentage": 0,
-        "errors": 0,
         "status": null,
         "totalDatabaseRecords": -1,
         "successRecords" : 85,
@@ -78,10 +75,7 @@
       "executionProgress": {
         "expectedRecords": 0,
         "processedRecords": 0,
-        "ignoredRecords": 0,
-        "deletedRecords": 0,
         "progressPercentage": 0,
-        "errors": 0,
         "status": null,
         "totalDatabaseRecords": -1,
         "successRecords" : 85,
