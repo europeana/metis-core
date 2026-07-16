@@ -14,8 +14,10 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dao.WorkflowExecutionDao.ExecutionDatasetPair;
@@ -70,7 +72,6 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class TestDataEvolutionUtils {
 
@@ -99,7 +100,7 @@ class TestDataEvolutionUtils {
         ExecutablePluginType.TRANSFORMATION, DATASET_ID));
     assertNull(dataEvolutionUtils.computePredecessorPlugin(ExecutablePluginType.HTTP_HARVEST,
         ExecutablePluginType.TRANSFORMATION, DATASET_ID));
-    Mockito.verify(workflowExecutionDao, Mockito.never())
+    verify(workflowExecutionDao, never())
         .getLatestSuccessfulExecutablePlugin(anyString(), any(), anyBoolean());
   }
 

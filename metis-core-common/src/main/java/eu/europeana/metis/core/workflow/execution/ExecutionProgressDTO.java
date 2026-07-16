@@ -15,18 +15,17 @@ public class ExecutionProgressDTO {
   private long expectedRecords;
   private long processedRecords;
   private long progressPercentage;
-  private long ignoredRecords;
-  private long deletedRecords;
-  private long errors;
-  private String status;
-  private long totalDatabaseRecords;
   private long successRecords;
   private long failRecords;
   private long warningRecords;
   private long duplicateRecords;
   private long unchangedRecords;
+
+  private String status;
+  private long totalDatabaseRecords;
+
   private long expectedDepublishRecords;
+  private long processedDepublishRecords;
   private long successDepublishRecords;
   private long failDepublishRecords;
-  private long processedDepublishRecords;
 }

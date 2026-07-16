@@ -660,7 +660,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       ExecutablePlugin lastExecutablePreviewPlugin, MetisPlugin lastPreviewPlugin,
       boolean isPreviewCleaningOrRunning, Instant date) {
 
-    boolean lastPreviewHasDeletedRecords = computeRecordCountsAndCheckDeletedRecords(lastExecutablePreviewPlugin,
+    boolean lastPreviewHasDepublishedRecords = computeRecordCountsAndCheckDepublishedRecords(lastExecutablePreviewPlugin,
         executionInfo::setLastPreviewRecords, executionInfo::setTotalPreviewRecords);
 
     //Compute more general information of the plugin
@@ -673,7 +673,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else if (executionInfo.getTotalPreviewRecords() == 0) {
         recordsAvailable = false;
       } else {
-        recordsAvailable = executionInfo.getLastPreviewRecords() > 0 || lastPreviewHasDeletedRecords;
+        recordsAvailable = executionInfo.getLastPreviewRecords() > 0 || lastPreviewHasDepublishedRecords;
       }
 
       executionInfo.setLastPreviewRecordsReadyForViewing(recordsAvailable &&
@@ -694,7 +694,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     final boolean datasetCurrentlyDepublished = isDatasetCurrentlyDepublished(lastExecutablePublishPlugin,
         lastExecutableDepublishPlugin);
 
-    boolean lastPublishHasDeletedRecords = computeRecordCountsAndCheckDeletedRecords(lastExecutablePublishPlugin,
+    boolean lastPublishHasDepublishedRecords = computeRecordCountsAndCheckDepublishedRecords(lastExecutablePublishPlugin,
         executionInfo::setLastPublishedRecords, executionInfo::setTotalPublishedRecords);
 
     //Compute depublish count
@@ -718,7 +718,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else {
         recordsAvailable =
             !datasetCurrentlyDepublished && (executionInfo.getLastPublishedRecords() > depublishedRecordCount
-                || lastPublishHasDeletedRecords);
+                || lastPublishHasDepublishedRecords);
       }
       executionInfo.setLastPublishedRecordsReadyForViewing(
           recordsAvailable && !isPublishCleaningOrRunning && isPreviewOrPublishReadyForViewing(
@@ -756,20 +756,20 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
         && depublishPlugin.getPluginMetadata().isDatasetDepublish();
   }
 
-  private boolean computeRecordCountsAndCheckDeletedRecords(ExecutablePlugin executablePlugin, LongConsumer lastRecordsSetter,
+  private boolean computeRecordCountsAndCheckDepublishedRecords(ExecutablePlugin executablePlugin, LongConsumer lastRecordsSetter,
       LongConsumer totalRecordsSetter) {
     long recordCount = 0;
     long totalRecordCount = -1;
-    boolean hasDeletedRecords = false;
+    boolean hasDepublishedRecords = false;
     if (Objects.nonNull(executablePlugin)) {
       recordCount = executablePlugin.getExecutionProgress().getProcessedRecords()
           - executablePlugin.getExecutionProgress().getFailRecords();
       totalRecordCount = executablePlugin.getExecutionProgress().getTotalDatabaseRecords();
-      hasDeletedRecords = executablePlugin.getExecutionProgress().getSuccessDepublishRecords() > 0;
+      hasDepublishedRecords = executablePlugin.getExecutionProgress().getSuccessDepublishRecords() > 0;
     }
     lastRecordsSetter.accept(recordCount);
     totalRecordsSetter.accept(totalRecordCount);
-    return hasDeletedRecords;
+    return hasDepublishedRecords;
   }
 
   private boolean isPreviewOrPublishReadyForViewing(MetisPlugin plugin, Instant now) {

@@ -32,9 +32,6 @@ public final class ExecutionProgressConverter {
     executionProgressDTO.setExpectedRecords(executionProgress.getExpectedRecords());
     executionProgressDTO.setProcessedRecords(executionProgress.getProcessedRecords());
     executionProgressDTO.setProgressPercentage(executionProgress.getProgressPercentage());
-    executionProgressDTO.setIgnoredRecords(executionProgress.getUnchangedRecords());
-    executionProgressDTO.setDeletedRecords(executionProgress.getSuccessDepublishRecords());
-    executionProgressDTO.setErrors(executionProgress.getFailRecords() + executionProgress.getFailDepublishRecords());
     executionProgressDTO.setStatus(executionProgress.getStatus());
     executionProgressDTO.setTotalDatabaseRecords(executionProgress.getTotalDatabaseRecords());
     executionProgressDTO.setSuccessRecords(executionProgress.getSuccessRecords());

@@ -5,6 +5,8 @@ import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import eu.europeana.metis.core.common.DaoFieldNames;
 import eu.europeana.metis.core.dataset.DatasetExecutionInformation;
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.rest.ExecutionHistory;
 import eu.europeana.metis.core.rest.IncrementalHarvestingAllowedView;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
@@ -45,14 +47,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Contains all the calls that are related to Orchestration.
- * <p>The {@link OrchestratorService} has control on how to orchestrate different components of the
- * system</p>
+ * <p>
+ * The {@link OrchestratorService} has control on how to orchestrate different components of the system.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Slf4j
 @RestController
-public class OrchestratorController {
+public class OrchestratorController<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private final OrchestratorService orchestratorService;
+  private final OrchestratorService<S, T> orchestratorService;
 
   /**
    * Autowired constructor with all required parameters.
@@ -60,7 +65,7 @@ public class OrchestratorController {
    * @param orchestratorService the orchestratorService object
    */
   @Autowired
-  public OrchestratorController(OrchestratorService orchestratorService) {
+  public OrchestratorController(OrchestratorService<S, T> orchestratorService) {
     this.orchestratorService = orchestratorService;
   }
 
@@ -159,6 +164,7 @@ public class OrchestratorController {
   }
 
   //WORKFLOW EXECUTIONS
+
   /**
    * Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates the status of the WorkflowExecution
    * to {@link WorkflowStatus#INQUEUE}, adds it to the database and also it's identifier goes into the distributed queue of
@@ -241,7 +247,7 @@ public class OrchestratorController {
       @PathVariable("executionId") String executionId) throws GenericMetisException {
     WorkflowExecutionDTO workflowExecutionDTO = orchestratorService.getWorkflowExecutionDTOByExecutionId(executionId);
     log.info("WorkflowExecution with executionId '{}' {} found.", escapeJava(executionId),
-          workflowExecutionDTO == null ? "not " : "");
+        workflowExecutionDTO == null ? "not " : "");
     return workflowExecutionDTO;
   }
 
@@ -361,8 +367,6 @@ public class OrchestratorController {
 
   /**
    * Get all WorkflowExecutions paged. Not filtered by datasetId.
-   * <p>
-   * TODO JV This endpoint is no longer in use. Consider removing it.
    *
    * @param workflowStatuses a set of workflow statuses to filter, can be empty or null
    * @param orderField the field to be used to sort the results

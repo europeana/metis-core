@@ -1,11 +1,11 @@
 package eu.europeana.metis.core.workflow.execution;
 
-import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
-import org.junit.jupiter.api.Test;
-
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.getExecutionProgressUsingSetters;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
+import org.junit.jupiter.api.Test;
 
 class TestExecutionProgressConverter {
 
@@ -25,9 +25,6 @@ class TestExecutionProgressConverter {
     assertEquals(executionProgress.getExpectedRecords(), executionProgressDTO.getExpectedRecords());
     assertEquals(executionProgress.getProcessedRecords(), executionProgressDTO.getProcessedRecords());
     assertEquals(executionProgress.getProgressPercentage(), executionProgressDTO.getProgressPercentage());
-    assertEquals(executionProgress.getUnchangedRecords(), executionProgressDTO.getIgnoredRecords());
-    assertEquals(executionProgress.getSuccessDepublishRecords(), executionProgressDTO.getDeletedRecords());
-    assertEquals(executionProgress.getFailRecords() + executionProgress.getFailDepublishRecords(), executionProgressDTO.getErrors());
     assertEquals(executionProgress.getStatus(), executionProgressDTO.getStatus());
     assertEquals(executionProgress.getTotalDatabaseRecords(), executionProgressDTO.getTotalDatabaseRecords());
     assertEquals(executionProgress.getSuccessRecords(), executionProgressDTO.getSuccessRecords());

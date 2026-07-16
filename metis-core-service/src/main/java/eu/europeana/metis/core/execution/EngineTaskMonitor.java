@@ -50,7 +50,6 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
   }
 
   void updateExecutionProgress(EngineTaskProgress engineTaskProgress) {
-    //todo: We further need to update the ExecutionProgress entity to support the new counters
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(engineTaskProgress.getExpectedRecords());
     executionProgress.setProcessedRecords(engineTaskProgress.getProcessedRecords());
