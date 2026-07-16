@@ -2,11 +2,13 @@ package eu.europeana.metis.core.rest.execution.overview;
 
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * This class contains executionProgress information on a plugin's execution.
  */
 @Getter
+@NoArgsConstructor
 public class PluginProgressView {
 
   private long expectedRecords;
@@ -21,9 +23,6 @@ public class PluginProgressView {
   private long successDepublishRecords;
   private long failDepublishRecords;
   private long processedDepublishRecords;
-
-  PluginProgressView() {
-  }
 
   PluginProgressView(ExecutionProgress progress) {
     if (progress != null) {
