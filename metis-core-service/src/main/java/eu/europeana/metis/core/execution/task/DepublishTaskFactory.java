@@ -8,6 +8,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
+import eu.europeana.metis.core.execution.EngineTaskSubmitContext;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.exception.ExternalTaskException;
@@ -42,14 +43,15 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId)
+  public T create(EngineTaskSubmitContext engineTaskSubmitContext)
       throws ExternalTaskException {
-    DepublishContext depublishContext = getDepublishPluginParameters(datasetId, engineDatasetId);
+    DepublishContext depublishContext = getDepublishPluginParameters(
+        engineTaskSubmitContext.getDatasetId(), engineTaskSubmitContext.getEngineDatasetId());
     Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
         plugin.getPluginMetadata().getExecutablePluginType());
     fullBatchJobType.ifPresent(
         batchJobType -> depublishContext.pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
-    depublishContext.pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineDatasetId);
+    depublishContext.pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineTaskSubmitContext.getEngineDatasetId());
     return engineTaskClient.createEngineTask(depublishContext.pluginParameters, depublishContext.depublishInputDataEndpoint,
         plugin.getTopologyName());
   }

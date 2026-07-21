@@ -57,16 +57,12 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
    * This method creates an engine task using the given parameters, submits it to the engine, and updates the plugin with the
    * submitted task ID and data status. If an error occurs during task creation or submission, an exception is thrown.
    *
-   * @param datasetId The unique identifier of the dataset to be processed by the plugin.
-   * @param engineDatasetId The unique identifier of the dataset within the engine context.
-   * @param sourceExecutionId The unique identifier of the previous task execution, used for task chaining or dependencies.
-   * @param sourceBatchId The unique identifier of the previous task, used for task chaining or dependencies.
    * @throws ExternalTaskException If an error occurs during task submission or execution.
    */
-  public T createTask(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId) throws ExternalTaskException {
-    log.info("Create task of {} plugin for externalDatasetId {}", plugin.getPluginType(), datasetId);
+  public T createTask(EngineTaskSubmitContext engineTaskSubmitContext) throws ExternalTaskException {
+    log.info("Create task of {} plugin for engineDatasetId {}", plugin.getPluginType(), engineTaskSubmitContext.getEngineDatasetId());
     try {
-      T engineTask = engineTaskFactory.create(datasetId, engineDatasetId, sourceExecutionId, sourceBatchId);
+      T engineTask = engineTaskFactory.create(engineTaskSubmitContext);
       plugin.setExternalTaskId(engineTask.getExternalTaskId());
       plugin.setBatchId(engineTask.getBatchId());
       plugin.setDataStatus(DataStatus.VALID);
@@ -77,10 +73,7 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
     } catch (RuntimeException e) {
       throw new ExternalTaskException(
           "Create task for plugin type %s and dataset %s failed"
-              .formatted(
-                  plugin.getPluginMetadata().getExecutablePluginType(),
-                  datasetId
-              ),
+              .formatted(plugin.getPluginMetadata().getExecutablePluginType(), engineTaskSubmitContext.getDatasetId()),
           e
       );
     }

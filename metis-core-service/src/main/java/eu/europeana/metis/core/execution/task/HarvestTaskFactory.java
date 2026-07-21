@@ -10,6 +10,7 @@ import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
+import eu.europeana.metis.core.execution.EngineTaskSubmitContext;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
@@ -46,10 +47,11 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String previousExecutionId, String sourceBatchId)
+  public T create(EngineTaskSubmitContext engineTaskSubmitContext)
       throws ExternalTaskException {
     PluginHarvestParameters pluginHarvestParameters = getPluginHarvestParameters();
-    return createHarvestEngineTask(datasetId, engineDatasetId, pluginHarvestParameters);
+    return createHarvestEngineTask(
+        engineTaskSubmitContext.getDatasetId(), engineTaskSubmitContext.getEngineDatasetId(), pluginHarvestParameters);
   }
 
   private @NotNull PluginHarvestParameters getPluginHarvestParameters() {
