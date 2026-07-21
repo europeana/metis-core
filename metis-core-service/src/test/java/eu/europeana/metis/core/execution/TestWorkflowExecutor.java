@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
@@ -79,14 +78,13 @@ class TestWorkflowExecutor {
   }
 
   @BeforeEach
-  void cleanUp() {
+  void cleanUp() throws ExternalTaskException {
     reset(workflowExecutionDao);
     reset(workflowPostProcessor);
     reset(engineTaskClient);
 
-    EngineTask engineTask = mock(EngineTask.class);
-    when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
-        .thenReturn(engineTask);
+    EngineTask engineTaskRequest = mock(EngineTask.class);
+    when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), anyString())).thenReturn(engineTaskRequest);
     EngineTaskSettings engineTaskSettings = mock(EngineTaskSettings.class);
     when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }

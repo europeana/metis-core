@@ -7,18 +7,25 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
+import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
@@ -32,16 +39,14 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
-import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -51,47 +56,86 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 class TestProxiesService {
 
   private static final String EXTERNAL_TASK_ID = "2070373127078497810";
 
-  private static ProxiesService proxiesService;
+  private static ProxiesService<?, ?> proxiesService;
   private static WorkflowExecutionDao workflowExecutionDao;
+  private static DatasetDao datasetDao;
   private static EngineTaskClient<?, ?> engineTaskClient;
 
   @BeforeAll
   static void prepare() {
     workflowExecutionDao = mock(WorkflowExecutionDao.class);
-    DatasetDao datasetDao = mock(DatasetDao.class);
+    datasetDao = mock(DatasetDao.class);
     engineTaskClient = mock(EngineTaskClient.class);
 
-    proxiesService = spy(new ProxiesService(engineTaskClient, workflowExecutionDao, datasetDao));
+    proxiesService = spy(
+        new ProxiesService<>(engineTaskClient, workflowExecutionDao, datasetDao));
   }
 
   @AfterEach
   void cleanUp() {
     reset(workflowExecutionDao);
+    reset(datasetDao);
     reset(engineTaskClient);
     reset(proxiesService);
   }
 
   @Test
   void existsExternalTaskReport() throws Exception {
+    final WorkflowExecution workflowExecution =
+        TestObjectFactory.createWorkflowExecutionObject();
 
-    when(engineTaskClient.hasEngineTaskErrorReport(Topology.OAIPMH_HARVEST.getTopologyName(),
-        EXTERNAL_TASK_ID)).thenReturn(true).thenThrow(ExternalTaskException.class);
-    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
+    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID))
+        .thenReturn(workflowExecution);
 
-    final boolean existsExternalTaskReport = proxiesService.existsExternalTaskReport(Topology.OAIPMH_HARVEST.getTopologyName(),
-        EXTERNAL_TASK_ID);
+    when(engineTaskClient.hasEngineTaskErrorReport(
+        Topology.OAIPMH_HARVEST.getTopologyName(), EXTERNAL_TASK_ID))
+        .thenReturn(true);
 
-    assertTrue(existsExternalTaskReport);
+    final boolean result = proxiesService.existsExternalTaskReport(
+        Topology.OAIPMH_HARVEST.getTopologyName(), EXTERNAL_TASK_ID);
+
+    assertTrue(result);
+
+    verify(datasetDao).getDatasetOrThrow(workflowExecution.getDatasetId());
+    verify(engineTaskClient).hasEngineTaskErrorReport(
+        Topology.OAIPMH_HARVEST.getTopologyName(), EXTERNAL_TASK_ID);
+  }
+
+  @Test
+  void existsExternalTaskReportThrowsExternalTaskException() throws Exception {
+    final WorkflowExecution workflowExecution =
+        TestObjectFactory.createWorkflowExecutionObject();
+
+    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID))
+        .thenReturn(workflowExecution);
+
+    when(engineTaskClient.hasEngineTaskErrorReport(
+        Topology.OAIPMH_HARVEST.getTopologyName(), EXTERNAL_TASK_ID))
+        .thenThrow(new ExternalTaskException("Engine failure"));
+
     assertThrows(ExternalTaskException.class,
-        () -> proxiesService.existsExternalTaskReport(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID));
+        () -> proxiesService.existsExternalTaskReport(
+            Topology.OAIPMH_HARVEST.getTopologyName(), EXTERNAL_TASK_ID));
 
+    verify(datasetDao).getDatasetOrThrow(workflowExecution.getDatasetId());
+  }
+
+  @Test
+  void existsExternalTaskReportThrowsWhenExecutionDoesNotExist() throws NoDatasetFoundException {
+    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID))
+        .thenReturn(null);
+
+    assertThrows(NoWorkflowExecutionFoundException.class,
+        () -> proxiesService.existsExternalTaskReport(
+            Topology.OAIPMH_HARVEST.getTopologyName(), EXTERNAL_TASK_ID));
+
+    verify(datasetDao, never()).getDatasetOrThrow(any());
   }
 
   @Test
@@ -112,6 +156,7 @@ class TestProxiesService {
 
     assertEquals(1, engineTaskErrors.errors().size());
     assertFalse(engineTaskErrors.errors().getFirst().errorDetails().isEmpty());
+    verify(datasetDao).getDatasetOrThrow(workflowExecution.getDatasetId());
   }
 
   @Test
@@ -156,6 +201,19 @@ class TestProxiesService {
   }
 
   @Test
+  void getExternalTaskStatistics() throws Exception {
+    final RecordStatisticsDTO recordStatisticsDTO = new RecordStatisticsDTO("0", List.of());
+    when(engineTaskClient.getEngineTaskContentRecordStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
+        EXTERNAL_TASK_ID)).thenReturn(recordStatisticsDTO);
+    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
+    final RecordStatisticsDTO result = proxiesService.getExternalTaskStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
+        EXTERNAL_TASK_ID);
+    assertSame(recordStatisticsDTO, result);
+    verify(datasetDao).getDatasetOrThrow(workflowExecution.getDatasetId());
+  }
+
+  @Test
   void getExternalTaskStatistics_NoExecutionException() {
     when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(null);
     assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
@@ -183,6 +241,7 @@ class TestProxiesService {
     final NodePathStatisticsDTO result = proxiesService.getAdditionalNodeStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
         EXTERNAL_TASK_ID, nodePath);
     assertSame(nodePathStatisticsDTO, result);
+    verify(datasetDao).getDatasetOrThrow(workflowExecution.getDatasetId());
   }
 
   @Test
@@ -204,60 +263,161 @@ class TestProxiesService {
   }
 
   @Test
-  void getExternalTaskStatistics() throws Exception {
-    final RecordStatisticsDTO recordStatisticsDTO = new RecordStatisticsDTO("0", List.of());
-    when(engineTaskClient.getEngineTaskContentRecordStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
-        EXTERNAL_TASK_ID)).thenReturn(recordStatisticsDTO);
-    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    final RecordStatisticsDTO result = proxiesService.getExternalTaskStatistics(Topology.OAIPMH_HARVEST.getTopologyName(),
-        EXTERNAL_TASK_ID);
-    assertSame(recordStatisticsDTO, result);
+  void searchRecordByIdFromPluginExecutionFindsEngineRecord() throws Exception {
+    final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
+    final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
+    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
+
+    final String batchId = "batch-id";
+    final String idToSearch = "engine-record-id";
+    final Record expectedRecord = new Record(idToSearch, "record content");
+
+    plugin.setBatchId(batchId);
+
+    doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
+                                                    .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
+
+    doReturn(expectedRecord).when(engineTaskClient)
+                            .getRecord(execution.getEcloudDatasetId(), idToSearch, batchId, executablePluginType);
+
+    final Record result = proxiesService.searchRecordByIdFromPluginExecution(
+        TestObjectFactory.EXECUTIONID, executablePluginType, idToSearch);
+
+    assertSame(expectedRecord, result);
+    verify(engineTaskClient).getRecord(execution.getEcloudDatasetId(), idToSearch, batchId, executablePluginType);
   }
 
-  // TODO: add tests for searchRecordByIdFromPluginExecution
+  @Test
+  void searchRecordByIdFromPluginExecutionTriesNormalizedEuropeanaId()
+      throws Exception {
+    final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
+    final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
+    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
+
+    final String batchId = "batch-id";
+    final String idToSearch = "record-id";
+    final String normalizedLocalId = "normalized-record-id";
+    final String fullRecordId =
+        "/" + execution.getDatasetId() + "/" + normalizedLocalId;
+
+    final Record expectedRecord =
+        new Record("engine-id", "record content");
+
+    plugin.setBatchId(batchId);
+    doReturn(new ImmutablePair<>(execution, plugin))
+        .when(proxiesService).getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
+
+    doReturn(null)
+        .when(engineTaskClient).getRecord(execution.getEcloudDatasetId(), idToSearch, batchId, executablePluginType);
+
+    doReturn(expectedRecord)
+        .when(engineTaskClient).getRecord(execution.getEcloudDatasetId(), fullRecordId, batchId, executablePluginType);
+
+    try (MockedStatic<RecordIdUtils> recordIdUtils = mockStatic(RecordIdUtils.class)) {
+      recordIdUtils.when(() -> RecordIdUtils.checkAndNormalizeRecordId(execution.getDatasetId(), idToSearch))
+                   .thenReturn(Optional.of(normalizedLocalId));
+      recordIdUtils.when(() -> RecordIdUtils.composeFullRecordId(execution.getDatasetId(), normalizedLocalId))
+                   .thenReturn(fullRecordId);
+
+      final Record result =
+          proxiesService.searchRecordByIdFromPluginExecution(TestObjectFactory.EXECUTIONID, executablePluginType, idToSearch);
+      assertSame(expectedRecord, result);
+    }
+
+    verify(engineTaskClient).getRecord(execution.getEcloudDatasetId(), idToSearch, batchId, executablePluginType);
+    verify(engineTaskClient).getRecord(execution.getEcloudDatasetId(), fullRecordId, batchId, executablePluginType);
+  }
+
+  @Test
+  void searchRecordByIdFromPluginExecutionReturnsNullWhenRecordDoesNotExist() throws Exception {
+    final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
+    final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
+    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
+
+    final String batchId = "batch-id";
+    final String idToSearch = "record-id";
+    final String fullRecordId = "/dataset/record-id";
+
+    plugin.setBatchId(batchId);
+
+    doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
+                                                    .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
+
+    doReturn(null).when(engineTaskClient)
+                  .getRecord(execution.getEcloudDatasetId(), idToSearch, batchId, executablePluginType);
+
+    doReturn(null).when(engineTaskClient)
+                  .getRecord(execution.getEcloudDatasetId(), fullRecordId, batchId, executablePluginType);
+
+    try (MockedStatic<RecordIdUtils> recordIdUtils = mockStatic(RecordIdUtils.class)) {
+
+      recordIdUtils.when(() ->
+          RecordIdUtils.checkAndNormalizeRecordId(execution.getDatasetId(), idToSearch)).thenReturn(Optional.of("record-id"));
+
+      recordIdUtils.when(() ->
+          RecordIdUtils.composeFullRecordId(execution.getDatasetId(), "record-id")).thenReturn(fullRecordId);
+
+      final Record result =
+          proxiesService.searchRecordByIdFromPluginExecution(TestObjectFactory.EXECUTIONID, executablePluginType, idToSearch);
+      assertNull(result);
+    }
+  }
 
   @Test
   void getListOfFileContentsFromPluginExecution() throws Exception {
-
-    // Create execution and plugin
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
-    execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(Instant.now()));
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
+
+    final String batchId = "batch-id";
+    plugin.setBatchId(batchId);
+
     doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
                                                         plugin.getPluginMetadata().getExecutablePluginType());
-    when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(execution);
 
-    // Mock getting the records from eCloud.
-    final String ecloudId = "ECLOUDID1";
+    final int numberOfRecords = 5;
+    final Record record = new Record("ECLOUDID1", "test content");
 
-    int numberOfRecords = 5;
-    // Mock obtaining the actual record.
-    final Record record = new Record(ecloudId, "test content");
-    doReturn(List.of(record)).when(engineTaskClient)
-                             .getRecords(execution.getEcloudDatasetId(), MetisPlugin.getRepresentationName(),
-                                 plugin.getPluginType().name(),
-                                 plugin.getStartedDate(), numberOfRecords);
+    doReturn(List.of(record)).when(engineTaskClient).getRecords(execution.getEcloudDatasetId(), batchId, numberOfRecords);
 
-    final ExecutablePluginType executablePluginType = plugin.getPluginMetadata().getExecutablePluginType();
-    // Execute the call.
-    PaginatedRecordsResponse listOfFileContentsFromPluginExecution = proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            executablePluginType, null, numberOfRecords);
-    assertEquals(record.xmlRecord(),
-        listOfFileContentsFromPluginExecution.getRecords().getFirst().xmlRecord());
-    assertEquals(ecloudId, listOfFileContentsFromPluginExecution.getRecords().getFirst().ecloudId());
+    final PaginatedRecordsResponse result =
+        proxiesService.getListOfFileContentsFromPluginExecution(
+            TestObjectFactory.EXECUTIONID,
+            plugin.getPluginMetadata().getExecutablePluginType(),
+            null,
+            numberOfRecords);
 
-    // Test exception.
-    doThrow(ExternalTaskException.class).when(engineTaskClient)
-                                        .getRecords(execution.getEcloudDatasetId(), MetisPlugin.getRepresentationName(),
-                                            plugin.getPluginType().name(),
-                                            plugin.getStartedDate(), numberOfRecords);
-    assertThrows(ExternalTaskException.class, () -> proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID, executablePluginType
-            , null, numberOfRecords));
+    assertNotNull(result);
+    assertEquals(List.of(record), result.getRecords());
+    assertNull(result.getNextPage());
+
+    verify(engineTaskClient).getRecords(execution.getEcloudDatasetId(), batchId, numberOfRecords);
+  }
+
+  @Test
+  void getListOfFileContentsFromPluginExecutionPropagatesExternalTaskException() throws Exception {
+    final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
+    final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
+
+    final String batchId = "batch-id";
+    plugin.setBatchId(batchId);
+
+    doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
+                                                    .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
+                                                        plugin.getPluginMetadata().getExecutablePluginType());
+
+    final int numberOfRecords = 5;
+
+    doThrow(new ExternalTaskException("Engine failure"))
+        .when(engineTaskClient)
+        .getRecords(execution.getEcloudDatasetId(), batchId, numberOfRecords);
+
+    assertThrows(ExternalTaskException.class,
+        () -> proxiesService.getListOfFileContentsFromPluginExecution(
+            TestObjectFactory.EXECUTIONID,
+            plugin.getPluginMetadata().getExecutablePluginType(),
+            null,
+            numberOfRecords));
   }
 
   @Test
@@ -285,54 +445,35 @@ class TestProxiesService {
   }
 
   @Test
-  void testGetListOfFileContentsFromPluginExecution() throws GenericMetisException {
-
-    // Create execution and plugin and mock relevant method getting them.
+  void getListOfFileContentsFromPluginExecutionByIds() throws Exception {
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
-    execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(Instant.now()));
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
+
+    final String batchId = "batch-id";
+    plugin.setBatchId(batchId);
+
     doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
                                                         plugin.getPluginMetadata().getExecutablePluginType());
 
-    // Create the test records and the list of IDs.
-    ListOfIds listOfIds = new ListOfIds();
+    final ListOfIds listOfIds = new ListOfIds();
     listOfIds.setIds(List.of("ID 1", "ID 2", "ID 3"));
-    final Record record1 = new Record("ID 1", "test content 1");
-    final Record record2 = new Record("ID 2", "test content 2");
-    final Record record3 = new Record("ID 3", "test content 3");
-    final List<Record> recordList = List.of(record1, record2, record3);
 
-    // Mock the method for getting records
-    doReturn(recordList).when(engineTaskClient)
-                        .getRecords(listOfIds.getIds(), plugin.getPluginType().name(), plugin.getStartedDate());
+    final List<Record> records = List.of(
+        new Record("ID 1", "test content 1"),
+        new Record("ID 2", "test content 2"),
+        new Record("ID 3", "test content 3"));
 
-    final RecordsResponse result = proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), listOfIds);
+    doReturn(records).when(engineTaskClient).getRecords(listOfIds.getIds(), batchId);
 
-    // Verify that the result contains the record in the right order
+    final RecordsResponse result =
+        proxiesService.getListOfFileContentsFromPluginExecution(
+            TestObjectFactory.EXECUTIONID, plugin.getPluginMetadata().getExecutablePluginType(), listOfIds);
+
     assertNotNull(result);
-    assertNotNull(result.getRecords());
-    assertEquals(listOfIds.getIds().size(), result.getRecords().size());
-    assertEquals(listOfIds.getIds(), result.getRecords().stream().map(Record::ecloudId).toList());
+    assertEquals(records, result.getRecords());
 
-    // Check that the call also works for an empty list
-    listOfIds.setIds(Collections.emptyList());
-    final RecordsResponse emptyResult = proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), listOfIds);
-    assertNotNull(emptyResult);
-    assertNotNull(emptyResult.getRecords());
-    assertTrue(emptyResult.getRecords().isEmpty());
-
-    // Check that if a record cannot be retrieved, the method fails.
-    doThrow(ExternalTaskException.class).when(engineTaskClient)
-                                        .getRecords(listOfIds.getIds(), plugin.getPluginType().name(), plugin.getStartedDate());
-    assertThrows(ExternalTaskException.class, () -> proxiesService
-        .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType(), listOfIds));
+    verify(engineTaskClient).getRecords(listOfIds.getIds(), batchId);
   }
 
   @Test
@@ -354,35 +495,32 @@ class TestProxiesService {
   }
 
   @Test
-  void testGetExecutionAndPlugin() throws GenericMetisException {
-
-    // Create a workflowExecution and get the plugin types
+  void getExecutionAndPlugin() throws Exception {
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
-    final Pair<AbstractExecutablePlugin<?>, ExecutablePluginType> pluginAndUnusedType = getUsedAndUnusedPluginType(
-        execution);
-    final ExecutablePluginType unusedPluginType = pluginAndUnusedType.getRight();
+    final Pair<AbstractExecutablePlugin<?>, ExecutablePluginType> pluginAndUnusedType = getUsedAndUnusedPluginType(execution);
     final AbstractExecutablePlugin<?> plugin = pluginAndUnusedType.getLeft();
+    final ExecutablePluginType unusedPluginType = pluginAndUnusedType.getRight();
 
-    // Create a user and mock the dependency methods.
     when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(execution);
 
-    // Test happy flow with result
-    final Pair<WorkflowExecution, ExecutablePlugin> result = proxiesService
-        .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType());
+    final Pair<WorkflowExecution, ExecutablePlugin> result =
+        proxiesService.getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, plugin.getPluginMetadata().getExecutablePluginType());
+
     assertNotNull(result);
-    assertEquals(execution, result.getLeft());
-    assertNotNull(result.getRight());
+    assertSame(execution, result.getLeft());
     assertSame(plugin, result.getRight());
-
-    // Test happy flow without result
+    verify(datasetDao).getDatasetOrThrow(execution.getDatasetId());
     assertNull(proxiesService.getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, unusedPluginType));
-
-    // Test execution not found
-    when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(null);
-    assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
-        .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
-            plugin.getPluginMetadata().getExecutablePluginType()));
-    when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(execution);
+    verify(datasetDao, times(2)).getDatasetOrThrow(execution.getDatasetId());
   }
+
+  @Test
+  void getExecutionAndPluginThrowsWhenExecutionDoesNotExist() throws NoDatasetFoundException {
+    when(workflowExecutionDao.getById(TestObjectFactory.EXECUTIONID)).thenReturn(null);
+    assertThrows(NoWorkflowExecutionFoundException.class,
+        () -> proxiesService.getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, ExecutablePluginType.OAIPMH_HARVEST));
+
+    verify(datasetDao, never()).getDatasetOrThrow(any());
+  }
+
 }

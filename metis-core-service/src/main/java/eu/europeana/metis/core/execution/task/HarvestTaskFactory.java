@@ -1,9 +1,7 @@
 package eu.europeana.metis.core.execution.task;
 
-import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDataRevision;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDefaultTaskParametersHarvest;
 
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -15,6 +13,7 @@ import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoin
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import java.util.EnumMap;
 import java.util.Map;
@@ -47,7 +46,8 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String previousTaskId) {
+  public T create(String datasetId, String engineDatasetId, String previousExecutionId, String sourceBatchId)
+      throws ExternalTaskException {
     PluginHarvestParameters pluginHarvestParameters = getPluginHarvestParameters();
     return createHarvestEngineTask(datasetId, engineDatasetId, pluginHarvestParameters);
   }
@@ -75,11 +75,10 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
   }
 
   private @NotNull T createHarvestEngineTask(String datasetId, String engineDatasetId,
-      PluginHarvestParameters pluginHarvestParameters) {
-    final String dataLocation = getDataLocation(engineDatasetId);
+      PluginHarvestParameters pluginHarvestParameters) throws ExternalTaskException {
     final Map<EngineTaskKey, String> basicTaskParameters =
         createDefaultTaskParametersHarvest(
-            engineDatasetId, datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(), dataLocation,
+            engineDatasetId, datasetId, pluginHarvestParameters.incrementalHarvest(), plugin.getStartedDate(),
             engineTaskClient.getEngineTaskSettings().getProvider());
     final Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
     allParameters.putAll(basicTaskParameters);
@@ -87,11 +86,8 @@ public class HarvestTaskFactory<S extends EngineTaskSettings, T extends EngineTa
         plugin.getPluginMetadata().getExecutablePluginType());
     fullBatchJobType.ifPresent(batchJobType -> allParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
 
-    final DataRevision outputDataRevision = createDataRevision(
-        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
-
     final HarvestInputDataEndpoint harvestInputDataEndpoint = pluginHarvestParameters.harvestInputDataEndpoint();
-    return engineTaskClient.createEngineTask(allParameters, harvestInputDataEndpoint, outputDataRevision);
+    return engineTaskClient.createEngineTask(allParameters, harvestInputDataEndpoint, plugin.getTopologyName());
   }
 
   private record PluginHarvestParameters(boolean incrementalHarvest,

@@ -1,14 +1,11 @@
 package eu.europeana.metis.core.engine.ecloud;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.cloud.client.uis.rest.CloudException;
@@ -17,8 +14,6 @@ import eu.europeana.cloud.common.model.CloudId;
 import eu.europeana.cloud.common.model.File;
 import eu.europeana.cloud.common.model.LocalId;
 import eu.europeana.cloud.common.model.Representation;
-import eu.europeana.cloud.common.model.Revision;
-import eu.europeana.cloud.common.response.CloudTagsResponse;
 import eu.europeana.cloud.common.response.ErrorInfo;
 import eu.europeana.cloud.common.response.ResultSlice;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
@@ -27,23 +22,24 @@ import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.rest.Record;
-import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class TestEcloudEngineDatasetRecordClient {
 
-  private static final String DATASET_ID = "datasetId";
   private static final String PROVIDER_ID = "providerId";
-  private static final String REPRESENTATION_NAME = "representationName";
-  private static final String REVISION_NAME = "revisionName";
+  private static final String BATCH_ID = "batchId";
+  private static final String RECORD_ID = "recordId";
+  private static final String ECLOUD_ID = "ecloudId";
+  private static final String RECORD_CONTENT = "recordContent";
+  private static final URI FILE_URI = URI.create("file://fake/path/to/file.xml");
 
   private DataSetServiceClient dataSetServiceClient;
   private RecordServiceClient recordServiceClient;
@@ -58,404 +54,249 @@ class TestEcloudEngineDatasetRecordClient {
     recordServiceClient = mock(RecordServiceClient.class);
     fileServiceClient = mock(FileServiceClient.class);
     uisClient = mock(UISClient.class);
-    ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(dataSetServiceClient, recordServiceClient,
-        fileServiceClient, uisClient);
+
+    ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(
+        dataSetServiceClient,
+        recordServiceClient,
+        fileServiceClient,
+        uisClient);
   }
 
   @Test
-  void createEngineDatasetId() throws Exception {
-    when(dataSetServiceClient.createDataSet(anyString(), anyString(), anyString())).thenReturn(null);
-    assertTrue(ecloudEngineDatasetRecordClient.createEngineDatasetId(PROVIDER_ID, DATASET_ID));
-  }
+  void getRecordsFromDataset() throws Exception {
+    Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
+    ResultSlice<Representation> resultSlice = new ResultSlice<>(null, List.of(representation));
+    when(dataSetServiceClient.getDataSetRepresentationsChunk(PROVIDER_ID, BATCH_ID, true, null, 1)).thenReturn(resultSlice);
+    mockFileContent();
+    List<Record> records = ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, BATCH_ID, 1);
 
-  @Test
-  void createEngineDatasetId_throws() throws Exception {
-    when(dataSetServiceClient.createDataSet(anyString(), anyString(), anyString())).thenThrow(new MCSException(""));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.createEngineDatasetId(PROVIDER_ID, DATASET_ID));
-  }
-
-  @Test
-  void getRecords_withDatasetId() throws Exception {
-    CloudTagsResponse cloudTagsResponse = new CloudTagsResponse("cloudId", false);
-    final List<CloudTagsResponse> cloudTagsResponses = List.of(cloudTagsResponse);
-    when(dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-        eq(PROVIDER_ID), eq(DATASET_ID), eq(REPRESENTATION_NAME), eq(REVISION_NAME),
-        eq(PROVIDER_ID), anyString(), eq(1))).thenReturn(cloudTagsResponses);
-
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
-
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    String recordContent = "recordContent";
-    when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
-
-    List<Record> records =
-        ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, Instant.now(), 1);
     assertEquals(1, records.size());
-    assertEquals(cloudTagsResponse.getCloudId(), records.getFirst().ecloudId());
-    assertEquals(recordContent, records.getFirst().xmlRecord());
+    assertEquals(ECLOUD_ID, records.getFirst().ecloudId());
+    assertEquals(RECORD_CONTENT, records.getFirst().xmlRecord());
   }
 
   @Test
-  void getRecords_withDatasetId_getFile_throws_MCSException() throws Exception {
-    CloudTagsResponse cloudTagsResponse = new CloudTagsResponse("cloudId", false);
-    final List<CloudTagsResponse> cloudTagsResponses = List.of(cloudTagsResponse);
-    when(dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-        eq(PROVIDER_ID), eq(DATASET_ID), eq(REPRESENTATION_NAME), eq(REVISION_NAME),
-        eq(PROVIDER_ID), anyString(), eq(1))).thenReturn(cloudTagsResponses);
-
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
-
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    when(fileServiceClient.getFile(anyString())).thenThrow(new MCSException());
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            Instant.now(), 1));
+  void getRecordsFromDatasetWhenDatasetClientThrows() throws Exception {
+    when(dataSetServiceClient.getDataSetRepresentationsChunk(PROVIDER_ID, BATCH_ID, true, null, 1))
+        .thenThrow(new MCSException());
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, BATCH_ID, 1));
   }
 
   @Test
-  void getRecords_withDatasetId_getFile_InputStream_throws_IOException() throws Exception {
-    CloudTagsResponse cloudTagsResponse = new CloudTagsResponse("cloudId", false);
-    final List<CloudTagsResponse> cloudTagsResponses = List.of(cloudTagsResponse);
-    when(dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-        eq(PROVIDER_ID), eq(DATASET_ID), eq(REPRESENTATION_NAME), eq(REVISION_NAME),
-        eq(PROVIDER_ID), anyString(), eq(1))).thenReturn(cloudTagsResponses);
+  void getRecordsFromDatasetWhenRepresentationHasNullFiles() throws Exception {
+    Representation representation = mock(Representation.class);
+    when(representation.getCloudId()).thenReturn(ECLOUD_ID);
+    when(representation.getFiles()).thenReturn(null);
 
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
+    when(dataSetServiceClient.getDataSetRepresentationsChunk(PROVIDER_ID, BATCH_ID, true, null, 1))
+        .thenReturn(new ResultSlice<>(null, List.of(representation)));
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    InputStream throwingStreamMock = mock(InputStream.class);
-    when(throwingStreamMock.read(any(byte[].class), anyInt(), anyInt())).thenThrow(new IOException());
-    when(fileServiceClient.getFile(anyString())).thenReturn(throwingStreamMock);
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            Instant.now(), 1));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, BATCH_ID, 1));
   }
 
   @Test
-  void getRecords_withDatasetId_representation_getFiles_blank_throws() throws Exception {
-    CloudTagsResponse cloudTagsResponse = new CloudTagsResponse("cloudId", false);
-    final List<CloudTagsResponse> cloudTagsResponses = List.of(cloudTagsResponse);
-    when(dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-        eq(PROVIDER_ID), eq(DATASET_ID), eq(REPRESENTATION_NAME), eq(REVISION_NAME),
-        eq(PROVIDER_ID), anyString(), eq(1))).thenReturn(cloudTagsResponses);
+  void getRecordsFromDatasetWhenRepresentationHasNoFiles() throws Exception {
+    Representation representation = mock(Representation.class);
+    when(representation.getCloudId()).thenReturn(ECLOUD_ID);
+    when(representation.getFiles()).thenReturn(List.of());
 
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(null).thenReturn(List.of());
+    when(dataSetServiceClient.getDataSetRepresentationsChunk(PROVIDER_ID, BATCH_ID, true, null, 1))
+        .thenReturn(new ResultSlice<>(null, List.of(representation)));
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            Instant.now(), 1));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            Instant.now(), 1));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, BATCH_ID, 1));
   }
 
   @Test
-  void getRecords_withDatasetId_representations_blank_throws() throws Exception {
-    CloudTagsResponse cloudTagsResponse = new CloudTagsResponse("cloudId", false);
-    final List<CloudTagsResponse> cloudTagsResponses = List.of(cloudTagsResponse);
-    when(dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-        eq(PROVIDER_ID), eq(DATASET_ID), eq(REPRESENTATION_NAME), eq(REVISION_NAME),
-        eq(PROVIDER_ID), anyString(), eq(1))).thenReturn(cloudTagsResponses);
+  void getRecordsFromDatasetWhenFileClientThrows() throws Exception {
+    Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
+    when(dataSetServiceClient.getDataSetRepresentationsChunk(PROVIDER_ID, BATCH_ID, true, null, 1))
+        .thenReturn(new ResultSlice<>(null, List.of(representation)));
 
-    Instant now = Instant.now();
-    assertThrows(IllegalStateException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
-    assertThrows(IllegalStateException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
+    when(fileServiceClient.getFile(FILE_URI.toString())).thenThrow(new MCSException());
+
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, BATCH_ID, 1));
   }
 
   @Test
-  void getRecords_withDatasetId_getRevisions_throws() throws Exception {
-    when(dataSetServiceClient.getRevisionsWithDeletedFlagSetToFalse(
-        eq(PROVIDER_ID), eq(DATASET_ID), eq(REPRESENTATION_NAME), eq(REVISION_NAME),
-        eq(PROVIDER_ID), anyString(), eq(1))).thenThrow(new MCSException());
+  void getRecordsFromDatasetWhenInputStreamThrows() throws Exception {
+    Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
 
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            Instant.now(), 1));
+    when(dataSetServiceClient.getDataSetRepresentationsChunk(PROVIDER_ID, BATCH_ID, true, null, 1))
+        .thenReturn(new ResultSlice<>(null, List.of(representation)));
+
+    InputStream throwingInputStream = mock(InputStream.class);
+    when(throwingInputStream.read(any(byte[].class), anyInt(), anyInt())).thenThrow(new IOException());
+
+    when(fileServiceClient.getFile(FILE_URI.toString())).thenReturn(throwingInputStream);
+
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, BATCH_ID, 1));
   }
 
   @Test
-  void getRecords_withRecordIds() throws Exception {
-    List<String> recordIds = List.of("recordId");
+  void getRecordsByRecordIds() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
 
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
+    Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
+    mockEcloudRecord(List.of(representation));
+    mockFileContent();
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordIds.getFirst()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
+    List<Record> records = ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, List.of(RECORD_ID), BATCH_ID);
 
-    String recordContent = "recordContent";
-    when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
-
-    List<Record> records =
-        ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now());
     assertEquals(1, records.size());
-    assertEquals(recordIds.getFirst(), records.getFirst().ecloudId());
-    assertEquals(recordContent, records.getFirst().xmlRecord());
+    assertEquals(ECLOUD_ID, records.getFirst().ecloudId());
+    assertEquals(RECORD_CONTENT, records.getFirst().xmlRecord());
   }
 
   @Test
-  void getRecords_withRecordIds_getFile_throws_MCSException() throws Exception {
-    List<String> recordIds = List.of("recordId");
+  void getRecordUsingLocalRecordId() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
 
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
+    Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
+    mockEcloudRecord(List.of(representation));
+    mockFileContent();
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordIds.getFirst()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
+    Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
 
-    when(fileServiceClient.getFile(anyString())).thenThrow(new MCSException());
+    assertEquals(ECLOUD_ID, record.ecloudId());
+    assertEquals(RECORD_CONTENT, record.xmlRecord());
+  }
 
+  @Test
+  void getRecordSelectsRepresentationMatchingBatchId() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
+    Representation otherBatchRepresentation = createRepresentation(ECLOUD_ID, "otherBatch");
+    Representation requestedBatchRepresentation = createRepresentation(ECLOUD_ID, BATCH_ID);
+    mockEcloudRecord(List.of(otherBatchRepresentation, requestedBatchRepresentation));
+    mockFileContent();
+
+    Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
+    assertEquals(ECLOUD_ID, record.ecloudId());
+    assertEquals(RECORD_CONTENT, record.xmlRecord());
+  }
+
+  @Test
+  void getRecordWhenUisLookupFailsForConnectivityReason() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenThrow(new CloudException("", new IllegalStateException()));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
   }
 
   @Test
-  void getRecords_withRecordIds_getFile_InputStream_throws_IOException() throws Exception {
-    List<String> recordIds = List.of("recordId");
+  void getRecordFallsBackToSuppliedEcloudId() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, ECLOUD_ID))
+        .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
+    CloudId matchingCloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getRecordId(ECLOUD_ID)).thenReturn(new ResultSlice<>(null, List.of(matchingCloudId)));
 
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
+    Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
+    mockEcloudRecord(List.of(representation));
+    mockFileContent();
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordIds.getFirst()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
+    Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, ECLOUD_ID, BATCH_ID);
 
-    InputStream throwingStreamMock = mock(InputStream.class);
-    when(throwingStreamMock.read(any(byte[].class), anyInt(), anyInt())).thenThrow(new IOException());
-    when(fileServiceClient.getFile(anyString())).thenReturn(throwingStreamMock);
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
+    assertEquals(ECLOUD_ID, record.ecloudId());
+    assertEquals(RECORD_CONTENT, record.xmlRecord());
   }
 
   @Test
-  void getRecords_withRecordIds_representation_getFiles_blank_empty_list() throws Exception {
-    List<String> recordIds = List.of("recordId");
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(null).thenReturn(List.of());
-
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordIds.getFirst()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
+  void getRecordWhenEcloudRecordCannotBeRetrieved() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
+    when(recordServiceClient.getRecord(ECLOUD_ID)).thenThrow(new MCSException());
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
   }
 
   @Test
-  void getRecords_withRecordIds_representations_blank_then_throws() throws Exception {
-    List<String> recordIds = List.of("recordId");
+  void getRecordWhenEcloudRecordHasNullRepresentations() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
+    mockEcloudRecord(null);
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordIds.getFirst()), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
+    ExternalTaskException exception = assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
 
-    assertTrue(ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()).isEmpty());
-    assertTrue(ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()).isEmpty());
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
+    assertEquals("No representations found for ecloudId: ecloudId", exception.getMessage());
   }
 
   @Test
-  void getRecord() throws Exception {
-    String recordId = "recordId";
-
-    CloudId cloudId = new CloudId(recordId, new LocalId(PROVIDER_ID, recordId));
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenReturn(cloudId);
-
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    String recordContent = "recordContent";
-    when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
-
-    Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now());
-    assertEquals(recordId, recordItem.ecloudId());
-    assertEquals(recordContent, recordItem.xmlRecord());
+  void getRecordWhenEcloudRecordHasNoRepresentations() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
+    mockEcloudRecord(List.of());
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
   }
 
   @Test
-  void getRecord_getFile_throws_MCSException() throws Exception {
-    String recordId = "recordId";
+  void getRecordWhenNoRepresentationMatchesBatchId() throws Exception {
+    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
+    Representation representation = createRepresentation(ECLOUD_ID, "differentBatchId");
 
-    CloudId cloudId = new CloudId(recordId, new LocalId(PROVIDER_ID, recordId));
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenReturn(cloudId);
+    mockEcloudRecord(List.of(representation));
 
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
+    ExternalTaskException exception = assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
 
-    when(fileServiceClient.getFile(anyString())).thenThrow(new MCSException());
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    assertEquals(
+        "No representations found for ecloudId: ecloudId, batchId: batchId",
+        exception.getMessage());
   }
 
   @Test
-  void getRecord_getFile_InputStream_throws_IOException() throws Exception {
-    String recordId = "recordId";
+  void getRecordWhenPotentialEcloudIdDoesNotExist() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
 
-    CloudId cloudId = new CloudId(recordId, new LocalId(PROVIDER_ID, recordId));
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenReturn(cloudId);
+    when(uisClient.getRecordId(RECORD_ID)).thenReturn(new ResultSlice<>(null, List.of()));
+    when(recordServiceClient.getRecord(null)).thenThrow(new MCSException());
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
 
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    InputStream throwingStreamMock = mock(InputStream.class);
-    when(throwingStreamMock.read(any(byte[].class), anyInt(), anyInt())).thenThrow(new IOException());
-    when(fileServiceClient.getFile(anyString())).thenReturn(throwingStreamMock);
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    verify(recordServiceClient).getRecord(null);
   }
 
   @Test
-  void getRecord_representation_getFiles_blank_empty_list() throws Exception {
-    String recordId = "recordId";
+  void getRecordWhenPotentialEcloudIdVerificationThrows() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
+    when(uisClient.getRecordId(RECORD_ID)).thenThrow(new CloudException("", new IllegalStateException()));
+    when(recordServiceClient.getRecord(null)).thenThrow(new MCSException());
 
-    CloudId cloudId = new CloudId(recordId, new LocalId(PROVIDER_ID, recordId));
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenReturn(cloudId);
+    assertThrows(
+        ExternalTaskException.class,
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
 
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(null).thenReturn(List.of());
-
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    verify(recordServiceClient).getRecord(null);
   }
 
-  @Test
-  void getRecord_representations_blank_then_throws() throws Exception {
-    String recordId = "recordId";
+  private Representation createRepresentation(String ecloudId, String datasetId) {
 
-    CloudId cloudId = new CloudId(recordId, new LocalId(PROVIDER_ID, recordId));
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenReturn(cloudId);
+    File file = mock(File.class);
+    when(file.getContentUri()).thenReturn(FILE_URI);
 
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
+    Representation representation = mock(Representation.class);
+    when(representation.getCloudId()).thenReturn(ecloudId);
+    when(representation.getDatasetId()).thenReturn(datasetId);
+    when(representation.getFiles()).thenReturn(List.of(file));
 
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    return representation;
   }
 
-  @Test
-  void getRecord_uisClient_throws() throws Exception {
-    String recordId = "recordId";
+  private void mockEcloudRecord(List<Representation> representations)
+      throws MCSException {
 
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenThrow(new CloudException("", new IllegalStateException()));
-    assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    eu.europeana.cloud.common.model.Record ecloudRecord =
+        mock(eu.europeana.cloud.common.model.Record.class);
+
+    when(ecloudRecord.getRepresentations()).thenReturn(representations);
+    when(recordServiceClient.getRecord(ECLOUD_ID)).thenReturn(ecloudRecord);
   }
 
-  @Test
-  void getRecord_uisClient_throws_with_cause_RecordDoesNotExistException_verify_success() throws Exception {
-    String recordId = "recordId";
-
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenThrow(
-        new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
-
-    CloudId cloudId = new CloudId(recordId, new LocalId(PROVIDER_ID, recordId));
-    ResultSlice<CloudId> resultSlice = new ResultSlice<>("nextSlice", List.of(cloudId));
-    when(uisClient.getRecordId(recordId)).thenReturn(resultSlice);
-
-    File fileMock = mock(File.class);
-    when(fileMock.getContentUri()).thenReturn(URI.create("file://fake/path/to/file.xml"));
-    Representation representationMock = mock(Representation.class);
-    when(representationMock.getFiles()).thenReturn(List.of(fileMock));
-    when(recordServiceClient
-        .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
-            Revision.class))).thenReturn(List.of(representationMock));
-
-    String recordContent = "recordContent";
-    when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
-
-    Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now());
-    assertEquals(recordId, recordItem.ecloudId());
-    assertEquals(recordContent, recordItem.xmlRecord());
-  }
-
-  @Test
-  void getRecord_uisClient_throws_with_cause_RecordDoesNotExistException_verify_fail() throws Exception {
-    String recordId = "recordId";
-
-    when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenThrow(
-        new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
-
-    ResultSlice<CloudId> resultSlice = new ResultSlice<>("nextSlice", List.of());
-    when(uisClient.getRecordId(recordId)).thenReturn(resultSlice).thenThrow(new CloudException("", new IllegalStateException()));
-
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
-  }
-
-  @Test
-  void getRecord_recordId_null() throws Exception {
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, null, REVISION_NAME, Instant.now()));
+  private void mockFileContent() throws MCSException {
+    when(fileServiceClient.getFile(FILE_URI.toString()))
+        .thenReturn(new ByteArrayInputStream(RECORD_CONTENT.getBytes(StandardCharsets.UTF_8)));
   }
 }

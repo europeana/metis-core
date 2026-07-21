@@ -11,6 +11,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPlugin;
+import eu.europeana.metis.exception.ExternalTaskException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -39,36 +40,27 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String previousTaskId) {
-    GenericIntermediateTaskContext genericIntermediateTaskContext = createGenericIntermediateTaskContext(engineDatasetId);
-    IndexTaskContext indexTaskContext = getIndexTaskConfiguration(previousTaskId, genericIntermediateTaskContext);
+  public T create(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId) throws ExternalTaskException {
+    IndexTaskContext indexTaskContext = getIndexTaskConfiguration(sourceExecutionId, sourceBatchId);
     addJobNameParameter(indexTaskContext.pluginParameters());
     Map<EngineTaskKey, String> allParameters = createAllParameters(
         engineDatasetId,
         datasetId,
-        previousTaskId,
-        genericIntermediateTaskContext.inputDataRevision(),
-        genericIntermediateTaskContext.dataLocation(),
+        sourceExecutionId,
         indexTaskContext.pluginParameters()
     );
 
-    return createIntermediateEngineTask(
-        allParameters,
-        indexTaskContext.inputDataEndpoint(),
-        genericIntermediateTaskContext.outputDataRevision()
-    );
+    return createIntermediateEngineTask(allParameters, indexTaskContext.inputDataEndpoint());
   }
 
-  private @NotNull IndexTaskContext getIndexTaskConfiguration(
-      String previousTaskId, GenericIntermediateTaskContext genericIntermediateTaskContext
-  ) {
+  private @NotNull IndexTaskContext getIndexTaskConfiguration(String sourceExecutionId, String sourceBatchId) {
     if (!(plugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata indexPluginMetadata)) {
       throw new IllegalStateException("Unexpected value: " + plugin.getPluginMetadata());
     }
 
     return new IndexTaskContext(
         createIndexPluginParameters(indexPluginMetadata),
-        createSimpleIntermediateInputDataEndpoint(previousTaskId, genericIntermediateTaskContext)
+        createSimpleIntermediateInputDataEndpoint(sourceExecutionId, sourceBatchId)
     );
   }
 

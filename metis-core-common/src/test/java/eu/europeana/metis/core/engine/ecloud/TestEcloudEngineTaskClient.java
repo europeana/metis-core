@@ -7,10 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,8 +26,6 @@ import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
-import eu.europeana.metis.core.dataset.Dataset;
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
@@ -45,8 +42,6 @@ import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
-import io.micrometer.common.util.StringUtils;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,8 +55,7 @@ class TestEcloudEngineTaskClient {
 
   private static final String TOPOLOGY_NAME = "topologyName";
   private static final String DATASET_ID = "datasetId";
-  private static final String REPRESENTATION_NAME = "representationName";
-  private static final String REVISION_NAME = "revisionName";
+  private static final String BATCH_ID = "batchId";
   private static final String X_PATH = "xPath";
 
   @Mock
@@ -85,47 +79,41 @@ class TestEcloudEngineTaskClient {
   }
 
   @Test
-  void createEngineTask() {
+  void createEngineTask() throws ExternalTaskException {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "");
-    DataRevision outputDataRevision = new DataRevision("name", "provider", Instant.now(), false);
-    EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint,
-        outputDataRevision);
+    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "", "");
+    EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint, TOPOLOGY_NAME);
     assertNotNull(ecloudEngineTask);
   }
 
   @Test
   void createEngineTask_throws() {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "");
-    DataRevision outputDataRevision = new DataRevision("name", "provider", Instant.now(), false);
-    assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, outputDataRevision));
-    assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint, null));
+    assertThrows(NullPointerException.class, () -> ecloudEngineTaskClient.createEngineTask(parameters, null, TOPOLOGY_NAME));
   }
 
   @Test
   void submitEngineTask() throws Exception {
-    EcloudEngineTask ecloudEngineTask = mock(EcloudEngineTask.class);
-    when(ecloudEngineTask.toDpsTask()).thenReturn(new DpsTask());
-    when(dpsClient.submitTask(any(), eq(TOPOLOGY_NAME))).thenReturn(123L);
-    String taskId = ecloudEngineTaskClient.submitEngineTask(ecloudEngineTask, TOPOLOGY_NAME);
+    DpsTask dpsTask = new DpsTask();
+    dpsTask.setTaskId(123L);
+    String taskId = ecloudEngineTaskClient.submitEngineTask(new EcloudEngineTask(dpsTask), TOPOLOGY_NAME);
     assertEquals("123", taskId);
   }
 
   @Test
   void submitEngineTask_throws() throws DpsException {
-    EcloudEngineTask ecloudEngineTask = mock(EcloudEngineTask.class);
-    when(ecloudEngineTask.toDpsTask()).thenReturn(new DpsTask());
-    when(dpsClient.submitTask(any(), any())).thenThrow(new DpsException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.submitEngineTask(ecloudEngineTask, TOPOLOGY_NAME));
+    DpsTask dpsTask = new DpsTask();
+    dpsTask.setTaskId(123L);
+    doThrow(new DpsException("")).when(dpsClient).startTask(anyString(), anyLong());
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.submitEngineTask(new EcloudEngineTask(dpsTask), TOPOLOGY_NAME));
   }
 
   @Test
   void submitEngineTask_throwsRuntimeException() throws DpsException {
-    EcloudEngineTask ecloudEngineTask = mock(EcloudEngineTask.class);
-    when(ecloudEngineTask.toDpsTask()).thenReturn(new DpsTask());
-    when(dpsClient.submitTask(any(), any())).thenThrow(new RuntimeException(""));
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.submitEngineTask(ecloudEngineTask, TOPOLOGY_NAME));
+    DpsTask dpsTask = new DpsTask();
+    dpsTask.setTaskId(123L);
+    doThrow(new RuntimeException("")).when(dpsClient).startTask(anyString(), anyLong());
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineTaskClient.submitEngineTask(new EcloudEngineTask(dpsTask), TOPOLOGY_NAME));
   }
 
   @Test
@@ -338,38 +326,25 @@ class TestEcloudEngineTaskClient {
   }
 
   @Test
-  void createEngineDatasetId() throws ExternalTaskException {
-    when(ecloudEngineDatasetRecordClient.createEngineDatasetId(eq(ecloudEngineTaskSettings.getProvider()), anyString())).thenReturn(
-        true);
-    assertTrue(StringUtils.isNotBlank(ecloudEngineTaskClient.createEngineDatasetId(new Dataset())));
-  }
-
-  @Test
   void getRecords_withDatasetId() throws ExternalTaskException {
-    Instant now = Instant.now();
     List<Record> records = List.of(new Record(null, null));
-    when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), DATASET_ID, REPRESENTATION_NAME,
-        REVISION_NAME, now, 1)).thenReturn(records);
-    List<Record> recordsResult = ecloudEngineTaskClient.getRecords(DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1);
+    when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), BATCH_ID, 1)).thenReturn(records);
+    List<Record> recordsResult = ecloudEngineTaskClient.getRecords(DATASET_ID, BATCH_ID, 1);
     assertEquals(records, recordsResult);
   }
 
   @Test
   void getRecords_fromIds() throws ExternalTaskException {
-    Instant now = Instant.now();
     List<Record> records = List.of(new Record(null, null));
-    when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), List.of("recordId1"), REVISION_NAME,
-        now)).thenReturn(records);
-    assertEquals(records, ecloudEngineTaskClient.getRecords(List.of("recordId1"), REVISION_NAME, now));
+    when(ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), List.of("recordId1"), "batchId")).thenReturn(records);
+    assertEquals(records, ecloudEngineTaskClient.getRecords(List.of("recordId1"), "batchId"));
   }
 
   @Test
   void getRecord() throws ExternalTaskException {
-    Instant now = Instant.now();
     Record records = new Record(null, null);
-    when(ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), "recordId", REVISION_NAME,
-        now)).thenReturn(records);
-    assertEquals(records, ecloudEngineTaskClient.getRecord(DATASET_ID, "recordId", REVISION_NAME, now, null));
+    when(ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), "recordId", "batchId")).thenReturn(records);
+    assertEquals(records, ecloudEngineTaskClient.getRecord(DATASET_ID, "recordId", "batchId", null));
   }
 
   @Test

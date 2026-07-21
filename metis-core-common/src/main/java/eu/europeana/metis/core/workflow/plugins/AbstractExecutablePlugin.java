@@ -16,6 +16,7 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
     extends AbstractMetisPlugin<M> implements ExecutablePlugin {
 
   private String externalTaskId;
+  private String batchId;
   private ExecutionProgress executionProgress = new ExecutionProgress();
 
   /**
