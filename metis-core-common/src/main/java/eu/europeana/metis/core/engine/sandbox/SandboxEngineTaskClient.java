@@ -3,7 +3,6 @@ package eu.europeana.metis.core.engine.sandbox;
 import static java.util.Objects.requireNonNull;
 
 import eu.europeana.metis.core.dataset.Dataset;
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
@@ -24,7 +23,6 @@ import eu.europeana.metis.sandbox.common.locale.Country;
 import eu.europeana.metis.sandbox.common.locale.Language;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress.SandboxTaskState;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -58,8 +56,9 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   public SandboxEngineTask createEngineTask(
       Map<EngineTaskKey, String> parameters,
       InputDataEndpoint inputDataEndpoint,
-      DataRevision outputDataRevision) {
-    return new SandboxEngineTask(parameters, inputDataEndpoint, outputDataRevision);
+      String topologyName) {
+    SandboxEngineTaskRequest sandboxEngineTaskRequest = new SandboxEngineTaskRequest(parameters, inputDataEndpoint);
+    return new SandboxEngineTask(sandboxEngineTaskRequest.getSandboxTask());
   }
 
   @Override
@@ -80,7 +79,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
     try {
       return restClient.post()
                        .uri("/task/submit")
-                       .body(engineTask.getSandboxTask())
+                       .body(engineTask)
                        .retrieve()
                        .body(String.class);
     } catch (RuntimeException e) {
@@ -143,20 +142,17 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Instant revisionTimestamp,
-      int numberOfRecords) throws ExternalTaskException {
+  public List<Record> getRecords(String engineDatasetId, String batchId, int numberOfRecords) throws ExternalTaskException {
     return List.of();
   }
 
   @Override
-  public List<Record> getRecords(List<String> recordIds, String revisionName, Instant revisionTimestamp)
-      throws ExternalTaskException {
+  public List<Record> getRecords(List<String> recordIds, String batchId) throws ExternalTaskException {
     return List.of();
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Instant revisionTimestamp,
-      ExecutablePluginType executablePluginType)
+  public Record getRecord(String engineDatasetId, String recordId, String batchId, ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
     FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(executablePluginType).orElseThrow();
     try {

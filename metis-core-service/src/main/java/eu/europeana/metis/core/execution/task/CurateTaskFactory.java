@@ -28,6 +28,7 @@ import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMeta
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
+import eu.europeana.metis.exception.ExternalTaskException;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
@@ -61,30 +62,23 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String previousTaskId) {
-    GenericIntermediateTaskContext genericIntermediateTaskContext = createGenericIntermediateTaskContext(engineDatasetId);
-    CurateTaskContext curateTaskContext = getIntermediatePluginParameters(previousTaskId, genericIntermediateTaskContext);
+  public T create(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId)
+      throws ExternalTaskException {
+    CurateTaskContext curateTaskContext = getIntermediatePluginParameters(sourceExecutionId, sourceBatchId);
     addJobNameParameter(curateTaskContext.pluginParameters());
     Map<EngineTaskKey, String> allParameters = createAllParameters(
         engineDatasetId,
         datasetId,
-        previousTaskId,
-        genericIntermediateTaskContext.inputDataRevision(),
-        genericIntermediateTaskContext.dataLocation(),
+        sourceExecutionId,
         curateTaskContext.pluginParameters()
     );
 
-    return createIntermediateEngineTask(
-        allParameters,
-        curateTaskContext.inputDataEndpoint(),
-        genericIntermediateTaskContext.outputDataRevision()
-    );
+    return createIntermediateEngineTask(allParameters, curateTaskContext.inputDataEndpoint());
   }
 
-  private @NotNull CurateTaskContext getIntermediatePluginParameters(String previousTaskId,
-      GenericIntermediateTaskContext genericIntermediateTaskContext) {
+  private @NotNull CurateTaskContext getIntermediatePluginParameters(String sourceExecutionId, String sourceBatchId) {
     SimpleIntermediateInputDataEndpoint simpleInput =
-        createSimpleIntermediateInputDataEndpoint(previousTaskId, genericIntermediateTaskContext);
+        createSimpleIntermediateInputDataEndpoint(sourceExecutionId, sourceBatchId);
     return switch (plugin.getPluginMetadata()) {
       case TransformationExternalPluginMetadata transformationExternalPluginMetadata -> {
         String xsltId = transformationExternalPluginMetadata.getXsltId();
@@ -93,7 +87,8 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
             createTransformationExternalParameters(
                 engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl(),
                 transformationExternalPluginMetadata.getXsltId()),
-            new TransformExternalInputDataEndpoint(xslt, genericIntermediateTaskContext.dataLocation(), previousTaskId)
+            new TransformExternalInputDataEndpoint(xslt, "", sourceExecutionId,
+                sourceBatchId)
         );
       }
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> new CurateTaskContext(
@@ -115,7 +110,8 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
                 transformationPluginMetadata.getCountry(),
                 transformationPluginMetadata.getLanguage()
             ),
-            new TransformInternalInputDataEndpoint(xslt, genericIntermediateTaskContext.dataLocation(), previousTaskId)
+            new TransformInternalInputDataEndpoint(xslt, "", sourceExecutionId,
+                sourceBatchId)
         );
       }
       case ValidationInternalPluginMetadata validationInternalPluginMetadata -> new CurateTaskContext(

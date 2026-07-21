@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.engine.base;
 
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
+import eu.europeana.metis.exception.ExternalTaskException;
 import java.util.Map;
 
 /**
@@ -29,13 +30,15 @@ public interface EngineTaskClient<S extends EngineTaskSettings, T extends Engine
   S getEngineTaskSettings();
 
   /**
-   * Creates a new engine task with the specified parameters, input data endpoint, and output data revision.
+   * Creates a new engine task with the specified parameters and input data endpoint.
    *
    * @param parameters a map of {@link EngineTaskKey} keys and their corresponding values used to configure the engine task
    * @param inputDataEndpoint the input data source for the engine task
-   * @param outputDataRevision the data revision to be produced by this engine task
+   * @param topologyName the name of the topology to be used for the engine task
    * @return a new instance of the engine task
+   * @throws ExternalTaskException if an error occurs while creating the engine task
    */
-  T createEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, DataRevision outputDataRevision);
+  T createEngineTask(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, String topologyName)
+      throws ExternalTaskException;
 
 }

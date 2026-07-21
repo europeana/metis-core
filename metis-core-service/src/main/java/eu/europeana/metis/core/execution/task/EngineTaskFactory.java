@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.execution.task;
 
 import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.exception.ExternalTaskException;
 
 /**
  * Interface for a factory that creates instances of {@link EngineTask}, which represent tasks to be processed
@@ -16,8 +17,8 @@ public interface EngineTaskFactory<T extends EngineTask> {
    *
    * @param datasetId The identifier of the dataset for which the task is created.
    * @param engineDatasetId The identifier of the engine's representation of the dataset.
-   * @param previousTaskId The identifier of the previous task in the workflow, if applicable.
+   * @param sourceBatchId The identifier of the previous task in the workflow, if applicable.
    * @return An instance of the task represented by the generic type parameter {@code T}.
    */
-  T create(String datasetId, String engineDatasetId, String previousTaskId);
+  T create(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId) throws ExternalTaskException;
 }

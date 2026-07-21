@@ -1,9 +1,7 @@
 package eu.europeana.metis.core.execution.task;
 
-import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDataRevision;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDepublishParameters;
 
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -12,12 +10,13 @@ import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
+import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import eu.europeana.metis.utils.DepublicationReason;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Factory class for creating depublish engine tasks.
@@ -43,34 +42,38 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String previousTaskId) {
-    Map<EngineTaskKey, String> pluginParameters = getDepublishPluginParameters(datasetId);
+  public T create(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId)
+      throws ExternalTaskException {
+    DepublishContext depublishContext = getDepublishPluginParameters(datasetId, engineDatasetId);
     Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
         plugin.getPluginMetadata().getExecutablePluginType());
-    fullBatchJobType.ifPresent(batchJobType -> pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
-    pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineDatasetId);
-    return createDepublishEngineTask(engineDatasetId, pluginParameters);
+    fullBatchJobType.ifPresent(
+        batchJobType -> depublishContext.pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
+    depublishContext.pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineDatasetId);
+    return engineTaskClient.createEngineTask(depublishContext.pluginParameters, depublishContext.depublishInputDataEndpoint,
+        plugin.getTopologyName());
   }
 
-  private @NotNull Map<EngineTaskKey, String> getDepublishPluginParameters(String datasetId) {
+  private DepublishContext getDepublishPluginParameters(String datasetId, String engineDatasetId) {
     if (plugin.getPluginMetadata() instanceof DepublishPluginMetadata depublishPluginMetadata) {
       boolean datasetDepublish = depublishPluginMetadata.isDatasetDepublish();
       Set<String> recordIdsToDepublish = depublishPluginMetadata.getRecordIdsToDepublish();
+      if (!datasetDepublish && CollectionUtils.isEmpty(recordIdsToDepublish)) {
+        throw new IllegalStateException(
+            "Requested record depublication but there are no record ids for depublication");
+      }
+
       String depublicationReason = depublishPluginMetadata.getDepublicationReason() == null ? DepublicationReason.GENERIC.name()
           : depublishPluginMetadata.getDepublicationReason().name();
-      return createDepublishParameters(datasetId, datasetDepublish, recordIdsToDepublish,
-          depublicationReason);
+      Map<EngineTaskKey, String> depublishParameters = createDepublishParameters(datasetId, depublicationReason);
+      return new DepublishContext(depublishParameters,
+          new DepublishInputDataEndpoint("", datasetDepublish, recordIdsToDepublish));
     } else {
       throw new IllegalStateException("Unexpected value: " + plugin);
     }
   }
 
-  @NotNull
-  private T createDepublishEngineTask(String engineDatasetId, Map<EngineTaskKey, String> pluginParameters) {
-    final String dataLocation = getDataLocation(engineDatasetId);
-    final DepublishInputDataEndpoint internalInputDataEndpoint = new DepublishInputDataEndpoint(dataLocation);
-    final DataRevision outputDataRevision = createDataRevision(
-        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider());
-    return engineTaskClient.createEngineTask(pluginParameters, internalInputDataEndpoint, outputDataRevision);
+  record DepublishContext(Map<EngineTaskKey, String> pluginParameters, DepublishInputDataEndpoint depublishInputDataEndpoint) {
+
   }
 }

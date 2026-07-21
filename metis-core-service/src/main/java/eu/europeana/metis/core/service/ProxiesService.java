@@ -186,11 +186,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
 
     // Get the list of records.
     final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
-    final String representationName = MetisPlugin.getRepresentationName();
-    final String revisionName = executionAndPlugin.getRight().getPluginType().name();
-
-    List<Record> records = engineTaskClient.getRecords(engineDatasetId, representationName, revisionName,
-        executionAndPlugin.getRight().getStartedDate(), numberOfRecords);
+    final String batchId = executionAndPlugin.getRight().getBatchId();
+    List<Record> records = engineTaskClient.getRecords(engineDatasetId, batchId, numberOfRecords);
 
     return new PaginatedRecordsResponse(records, null);
   }
@@ -217,10 +214,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
     existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
-    final String revisionName = executionAndPlugin.getRight().getPluginType().name();
-
-    List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), revisionName,
-        executionAndPlugin.getRight().getStartedDate());
+    final String batchId = executionAndPlugin.getRight().getBatchId();
+    List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), batchId);
 
     return new RecordsResponse(records);
   }
@@ -268,9 +263,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
 
     ExecutablePlugin predecessorExecutablePlugin = (ExecutablePlugin) predecessorPlugin.getLeft();
 
-    final String revisionName = predecessorExecutablePlugin.getPluginType().name();
-    List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), revisionName,
-        predecessorExecutablePlugin.getStartedDate());
+    final String batchId = predecessorExecutablePlugin.getBatchId();
+    List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), batchId);
     return new RecordsResponse(records);
   }
 
@@ -300,11 +294,10 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();
     final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
-    final String revisionName = executionAndPlugin.getRight().getPluginType().name();
+    final String batchId = executionAndPlugin.getRight().getBatchId();
 
     //Check engine record id and then europeana record id.
-    Record recordData = engineTaskClient.getRecord(engineDatasetId, idToSearch, revisionName,
-        executionAndPlugin.getRight().getStartedDate(), executablePluginType);
+    Record recordData = engineTaskClient.getRecord(engineDatasetId, idToSearch, batchId, executablePluginType);
     if (recordData == null) {
       String normalizedRecordId = idToSearch;
       try {
@@ -313,8 +306,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       } catch (BadContentException e) {
         LOGGER.info(format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
-      recordData = engineTaskClient.getRecord(engineDatasetId, normalizedRecordId, revisionName,
-          executionAndPlugin.getRight().getStartedDate(), executablePluginType);
+      recordData = engineTaskClient.getRecord(engineDatasetId, normalizedRecordId, batchId, executablePluginType);
     }
     return recordData;
   }

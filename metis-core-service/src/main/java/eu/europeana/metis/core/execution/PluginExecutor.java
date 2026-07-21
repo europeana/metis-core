@@ -51,7 +51,8 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    * executions
    * @param datasetXsltDao the {@link DatasetXsltDao} instance used to retrieve dataset-specific XSLT configurations
    */
-  public PluginExecutor(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao, DatasetXsltDao datasetXsltDao) {
+  public PluginExecutor(EngineTaskClient<S, T> engineTaskClient, WorkflowExecutionDao workflowExecutionDao,
+      DatasetXsltDao datasetXsltDao) {
     this.engineTaskClient = engineTaskClient;
     this.workflowExecutionDao = workflowExecutionDao;
     this.datasetXsltDao = datasetXsltDao;
@@ -69,7 +70,8 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     try {
       preparePredecessorMetadata(plugin, workflowExecution);
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);
-      submitIfNotStarted(plugin, workflowExecution, engineTaskSubmitter);
+      T engineTask = createTask(plugin, workflowExecution, engineTaskSubmitter);
+      engineTaskSubmitter.submitTask(engineTask);
     } catch (ExternalTaskException | RuntimeException e) {
       log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin failed", workflowExecution.getId(),
           plugin.getPluginType()), e);
@@ -84,18 +86,24 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     return true;
   }
 
-  private void submitIfNotStarted(AbstractExecutablePlugin<?> plugin,
+  private T createTask(AbstractExecutablePlugin<?> plugin,
       WorkflowExecution workflowExecution, EngineTaskSubmitter<S, T> engineTaskSubmitter)
       throws ExternalTaskException {
     if (isBlank(plugin.getExternalTaskId())) {
+      AbstractExecutablePlugin<?> previousPlugin = getPreviousPlugin(plugin.getPluginMetadata(), workflowExecution);
+      if (previousPlugin == null) {
+        throw new ExternalTaskException("No previous plugin found for plugin " + plugin.getPluginMetadata().getPluginType());
+      }
       plugin.setStartedDate(Instant.now());
       plugin.setPluginStatus(PluginStatus.RUNNING);
-      engineTaskSubmitter.submit(
+      return engineTaskSubmitter.createTask(
           workflowExecution.getDatasetId(),
           workflowExecution.getEcloudDatasetId(),
-          getExternalTaskIdOfPreviousPlugin(plugin.getPluginMetadata(), workflowExecution)
+          previousPlugin.getExternalTaskId(),
+          previousPlugin.getBatchId()
       );
     }
+    return null;
   }
 
   private void preparePredecessorMetadata(AbstractExecutablePlugin<?> plugin, WorkflowExecution workflowExecution) {
@@ -143,7 +151,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
     }
   }
 
-  private String getExternalTaskIdOfPreviousPlugin(AbstractExecutablePluginMetadata metadata,
+  private AbstractExecutablePlugin<?> getPreviousPlugin(AbstractExecutablePluginMetadata metadata,
       WorkflowExecution workflowExecution) {
 
     ExecutedMetisPluginId predecessorPlugin =
@@ -160,7 +168,6 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
                    .flatMap(exec ->
                        workflowExecutionHelper.getMetisPluginWithType(exec, predecessorPlugin.getPluginType()))
                    .map(AbstractExecutablePlugin.class::cast)
-                   .map(AbstractExecutablePlugin::getExternalTaskId)
                    .orElse(null);
   }
 }
