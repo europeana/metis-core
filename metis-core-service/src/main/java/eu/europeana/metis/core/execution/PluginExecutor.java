@@ -10,6 +10,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
+import eu.europeana.metis.core.execution.EngineTaskSubmitContext.EngineTaskSubmitContextBuilder;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -91,17 +92,19 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       throws ExternalTaskException {
     if (isBlank(plugin.getExternalTaskId())) {
       AbstractExecutablePlugin<?> previousPlugin = getPreviousPlugin(plugin.getPluginMetadata(), workflowExecution);
-      if (previousPlugin == null) {
-        throw new ExternalTaskException("No previous plugin found for plugin " + plugin.getPluginMetadata().getPluginType());
-      }
       plugin.setStartedDate(Instant.now());
       plugin.setPluginStatus(PluginStatus.RUNNING);
-      return engineTaskSubmitter.createTask(
-          workflowExecution.getDatasetId(),
-          workflowExecution.getEcloudDatasetId(),
-          previousPlugin.getExternalTaskId(),
-          previousPlugin.getBatchId()
-      );
+
+      EngineTaskSubmitContextBuilder engineTaskSubmitContextBuilder =
+          EngineTaskSubmitContext.builder()
+                                 .engineDatasetId(workflowExecution.getDatasetId())
+                                 .engineDatasetId(workflowExecution.getEcloudDatasetId());
+      if (previousPlugin != null) {
+        engineTaskSubmitContextBuilder.sourceExecutionId(previousPlugin.getExternalTaskId());
+        engineTaskSubmitContextBuilder.sourceBatchId(previousPlugin.getBatchId());
+      }
+
+      return engineTaskSubmitter.createTask(engineTaskSubmitContextBuilder.build());
     }
     return null;
   }

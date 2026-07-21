@@ -17,6 +17,7 @@ import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpo
 import eu.europeana.metis.core.engine.base.task.input.SimpleIntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.TransformExternalInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.TransformInternalInputDataEndpoint;
+import eu.europeana.metis.core.execution.EngineTaskSubmitContext;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
@@ -62,14 +63,15 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
   }
 
   @Override
-  public T create(String datasetId, String engineDatasetId, String sourceExecutionId, String sourceBatchId)
-      throws ExternalTaskException {
-    CurateTaskContext curateTaskContext = getIntermediatePluginParameters(sourceExecutionId, sourceBatchId);
+  public T create(EngineTaskSubmitContext engineTaskSubmitContext) throws ExternalTaskException {
+    CurateTaskContext curateTaskContext = getIntermediatePluginParameters(
+        engineTaskSubmitContext.getSourceExecutionId(),
+        engineTaskSubmitContext.getSourceBatchId());
     addJobNameParameter(curateTaskContext.pluginParameters());
     Map<EngineTaskKey, String> allParameters = createAllParameters(
-        engineDatasetId,
-        datasetId,
-        sourceExecutionId,
+        engineTaskSubmitContext.getEngineDatasetId(),
+        engineTaskSubmitContext.getDatasetId(),
+        engineTaskSubmitContext.getSourceExecutionId(),
         curateTaskContext.pluginParameters()
     );
 
