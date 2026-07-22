@@ -96,7 +96,7 @@ class TestProxiesController {
   @Test
   void existsExternalTaskReport() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
-    when(proxiesService.existsExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
+    when(proxiesService.existsEngineTaskReport(TestObjectFactory.TOPOLOGY_NAME,
         TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(true);
 
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
