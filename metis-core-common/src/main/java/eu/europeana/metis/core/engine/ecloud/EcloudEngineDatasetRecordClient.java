@@ -54,14 +54,14 @@ public class EcloudEngineDatasetRecordClient {
    * @return A list of retrieved records based on the specified parameters.
    * @throws ExternalTaskException If an issue occurs while fetching the records from external services.
    */
-  public List<Record> getRecords(String providerId, String batchId, int numberOfRecords) throws ExternalTaskException {
+  public List<Record> getRecords(String providerId, String engineBatchId, int numberOfRecords) throws ExternalTaskException {
     ResultSlice<Representation> dataSetRepresentationsChunk;
     try {
       dataSetRepresentationsChunk =
-          dataSetServiceClient.getDataSetRepresentationsChunk(providerId, batchId, true, null, numberOfRecords);
+          dataSetServiceClient.getDataSetRepresentationsChunk(providerId, engineBatchId, true, null, numberOfRecords);
     } catch (MCSException e) {
       throw new ExternalTaskException(
-          format("Error fetching dataset representations for provider %s and batch %s", providerId, batchId), e);
+          format("Error fetching dataset representations for provider %s and batch %s", providerId, engineBatchId), e);
     }
 
     List<Record> records = new ArrayList<>();
@@ -76,16 +76,16 @@ public class EcloudEngineDatasetRecordClient {
    *
    * @param providerId The ID of the provider.
    * @param recordIds The list of record IDs to retrieve.
-   * @param batchId
+   * @param engineBatchId
    * @return A list of records that match the provided criteria.
    * @throws ExternalTaskException If an error occurs while retrieving the records.
    */
-  public List<Record> getRecords(String providerId, List<String> recordIds, String batchId)
+  public List<Record> getRecords(String providerId, List<String> recordIds, String engineBatchId)
       throws ExternalTaskException {
 
     final List<Record> records = new ArrayList<>(recordIds.size());
     for (String recordId : recordIds) {
-      records.add(getRecord(providerId, recordId, batchId));
+      records.add(getRecord(providerId, recordId, engineBatchId));
     }
 
     return records;
@@ -99,7 +99,7 @@ public class EcloudEngineDatasetRecordClient {
    * @return The retrieved Record object, or null if no matching record is found.
    * @throws ExternalTaskException If an issue occurs while fetching the record.
    */
-  public Record getRecord(String providerId, String recordId, String batchId) throws ExternalTaskException {
+  public Record getRecord(String providerId, String recordId, String engineBatchId) throws ExternalTaskException {
     String ecloudId = null;
     try {
       if (recordId != null) {
@@ -117,12 +117,12 @@ public class EcloudEngineDatasetRecordClient {
 
     final List<Representation> representations;
     try {
-      representations = dataSetServiceClient.getDataSetRepresentations(providerId, batchId, ecloudId,
+      representations = dataSetServiceClient.getDataSetRepresentations(providerId, engineBatchId, ecloudId,
           MetisPlugin.getRepresentationName());
     } catch (MCSException e) {
       throw new ExternalTaskException(
-          format("Failed to get ecloud record for providerId: %s, batchId: %s, ecloudId: %s, representationName: %s", providerId,
-              batchId, ecloudId, MetisPlugin.getRepresentationName()), e);
+          format("Failed to get ecloud record for providerId: %s, engineBatchId: %s, ecloudId: %s, representationName: %s", providerId,
+              engineBatchId, ecloudId, MetisPlugin.getRepresentationName()), e);
     }
 
     if (representations == null || representations.isEmpty()) {

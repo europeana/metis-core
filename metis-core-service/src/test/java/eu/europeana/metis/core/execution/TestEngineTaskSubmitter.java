@@ -109,8 +109,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     lenient().when(engineTaskSettings.getProvider()).thenReturn("provider");
     lenient().when(engineTaskSettings.getBaseUrl()).thenReturn("http://base.url");
     lenient().when(engineTaskSettings.getThrottlingValues()).thenReturn(new ThrottlingValues(1, 2, 3));
-    lenient().when(engineTaskRequest.getExternalTaskId()).thenReturn(CREATED_TASK_ID);
-    lenient().when(engineTaskRequest.getBatchId()).thenReturn(BATCH_ID);
+    lenient().when(engineTaskRequest.getEngineTaskId()).thenReturn(CREATED_TASK_ID);
+    lenient().when(engineTaskRequest.getEngineBatchId()).thenReturn(BATCH_ID);
   }
 
   @ParameterizedTest
@@ -275,8 +275,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     assertInstanceOf(
         DepublishInputDataEndpoint.class,
         inputDataEndpointCaptor.getValue());
-    assertEquals(CREATED_TASK_ID, depublishPlugin.getExternalTaskId());
-    assertEquals(BATCH_ID, depublishPlugin.getBatchId());
+    assertEquals(CREATED_TASK_ID, depublishPlugin.getEngineTaskId());
+    assertEquals(BATCH_ID, depublishPlugin.getEngineBatchId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());
 
     verify(engineTaskClient, never())
@@ -329,8 +329,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     assertInstanceOf(
         DepublishInputDataEndpoint.class,
         inputDataEndpointCaptor.getValue());
-    assertEquals(CREATED_TASK_ID, depublishPlugin.getExternalTaskId());
-    assertEquals(BATCH_ID, depublishPlugin.getBatchId());
+    assertEquals(CREATED_TASK_ID, depublishPlugin.getEngineTaskId());
+    assertEquals(BATCH_ID, depublishPlugin.getEngineBatchId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());
 
     verify(engineTaskClient, never())
@@ -378,8 +378,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     assertInstanceOf(
         DepublishInputDataEndpoint.class,
         inputDataEndpointCaptor.getValue());
-    assertEquals(CREATED_TASK_ID, depublishPlugin.getExternalTaskId());
-    assertEquals(BATCH_ID, depublishPlugin.getBatchId());
+    assertEquals(CREATED_TASK_ID, depublishPlugin.getEngineTaskId());
+    assertEquals(BATCH_ID, depublishPlugin.getEngineBatchId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());
 
     verify(engineTaskClient, never())
@@ -514,13 +514,13 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
   }
 
   @Test
-  void testSubmitTask_UpdatesPluginExternalTaskId()
+  void testSubmitTask_UpdatesPluginEngineTaskId()
       throws ExternalTaskException {
 
     OaipmhHarvestPlugin oaipmhHarvestPlugin =
         createOaipmhHarvestPlugin();
 
-    oaipmhHarvestPlugin.setExternalTaskId(CREATED_TASK_ID);
+    oaipmhHarvestPlugin.setEngineTaskId(CREATED_TASK_ID);
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         new EngineTaskSubmitter<>(
@@ -537,7 +537,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     assertEquals(
         SUBMITTED_TASK_ID,
-        oaipmhHarvestPlugin.getExternalTaskId());
+        oaipmhHarvestPlugin.getEngineTaskId());
 
     verify(engineTaskClient).submitEngineTask(
         engineTaskRequest,
@@ -706,8 +706,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
       assertEquals(HARVEST_URL, inputDataCaptor.getValue().url());
     }
 
-    assertEquals(CREATED_TASK_ID, plugin.getExternalTaskId());
-    assertEquals(BATCH_ID, plugin.getBatchId());
+    assertEquals(CREATED_TASK_ID, plugin.getEngineTaskId());
+    assertEquals(BATCH_ID, plugin.getEngineBatchId());
     assertEquals(DataStatus.VALID, plugin.getDataStatus());
 
     if (throttlingLevel != null) {

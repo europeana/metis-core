@@ -3,7 +3,7 @@ package eu.europeana.metis.core.dao;
 import static eu.europeana.metis.core.common.DaoFieldNames.CLAIMED_BY_INSTANCE;
 import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.EXTERNAL_TASK_ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.ENGINE_TASK_ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.FINISHED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.METIS_PLUGINS;
@@ -712,14 +712,14 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   /**
    * This method retrieves the workflow execution of which the task with the given ID is a subtask.
    *
-   * @param externalTaskId The external task ID that is to be queried.
+   * @param engineTaskId The external task ID that is to be queried.
    * @return The workflow execution.
    */
-  public WorkflowExecution getByExternalTaskId(String externalTaskId) {
+  public WorkflowExecution getByEngineTaskId(String engineTaskId) {
     // TODO JV Validation is disabled because otherwise it complains that the subquery is looking in a
-    // list of AbstractMetisPlugin objects that don't have the "externalTaskId" property being queried.
+    // list of AbstractMetisPlugin objects that don't have the "engineTaskId" property being queried.
     Filter[] filters = {
-        Filters.elemMatch(METIS_PLUGINS.getFieldName(), Filters.eq(EXTERNAL_TASK_ID.getFieldName(), externalTaskId))
+        Filters.elemMatch(METIS_PLUGINS.getFieldName(), Filters.eq(ENGINE_TASK_ID.getFieldName(), engineTaskId))
     };
     final Query<WorkflowExecution> query =
         morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class).disableValidation().filter(filters);

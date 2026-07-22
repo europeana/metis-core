@@ -24,7 +24,7 @@ public enum DaoFieldNames {
   UPDATED_DATE("updatedDate"),
   FINISHED_DATE("finishedDate"),
   PLUGIN_METADATA("pluginMetadata"),
-  EXTERNAL_TASK_ID("externalTaskId"),
+  ENGINE_TASK_ID("engineTaskId"),
   XSLT_ID("xsltId"),
   XSLT_TYPE("xsltType"),
   CLAIMED_BY_INSTANCE("claimedByInstance");

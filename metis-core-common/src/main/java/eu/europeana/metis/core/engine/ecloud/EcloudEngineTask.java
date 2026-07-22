@@ -6,12 +6,12 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 public record EcloudEngineTask(DpsTask dpsTask) implements EngineTask {
 
   @Override
-  public String getExternalTaskId() {
+  public String getEngineTaskId() {
     return String.valueOf(dpsTask.getTaskId());
   }
 
   @Override
-  public String getBatchId() {
+  public String getEngineBatchId() {
     return String.valueOf(dpsTask.getTaskId());
   }
 }

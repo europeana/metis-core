@@ -27,7 +27,7 @@
       "startedDate": null,
       "updatedDate": null,
       "finishedDate": null,
-      "externalTaskId": null,
+      "engineTaskId": null,
       "executionProgress": {
         "expectedRecords": 0,
         "processedRecords": 0,
@@ -71,7 +71,7 @@
       "startedDate": null,
       "updatedDate": null,
       "finishedDate": null,
-      "externalTaskId": null,
+      "engineTaskId": null,
       "executionProgress": {
         "expectedRecords": 0,
         "processedRecords": 0,

@@ -142,17 +142,17 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public List<Record> getRecords(String engineDatasetId, String batchId, int numberOfRecords) throws ExternalTaskException {
+  public List<Record> getRecords(String engineDatasetId, String engineBatchId, int numberOfRecords) throws ExternalTaskException {
     return List.of();
   }
 
   @Override
-  public List<Record> getRecords(List<String> recordIds, String batchId) throws ExternalTaskException {
+  public List<Record> getRecords(List<String> recordIds, String engineBatchId) throws ExternalTaskException {
     return List.of();
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String batchId, ExecutablePluginType executablePluginType)
+  public Record getRecord(String engineDatasetId, String recordId, String engineBatchId, ExecutablePluginType executablePluginType)
       throws ExternalTaskException {
     FullBatchJobType fullBatchJobType = PluginTypeToBatchJobMapper.map(executablePluginType).orElseThrow();
     try {
