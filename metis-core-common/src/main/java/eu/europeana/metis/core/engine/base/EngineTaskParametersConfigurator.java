@@ -57,11 +57,12 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParameters(
-      String engineDatasetId, String datasetId, String previousTaskId) {
+      String engineDatasetId, String datasetId, String previousTaskId, String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(PREVIOUS_TASK_ID, previousTaskId);
+    parameters.put(PROVIDER_ID, providerId);
     return parameters;
   }
 

@@ -72,7 +72,9 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       preparePredecessorMetadata(plugin, workflowExecution);
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);
       T engineTask = createTask(plugin, workflowExecution, engineTaskSubmitter);
-      engineTaskSubmitter.submitTask(engineTask);
+      if (engineTask != null) {
+        engineTaskSubmitter.submitTask(engineTask);
+      }
     } catch (ExternalTaskException | RuntimeException e) {
       log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin failed", workflowExecution.getId(),
           plugin.getPluginType()), e);

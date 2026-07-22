@@ -87,10 +87,10 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
    * interaction.
    */
   public void submitTask(T engineTask) throws ExternalTaskException {
-    log.info("Submit task with externalTaskId: {}", engineTask);
+    log.info("Submit task with externalTaskId: {}", engineTask.getExternalTaskId());
     String engineTaskId = engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
     //todo: this can be removed when sandbox creates the id on task creation instead of submission.
     plugin.setExternalTaskId(engineTaskId);
-    log.info("Submitted task with externalTaskId: {}", engineTask);
+    log.info("Submitted task with externalTaskId: {}", engineTask.getExternalTaskId());
   }
 }
