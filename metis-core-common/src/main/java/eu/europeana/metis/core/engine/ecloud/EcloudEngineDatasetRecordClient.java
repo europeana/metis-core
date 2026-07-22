@@ -115,6 +115,11 @@ public class EcloudEngineDatasetRecordClient {
       }
     }
 
+    //If it still fails here, we assume the record does not exist.
+    if (ecloudId == null) {
+      throw new ExternalTaskException(format("Failed to lookup cloudId for idToSearch: %s", recordId));
+    }
+
     final List<Representation> representations;
     try {
       representations = dataSetServiceClient.getDataSetRepresentations(providerId, engineBatchId, ecloudId,
@@ -156,9 +161,6 @@ public class EcloudEngineDatasetRecordClient {
       return uisClient.getRecordId(potentialEcloudId).getResults().isEmpty() ? null : potentialEcloudId;
     } catch (CloudException e) {
       log.warn("Could not verify existence of eCloud ID: {}", potentialEcloudId, e);
-      // TODO currently we can't distinguish between a connection issue and a non-existing eCloud ID.
-      //  The client should be changed to allow for this. We assume here that there is not a connection
-      //  issue because, where this method is called, we just did a successful call to the UIS service.
       return null;
     }
   }

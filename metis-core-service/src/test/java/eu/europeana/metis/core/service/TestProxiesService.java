@@ -97,7 +97,7 @@ class TestProxiesService {
         Topology.OAIPMH_HARVEST.getTopologyName(), ENGINE_TASK_ID))
         .thenReturn(true);
 
-    final boolean result = proxiesService.existsExternalTaskReport(
+    final boolean result = proxiesService.existsEngineTaskReport(
         Topology.OAIPMH_HARVEST.getTopologyName(), ENGINE_TASK_ID);
 
     assertTrue(result);
@@ -120,7 +120,7 @@ class TestProxiesService {
         .thenThrow(new ExternalTaskException("Engine failure"));
 
     assertThrows(ExternalTaskException.class,
-        () -> proxiesService.existsExternalTaskReport(
+        () -> proxiesService.existsEngineTaskReport(
             Topology.OAIPMH_HARVEST.getTopologyName(), ENGINE_TASK_ID));
 
     verify(datasetDao).getDatasetOrThrow(workflowExecution.getDatasetId());
@@ -132,7 +132,7 @@ class TestProxiesService {
         .thenReturn(null);
 
     assertThrows(NoWorkflowExecutionFoundException.class,
-        () -> proxiesService.existsExternalTaskReport(
+        () -> proxiesService.existsEngineTaskReport(
             Topology.OAIPMH_HARVEST.getTopologyName(), ENGINE_TASK_ID));
 
     verify(datasetDao, never()).getDatasetOrThrow(any());

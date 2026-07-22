@@ -78,7 +78,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * <li>{@link ExternalTaskException} containing {@link DpsException} if an error occurred while checking if the error report exists</li>
    * </ul>
    */
-  public boolean existsExternalTaskReport(String topologyName, String engineTaskId) throws GenericMetisException {
+  public boolean existsEngineTaskReport(String topologyName, String engineTaskId) throws GenericMetisException {
     datasetDao.getDatasetOrThrow(getDatasetIdFromEngineTaskId(engineTaskId));
     return engineTaskClient.hasEngineTaskErrorReport(topologyName, engineTaskId);
   }

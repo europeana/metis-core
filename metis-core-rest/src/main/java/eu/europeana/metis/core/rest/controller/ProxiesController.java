@@ -65,13 +65,13 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
       produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public Map<String, Boolean> existsExternalTaskReport(
+  public Map<String, Boolean> existsEngineTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("engineTaskId") String engineTaskId) throws GenericMetisException {
     log.info("Requesting proxy call to check if task report exists for topologyName: {}, engineTaskId: {}",
         escapeJava(topologyName), escapeJava(engineTaskId));
-    return Collections.singletonMap("existsExternalTaskReport",
-        proxiesService.existsExternalTaskReport(topologyName, engineTaskId));
+    return Collections.singletonMap("existsEngineTaskReport",
+        proxiesService.existsEngineTaskReport(topologyName, engineTaskId));
   }
 
   /**
@@ -93,7 +93,7 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
       produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public EngineTaskErrors getExternalTaskReport(
+  public EngineTaskErrors getEngineTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("engineTaskId") String engineTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
@@ -119,7 +119,7 @@ public class ProxiesController {
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
       produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
-  public RecordStatisticsDTO getExternalTaskStatistics(
+  public RecordStatisticsDTO getEngineTaskStatistics(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("engineTaskId") String engineTaskId) throws GenericMetisException {
     log.info("Requesting proxy call task statistics for topologyName: {}, engineTaskId: {}",
@@ -129,7 +129,7 @@ public class ProxiesController {
 
   /**
    * Get additional statistics on a node. This method can be used to elaborate on one of the items returned by
-   * {@link #getExternalTaskStatistics(String, String)}.
+   * {@link #getEngineTaskStatistics(String, String)}.
    *
    * @param topologyName the topology name of the task
    * @param engineTaskId the task identifier
