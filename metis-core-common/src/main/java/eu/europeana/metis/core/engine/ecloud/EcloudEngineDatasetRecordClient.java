@@ -9,17 +9,16 @@ import eu.europeana.cloud.common.model.Representation;
 import eu.europeana.cloud.common.response.ResultSlice;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
 import eu.europeana.cloud.mcs.driver.FileServiceClient;
-import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -30,7 +29,6 @@ import org.apache.commons.io.IOUtils;
 public class EcloudEngineDatasetRecordClient {
 
   private final DataSetServiceClient dataSetServiceClient;
-  private final RecordServiceClient recordServiceClient;
   private final FileServiceClient fileServiceClient;
   private final UISClient uisClient;
 
@@ -38,14 +36,12 @@ public class EcloudEngineDatasetRecordClient {
    * Constructor.
    *
    * @param dataSetServiceClient The client used for dataset-related operations.
-   * @param recordServiceClient The client used for record-related operations.
    * @param fileServiceClient The client used for file-management operations.
    * @param uisClient The client used for user interaction operations.
    */
-  public EcloudEngineDatasetRecordClient(DataSetServiceClient dataSetServiceClient, RecordServiceClient recordServiceClient,
-      FileServiceClient fileServiceClient, UISClient uisClient) {
+  public EcloudEngineDatasetRecordClient(
+      DataSetServiceClient dataSetServiceClient, FileServiceClient fileServiceClient, UISClient uisClient) {
     this.dataSetServiceClient = dataSetServiceClient;
-    this.recordServiceClient = recordServiceClient;
     this.fileServiceClient = fileServiceClient;
     this.uisClient = uisClient;
   }
@@ -119,27 +115,20 @@ public class EcloudEngineDatasetRecordClient {
       }
     }
 
-    eu.europeana.cloud.common.model.Record ecloudRecord;
+    final List<Representation> representations;
     try {
-      ecloudRecord = recordServiceClient.getRecord(ecloudId);
+      representations = dataSetServiceClient.getDataSetRepresentations(providerId, batchId, ecloudId,
+          MetisPlugin.getRepresentationName());
     } catch (MCSException e) {
-      throw new ExternalTaskException(format("Failed to get ecloud record for idToSearch: %s", ecloudId), e);
+      throw new ExternalTaskException(
+          format("Failed to get ecloud record for providerId: %s, batchId: %s, ecloudId: %s, representationName: %s", providerId,
+              batchId, ecloudId, MetisPlugin.getRepresentationName()), e);
     }
-    if (ecloudId == null) {
-      throw new ExternalTaskException(format("Could not resolve record ID: %s, to an eCloud ID", recordId));
-    }
-    List<Representation> representations = ecloudRecord.getRepresentations();
+
     if (representations == null || representations.isEmpty()) {
       throw new ExternalTaskException(format("No representations found for ecloudId: %s", ecloudId));
     }
-    Optional<Representation> representationByBatchId =
-        representations.stream()
-                       .filter(representation -> representation.getDatasetId().equals(batchId))
-                       .findFirst();
-    if (representationByBatchId.isEmpty()) {
-      throw new ExternalTaskException(format("No representations found for ecloudId: %s, batchId: %s", ecloudId, batchId));
-    }
-    return getRecord(representationByBatchId.get());
+    return getRecord(representations.getFirst());
   }
 
   private Record getRecord(Representation representation) throws ExternalTaskException {

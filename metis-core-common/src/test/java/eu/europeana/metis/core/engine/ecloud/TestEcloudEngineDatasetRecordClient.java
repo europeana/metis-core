@@ -18,10 +18,10 @@ import eu.europeana.cloud.common.response.ErrorInfo;
 import eu.europeana.cloud.common.response.ResultSlice;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
 import eu.europeana.cloud.mcs.driver.FileServiceClient;
-import eu.europeana.cloud.mcs.driver.RecordServiceClient;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,7 +42,6 @@ class TestEcloudEngineDatasetRecordClient {
   private static final URI FILE_URI = URI.create("file://fake/path/to/file.xml");
 
   private DataSetServiceClient dataSetServiceClient;
-  private RecordServiceClient recordServiceClient;
   private FileServiceClient fileServiceClient;
   private UISClient uisClient;
 
@@ -51,15 +50,10 @@ class TestEcloudEngineDatasetRecordClient {
   @BeforeEach
   void setUp() {
     dataSetServiceClient = mock(DataSetServiceClient.class);
-    recordServiceClient = mock(RecordServiceClient.class);
     fileServiceClient = mock(FileServiceClient.class);
     uisClient = mock(UISClient.class);
 
-    ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(
-        dataSetServiceClient,
-        recordServiceClient,
-        fileServiceClient,
-        uisClient);
+    ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(dataSetServiceClient, fileServiceClient, uisClient);
   }
 
   @Test
@@ -139,7 +133,7 @@ class TestEcloudEngineDatasetRecordClient {
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
 
     Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
-    mockEcloudRecord(List.of(representation));
+    mockDatasetRepresentations(List.of(representation));
     mockFileContent();
 
     List<Record> records = ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, List.of(RECORD_ID), BATCH_ID);
@@ -155,13 +149,14 @@ class TestEcloudEngineDatasetRecordClient {
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
 
     Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
-    mockEcloudRecord(List.of(representation));
+    mockDatasetRepresentations(List.of(representation));
     mockFileContent();
 
     Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
 
     assertEquals(ECLOUD_ID, record.ecloudId());
     assertEquals(RECORD_CONTENT, record.xmlRecord());
+    verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID, MetisPlugin.getRepresentationName());
   }
 
   @Test
@@ -170,7 +165,7 @@ class TestEcloudEngineDatasetRecordClient {
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
     Representation otherBatchRepresentation = createRepresentation(ECLOUD_ID, "otherBatch");
     Representation requestedBatchRepresentation = createRepresentation(ECLOUD_ID, BATCH_ID);
-    mockEcloudRecord(List.of(otherBatchRepresentation, requestedBatchRepresentation));
+    mockDatasetRepresentations(List.of(otherBatchRepresentation, requestedBatchRepresentation));
     mockFileContent();
 
     Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
@@ -193,28 +188,20 @@ class TestEcloudEngineDatasetRecordClient {
     when(uisClient.getRecordId(ECLOUD_ID)).thenReturn(new ResultSlice<>(null, List.of(matchingCloudId)));
 
     Representation representation = createRepresentation(ECLOUD_ID, BATCH_ID);
-    mockEcloudRecord(List.of(representation));
+    mockDatasetRepresentations(List.of(representation));
     mockFileContent();
 
     Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, ECLOUD_ID, BATCH_ID);
 
     assertEquals(ECLOUD_ID, record.ecloudId());
     assertEquals(RECORD_CONTENT, record.xmlRecord());
-  }
-
-  @Test
-  void getRecordWhenEcloudRecordCannotBeRetrieved() throws Exception {
-    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
-    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
-    when(recordServiceClient.getRecord(ECLOUD_ID)).thenThrow(new MCSException());
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID, MetisPlugin.getRepresentationName());
   }
 
   @Test
   void getRecordWhenEcloudRecordHasNullRepresentations() throws Exception {
     CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
-    mockEcloudRecord(null);
 
     ExternalTaskException exception = assertThrows(ExternalTaskException.class,
         () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
@@ -223,27 +210,12 @@ class TestEcloudEngineDatasetRecordClient {
   }
 
   @Test
-  void getRecordWhenEcloudRecordHasNoRepresentations() throws Exception {
+  void getRecordWhenDatasetHasNoRepresentations() throws Exception {
     CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
-    mockEcloudRecord(List.of());
+
+    mockDatasetRepresentations(List.of());
     assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
-  }
-
-  @Test
-  void getRecordWhenNoRepresentationMatchesBatchId() throws Exception {
-    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
-    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
-    Representation representation = createRepresentation(ECLOUD_ID, "differentBatchId");
-
-    mockEcloudRecord(List.of(representation));
-
-    ExternalTaskException exception = assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
-
-    assertEquals(
-        "No representations found for ecloudId: ecloudId, batchId: batchId",
-        exception.getMessage());
   }
 
   @Test
@@ -252,10 +224,10 @@ class TestEcloudEngineDatasetRecordClient {
         .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
 
     when(uisClient.getRecordId(RECORD_ID)).thenReturn(new ResultSlice<>(null, List.of()));
-    when(recordServiceClient.getRecord(null)).thenThrow(new MCSException());
+    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null,
+        MetisPlugin.getRepresentationName())).thenThrow(new MCSException());
     assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
-
-    verify(recordServiceClient).getRecord(null);
+    verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null, MetisPlugin.getRepresentationName());
   }
 
   @Test
@@ -263,13 +235,12 @@ class TestEcloudEngineDatasetRecordClient {
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
         .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
     when(uisClient.getRecordId(RECORD_ID)).thenThrow(new CloudException("", new IllegalStateException()));
-    when(recordServiceClient.getRecord(null)).thenThrow(new MCSException());
+    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null,
+        MetisPlugin.getRepresentationName())).thenThrow(new MCSException());
 
-    assertThrows(
-        ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
 
-    verify(recordServiceClient).getRecord(null);
+    verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null, MetisPlugin.getRepresentationName());
   }
 
   private Representation createRepresentation(String ecloudId, String datasetId) {
@@ -285,14 +256,9 @@ class TestEcloudEngineDatasetRecordClient {
     return representation;
   }
 
-  private void mockEcloudRecord(List<Representation> representations)
-      throws MCSException {
-
-    eu.europeana.cloud.common.model.Record ecloudRecord =
-        mock(eu.europeana.cloud.common.model.Record.class);
-
-    when(ecloudRecord.getRepresentations()).thenReturn(representations);
-    when(recordServiceClient.getRecord(ECLOUD_ID)).thenReturn(ecloudRecord);
+  private void mockDatasetRepresentations(List<Representation> representations) throws MCSException {
+    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID,
+        MetisPlugin.getRepresentationName())).thenReturn(representations);
   }
 
   private void mockFileContent() throws MCSException {
