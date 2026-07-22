@@ -39,6 +39,7 @@ import eu.europeana.metis.core.workflow.plugins.DepublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPlugin;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
@@ -121,12 +122,10 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     setupPlugin(plugin, metadata, previousPlugin, throttlingLevel);
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(plugin, engineTaskClient, datasetXsltDao);
+        submitterFor(plugin);
 
-    ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor =
-        ArgumentCaptor.forClass(Map.class);
-    ArgumentCaptor<InputDataEndpoint> inputDataCaptor =
-        ArgumentCaptor.forClass(InputDataEndpoint.class);
+    ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor = ArgumentCaptor.forClass(Map.class);
+    ArgumentCaptor<InputDataEndpoint> inputDataCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
 
     when(engineTaskClient.createEngineTask(
         propertiesCaptor.capture(),
@@ -134,15 +133,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTaskCreationContext engineTaskCreationContext =
-        EngineTaskCreationContext.builder()
-                                 .datasetId(DATASET_ID)
-                                 .engineDatasetId(ENGINE_DATASET_ID)
-                                 .sourceExecutionId(PREVIOUS_TASK_ID)
-                                 .sourceBatchId(BATCH_ID)
-                                 .build();
-
-    EngineTask engineTask = engineTaskSubmitter.createTask(engineTaskCreationContext);
+    EngineTask engineTask = engineTaskSubmitter.createTask(defaultContext());
 
     assertSame(engineTaskRequest, engineTask);
     assertTaskCreation(plugin, propertiesCaptor, inputDataCaptor, throttlingLevel);
@@ -151,91 +142,22 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         .submitEngineTask(any(EngineTask.class), anyString());
   }
 
-  @Test
-  void testCreateTask_InvalidHarvestPlugin() {
-    ValidationExternalPlugin validationExternalPlugin =
-        new ValidationExternalPlugin();
-    ValidationExternalPluginMetadata validationExternalPluginMetadata =
-        spy(ValidationExternalPluginMetadata.class);
+  @ParameterizedTest
+  @MethodSource("mismatchedPluginArguments")
+  void testCreateTask_MismatchedPluginType(
+      AbstractExecutablePlugin<M> plugin,
+      M metadata,
+      ExecutablePluginType mismatchedType) {
 
-    validationExternalPlugin.setPluginMetadata(
-        validationExternalPluginMetadata);
-    validationExternalPlugin.setStartedDate(Instant.now());
+    plugin.setPluginMetadata(metadata);
+    plugin.setStartedDate(Instant.now());
 
-    when(validationExternalPluginMetadata.getExecutablePluginType())
-        .thenReturn(HTTP_HARVEST);
+    when(metadata.getExecutablePluginType()).thenReturn(mismatchedType);
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            validationExternalPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(plugin);
 
-    EngineTaskCreationContext engineTaskCreationContext =
-        EngineTaskCreationContext.builder()
-                                 .datasetId(DATASET_ID)
-                                 .engineDatasetId(ENGINE_DATASET_ID)
-                                 .sourceExecutionId(PREVIOUS_TASK_ID)
-                                 .sourceBatchId(BATCH_ID)
-                                 .build();
-    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
-  }
-
-  @Test
-  void testCreateTask_InvalidProcessPlugin() {
-    IndexToPreviewPlugin indexToPreviewPlugin = new IndexToPreviewPlugin();
-    IndexToPreviewPluginMetadata indexToPreviewPluginMetadata =
-        spy(IndexToPreviewPluginMetadata.class);
-
-    indexToPreviewPlugin.setPluginMetadata(indexToPreviewPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(Instant.now());
-
-    when(indexToPreviewPluginMetadata.getExecutablePluginType())
-        .thenReturn(VALIDATION_EXTERNAL);
-
-    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            indexToPreviewPlugin,
-            engineTaskClient,
-            datasetXsltDao);
-
-    EngineTaskCreationContext engineTaskCreationContext =
-        EngineTaskCreationContext.builder()
-                                 .datasetId(DATASET_ID)
-                                 .engineDatasetId(ENGINE_DATASET_ID)
-                                 .sourceExecutionId(PREVIOUS_TASK_ID)
-                                 .sourceBatchId(BATCH_ID)
-                                 .build();
-
-    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
-  }
-
-  @Test
-  void testCreateTask_InvalidIndexPlugin() {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = new OaipmhHarvestPlugin();
-    OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata =
-        spy(OaipmhHarvestPluginMetadata.class);
-
-    oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(Instant.now());
-
-    when(oaipmhHarvestPluginMetadata.getExecutablePluginType())
-        .thenReturn(PREVIEW);
-
-    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
-
-    EngineTaskCreationContext engineTaskCreationContext =
-        EngineTaskCreationContext.builder()
-                                 .datasetId(DATASET_ID)
-                                 .engineDatasetId(ENGINE_DATASET_ID)
-                                 .sourceExecutionId(PREVIOUS_TASK_ID)
-                                 .sourceBatchId(BATCH_ID)
-                                 .build();
-
+    EngineTaskCreationContext engineTaskCreationContext = defaultContext();
     assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
@@ -252,10 +174,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     depublishPlugin.setStartedDate(Instant.now());
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            depublishPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(depublishPlugin);
 
     ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor =
         ArgumentCaptor.forClass(InputDataEndpoint.class);
@@ -266,12 +185,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
-                                                                                     .datasetId(DATASET_ID)
-                                                                                     .engineDatasetId(ENGINE_DATASET_ID)
-                                                                                     .sourceExecutionId(PREVIOUS_TASK_ID)
-                                                                                     .sourceBatchId(BATCH_ID)
-                                                                                     .build());
+    EngineTask createdTask = engineTaskSubmitter.createTask(defaultContext());
 
     assertSame(engineTaskRequest, createdTask);
     assertInstanceOf(
@@ -301,15 +215,10 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     depublishPlugin.setStartedDate(Instant.now());
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            depublishPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(depublishPlugin);
 
-    ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor =
-        ArgumentCaptor.forClass(Map.class);
-    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor =
-        ArgumentCaptor.forClass(InputDataEndpoint.class);
+    ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor = ArgumentCaptor.forClass(Map.class);
+    ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
 
     when(engineTaskClient.createEngineTask(
         propertiesCaptor.capture(),
@@ -317,12 +226,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
-                                                                                     .datasetId(DATASET_ID)
-                                                                                     .engineDatasetId(ENGINE_DATASET_ID)
-                                                                                     .sourceExecutionId(PREVIOUS_TASK_ID)
-                                                                                     .sourceBatchId(BATCH_ID)
-                                                                                     .build());
+    EngineTask createdTask = engineTaskSubmitter.createTask(defaultContext());
 
     assertSame(engineTaskRequest, createdTask);
     assertEquals(
@@ -355,10 +259,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     depublishPlugin.setStartedDate(Instant.now());
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            depublishPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(depublishPlugin);
 
     ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor =
         ArgumentCaptor.forClass(InputDataEndpoint.class);
@@ -369,12 +270,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
-                                                                                     .datasetId(DATASET_ID)
-                                                                                     .engineDatasetId(ENGINE_DATASET_ID)
-                                                                                     .sourceExecutionId(PREVIOUS_TASK_ID)
-                                                                                     .sourceBatchId(BATCH_ID)
-                                                                                     .build());
+    EngineTask createdTask = engineTaskSubmitter.createTask(defaultContext());
 
     assertSame(engineTaskRequest, createdTask);
     assertInstanceOf(
@@ -399,48 +295,9 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     depublishPlugin.setStartedDate(Instant.now());
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(depublishPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(depublishPlugin);
 
-    EngineTaskCreationContext engineTaskCreationContext =
-        EngineTaskCreationContext.builder()
-                                 .datasetId(DATASET_ID)
-                                 .engineDatasetId(ENGINE_DATASET_ID)
-                                 .sourceExecutionId(PREVIOUS_TASK_ID)
-                                 .sourceBatchId(BATCH_ID)
-                                 .build();
-
-    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
-  }
-
-  @Test
-  void testCreateTask_InvalidDepublishPlugin() {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin =
-        new OaipmhHarvestPlugin();
-    OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata =
-        spy(OaipmhHarvestPluginMetadata.class);
-
-    oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(Instant.now());
-
-    when(oaipmhHarvestPluginMetadata.getExecutablePluginType())
-        .thenReturn(DEPUBLISH);
-
-    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
-
-    EngineTaskCreationContext engineTaskCreationContext =
-        EngineTaskCreationContext.builder()
-                                 .datasetId(DATASET_ID)
-                                 .engineDatasetId(ENGINE_DATASET_ID)
-                                 .sourceExecutionId(PREVIOUS_TASK_ID)
-                                 .sourceBatchId(BATCH_ID)
-                                 .build();
-
+    EngineTaskCreationContext engineTaskCreationContext = defaultContext();
     assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
@@ -452,10 +309,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         createOaipmhHarvestPlugin();
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(oaipmhHarvestPlugin);
 
     RuntimeException runtimeException =
         new RuntimeException("Network error");
@@ -468,12 +322,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     ExternalTaskException exception = assertThrows(
         ExternalTaskException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
-                                                                      .datasetId(DATASET_ID)
-                                                                      .engineDatasetId(ENGINE_DATASET_ID)
-                                                                      .sourceExecutionId(PREVIOUS_TASK_ID)
-                                                                      .sourceBatchId(BATCH_ID)
-                                                                      .build()));
+        () -> engineTaskSubmitter.createTask(defaultContext()));
 
     assertSame(runtimeException, exception.getCause());
     assertEquals(
@@ -489,10 +338,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         createOaipmhHarvestPlugin();
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(oaipmhHarvestPlugin);
 
     ExternalTaskException externalTaskException =
         new ExternalTaskException("Creation failed");
@@ -505,12 +351,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     ExternalTaskException thrownException = assertThrows(
         ExternalTaskException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
-                                                                      .datasetId(DATASET_ID)
-                                                                      .engineDatasetId(ENGINE_DATASET_ID)
-                                                                      .sourceExecutionId(PREVIOUS_TASK_ID)
-                                                                      .sourceBatchId(BATCH_ID)
-                                                                      .build()));
+        () -> engineTaskSubmitter.createTask(defaultContext()));
 
     assertSame(externalTaskException, thrownException);
   }
@@ -525,10 +366,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     oaipmhHarvestPlugin.setEngineTaskId(CREATED_TASK_ID);
 
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
+        submitterFor(oaipmhHarvestPlugin);
 
     when(engineTaskClient.submitEngineTask(
         eq(engineTaskRequest),
@@ -546,60 +384,24 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         oaipmhHarvestPlugin.getTopologyName());
   }
 
-  @Test
-  void testSubmitTask_ExternalTaskExceptionIsPropagated()
+  @ParameterizedTest
+  @MethodSource("submitExceptions")
+  void testSubmitTask_ExceptionIsPropagated(Throwable thrownException)
       throws ExternalTaskException {
 
-    OaipmhHarvestPlugin oaipmhHarvestPlugin =
-        createOaipmhHarvestPlugin();
-
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
-
-    ExternalTaskException externalTaskException =
-        new ExternalTaskException("Submission failed");
+        submitterFor(createOaipmhHarvestPlugin());
 
     when(engineTaskClient.submitEngineTask(
         eq(engineTaskRequest),
         anyString()))
-        .thenThrow(externalTaskException);
+        .thenThrow(thrownException);
 
-    ExternalTaskException thrownException = assertThrows(
-        ExternalTaskException.class,
+    Throwable actualException = assertThrows(
+        thrownException.getClass(),
         () -> engineTaskSubmitter.submitTask(engineTaskRequest));
 
-    assertSame(externalTaskException, thrownException);
-  }
-
-  @Test
-  void testSubmitTask_RuntimeExceptionIsPropagated()
-      throws ExternalTaskException {
-
-    OaipmhHarvestPlugin oaipmhHarvestPlugin =
-        createOaipmhHarvestPlugin();
-
-    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
-        new EngineTaskSubmitter<>(
-            oaipmhHarvestPlugin,
-            engineTaskClient,
-            datasetXsltDao);
-
-    RuntimeException runtimeException =
-        new RuntimeException("Network error");
-
-    when(engineTaskClient.submitEngineTask(
-        eq(engineTaskRequest),
-        anyString()))
-        .thenThrow(runtimeException);
-
-    RuntimeException thrownException = assertThrows(
-        RuntimeException.class,
-        () -> engineTaskSubmitter.submitTask(engineTaskRequest));
-
-    assertSame(runtimeException, thrownException);
+    assertSame(thrownException, actualException);
   }
 
   private static Stream<Arguments> pluginArguments() {
@@ -660,11 +462,23 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     );
   }
 
-  private T setupPlugin(
-      T plugin,
-      M metadata,
-      PluginType previousType,
-      ThrottlingLevel throttlingLevel) {
+  private static Stream<Arguments> mismatchedPluginArguments() {
+    return Stream.of(
+        of(new ValidationExternalPlugin(), spy(ValidationExternalPluginMetadata.class), HTTP_HARVEST),
+        of(new IndexToPreviewPlugin(), spy(IndexToPreviewPluginMetadata.class), VALIDATION_EXTERNAL),
+        of(new OaipmhHarvestPlugin(), spy(OaipmhHarvestPluginMetadata.class), PREVIEW),
+        of(new OaipmhHarvestPlugin(), spy(OaipmhHarvestPluginMetadata.class), DEPUBLISH)
+    );
+  }
+
+  private static Stream<Arguments> submitExceptions() {
+    return Stream.of(
+        of(new ExternalTaskException("Submission failed")),
+        of(new RuntimeException("Network error"))
+    );
+  }
+
+  private T setupPlugin(T plugin, M metadata, PluginType previousType, ThrottlingLevel throttlingLevel) {
 
     if (metadata instanceof OaipmhHarvestPluginMetadata pluginMetadata) {
       pluginMetadata.setUrl(HARVEST_URL);
@@ -743,5 +557,19 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
       Object metadata,
       PluginType type) {
     return of(plugin, metadata, type, null);
+  }
+
+  private EngineTaskSubmitter<EngineTaskSettings, EngineTask> submitterFor(
+      AbstractExecutablePlugin<?> plugin) {
+    return new EngineTaskSubmitter<>(plugin, engineTaskClient, datasetXsltDao);
+  }
+
+  private static EngineTaskCreationContext defaultContext() {
+    return EngineTaskCreationContext.builder()
+                                    .datasetId(DATASET_ID)
+                                    .engineDatasetId(ENGINE_DATASET_ID)
+                                    .sourceExecutionId(PREVIOUS_TASK_ID)
+                                    .sourceBatchId(BATCH_ID)
+                                    .build();
   }
 }
