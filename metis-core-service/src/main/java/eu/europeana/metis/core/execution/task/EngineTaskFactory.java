@@ -1,7 +1,7 @@
 package eu.europeana.metis.core.execution.task;
 
 import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.execution.EngineTaskSubmitContext;
+import eu.europeana.metis.core.execution.EngineTaskCreationContext;
 import eu.europeana.metis.exception.ExternalTaskException;
 
 /**
@@ -16,8 +16,9 @@ public interface EngineTaskFactory<T extends EngineTask> {
   /**
    * Creates an instance of the engine task.
    *
-   * @param engineTaskSubmitContext The context containing the identifiers and configurations for creating the task.
+   * @param engineTaskCreationContext The context containing the identifiers and configurations for creating the task.
    * @return An instance of the task represented by the generic type parameter {@code T}.
+   * @throws ExternalTaskException If there is an error, creating the task.
    */
-  T create(EngineTaskSubmitContext engineTaskSubmitContext) throws ExternalTaskException;
+  T create(EngineTaskCreationContext engineTaskCreationContext) throws ExternalTaskException;
 }

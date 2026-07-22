@@ -8,7 +8,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
-import eu.europeana.metis.core.execution.EngineTaskSubmitContext;
+import eu.europeana.metis.core.execution.EngineTaskCreationContext;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.exception.ExternalTaskException;
@@ -43,20 +43,19 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
   }
 
   @Override
-  public T create(EngineTaskSubmitContext engineTaskSubmitContext)
+  public T create(EngineTaskCreationContext engineTaskCreationContext)
       throws ExternalTaskException {
-    DepublishContext depublishContext = getDepublishPluginParameters(
-        engineTaskSubmitContext.getDatasetId(), engineTaskSubmitContext.getEngineDatasetId());
+    DepublishContext depublishContext = getDepublishPluginParameters(engineTaskCreationContext.getDatasetId());
     Optional<FullBatchJobType> fullBatchJobType = PluginTypeToBatchJobMapper.map(
         plugin.getPluginMetadata().getExecutablePluginType());
     fullBatchJobType.ifPresent(
         batchJobType -> depublishContext.pluginParameters.put(EngineTaskKey.JOB_NAME, batchJobType.name()));
-    depublishContext.pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineTaskSubmitContext.getEngineDatasetId());
+    depublishContext.pluginParameters.put(EngineTaskKey.ENGINE_DATASET_ID, engineTaskCreationContext.getEngineDatasetId());
     return engineTaskClient.createEngineTask(depublishContext.pluginParameters, depublishContext.depublishInputDataEndpoint,
         plugin.getTopologyName());
   }
 
-  private DepublishContext getDepublishPluginParameters(String datasetId, String engineDatasetId) {
+  private DepublishContext getDepublishPluginParameters(String datasetId) {
     if (plugin.getPluginMetadata() instanceof DepublishPluginMetadata depublishPluginMetadata) {
       boolean datasetDepublish = depublishPluginMetadata.isDatasetDepublish();
       Set<String> recordIdsToDepublish = depublishPluginMetadata.getRecordIdsToDepublish();

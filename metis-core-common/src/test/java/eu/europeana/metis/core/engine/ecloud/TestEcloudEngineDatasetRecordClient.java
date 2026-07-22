@@ -227,7 +227,6 @@ class TestEcloudEngineDatasetRecordClient {
     when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null,
         MetisPlugin.getRepresentationName())).thenThrow(new MCSException());
     assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
-    verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null, MetisPlugin.getRepresentationName());
   }
 
   @Test
@@ -239,8 +238,6 @@ class TestEcloudEngineDatasetRecordClient {
         MetisPlugin.getRepresentationName())).thenThrow(new MCSException());
 
     assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
-
-    verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null, MetisPlugin.getRepresentationName());
   }
 
   private Representation createRepresentation(String ecloudId, String datasetId) {

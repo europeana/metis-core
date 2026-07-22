@@ -134,15 +134,15 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTaskSubmitContext engineTaskSubmitContext =
-        EngineTaskSubmitContext.builder()
-                               .datasetId(DATASET_ID)
-                               .engineDatasetId(ENGINE_DATASET_ID)
-                               .sourceExecutionId(PREVIOUS_TASK_ID)
-                               .sourceBatchId(BATCH_ID)
-                               .build();
+    EngineTaskCreationContext engineTaskCreationContext =
+        EngineTaskCreationContext.builder()
+                                 .datasetId(DATASET_ID)
+                                 .engineDatasetId(ENGINE_DATASET_ID)
+                                 .sourceExecutionId(PREVIOUS_TASK_ID)
+                                 .sourceBatchId(BATCH_ID)
+                                 .build();
 
-    EngineTask engineTask = engineTaskSubmitter.createTask(engineTaskSubmitContext);
+    EngineTask engineTask = engineTaskSubmitter.createTask(engineTaskCreationContext);
 
     assertSame(engineTaskRequest, engineTask);
     assertTaskCreation(plugin, propertiesCaptor, inputDataCaptor, throttlingLevel);
@@ -171,14 +171,14 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
             engineTaskClient,
             datasetXsltDao);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-                                                                    .datasetId(DATASET_ID)
-                                                                    .engineDatasetId(ENGINE_DATASET_ID)
-                                                                    .sourceExecutionId(PREVIOUS_TASK_ID)
-                                                                    .sourceBatchId(BATCH_ID)
-                                                                    .build()));
+    EngineTaskCreationContext engineTaskCreationContext =
+        EngineTaskCreationContext.builder()
+                                 .datasetId(DATASET_ID)
+                                 .engineDatasetId(ENGINE_DATASET_ID)
+                                 .sourceExecutionId(PREVIOUS_TASK_ID)
+                                 .sourceBatchId(BATCH_ID)
+                                 .build();
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
   @Test
@@ -199,14 +199,15 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
             engineTaskClient,
             datasetXsltDao);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-            .datasetId(DATASET_ID)
-            .engineDatasetId(ENGINE_DATASET_ID)
-            .sourceExecutionId(PREVIOUS_TASK_ID)
-            .sourceBatchId(BATCH_ID)
-            .build()));
+    EngineTaskCreationContext engineTaskCreationContext =
+        EngineTaskCreationContext.builder()
+                                 .datasetId(DATASET_ID)
+                                 .engineDatasetId(ENGINE_DATASET_ID)
+                                 .sourceExecutionId(PREVIOUS_TASK_ID)
+                                 .sourceBatchId(BATCH_ID)
+                                 .build();
+
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
   @Test
@@ -227,14 +228,15 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
             engineTaskClient,
             datasetXsltDao);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-            .datasetId(DATASET_ID)
-            .engineDatasetId(ENGINE_DATASET_ID)
-            .sourceExecutionId(PREVIOUS_TASK_ID)
-            .sourceBatchId(BATCH_ID)
-            .build()));
+    EngineTaskCreationContext engineTaskCreationContext =
+        EngineTaskCreationContext.builder()
+                                 .datasetId(DATASET_ID)
+                                 .engineDatasetId(ENGINE_DATASET_ID)
+                                 .sourceExecutionId(PREVIOUS_TASK_ID)
+                                 .sourceBatchId(BATCH_ID)
+                                 .build();
+
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
   @Test
@@ -264,12 +266,12 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-        .datasetId(DATASET_ID)
-        .engineDatasetId(ENGINE_DATASET_ID)
-        .sourceExecutionId(PREVIOUS_TASK_ID)
-        .sourceBatchId(BATCH_ID)
-        .build());
+    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
+                                                                                     .datasetId(DATASET_ID)
+                                                                                     .engineDatasetId(ENGINE_DATASET_ID)
+                                                                                     .sourceExecutionId(PREVIOUS_TASK_ID)
+                                                                                     .sourceBatchId(BATCH_ID)
+                                                                                     .build());
 
     assertSame(engineTaskRequest, createdTask);
     assertInstanceOf(
@@ -315,12 +317,12 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-        .datasetId(DATASET_ID)
-        .engineDatasetId(ENGINE_DATASET_ID)
-        .sourceExecutionId(PREVIOUS_TASK_ID)
-        .sourceBatchId(BATCH_ID)
-        .build());
+    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
+                                                                                     .datasetId(DATASET_ID)
+                                                                                     .engineDatasetId(ENGINE_DATASET_ID)
+                                                                                     .sourceExecutionId(PREVIOUS_TASK_ID)
+                                                                                     .sourceBatchId(BATCH_ID)
+                                                                                     .build());
 
     assertSame(engineTaskRequest, createdTask);
     assertEquals(
@@ -367,12 +369,12 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
         anyString()))
         .thenReturn(engineTaskRequest);
 
-    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-        .datasetId(DATASET_ID)
-        .engineDatasetId(ENGINE_DATASET_ID)
-        .sourceExecutionId(PREVIOUS_TASK_ID)
-        .sourceBatchId(BATCH_ID)
-        .build());
+    EngineTask createdTask = engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
+                                                                                     .datasetId(DATASET_ID)
+                                                                                     .engineDatasetId(ENGINE_DATASET_ID)
+                                                                                     .sourceExecutionId(PREVIOUS_TASK_ID)
+                                                                                     .sourceBatchId(BATCH_ID)
+                                                                                     .build());
 
     assertSame(engineTaskRequest, createdTask);
     assertInstanceOf(
@@ -401,16 +403,15 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
             engineTaskClient,
             datasetXsltDao);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-            .datasetId(DATASET_ID)
-            .engineDatasetId(ENGINE_DATASET_ID)
-            .sourceExecutionId(PREVIOUS_TASK_ID)
-            .sourceBatchId(BATCH_ID)
-            .build()),
-        "Requested record depublication but there are no records ids "
-            + "for depublication in the db");
+    EngineTaskCreationContext engineTaskCreationContext =
+        EngineTaskCreationContext.builder()
+                                 .datasetId(DATASET_ID)
+                                 .engineDatasetId(ENGINE_DATASET_ID)
+                                 .sourceExecutionId(PREVIOUS_TASK_ID)
+                                 .sourceBatchId(BATCH_ID)
+                                 .build();
+
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
   @Test
@@ -432,14 +433,15 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
             engineTaskClient,
             datasetXsltDao);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-            .datasetId(DATASET_ID)
-            .engineDatasetId(ENGINE_DATASET_ID)
-            .sourceExecutionId(PREVIOUS_TASK_ID)
-            .sourceBatchId(BATCH_ID)
-            .build()));
+    EngineTaskCreationContext engineTaskCreationContext =
+        EngineTaskCreationContext.builder()
+                                 .datasetId(DATASET_ID)
+                                 .engineDatasetId(ENGINE_DATASET_ID)
+                                 .sourceExecutionId(PREVIOUS_TASK_ID)
+                                 .sourceBatchId(BATCH_ID)
+                                 .build();
+
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.createTask(engineTaskCreationContext));
   }
 
   @Test
@@ -466,12 +468,12 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     ExternalTaskException exception = assertThrows(
         ExternalTaskException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-            .datasetId(DATASET_ID)
-            .engineDatasetId(ENGINE_DATASET_ID)
-            .sourceExecutionId(PREVIOUS_TASK_ID)
-            .sourceBatchId(BATCH_ID)
-            .build()));
+        () -> engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
+                                                                      .datasetId(DATASET_ID)
+                                                                      .engineDatasetId(ENGINE_DATASET_ID)
+                                                                      .sourceExecutionId(PREVIOUS_TASK_ID)
+                                                                      .sourceBatchId(BATCH_ID)
+                                                                      .build()));
 
     assertSame(runtimeException, exception.getCause());
     assertEquals(
@@ -503,12 +505,12 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     ExternalTaskException thrownException = assertThrows(
         ExternalTaskException.class,
-        () -> engineTaskSubmitter.createTask(EngineTaskSubmitContext.builder()
-            .datasetId(DATASET_ID)
-            .engineDatasetId(ENGINE_DATASET_ID)
-            .sourceExecutionId(PREVIOUS_TASK_ID)
-            .sourceBatchId(BATCH_ID)
-            .build()));
+        () -> engineTaskSubmitter.createTask(EngineTaskCreationContext.builder()
+                                                                      .datasetId(DATASET_ID)
+                                                                      .engineDatasetId(ENGINE_DATASET_ID)
+                                                                      .sourceExecutionId(PREVIOUS_TASK_ID)
+                                                                      .sourceBatchId(BATCH_ID)
+                                                                      .build()));
 
     assertSame(externalTaskException, thrownException);
   }

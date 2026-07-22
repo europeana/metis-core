@@ -32,7 +32,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Proxies Controller which encapsulates functionality that has to be proxied to an external resource.
+ * Controller responsible for handling proxies-related operations to the engine.
+ *
+ * @param <S> The type representing the task settings required for the engine tasks.
+ * @param <T> The type representing the tasks to be managed by the engine.
  */
 @Slf4j
 @RestController

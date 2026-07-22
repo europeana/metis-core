@@ -10,7 +10,7 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.execution.EngineTaskSubmitContext.EngineTaskSubmitContextBuilder;
+import eu.europeana.metis.core.execution.EngineTaskCreationContext.EngineTaskCreationContextBuilder;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowExecutionHelper;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
@@ -97,16 +97,16 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       plugin.setStartedDate(Instant.now());
       plugin.setPluginStatus(PluginStatus.RUNNING);
 
-      EngineTaskSubmitContextBuilder engineTaskSubmitContextBuilder =
-          EngineTaskSubmitContext.builder()
-                                 .datasetId(workflowExecution.getDatasetId())
-                                 .engineDatasetId(workflowExecution.getEcloudDatasetId());
+      EngineTaskCreationContextBuilder engineTaskCreationContextBuilder =
+          EngineTaskCreationContext.builder()
+                                   .datasetId(workflowExecution.getDatasetId())
+                                   .engineDatasetId(workflowExecution.getEcloudDatasetId());
       if (previousPlugin != null) {
-        engineTaskSubmitContextBuilder.sourceExecutionId(previousPlugin.getEngineTaskId());
-        engineTaskSubmitContextBuilder.sourceBatchId(previousPlugin.getEngineBatchId());
+        engineTaskCreationContextBuilder.sourceExecutionId(previousPlugin.getEngineTaskId());
+        engineTaskCreationContextBuilder.sourceBatchId(previousPlugin.getEngineBatchId());
       }
 
-      return engineTaskSubmitter.createTask(engineTaskSubmitContextBuilder.build());
+      return engineTaskSubmitter.createTask(engineTaskCreationContextBuilder.build());
     }
     return null;
   }
