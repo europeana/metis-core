@@ -97,7 +97,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
 
       EngineTaskSubmitContextBuilder engineTaskSubmitContextBuilder =
           EngineTaskSubmitContext.builder()
-                                 .engineDatasetId(workflowExecution.getDatasetId())
+                                 .datasetId(workflowExecution.getDatasetId())
                                  .engineDatasetId(workflowExecution.getEcloudDatasetId());
       if (previousPlugin != null) {
         engineTaskSubmitContextBuilder.sourceExecutionId(previousPlugin.getExternalTaskId());
