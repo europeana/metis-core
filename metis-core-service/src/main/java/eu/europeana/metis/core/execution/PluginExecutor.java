@@ -92,7 +92,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
   private T createTask(AbstractExecutablePlugin<?> plugin,
       WorkflowExecution workflowExecution, EngineTaskSubmitter<S, T> engineTaskSubmitter)
       throws ExternalTaskException {
-    if (isBlank(plugin.getExternalTaskId())) {
+    if (isBlank(plugin.getEngineTaskId())) {
       AbstractExecutablePlugin<?> previousPlugin = getPreviousPlugin(plugin.getPluginMetadata(), workflowExecution);
       plugin.setStartedDate(Instant.now());
       plugin.setPluginStatus(PluginStatus.RUNNING);
@@ -102,8 +102,8 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
                                  .datasetId(workflowExecution.getDatasetId())
                                  .engineDatasetId(workflowExecution.getEcloudDatasetId());
       if (previousPlugin != null) {
-        engineTaskSubmitContextBuilder.sourceExecutionId(previousPlugin.getExternalTaskId());
-        engineTaskSubmitContextBuilder.sourceBatchId(previousPlugin.getBatchId());
+        engineTaskSubmitContextBuilder.sourceExecutionId(previousPlugin.getEngineTaskId());
+        engineTaskSubmitContextBuilder.sourceBatchId(previousPlugin.getEngineBatchId());
       }
 
       return engineTaskSubmitter.createTask(engineTaskSubmitContextBuilder.build());

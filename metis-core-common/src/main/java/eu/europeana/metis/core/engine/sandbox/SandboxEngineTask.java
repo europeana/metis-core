@@ -6,13 +6,13 @@ import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 public record SandboxEngineTask(SandboxTask sandboxTask) implements EngineTask {
 
   @Override
-  public String getExternalTaskId() {
+  public String getEngineTaskId() {
     //todo: Not supported yet in sandbox
     return null;
   }
 
   @Override
-  public String getBatchId() {
+  public String getEngineBatchId() {
     //todo: Not supported yet in sandbox
     return null;
   }

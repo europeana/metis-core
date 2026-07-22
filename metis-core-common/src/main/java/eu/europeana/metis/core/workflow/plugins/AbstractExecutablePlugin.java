@@ -15,8 +15,8 @@ import lombok.Setter;
 public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePluginMetadata>
     extends AbstractMetisPlugin<M> implements ExecutablePlugin {
 
-  private String externalTaskId;
-  private String batchId;
+  private String engineTaskId;
+  private String engineBatchId;
   private ExecutionProgress executionProgress = new ExecutionProgress();
 
   /**

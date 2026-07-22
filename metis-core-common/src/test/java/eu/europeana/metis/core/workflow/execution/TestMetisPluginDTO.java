@@ -17,8 +17,8 @@ import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.CA
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.DATA_TATUS;
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.DATA_TATUS_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.EXECUTION_PROGRESS_DTO;
-import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.EXTERNAL_TASK_ID;
-import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.EXTERNAL_TASK_ID_VALUE;
+import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.ENGINE_TASK_ID;
+import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.ENGINE_TASK_ID_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.FAIL_MESSAGE;
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.FAIL_MESSAGE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestMetisPluginUtils.FINISHED_DATE;
@@ -99,7 +99,7 @@ class TestMetisPluginDTO {
     assertEquals(STARTED_DATE_VALUE, metisPluginDTO.getStartedDate());
     assertEquals(UPDATED_DATE_VALUE, metisPluginDTO.getUpdatedDate());
     assertEquals(FINISHED_DATE_VALUE, metisPluginDTO.getFinishedDate());
-    assertEquals(EXTERNAL_TASK_ID_VALUE, metisPluginDTO.getExternalTaskId());
+    assertEquals(ENGINE_TASK_ID_VALUE, metisPluginDTO.getEngineTaskId());
     assertExecutionProgressDTO(metisPluginDTO.getExecutionProgress());
     assertEquals(TOPOLOGY_NAME_VALUE, metisPluginDTO.getTopologyName());
     assertEquals(CAN_DISPLAY_RAW_XML_VALUE, metisPluginDTO.isCanDisplayRawXml());
@@ -115,7 +115,7 @@ class TestMetisPluginDTO {
     TestSerializationUtils.assertFieldEquals(jsonOutput, STARTED_DATE, STARTED_DATE_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, UPDATED_DATE, UPDATED_DATE_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, FINISHED_DATE, FINISHED_DATE_VALUE);
-    TestSerializationUtils.assertFieldEquals(jsonOutput, EXTERNAL_TASK_ID, EXTERNAL_TASK_ID_VALUE);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ENGINE_TASK_ID, ENGINE_TASK_ID_VALUE);
     TestSerializationUtils.assertNestedFieldEquals(jsonOutput, EXECUTION_PROGRESS_DTO, EXPECTED_RECORDS, EXPECTED_RECORDS_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, TOPOLOGY_NAME, TOPOLOGY_NAME_VALUE);
     TestSerializationUtils.assertFieldEquals(jsonOutput, CAN_DISPLAY_RAW_XML, CAN_DISPLAY_RAW_XML_VALUE);

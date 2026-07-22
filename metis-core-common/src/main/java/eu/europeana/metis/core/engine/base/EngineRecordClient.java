@@ -15,12 +15,12 @@ public interface EngineRecordClient {
    * Retrieves a list of records from a specified dataset in the processing engine.
    *
    * @param engineDatasetId the identifier of the dataset to retrieve records from
-   * @param batchId the identifier of the batch to retrieve records from
+   * @param engineBatchId the identifier of the batch to retrieve records from
    * @param numberOfRecords the maximum number of records to retrieve
    * @return a list of {@link java.lang.Record} objects from the specified dataset and revision
    * @throws ExternalTaskException if an error occurs while retrieving the records
    */
-  List<Record> getRecords(String engineDatasetId, String batchId, int numberOfRecords) throws ExternalTaskException;
+  List<Record> getRecords(String engineDatasetId, String engineBatchId, int numberOfRecords) throws ExternalTaskException;
 
   /**
    * Retrieves a list of records based on the provided record identifiers and revision information.
@@ -29,19 +29,19 @@ public interface EngineRecordClient {
    * @return a list of {@link java.lang.Record} objects corresponding to the provided record identifiers
    * @throws ExternalTaskException if an error occurs during the record retrieval process
    */
-  List<Record> getRecords(List<String> recordIds, String batchId) throws ExternalTaskException;
+  List<Record> getRecords(List<String> recordIds, String engineBatchId) throws ExternalTaskException;
 
   /**
    * Retrieves a record based on the provided record identifier, revision name, and timestamp.
    *
    * @param engineDatasetId the identifier of the engine dataset containing the record
    * @param recordId the unique identifier of the record to retrieve
-   * @param batchId the batch identifier associated with the record retrieval
+   * @param engineBatchId the batch identifier associated with the record retrieval
    * @param pluginType the plugin type associated with the record retrieval
    * @return the retrieved Record object matching the provided criteria
    * @throws ExternalTaskException if there is an error while retrieving the record
    */
-  Record getRecord(String engineDatasetId, String recordId, String batchId,
+  Record getRecord(String engineDatasetId, String recordId, String engineBatchId,
       ExecutablePluginType pluginType) throws ExternalTaskException;
 
   /**

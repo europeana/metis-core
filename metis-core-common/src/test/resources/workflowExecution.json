@@ -36,7 +36,7 @@
         "executablePluginType": "OAIPMH_HARVEST",
         "pluginType": "OAIPMH_HARVEST"
       },
-      "externalTaskId": null,
+      "engineTaskId": null,
       "executionProgress": {
         "expectedRecords": 100,
         "processedRecords": 100,
@@ -74,7 +74,7 @@
         "executablePluginType": "VALIDATION_EXTERNAL",
         "pluginType": "VALIDATION_EXTERNAL"
       },
-      "externalTaskId": null,
+      "engineTaskId": null,
       "executionProgress": {
         "expectedRecords": 100,
         "processedRecords": 100,

@@ -237,7 +237,7 @@ public class TestRedirectionBase {
     executablePlugin.setUpdatedDate(updateDate);
     executablePlugin.setFinishedDate(finishDate);
     executablePlugin.setDataStatus(dataStatus);
-    executablePlugin.setExternalTaskId(String.valueOf(Instant.now().toEpochMilli()));
+    executablePlugin.setEngineTaskId(String.valueOf(Instant.now().toEpochMilli()));
     return executablePlugin;
   }
 

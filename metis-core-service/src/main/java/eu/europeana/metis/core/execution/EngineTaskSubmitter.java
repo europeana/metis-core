@@ -63,10 +63,10 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
     log.info("Create task of {} plugin for engineDatasetId {}", plugin.getPluginType(), engineTaskSubmitContext.getEngineDatasetId());
     try {
       T engineTask = engineTaskFactory.create(engineTaskSubmitContext);
-      plugin.setExternalTaskId(engineTask.getExternalTaskId());
-      plugin.setBatchId(engineTask.getBatchId());
+      plugin.setEngineTaskId(engineTask.getEngineTaskId());
+      plugin.setEngineBatchId(engineTask.getEngineBatchId());
       plugin.setDataStatus(DataStatus.VALID);
-      log.info("Created task with externalTaskId: {}", plugin.getExternalTaskId());
+      log.info("Created task with engineTaskId: {}", plugin.getEngineTaskId());
       return engineTask;
     } catch (IllegalStateException | ExternalTaskException e) {
       throw e;
@@ -87,10 +87,10 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
    * interaction.
    */
   public void submitTask(T engineTask) throws ExternalTaskException {
-    log.info("Submit task with externalTaskId: {}", engineTask.getExternalTaskId());
+    log.info("Submit task with engineTaskId: {}", engineTask.getEngineTaskId());
     String engineTaskId = engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
     //todo: this can be removed when sandbox creates the id on task creation instead of submission.
-    plugin.setExternalTaskId(engineTaskId);
-    log.info("Submitted task with externalTaskId: {}", engineTask.getExternalTaskId());
+    plugin.setEngineTaskId(engineTaskId);
+    log.info("Submitted task with engineTaskId: {}", engineTask.getEngineTaskId());
   }
 }
