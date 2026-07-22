@@ -7,7 +7,7 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
-import eu.europeana.metis.core.execution.EngineTaskSubmitContext;
+import eu.europeana.metis.core.execution.EngineTaskCreationContext;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPlugin;
@@ -41,16 +41,16 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
   }
 
   @Override
-  public T create(EngineTaskSubmitContext engineTaskSubmitContext) throws ExternalTaskException {
+  public T create(EngineTaskCreationContext engineTaskCreationContext) throws ExternalTaskException {
     IndexTaskContext indexTaskContext = getIndexTaskConfiguration(
-        engineTaskSubmitContext.getSourceExecutionId(),
-        engineTaskSubmitContext.getSourceBatchId()
+        engineTaskCreationContext.getSourceExecutionId(),
+        engineTaskCreationContext.getSourceBatchId()
     );
     addJobNameParameter(indexTaskContext.pluginParameters());
     Map<EngineTaskKey, String> allParameters = createAllParameters(
-        engineTaskSubmitContext.getEngineDatasetId(),
-        engineTaskSubmitContext.getDatasetId(),
-        engineTaskSubmitContext.getSourceExecutionId(),
+        engineTaskCreationContext.getEngineDatasetId(),
+        engineTaskCreationContext.getDatasetId(),
+        engineTaskCreationContext.getSourceExecutionId(),
         indexTaskContext.pluginParameters()
     );
 

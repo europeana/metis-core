@@ -97,15 +97,15 @@ class TestProxiesController {
   void existsExternalTaskReport() throws Exception {
     when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
     when(proxiesService.existsEngineTaskReport(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(true);
+        TestObjectFactory.ENGINE_TASK_ID)).thenReturn(true);
 
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
-               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
+               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.ENGINE_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON)
                .content(""))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.existsExternalTaskReport", is(true)));
+           .andExpect(jsonPath("$.existsEngineTaskReport", is(true)));
   }
 
   @Test
@@ -118,16 +118,16 @@ class TestProxiesController {
 
     EngineTaskErrors engineTaskErrors = TestObjectFactory.createExternalTaskErrorsListWithIdentifiers(2);
     when(proxiesService.getExternalTaskReport(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, 10)).thenReturn(engineTaskErrors);
+        TestObjectFactory.ENGINE_TASK_ID, 10)).thenReturn(engineTaskErrors);
 
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
-               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
+               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.ENGINE_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("idsPerError", "10")
                .contentType(MediaType.APPLICATION_JSON)
                .content(""))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.id", is(TestObjectFactory.EXTERNAL_TASK_ID)))
+           .andExpect(jsonPath("$.id", is(TestObjectFactory.ENGINE_TASK_ID)))
            .andExpect(jsonPath("$.errors", hasSize(engineTaskErrors.errors().size())))
            .andExpect(jsonPath("$.errors[0].errorDetails",
                hasSize(engineTaskErrors.errors().get(0).errorDetails().size())))
@@ -142,18 +142,18 @@ class TestProxiesController {
     // Create response object.
     final NodeValueStatisticsDTO nodeValue = new NodeValueStatisticsDTO("node value", 3, Collections.emptyList());
     final NodePathStatisticsDTO nodePath = new NodePathStatisticsDTO("node path", Collections.singletonList(nodeValue));
-    final RecordStatisticsDTO recordStatisticsDTO = new RecordStatisticsDTO(TestObjectFactory.EXTERNAL_TASK_ID,
+    final RecordStatisticsDTO recordStatisticsDTO = new RecordStatisticsDTO(TestObjectFactory.ENGINE_TASK_ID,
         Collections.singletonList(nodePath));
 
     // Make the call and verify the result.
     when(proxiesService.getExternalTaskStatistics(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID)).thenReturn(recordStatisticsDTO);
+        TestObjectFactory.ENGINE_TASK_ID)).thenReturn(recordStatisticsDTO);
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
-               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
+               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.ENGINE_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .contentType(MediaType.APPLICATION_JSON).content(""))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.taskId", is(TestObjectFactory.EXTERNAL_TASK_ID)))
+           .andExpect(jsonPath("$.taskId", is(TestObjectFactory.ENGINE_TASK_ID)))
            .andExpect(jsonPath("$.nodePathStatistics", hasSize(recordStatisticsDTO.nodePathStatistics().size())))
            .andExpect(jsonPath("$.nodePathStatistics[0].xPath", is(nodePath.xPath())))
            .andExpect(jsonPath("$.nodePathStatistics[0].nodeValueStatistics", hasSize(nodePath.nodeValueStatistics().size())))
@@ -175,11 +175,11 @@ class TestProxiesController {
     final NodePathStatisticsDTO nodePath = new NodePathStatisticsDTO("node path", Collections.singletonList(nodeValue));
 
     when(proxiesService.getAdditionalNodeStatistics(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, nodePath.xPath())).thenReturn(nodePath);
+        TestObjectFactory.ENGINE_TASK_ID, nodePath.xPath())).thenReturn(nodePath);
 
     // Make the call and verify the result.
     mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
-               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
+               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.ENGINE_TASK_ID)
                .header("Authorization", BEARER + MOCK_VALID_TOKEN)
                .param("nodePath", nodePath.xPath()))
            .andExpect(status().isOk())

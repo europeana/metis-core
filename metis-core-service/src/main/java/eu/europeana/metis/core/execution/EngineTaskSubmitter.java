@@ -57,12 +57,15 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
    * This method creates an engine task using the given parameters, submits it to the engine, and updates the plugin with the
    * submitted task ID and data status. If an error occurs during task creation or submission, an exception is thrown.
    *
+   * @param engineTaskCreationContext The context required for creating the engine task.
+   * @return The created engine task.
    * @throws ExternalTaskException If an error occurs during task submission or execution.
    */
-  public T createTask(EngineTaskSubmitContext engineTaskSubmitContext) throws ExternalTaskException {
-    log.info("Create task of {} plugin for engineDatasetId {}", plugin.getPluginType(), engineTaskSubmitContext.getEngineDatasetId());
+  public T createTask(EngineTaskCreationContext engineTaskCreationContext) throws ExternalTaskException {
+    log.info("Create task of {} plugin for engineDatasetId {}", plugin.getPluginType(),
+        engineTaskCreationContext.getEngineDatasetId());
     try {
-      T engineTask = engineTaskFactory.create(engineTaskSubmitContext);
+      T engineTask = engineTaskFactory.create(engineTaskCreationContext);
       plugin.setEngineTaskId(engineTask.getEngineTaskId());
       plugin.setEngineBatchId(engineTask.getEngineBatchId());
       plugin.setDataStatus(DataStatus.VALID);
@@ -73,7 +76,7 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
     } catch (RuntimeException e) {
       throw new ExternalTaskException(
           "Create task for plugin type %s and dataset %s failed"
-              .formatted(plugin.getPluginMetadata().getExecutablePluginType(), engineTaskSubmitContext.getDatasetId()),
+              .formatted(plugin.getPluginMetadata().getExecutablePluginType(), engineTaskCreationContext.getDatasetId()),
           e
       );
     }
