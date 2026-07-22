@@ -18,6 +18,7 @@ import eu.europeana.metis.core.engine.base.task.input.TransformInternalInputData
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.Getter;
 
@@ -50,7 +51,9 @@ public class EcloudEngineTaskRequest extends EngineTaskRequest {
     String providerId = parameters.get(EngineTaskKey.PROVIDER_ID);
     TaskSource taskSource = switch (this.inputDataEndpoint) {
       case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
-          new OAIPMHHarvestingDetails(url, set, metadataPrefix, Date.from(from), Date.from(until), null);
+          new OAIPMHHarvestingDetails(url, metadataPrefix, set,
+              Optional.ofNullable(from).map(Date::from).orElse(null),
+              Optional.ofNullable(until).map(Date::from).orElse(null), null);
       case HttpHarvestInputDataEndpoint(String url, Integer stepSize) ->
         new HttpHarvestingDetails(url);
       case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId, String sourceBatchId) ->

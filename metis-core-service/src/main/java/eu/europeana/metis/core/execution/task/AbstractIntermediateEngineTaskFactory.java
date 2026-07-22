@@ -54,7 +54,8 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
     allParameters.putAll(createDefaultTaskParameters(
         engineDatasetId,
         datasetId,
-        sourceExecutionId
+        sourceExecutionId,
+        engineTaskClient.getEngineTaskSettings().getProvider()
     ));
 
     allParameters.putAll(pluginParameters);
