@@ -3,6 +3,8 @@ package eu.europeana.metis.core.rest.controller;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
+import eu.europeana.metis.core.engine.base.EngineTask;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -34,10 +36,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-public class ProxiesController {
+public class ProxiesController<S extends EngineTaskSettings, T extends EngineTask> {
 
   private static final int NUMBER_OF_RECORDS = 5;
-  private final ProxiesService proxiesService;
+  private final ProxiesService<S, T> proxiesService;
 
   /**
    * Constructor with required parameters
@@ -45,7 +47,7 @@ public class ProxiesController {
    * @param proxiesService {@link ProxiesService}
    */
   @Autowired
-  public ProxiesController(ProxiesService proxiesService) {
+  public ProxiesController(ProxiesService<S, T> proxiesService) {
     this.proxiesService = proxiesService;
   }
 

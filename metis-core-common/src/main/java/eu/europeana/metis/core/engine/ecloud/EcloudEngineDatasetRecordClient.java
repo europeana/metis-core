@@ -50,6 +50,7 @@ public class EcloudEngineDatasetRecordClient {
    * Retrieves a list of records for a dataset.
    *
    * @param providerId The ID of the provider requesting the records.
+   * @param engineBatchId The ID of the engine batch (dataset) to read the records from.
    * @param numberOfRecords The maximum number of records to retrieve.
    * @return A list of retrieved records based on the specified parameters.
    * @throws ExternalTaskException If an issue occurs while fetching the records from external services.
@@ -76,7 +77,7 @@ public class EcloudEngineDatasetRecordClient {
    *
    * @param providerId The ID of the provider.
    * @param recordIds The list of record IDs to retrieve.
-   * @param engineBatchId
+   * @param engineBatchId The ID of the engine batch (dataset) to read the records from.
    * @return A list of records that match the provided criteria.
    * @throws ExternalTaskException If an error occurs while retrieving the records.
    */
@@ -96,8 +97,9 @@ public class EcloudEngineDatasetRecordClient {
    *
    * @param providerId The unique identifier for the data provider.
    * @param recordId The unique identifier for the record.
-   * @return The retrieved Record object, or null if no matching record is found.
-   * @throws ExternalTaskException If an issue occurs while fetching the record.
+   * @param engineBatchId The ID of the engine batch (dataset) to read the record from.
+   * @return The retrieved Record object.
+   * @throws ExternalTaskException If an issue occurs while fetching the record, or if no matching record is found.
    */
   public Record getRecord(String providerId, String recordId, String engineBatchId) throws ExternalTaskException {
     String ecloudId = null;
@@ -126,7 +128,8 @@ public class EcloudEngineDatasetRecordClient {
           MetisPlugin.getRepresentationName());
     } catch (MCSException e) {
       throw new ExternalTaskException(
-          format("Failed to get ecloud record for providerId: %s, engineBatchId: %s, ecloudId: %s, representationName: %s", providerId,
+          format("Failed to get ecloud record for providerId: %s, engineBatchId: %s, ecloudId: %s, representationName: %s",
+              providerId,
               engineBatchId, ecloudId, MetisPlugin.getRepresentationName()), e);
     }
 
@@ -146,9 +149,8 @@ public class EcloudEngineDatasetRecordClient {
     final File file = representation.getFiles().getFirst();
 
     // Get the file contents belonging to this representation version.
-    try {
-      final InputStream inputStream = fileServiceClient.getFile(file.getContentUri().toString());
-      return new Record(representation.getCloudId(), IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+    try (InputStream inputStream = fileServiceClient.getFile(file.getContentUri().toString())) {
+      return new Record(representation.getCloudId(), IOUtils.toString(inputStream, StandardCharsets.UTF_8));
     } catch (MCSException e) {
       throw new ExternalTaskException(format("Getting file content failed. uri: %s", file.getContentUri()), e);
     } catch (IOException e) {
