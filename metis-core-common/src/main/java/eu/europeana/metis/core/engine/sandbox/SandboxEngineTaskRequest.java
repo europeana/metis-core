@@ -54,24 +54,21 @@ public class SandboxEngineTaskRequest extends EngineTaskRequest {
     Map<SandboxTaskKey, String> sandboxParameters =
         parameters.entrySet().stream()
                   .filter(entry -> validKeys.contains(entry.getKey().name()))
-                  .collect(Collectors.toMap(
-                      entry ->
-                          SandboxTaskKey.valueOf(entry.getKey().name()),
-                      Entry::getValue
-                  ));
+                  .collect(Collectors.toMap(entry -> SandboxTaskKey.valueOf(entry.getKey().name()), Entry::getValue));
     sandboxTaskRequest.setParameters(sandboxParameters);
   }
 
   private void prepareTaskRequest() {
     InputMetadataRequest inputMetadataRequest = switch (this.inputDataEndpoint) {
-      case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
-          new OaiHarvestInputMetadataRequest(url, set, metadataPrefix, from, until, stepSize);
+      case OaiHarvestInputDataEndpoint(
+          String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize
+      ) -> new OaiHarvestInputMetadataRequest(url, set, metadataPrefix, from, until, stepSize);
       case HttpHarvestInputDataEndpoint(String url, Integer stepSize) -> new HttpHarvestInputMetadataRequest(url, stepSize);
-      case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, String sourceBatchId) ->
+      case TransformExternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId) ->
           new TransformExternalInputMetadataRequest(xslt, sourceExecutionId);
-      case TransformInternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, String sourceBatchId) ->
+      case TransformInternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId) ->
           new TransformInternalInputMetadataRequest(xslt, sourceExecutionId);
-      case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId, String sourceBatchId) ->
+      case SimpleIntermediateInputDataEndpoint(String sourceExecutionId, String sourceBatchId) ->
           new SimpleIntermediateInputMetadataRequest(sourceExecutionId);
       case DepublishInputDataEndpoint ignored ->
           throw new IllegalArgumentException("DepublishInputDataEndpoint is not supported for sandbox tasks");

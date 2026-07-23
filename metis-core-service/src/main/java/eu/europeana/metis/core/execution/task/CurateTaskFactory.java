@@ -89,8 +89,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
             createTransformationExternalParameters(
                 engineTaskClient.getEngineTaskSettings().getMetisCoreBaseUrl(),
                 transformationExternalPluginMetadata.getXsltId()),
-            new TransformExternalInputDataEndpoint(xslt, "", sourceExecutionId,
-                sourceBatchId)
+            new TransformExternalInputDataEndpoint(xslt, sourceExecutionId, sourceBatchId)
         );
       }
       case ValidationExternalPluginMetadata validationExternalPluginMetadata -> new CurateTaskContext(
@@ -112,8 +111,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
                 transformationPluginMetadata.getCountry(),
                 transformationPluginMetadata.getLanguage()
             ),
-            new TransformInternalInputDataEndpoint(xslt, "", sourceExecutionId,
-                sourceBatchId)
+            new TransformInternalInputDataEndpoint(xslt, sourceExecutionId, sourceBatchId)
         );
       }
       case ValidationInternalPluginMetadata validationInternalPluginMetadata -> new CurateTaskContext(

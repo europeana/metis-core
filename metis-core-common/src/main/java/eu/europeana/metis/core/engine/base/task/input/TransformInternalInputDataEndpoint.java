@@ -5,11 +5,10 @@ package eu.europeana.metis.core.engine.base.task.input;
  * further.
  *
  * @param xslt The XSLT stylesheet used to transform the external data.
- * @param url The URL of the external input data.
  * @param sourceExecutionId The identifier of the source execution that generated the external input data.
+ * @param sourceBatchId The identifier of the source batch that generated the external input data.
  */
-//todo: see if we can remove url from this level. It used to be for the dataLocation required from ecloud.
-public record TransformInternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, String sourceBatchId)
+public record TransformInternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId)
     implements IntermediateInputDataEndpoint {
 
 }

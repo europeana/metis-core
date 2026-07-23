@@ -81,7 +81,7 @@ class TestEcloudEngineTaskClient {
   @Test
   void createEngineTask() throws ExternalTaskException {
     Map<EngineTaskKey, String> parameters = Map.of();
-    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("http://internal.url", "", "");
+    InputDataEndpoint inputDataEndpoint = new SimpleIntermediateInputDataEndpoint("", "");
     EcloudEngineTask ecloudEngineTask = ecloudEngineTaskClient.createEngineTask(parameters, inputDataEndpoint, TOPOLOGY_NAME);
     assertNotNull(ecloudEngineTask);
   }
