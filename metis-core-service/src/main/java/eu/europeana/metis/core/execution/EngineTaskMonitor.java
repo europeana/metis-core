@@ -53,7 +53,6 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
     ExecutionProgress executionProgress = plugin.getExecutionProgress();
     executionProgress.setExpectedRecords(engineTaskProgress.getExpectedRecords());
     executionProgress.setProcessedRecords(engineTaskProgress.getProcessedRecords());
-    executionProgress.recalculateProgressPercentage();
     executionProgress.setStatus(engineTaskProgress.getEngineTaskState().name());
     executionProgress.setSuccessRecords(engineTaskProgress.getSuccessRecords());
     executionProgress.setFailRecords(engineTaskProgress.getFailRecords());
@@ -64,6 +63,7 @@ public class EngineTaskMonitor<S extends EngineTaskSettings, T extends EngineTas
     executionProgress.setSuccessDepublishRecords(engineTaskProgress.getSuccessDepublishRecords());
     executionProgress.setFailDepublishRecords(engineTaskProgress.getFailDepublishRecords());
     executionProgress.setProcessedDepublishRecords(engineTaskProgress.getProcessedDepublishRecords());
+    executionProgress.recalculateProgressPercentage();
   }
 
   /**
