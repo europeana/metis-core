@@ -2,7 +2,7 @@
   "id": "64bffcdde13e6c25d4efb2ac",
   "datasetId": "datasetId",
   "workflowStatus": "RUNNING",
-  "ecloudDatasetId": "ecloudDatasetId",
+  "engineDatasetId": "engineDatasetId",
   "cancelledBy": "cancelledBy",
   "startedBy": "startedBy",
   "workflowPriority": 0,

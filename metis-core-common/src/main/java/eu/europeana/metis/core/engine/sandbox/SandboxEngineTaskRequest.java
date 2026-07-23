@@ -12,8 +12,8 @@ import eu.europeana.metis.core.engine.base.task.input.TransformInternalInputData
 import eu.europeana.metis.sandbox.common.task.input.HttpHarvestInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.InputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.OaiHarvestInputMetadataRequest;
-import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskKey;
+import eu.europeana.metis.sandbox.common.task.input.SandboxTaskRequest;
 import eu.europeana.metis.sandbox.common.task.input.SimpleIntermediateInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.TransformExternalInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.TransformInternalInputMetadataRequest;
@@ -32,7 +32,7 @@ import lombok.Getter;
 @Getter
 public class SandboxEngineTaskRequest extends EngineTaskRequest {
 
-  SandboxTask sandboxTask = new SandboxTask();
+  private final SandboxTaskRequest sandboxTaskRequest = new SandboxTaskRequest();
 
   /**
    * Constructs an EngineTask with specified parameters and input data endpoint.
@@ -59,7 +59,7 @@ public class SandboxEngineTaskRequest extends EngineTaskRequest {
                           SandboxTaskKey.valueOf(entry.getKey().name()),
                       Entry::getValue
                   ));
-    sandboxTask.setParameters(sandboxParameters);
+    sandboxTaskRequest.setParameters(sandboxParameters);
   }
 
   private void prepareTaskRequest() {
@@ -76,6 +76,6 @@ public class SandboxEngineTaskRequest extends EngineTaskRequest {
       case DepublishInputDataEndpoint ignored ->
           throw new IllegalArgumentException("DepublishInputDataEndpoint is not supported for sandbox tasks");
     };
-    sandboxTask.setInputMetadataRequest(inputMetadataRequest);
+    sandboxTaskRequest.setInputMetadataRequest(inputMetadataRequest);
   }
 }

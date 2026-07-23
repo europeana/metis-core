@@ -83,17 +83,15 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
   }
 
   /**
-   * Submits a task identified by the specified external task ID to the processing engine for execution.
+   * Submits the specified task to the processing engine for execution.
    *
-   * @param engineTask The unique identifier of the external task to be submitted.
+   * @param engineTask The task to be submitted.
    * @throws ExternalTaskException If an error occurs during the submission process, such as a failure in external resource
    * interaction.
    */
   public void submitTask(T engineTask) throws ExternalTaskException {
     log.info("Submit task with engineTaskId: {}", engineTask.getEngineTaskId());
-    String engineTaskId = engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
-    //todo: this can be removed when sandbox creates the id on task creation instead of submission.
-    plugin.setEngineTaskId(engineTaskId);
+    engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
     log.info("Submitted task with engineTaskId: {}", engineTask.getEngineTaskId());
   }
 }

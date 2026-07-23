@@ -466,7 +466,7 @@ class TestOrchestratorService {
   void addWorkflowInQueueOfWorkflowExecutions_EcloudDatasetAlreadyGenerated()
       throws Exception {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    dataset.setEcloudDatasetId("f525f64c-fea0-44bf-8c56-88f30962734c");
+    dataset.setEngineDatasetId("f525f64c-fea0-44bf-8c56-88f30962734c");
     Workflow workflow = TestObjectFactory.createWorkflowObject();
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(workflowDao.getWorkflow(workflow.getDatasetId())).thenReturn(workflow);

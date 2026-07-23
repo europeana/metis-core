@@ -100,7 +100,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       EngineTaskCreationContextBuilder engineTaskCreationContextBuilder =
           EngineTaskCreationContext.builder()
                                    .datasetId(workflowExecution.getDatasetId())
-                                   .engineDatasetId(workflowExecution.getEcloudDatasetId());
+                                   .engineDatasetId(workflowExecution.getEngineDatasetId());
       if (previousPlugin != null) {
         engineTaskCreationContextBuilder.sourceExecutionId(previousPlugin.getEngineTaskId());
         engineTaskCreationContextBuilder.sourceBatchId(previousPlugin.getEngineBatchId());

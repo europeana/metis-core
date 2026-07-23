@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -86,7 +87,6 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
   private static final String BATCH_ID = "batchId";
   private static final String CREATED_TASK_ID = "createdTaskId";
-  private static final String SUBMITTED_TASK_ID = "submittedTaskId";
   private static final String DATASET_ID = "datasetId";
   private static final String ENGINE_DATASET_ID = "engineDatasetId";
   private static final String PREVIOUS_TASK_ID = "previousTaskId";
@@ -357,7 +357,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
   }
 
   @Test
-  void testSubmitTask_UpdatesPluginEngineTaskId()
+  void testSubmitTask_KeepsCreatedPluginEngineTaskId()
       throws ExternalTaskException {
 
     OaipmhHarvestPlugin oaipmhHarvestPlugin =
@@ -368,15 +368,10 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         submitterFor(oaipmhHarvestPlugin);
 
-    when(engineTaskClient.submitEngineTask(
-        eq(engineTaskRequest),
-        anyString()))
-        .thenReturn(SUBMITTED_TASK_ID);
-
     engineTaskSubmitter.submitTask(engineTaskRequest);
 
     assertEquals(
-        SUBMITTED_TASK_ID,
+        CREATED_TASK_ID,
         oaipmhHarvestPlugin.getEngineTaskId());
 
     verify(engineTaskClient).submitEngineTask(
@@ -392,10 +387,9 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
         submitterFor(createOaipmhHarvestPlugin());
 
-    when(engineTaskClient.submitEngineTask(
-        eq(engineTaskRequest),
-        anyString()))
-        .thenThrow(thrownException);
+    doThrow(thrownException)
+        .when(engineTaskClient)
+        .submitEngineTask(eq(engineTaskRequest), anyString());
 
     Throwable actualException = assertThrows(
         thrownException.getClass(),

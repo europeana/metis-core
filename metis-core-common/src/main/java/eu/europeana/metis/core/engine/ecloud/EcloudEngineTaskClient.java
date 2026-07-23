@@ -102,10 +102,9 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public String submitEngineTask(EcloudEngineTask engineTask, String topologyName) throws ExternalTaskException {
+  public void submitEngineTask(EcloudEngineTask engineTask, String topologyName) throws ExternalTaskException {
     try {
       dpsClient.startTask(topologyName, Long.parseLong(engineTask.getEngineTaskId()));
-      return engineTask.getEngineTaskId();
     } catch (DpsException | RuntimeException e) {
       throw new ExternalTaskException("Submitting task to DPS failed", e);
     }
@@ -266,7 +265,8 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public Record getRecord(String engineDatasetId, String recordId, String engineBatchId, ExecutablePluginType pluginType) throws ExternalTaskException {
+  public Record getRecord(String engineDatasetId, String recordId, String engineBatchId, ExecutablePluginType pluginType)
+      throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), recordId, engineBatchId);
   }
 

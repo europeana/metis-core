@@ -51,7 +51,7 @@ public final class WorkflowExecutionConverter {
     workflowExecutionDTO.setId(Optional.ofNullable(workflowExecution.getId()).map(ObjectId::toString).orElse(null));
     workflowExecutionDTO.setDatasetId(workflowExecution.getDatasetId());
     workflowExecutionDTO.setWorkflowStatus(workflowExecution.getWorkflowStatus());
-    workflowExecutionDTO.setEcloudDatasetId(workflowExecution.getEcloudDatasetId());
+    workflowExecutionDTO.setEngineDatasetId(workflowExecution.getEngineDatasetId());
     workflowExecutionDTO.setCancelledBy(workflowExecution.getCancelledBy());
     workflowExecutionDTO.setStartedBy(workflowExecution.getStartedBy());
     workflowExecutionDTO.setCancelling(workflowExecution.isCancelling());

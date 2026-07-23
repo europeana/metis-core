@@ -96,8 +96,10 @@ class TestEcloudEngineTaskClient {
   void submitEngineTask() throws Exception {
     DpsTask dpsTask = new DpsTask();
     dpsTask.setTaskId(123L);
-    String taskId = ecloudEngineTaskClient.submitEngineTask(new EcloudEngineTask(dpsTask), TOPOLOGY_NAME);
-    assertEquals("123", taskId);
+
+    ecloudEngineTaskClient.submitEngineTask(new EcloudEngineTask(dpsTask), TOPOLOGY_NAME);
+
+    verify(dpsClient).startTask(TOPOLOGY_NAME, 123L);
   }
 
   @Test

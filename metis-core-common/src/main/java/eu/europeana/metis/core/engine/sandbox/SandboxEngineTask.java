@@ -7,13 +7,11 @@ public record SandboxEngineTask(SandboxTask sandboxTask) implements EngineTask {
 
   @Override
   public String getEngineTaskId() {
-    //todo: Not supported yet in sandbox
-    return null;
+    return sandboxTask.getTaskId();
   }
 
   @Override
   public String getEngineBatchId() {
-    //todo: Not supported yet in sandbox
-    return null;
+    return sandboxTask.getBatchId();
   }
 }

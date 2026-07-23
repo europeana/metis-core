@@ -9,7 +9,7 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.DATASET_ID;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ECLOUD_DATASET_ID;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ENGINE_DATASET_ID;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ID;
@@ -101,7 +101,7 @@ class TestWorkflowExecutionDTO {
     TestSerializationUtils.assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
     TestSerializationUtils.assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonOutput, WORKFLOW_STATUS, WORKFLOW_STATUS_VALUE.name());
-    TestSerializationUtils.assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ENGINE_DATASET_ID, ENGINE_DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY, CANCELLED_BY);
     TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY_USER_NAME, CANCELLED_BY_USER_NAME);
     TestSerializationUtils.assertFieldEquals(jsonOutput, CANCELLED_BY_FIRST_NAME, CANCELLED_BY_FIRST_NAME);
@@ -124,7 +124,7 @@ class TestWorkflowExecutionDTO {
     assertEquals(OBJECT_ID_VALUE.toString(), workflowExecutionDTO.getId());
     assertEquals(DATASET_ID, workflowExecutionDTO.getDatasetId());
     assertEquals(WorkflowStatus.RUNNING, workflowExecutionDTO.getWorkflowStatus());
-    assertEquals(ECLOUD_DATASET_ID, workflowExecutionDTO.getEcloudDatasetId());
+    assertEquals(ENGINE_DATASET_ID, workflowExecutionDTO.getEngineDatasetId());
     assertEquals(CANCELLED_BY, workflowExecutionDTO.getCancelledBy());
     assertEquals(CANCELLED_BY_USER_NAME, workflowExecutionDTO.getCancelledByUserName());
     assertEquals(CANCELLED_BY_FIRST_NAME, workflowExecutionDTO.getCancelledByFirstName());
