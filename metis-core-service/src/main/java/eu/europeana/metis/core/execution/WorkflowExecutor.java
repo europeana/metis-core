@@ -253,30 +253,25 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   private void applyRuntimePluginState(AbstractExecutablePlugin<?> plugin, EngineTaskProgress engineTaskProgress) {
     EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
-    if (engineTaskState == EngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
-        isIndexingInPostProcessing(engineTaskState, plugin)) {
+    if (isIndexInPostProcessing(engineTaskState, plugin)) {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
-
     } else if (isHarvestingInPostProcessing(engineTaskState, plugin)) {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.IDENTIFYING_DELETED_RECORDS);
-
     } else {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.RUNNING);
     }
   }
 
-  private boolean isIndexingInPostProcessing(EngineTaskState engineTaskState,
+  private boolean isIndexInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
     return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
-        (plugin.getPluginType() == PluginType.REINDEX_TO_PREVIEW ||
-            plugin.getPluginType() == PluginType.REINDEX_TO_PUBLISH);
+        (plugin.getPluginType() == PluginType.PREVIEW || plugin.getPluginType() == PluginType.PUBLISH);
   }
 
   private boolean isHarvestingInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
     return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
-        (plugin.getPluginType() == PluginType.HTTP_HARVEST ||
-            plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
+        (plugin.getPluginType() == PluginType.HTTP_HARVEST || plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,

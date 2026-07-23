@@ -231,7 +231,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   private static EngineTaskState convertToEngineTaskState(SandboxTaskState sandboxTaskState) {
 
     return switch (sandboxTaskState) {
-      case RUNNING -> EngineTaskState.CURRENTLY_PROCESSING;
+      case RUNNING -> EngineTaskState.QUEUED;
       case FINISHED -> EngineTaskState.PROCESSED;
       case CANCELLED, FAILED -> EngineTaskState.DROPPED;
     };
