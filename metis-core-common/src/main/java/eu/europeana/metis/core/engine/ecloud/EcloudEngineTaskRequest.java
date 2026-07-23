@@ -56,13 +56,13 @@ public class EcloudEngineTaskRequest extends EngineTaskRequest {
               Optional.ofNullable(until).map(Date::from).orElse(null), null);
       case HttpHarvestInputDataEndpoint(String url, Integer stepSize) ->
         new HttpHarvestingDetails(url);
-      case SimpleIntermediateInputDataEndpoint(String url, String sourceExecutionId, String sourceBatchId) ->
+      case SimpleIntermediateInputDataEndpoint(String sourceExecutionId, String sourceBatchId) ->
           new BatchInfo(providerId, sourceBatchId);
-      case TransformExternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, String sourceBatchId) ->
+      case TransformExternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId) ->
           new BatchInfo(providerId, sourceBatchId);
-      case TransformInternalInputDataEndpoint(String xslt, String url, String sourceExecutionId, String sourceBatchId) ->
+      case TransformInternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId) ->
           new BatchInfo(providerId, sourceBatchId);
-      case DepublishInputDataEndpoint(String url, boolean datasetDepublish, Set<String> idsToDepublish) ->
+      case DepublishInputDataEndpoint(boolean datasetDepublish, Set<String> idsToDepublish) ->
           new DepublicationInfo(datasetDepublish, idsToDepublish);
     };
     createDpsTaskRequest.setSource(taskSource);

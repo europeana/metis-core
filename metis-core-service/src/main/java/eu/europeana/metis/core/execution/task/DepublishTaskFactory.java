@@ -68,7 +68,7 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
           : depublishPluginMetadata.getDepublicationReason().name();
       Map<EngineTaskKey, String> depublishParameters = createDepublishParameters(datasetId, depublicationReason);
       return new DepublishContext(depublishParameters,
-          new DepublishInputDataEndpoint("", datasetDepublish, recordIdsToDepublish));
+          new DepublishInputDataEndpoint(datasetDepublish, recordIdsToDepublish));
     } else {
       throw new IllegalStateException("Unexpected value: " + plugin);
     }

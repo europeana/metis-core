@@ -69,7 +69,7 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
 
   protected SimpleIntermediateInputDataEndpoint createSimpleIntermediateInputDataEndpoint(
       String sourceExecutionId, String sourceBatchId) {
-    return new SimpleIntermediateInputDataEndpoint("", sourceExecutionId, sourceBatchId);
+    return new SimpleIntermediateInputDataEndpoint(sourceExecutionId, sourceBatchId);
   }
 
   @NotNull

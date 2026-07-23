@@ -29,9 +29,8 @@ import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.HarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
@@ -509,11 +508,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     assertNotNull(inputDataCaptor.getValue());
 
-    if (inputDataCaptor.getValue()
-        instanceof HttpHarvestInputDataEndpoint
-        || inputDataCaptor.getValue()
-        instanceof OaiHarvestInputDataEndpoint) {
-      assertEquals(HARVEST_URL, inputDataCaptor.getValue().url());
+    if (inputDataCaptor.getValue() instanceof HarvestInputDataEndpoint harvestInputDataEndpoint) {
+      assertEquals(HARVEST_URL, harvestInputDataEndpoint.url());
     }
 
     assertEquals(CREATED_TASK_ID, plugin.getEngineTaskId());
