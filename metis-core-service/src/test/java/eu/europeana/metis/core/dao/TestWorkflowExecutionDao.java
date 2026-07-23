@@ -131,7 +131,7 @@ class TestWorkflowExecutionDao {
   }
 
   @Test
-  void updateMonitorInformation() {
+  void updateMonitorInformationIfOwned() {
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setClaimedByInstance(provider.getInstanceId());
     Instant createdDate = Instant.now().truncatedTo(ChronoUnit.MILLIS);
@@ -147,7 +147,7 @@ class TestWorkflowExecutionDao {
     if (workflowExecution.getMetisPlugins().getFirst() instanceof AbstractExecutablePlugin) {
       workflowExecution.getMetisPlugins().getFirst().setUpdatedDate(pluginUpdatedDate);
     }
-    workflowExecutionDao.updateMonitorInformation(workflowExecution);
+    assertTrue(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution));
     WorkflowExecution updatedWorkflowExecution = workflowExecutionDao.getById(objectId);
     assertEquals(WorkflowStatus.RUNNING, updatedWorkflowExecution.getWorkflowStatus());
     assertEquals(0, createdDate.compareTo(updatedWorkflowExecution.getCreatedDate()));
@@ -158,6 +158,17 @@ class TestWorkflowExecutionDao {
       assertEquals(0, pluginUpdatedDate.compareTo(
           updatedWorkflowExecution.getMetisPlugins().getFirst().getUpdatedDate()));
     }
+
+    assertTrue(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution));
+  }
+
+  @Test
+  void updateMonitorInformationIfOwnedReturnsFalseForDifferentOwner() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setClaimedByInstance("different-instance");
+    workflowExecutionDao.create(workflowExecution);
+
+    assertFalse(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution));
   }
 
   @Test

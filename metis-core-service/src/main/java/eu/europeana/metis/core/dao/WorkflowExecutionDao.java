@@ -150,10 +150,10 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    *
    * @param workflowExecution the workflow execution object containing the updated monitor information. It is expected to have
    * valid IDs and the claimed instance information.
-   * @return {@code true} if the monitor information was successfully updated in the datastore (i.e., exactly one record was
-   * modified); {@code false} otherwise.
+   * @return {@code true} if the workflow execution matched both the provided identifier and the current instance ownership;
+   * {@code false} otherwise. A matching document can return {@code true} even when no values needed to be modified.
    */
-  public boolean updateMonitorInformation(WorkflowExecution workflowExecution) {
+  public boolean updateMonitorInformationIfOwned(WorkflowExecution workflowExecution) {
     Filter[] filters = {
         Filters.eq(ID.getFieldName(), workflowExecution.getId()),
         Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), morphiaDatastoreProvider.getInstanceId())
@@ -166,11 +166,12 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), updateOperators.toArray(UpdateOperator[]::new)));
     LOGGER.debug(
-        "WorkflowExecution monitor information for datasetId '{}' updated in Mongo. (UpdateResults: {})",
+        "WorkflowExecution monitor information for datasetId '{}' updated in Mongo. (Matched: {}, Modified: {})",
         workflowExecution.getDatasetId(),
+        updateResult == null ? 0 : updateResult.getMatchedCount(),
         updateResult == null ? 0 : updateResult.getModifiedCount());
 
-    return updateResult != null && updateResult.getModifiedCount() == 1;
+    return updateResult != null && updateResult.getMatchedCount() == 1;
   }
 
   /**

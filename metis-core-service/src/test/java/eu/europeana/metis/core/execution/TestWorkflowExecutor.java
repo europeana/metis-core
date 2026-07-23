@@ -123,7 +123,7 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -135,7 +135,7 @@ class TestWorkflowExecutor {
         workflowExecutorSettings);
     workflowExecutor.call();
 
-    verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
+    verify(workflowExecutionDao, times(2)).updateMonitorInformationIfOwned(workflowExecution);
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
 
     InOrder inOrderForPlugin = inOrder(oaipmhHarvestPlugin);
@@ -170,7 +170,7 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(droppedProgress);
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -182,7 +182,7 @@ class TestWorkflowExecutor {
         workflowExecutorSettings);
     workflowExecutor.call();
 
-    verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
+    verify(workflowExecutionDao, times(2)).updateMonitorInformationIfOwned(workflowExecution);
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
 
     InOrder inOrderForPlugin = inOrder(oaipmhHarvestPlugin);
@@ -220,7 +220,7 @@ class TestWorkflowExecutor {
         .thenThrow(engineTaskException100Times)
         .thenReturn(processedProgress);
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -260,7 +260,7 @@ class TestWorkflowExecutor {
         .thenThrow(new ExternalTaskException("",
             new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -309,7 +309,7 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -362,7 +362,7 @@ class TestWorkflowExecutor {
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
     doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message), isNull());
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false)
                                                                       .thenReturn(true);
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
@@ -376,7 +376,7 @@ class TestWorkflowExecutor {
         workflowExecutorSettings);
     workflowExecutor.call();
 
-    verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
+    verify(workflowExecutionDao, times(2)).updateMonitorInformationIfOwned(workflowExecution);
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
 
     verify(oaipmhHarvestPlugin, never()).setFailMessage(anyString());
@@ -407,7 +407,7 @@ class TestWorkflowExecutor {
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress);
 
-    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
@@ -463,6 +463,7 @@ class TestWorkflowExecutor {
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
     when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(droppedProgress);
     when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(persistedWorkflowExecution);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
 
     WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
         new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
@@ -501,10 +502,11 @@ class TestWorkflowExecutor {
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
     doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message), isNull());
 
-    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(currentlyProcessingProgress);
+    EngineTaskProgress droppedProgress = new EngineTaskProgress();
+    droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(droppedProgress);
     when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
 
     WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
         new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
@@ -514,7 +516,40 @@ class TestWorkflowExecutor {
     verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
     WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
     assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(PluginStatus.CANCELLED, lastWorkflowExecutionUpdate.getMetisPlugins().getFirst().getPluginStatus());
     assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+  }
+
+  @Test
+  void callWhenMonitorUpdateFailsStopsAfterOwnershipLoss() throws ExternalTaskException {
+    OaipmhHarvestPlugin plugin = new OaipmhHarvestPlugin();
+    plugin.setPluginMetadata(new OaipmhHarvestPluginMetadata());
+    plugin.setPluginStatus(PluginStatus.RUNNING);
+    plugin.setEngineTaskId("engine-task-id");
+
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
+    workflowExecution.setStartedDate(Instant.now());
+    workflowExecution.setMetisPlugins(new ArrayList<>(List.of(plugin)));
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
+
+    EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), anyString(), any()))
+        .thenReturn(currentlyProcessingProgress);
+    when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
+    when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(false);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    workflowExecutor.call();
+
+    verify(workflowExecutionDao, times(1)).updateMonitorInformationIfOwned(workflowExecution);
+    verify(workflowExecutionDao, times(1)).updateWorkflowPlugins(workflowExecution);
+    verify(workflowExecutionDao, never()).update(workflowExecution);
+    assertEquals(WorkflowStatus.RUNNING, workflowExecution.getWorkflowStatus());
+    assertEquals(PluginStatus.RUNNING, plugin.getPluginStatus());
   }
 
   @Test
@@ -555,7 +590,7 @@ class TestWorkflowExecutor {
     WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
         new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     executor.call();
-    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, never()).updateMonitorInformationIfOwned(any());
     verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
   }
 
@@ -567,7 +602,7 @@ class TestWorkflowExecutor {
     WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
         new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     executor.call();
-    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, never()).updateMonitorInformationIfOwned(any());
     verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
   }
 
@@ -581,7 +616,7 @@ class TestWorkflowExecutor {
 
     assertNotNull(result);
     assertTrue(Thread.currentThread().isInterrupted());
-    verify(workflowExecutionDao, atMost(1)).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).updateMonitorInformationIfOwned(any());
     verify(workflowExecutionDao, atMost(2)).update(workflowExecution);
   }
 }
