@@ -116,7 +116,7 @@ class TestWorkflowExecutor {
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.QUEUED);
     EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
@@ -162,7 +162,7 @@ class TestWorkflowExecutor {
     workflowExecution.setStartedDate(Instant.now());
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.QUEUED);
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
@@ -301,7 +301,7 @@ class TestWorkflowExecutor {
     Arrays.fill(engineTaskExceptions, exception);
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.QUEUED);
     EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
@@ -353,7 +353,7 @@ class TestWorkflowExecutor {
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.QUEUED);
     EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
@@ -402,7 +402,7 @@ class TestWorkflowExecutor {
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.QUEUED);
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress);
@@ -535,7 +535,7 @@ class TestWorkflowExecutor {
     workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
-    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
+    currentlyProcessingProgress.setEngineTaskState(EngineTaskState.QUEUED);
     when(engineTaskClient.getEngineTaskProgress(anyString(), anyString(), any()))
         .thenReturn(currentlyProcessingProgress);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
