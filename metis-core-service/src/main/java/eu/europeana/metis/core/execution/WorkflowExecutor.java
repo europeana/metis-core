@@ -284,9 +284,10 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       EngineTaskMonitor<S, T> engineTaskMonitor, AbstractExecutablePlugin<?> plugin,
       ProgressState progressState) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, progressState)) {
-      // Update workflowExecution first, to retrieve cancelling information from db
-      workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
-      engineTaskMonitor.cancel(workflowExecution.getCancelledBy());
+      // Retrieve the cancellation information without replacing the workflow object whose plugin is being monitored.
+      WorkflowExecution cancellingWorkflowExecution =
+          workflowExecutionDao.getById(workflowExecution.getId().toString());
+      engineTaskMonitor.cancel(cancellingWorkflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }

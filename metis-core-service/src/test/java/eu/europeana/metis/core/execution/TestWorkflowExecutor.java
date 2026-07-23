@@ -47,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -444,6 +445,14 @@ class TestWorkflowExecutor {
     workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
+    OaipmhHarvestPlugin persistedPluginWithDifferentState = new OaipmhHarvestPlugin();
+    persistedPluginWithDifferentState.setPluginMetadata(new OaipmhHarvestPluginMetadata());
+    persistedPluginWithDifferentState.getExecutionProgress().setStatus(EngineTaskState.QUEUED.name());
+    WorkflowExecution persistedWorkflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    persistedWorkflowExecution.setId(objectId);
+    persistedWorkflowExecution.setMetisPlugins(new ArrayList<>(List.of(persistedPluginWithDifferentState)));
+    persistedWorkflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
+
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
@@ -453,7 +462,7 @@ class TestWorkflowExecutor {
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
     when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(droppedProgress);
-    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(persistedWorkflowExecution);
 
     WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
         new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
@@ -464,6 +473,8 @@ class TestWorkflowExecutor {
     WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
     assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
     assertEquals(PluginStatus.CANCELLED, lastWorkflowExecutionUpdate.getMetisPlugins().getFirst().getPluginStatus());
+    assertEquals(EngineTaskState.DROPPED.name(),
+        ((OaipmhHarvestPlugin) lastWorkflowExecutionUpdate.getMetisPlugins().getFirst()).getExecutionProgress().getStatus());
     assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
   }
 
