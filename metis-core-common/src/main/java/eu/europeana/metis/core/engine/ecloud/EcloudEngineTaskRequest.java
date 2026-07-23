@@ -11,10 +11,8 @@ import eu.europeana.metis.core.engine.base.EngineTaskRequest;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.SimpleIntermediateInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.TransformExternalInputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.TransformInternalInputDataEndpoint;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -54,14 +52,8 @@ public class EcloudEngineTaskRequest extends EngineTaskRequest {
           new OAIPMHHarvestingDetails(url, metadataPrefix, set,
               Optional.ofNullable(from).map(Date::from).orElse(null),
               Optional.ofNullable(until).map(Date::from).orElse(null), null);
-      case HttpHarvestInputDataEndpoint(String url, Integer stepSize) ->
-        new HttpHarvestingDetails(url);
-      case SimpleIntermediateInputDataEndpoint(String sourceExecutionId, String sourceBatchId) ->
-          new BatchInfo(providerId, sourceBatchId);
-      case TransformExternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId) ->
-          new BatchInfo(providerId, sourceBatchId);
-      case TransformInternalInputDataEndpoint(String xslt, String sourceExecutionId, String sourceBatchId) ->
-          new BatchInfo(providerId, sourceBatchId);
+      case HttpHarvestInputDataEndpoint(String url, Integer stepSize) -> new HttpHarvestingDetails(url);
+      case IntermediateInputDataEndpoint endpoint -> new BatchInfo(providerId, endpoint.sourceBatchId());
       case DepublishInputDataEndpoint(boolean datasetDepublish, Set<String> idsToDepublish) ->
           new DepublicationInfo(datasetDepublish, idsToDepublish);
     };
