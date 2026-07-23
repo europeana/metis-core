@@ -21,6 +21,7 @@ import eu.europeana.metis.sandbox.common.DatasetMetadataRequest;
 import eu.europeana.metis.sandbox.common.batch.FullBatchJobType;
 import eu.europeana.metis.sandbox.common.locale.Country;
 import eu.europeana.metis.sandbox.common.locale.Language;
+import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskProgress.SandboxTaskState;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.springframework.web.client.RestClient;
 public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTaskSettings, SandboxEngineTask> {
 
   private static final String FULL_BATCH_JOB_TYPE_PARAM = "fullBatchJobType";
+  private static final String STEP_PARAM = "step";
   private static final String EXECUTION_ID_PARAM = "executionId";
   private static final String RECORD_ID_PARAM = "recordId";
   private static final String METIS_DATASET_ID_PARAM = "metisDatasetId";
@@ -50,15 +52,6 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   @Override
   public SandboxEngineTaskSettings getEngineTaskSettings() {
     return engineTaskSettings;
-  }
-
-  @Override
-  public SandboxEngineTask createEngineTask(
-      Map<EngineTaskKey, String> parameters,
-      InputDataEndpoint inputDataEndpoint,
-      String topologyName) {
-    SandboxEngineTaskRequest sandboxEngineTaskRequest = new SandboxEngineTaskRequest(parameters, inputDataEndpoint);
-    return new SandboxEngineTask(sandboxEngineTaskRequest.getSandboxTask());
   }
 
   @Override
@@ -75,15 +68,33 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
   }
 
   @Override
-  public String submitEngineTask(SandboxEngineTask engineTask, String topologyName) throws ExternalTaskException {
+  public SandboxEngineTask createEngineTask(
+      Map<EngineTaskKey, String> parameters,
+      InputDataEndpoint inputDataEndpoint,
+      String topologyName) throws ExternalTaskException {
+    SandboxEngineTaskRequest sandboxEngineTaskRequest = new SandboxEngineTaskRequest(parameters, inputDataEndpoint);
     try {
-      return restClient.post()
-                       .uri("/task/submit")
-                       .body(engineTask)
-                       .retrieve()
-                       .body(String.class);
+      SandboxTask sandboxTask = restClient.post()
+                                          .uri("/task/create")
+                                          .body(sandboxEngineTaskRequest.getSandboxTaskRequest())
+                                          .retrieve()
+                                          .body(SandboxTask.class);
+      return new SandboxEngineTask(requireNonNull(sandboxTask));
     } catch (RuntimeException e) {
-      throw new ExternalTaskException("Submitting task to DPS failed", e);
+      throw new ExternalTaskException("Creating task in Sandbox failed", e);
+    }
+  }
+
+  @Override
+  public void submitEngineTask(SandboxEngineTask engineTask, String topologyName) throws ExternalTaskException {
+    try {
+      restClient.post()
+                .uri("/task/submit")
+                .body(engineTask.sandboxTask())
+                .retrieve()
+                .toBodilessEntity();
+    } catch (RuntimeException e) {
+      throw new ExternalTaskException("Submitting task to Sandbox failed", e);
     }
   }
 
@@ -161,7 +172,7 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
                     .uri(uriBuilder -> uriBuilder
                         .path("/dataset/{datasetId}/record")
                         .queryParam(RECORD_ID_PARAM, recordId)
-                        .queryParam(FULL_BATCH_JOB_TYPE_PARAM, fullBatchJobType)
+                        .queryParam(STEP_PARAM, fullBatchJobType.name())
                         .build(engineDatasetId))
                     .retrieve()
                     .body(String.class);

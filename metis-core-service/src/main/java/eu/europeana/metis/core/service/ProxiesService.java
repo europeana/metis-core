@@ -185,7 +185,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     }
 
     // Get the list of records.
-    final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
+    final String engineDatasetId = executionAndPlugin.getLeft().getEngineDatasetId();
     final String engineBatchId = executionAndPlugin.getRight().getEngineBatchId();
     List<Record> records = engineTaskClient.getRecords(engineDatasetId, engineBatchId, numberOfRecords);
 
@@ -293,7 +293,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();
-    final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
+    final String engineDatasetId = executionAndPlugin.getLeft().getEngineDatasetId();
     final String engineBatchId = executionAndPlugin.getRight().getEngineBatchId();
 
     //Check engine record id and then europeana record id.

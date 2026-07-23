@@ -195,7 +195,7 @@ public class TestRedirectionBase {
     dataset.setProvider("EFG");
     dataset.setIntermediateProvider("");
     dataset.setNotes("");
-    dataset.setEcloudDatasetId("377ac607-f729-483d-a86d-2c005150c46d");
+    dataset.setEngineDatasetId("377ac607-f729-483d-a86d-2c005150c46d");
     dataset.setPublicationFitness(PublicationFitness.FIT);
     return dataset;
   }
@@ -265,7 +265,7 @@ public class TestRedirectionBase {
     final WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
     workflowExecution.setCancelling(false);
     Instant templateDate = Instant.now();
@@ -369,7 +369,7 @@ public class TestRedirectionBase {
     final WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
     workflowExecution.setCancelling(false);
     Instant templateDate = Instant.now();
@@ -409,7 +409,7 @@ public class TestRedirectionBase {
     final WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
     workflowExecution.setCancelling(false);
     Instant templateDate = Instant.now();

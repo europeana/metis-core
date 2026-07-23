@@ -278,13 +278,13 @@ class TestProxiesService {
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
 
     doReturn(expectedRecord).when(engineTaskClient)
-                            .getRecord(execution.getEcloudDatasetId(), idToSearch, engineBatchId, executablePluginType);
+                            .getRecord(execution.getEngineDatasetId(), idToSearch, engineBatchId, executablePluginType);
 
     final Record result = proxiesService.searchRecordByIdFromPluginExecution(
         TestObjectFactory.EXECUTIONID, executablePluginType, idToSearch);
 
     assertSame(expectedRecord, result);
-    verify(engineTaskClient).getRecord(execution.getEcloudDatasetId(), idToSearch, engineBatchId, executablePluginType);
+    verify(engineTaskClient).getRecord(execution.getEngineDatasetId(), idToSearch, engineBatchId, executablePluginType);
   }
 
   @Test
@@ -308,10 +308,10 @@ class TestProxiesService {
         .when(proxiesService).getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
 
     doReturn(null)
-        .when(engineTaskClient).getRecord(execution.getEcloudDatasetId(), idToSearch, engineBatchId, executablePluginType);
+        .when(engineTaskClient).getRecord(execution.getEngineDatasetId(), idToSearch, engineBatchId, executablePluginType);
 
     doReturn(expectedRecord)
-        .when(engineTaskClient).getRecord(execution.getEcloudDatasetId(), fullRecordId, engineBatchId, executablePluginType);
+        .when(engineTaskClient).getRecord(execution.getEngineDatasetId(), fullRecordId, engineBatchId, executablePluginType);
 
     try (MockedStatic<RecordIdUtils> recordIdUtils = mockStatic(RecordIdUtils.class)) {
       recordIdUtils.when(() -> RecordIdUtils.checkAndNormalizeRecordId(execution.getDatasetId(), idToSearch))
@@ -324,8 +324,8 @@ class TestProxiesService {
       assertSame(expectedRecord, result);
     }
 
-    verify(engineTaskClient).getRecord(execution.getEcloudDatasetId(), idToSearch, engineBatchId, executablePluginType);
-    verify(engineTaskClient).getRecord(execution.getEcloudDatasetId(), fullRecordId, engineBatchId, executablePluginType);
+    verify(engineTaskClient).getRecord(execution.getEngineDatasetId(), idToSearch, engineBatchId, executablePluginType);
+    verify(engineTaskClient).getRecord(execution.getEngineDatasetId(), fullRecordId, engineBatchId, executablePluginType);
   }
 
   @Test
@@ -344,10 +344,10 @@ class TestProxiesService {
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
 
     doReturn(null).when(engineTaskClient)
-                  .getRecord(execution.getEcloudDatasetId(), idToSearch, engineBatchId, executablePluginType);
+                  .getRecord(execution.getEngineDatasetId(), idToSearch, engineBatchId, executablePluginType);
 
     doReturn(null).when(engineTaskClient)
-                  .getRecord(execution.getEcloudDatasetId(), fullRecordId, engineBatchId, executablePluginType);
+                  .getRecord(execution.getEngineDatasetId(), fullRecordId, engineBatchId, executablePluginType);
 
     try (MockedStatic<RecordIdUtils> recordIdUtils = mockStatic(RecordIdUtils.class)) {
 
@@ -378,7 +378,7 @@ class TestProxiesService {
     final int numberOfRecords = 5;
     final Record record = new Record("ECLOUDID1", "test content");
 
-    doReturn(List.of(record)).when(engineTaskClient).getRecords(execution.getEcloudDatasetId(), engineBatchId, numberOfRecords);
+    doReturn(List.of(record)).when(engineTaskClient).getRecords(execution.getEngineDatasetId(), engineBatchId, numberOfRecords);
 
     final PaginatedRecordsResponse result =
         proxiesService.getListOfFileContentsFromPluginExecution(
@@ -391,7 +391,7 @@ class TestProxiesService {
     assertEquals(List.of(record), result.getRecords());
     assertNull(result.getNextPage());
 
-    verify(engineTaskClient).getRecords(execution.getEcloudDatasetId(), engineBatchId, numberOfRecords);
+    verify(engineTaskClient).getRecords(execution.getEngineDatasetId(), engineBatchId, numberOfRecords);
   }
 
   @Test
@@ -410,7 +410,7 @@ class TestProxiesService {
 
     doThrow(new ExternalTaskException("Engine failure"))
         .when(engineTaskClient)
-        .getRecords(execution.getEcloudDatasetId(), engineBatchId, numberOfRecords);
+        .getRecords(execution.getEngineDatasetId(), engineBatchId, numberOfRecords);
 
     assertThrows(ExternalTaskException.class,
         () -> proxiesService.getListOfFileContentsFromPluginExecution(

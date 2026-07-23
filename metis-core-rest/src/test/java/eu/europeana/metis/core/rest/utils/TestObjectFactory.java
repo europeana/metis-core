@@ -104,7 +104,7 @@ public class TestObjectFactory {
 
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
     workflowExecutionDTO.setDatasetId(dataset.getDatasetId());
-    workflowExecutionDTO.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecutionDTO.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
                                                              .map(plugin -> MetisPluginConverter.toDTO(plugin,
                                                                  WorkflowExecutionConverter.canDisplayRawXml(plugin)))
@@ -118,7 +118,7 @@ public class TestObjectFactory {
   private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
     WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(Instant.now());
@@ -173,7 +173,7 @@ public class TestObjectFactory {
    */
   public static DatasetDTO createDatasetDTO(String datasetName) {
     DatasetDTO ds = new DatasetDTO();
-    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setEngineDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
     final String providerId = "1234567890";
