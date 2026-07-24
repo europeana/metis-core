@@ -27,8 +27,8 @@
   "topologyName": "topologyName",
   "canDisplayRawXml": true,
   "pluginMetadata": {
-    "revisionNamePreviousPlugin": null,
-    "revisionTimestampPreviousPlugin": null,
+    "predecessorPluginName": null,
+    "predecessorPluginStartedDate": null,
     "enabled": false,
     "useDefaultIdentifiers": false,
     "url": null,

@@ -78,7 +78,7 @@ public class WorkflowExecutionFactory {
 
     // Set the predecessor
     if (predecessor != null) {
-      workflowPlugins.getFirst().getPluginMetadata().setPreviousRevisionInformation(predecessor.getPlugin());
+      workflowPlugins.getFirst().getPluginMetadata().setPredecessorInformation(predecessor.getPlugin());
     }
 
     WorkflowExecution workflowExecution = new WorkflowExecution();

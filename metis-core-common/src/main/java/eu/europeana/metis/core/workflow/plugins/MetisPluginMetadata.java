@@ -27,8 +27,8 @@ public interface MetisPluginMetadata {
 
   PluginType getPluginType();
 
-  String getRevisionNamePreviousPlugin();
+  String getPredecessorPluginName();
 
-  Instant getRevisionTimestampPreviousPlugin();
+  Instant getPredecessorPluginStartedDate();
 
 }

@@ -852,15 +852,15 @@ class TestOrchestratorService {
     final AbstractExecutablePlugin<MediaProcessPluginMetadata> plugin3 = mock(AbstractExecutablePlugin.class);
     when(plugin3.getPluginType()).thenReturn(PluginType.MEDIA_PROCESS);
     MediaProcessPluginMetadata mediaProcessPluginMetadata = new MediaProcessPluginMetadata();
-    mediaProcessPluginMetadata.setRevisionNamePreviousPlugin(plugin1.getPluginType().name());
-    mediaProcessPluginMetadata.setRevisionTimestampPreviousPlugin(plugin1.getFinishedDate());
+    mediaProcessPluginMetadata.setPredecessorPluginName(plugin1.getPluginType().name());
+    mediaProcessPluginMetadata.setPredecessorPluginStartedDate(plugin1.getFinishedDate());
     when(plugin3.getPluginMetadata()).thenReturn(mediaProcessPluginMetadata);
     when(plugin3.getExecutionProgress()).thenReturn(getExecutionProgress(0, 0));
     final ReindexToPreviewPlugin plugin4 = mock(ReindexToPreviewPlugin.class);
     when(plugin4.getPluginType()).thenReturn(PluginType.REINDEX_TO_PUBLISH);
     ReindexToPreviewPluginMetadata reindexToPreviewPluginMetadata = new ReindexToPreviewPluginMetadata();
-    reindexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(plugin3.getId());
-    reindexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(plugin3.getFinishedDate());
+    reindexToPreviewPluginMetadata.setPredecessorPluginName(plugin3.getId());
+    reindexToPreviewPluginMetadata.setPredecessorPluginStartedDate(plugin3.getFinishedDate());
     when(plugin4.getPluginMetadata()).thenReturn(new ReindexToPreviewPluginMetadata());
     when(plugin4.getFinishedDate()).thenReturn(Instant.ofEpochMilli(4));
 

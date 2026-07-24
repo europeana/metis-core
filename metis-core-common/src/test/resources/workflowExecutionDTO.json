@@ -47,8 +47,8 @@
       "topologyName": "oai_harvest",
       "canDisplayRawXml": true,
       "pluginMetadata": {
-        "revisionNamePreviousPlugin": null,
-        "revisionTimestampPreviousPlugin": null,
+        "predecessorPluginName": null,
+        "predecessorPluginStartedDate": null,
         "enabled": false,
         "useDefaultIdentifiers": false,
         "url": null,
@@ -92,8 +92,8 @@
       "topologyName": "validation",
       "canDisplayRawXml": true,
       "pluginMetadata": {
-        "revisionNamePreviousPlugin": null,
-        "revisionTimestampPreviousPlugin": null,
+        "predecessorPluginName": null,
+        "predecessorPluginStartedDate": null,
         "enabled": false,
         "urlOfSchemasZip": null,
         "schemaRootPath": null,
