@@ -17,13 +17,13 @@ public interface EngineRecordClient {
    * @param engineDatasetId the identifier of the dataset to retrieve records from
    * @param engineBatchId the identifier of the batch to retrieve records from
    * @param numberOfRecords the maximum number of records to retrieve
-   * @return a list of {@link java.lang.Record} objects from the specified dataset and revision
+   * @return a list of {@link java.lang.Record} objects from the specified dataset and batch
    * @throws ExternalTaskException if an error occurs while retrieving the records
    */
   List<Record> getRecords(String engineDatasetId, String engineBatchId, int numberOfRecords) throws ExternalTaskException;
 
   /**
-   * Retrieves a list of records based on the provided record identifiers and revision information.
+   * Retrieves a list of records based on the provided record identifiers and batch information.
    *
    * @param recordIds the list of record identifiers to retrieve
    * @return a list of {@link java.lang.Record} objects corresponding to the provided record identifiers
@@ -32,7 +32,7 @@ public interface EngineRecordClient {
   List<Record> getRecords(List<String> recordIds, String engineBatchId) throws ExternalTaskException;
 
   /**
-   * Retrieves a record based on the provided record identifier, revision name, and timestamp.
+   * Retrieves a record based on the provided dataset id, record id, batch id, and plugin type.
    *
    * @param engineDatasetId the identifier of the engine dataset containing the record
    * @param recordId the unique identifier of the record to retrieve

@@ -58,12 +58,12 @@ public class TestRedirectionBase {
   }
 
   @NotNull
-  static ValidationExternalPluginMetadata getValidationExternalPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static ValidationExternalPluginMetadata getValidationExternalPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final ValidationExternalPluginMetadata validationExternalPluginMetadata = new ValidationExternalPluginMetadata();
     validationExternalPluginMetadata.setEnabled(true);
-    validationExternalPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    validationExternalPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    validationExternalPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    validationExternalPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     validationExternalPluginMetadata.setUrlOfSchemasZip("http://ftp.eanadev.org/schema_zips/europeana_schemas-20220809.zip");
     validationExternalPluginMetadata.setSchemaRootPath("EDM.xsd");
     validationExternalPluginMetadata.setSchematronRootPath("schematron/schematron.xsl");
@@ -71,84 +71,84 @@ public class TestRedirectionBase {
   }
 
   @NotNull
-  static TransformationPluginMetadata getTransformationPluginMetadata(Dataset dataset, String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static TransformationPluginMetadata getTransformationPluginMetadata(Dataset dataset, String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final TransformationPluginMetadata transformationPluginMetadata = new TransformationPluginMetadata();
     transformationPluginMetadata.setEnabled(true);
     transformationPluginMetadata.setCustomXslt(false);
     transformationPluginMetadata.setCountry("Netherlands");
     transformationPluginMetadata.setLanguage("nl");
     transformationPluginMetadata.setDatasetName(dataset.getDatasetName());
-    transformationPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    transformationPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    transformationPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    transformationPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return transformationPluginMetadata;
   }
 
   @NotNull
-  static ValidationInternalPluginMetadata getValidationInternalPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static ValidationInternalPluginMetadata getValidationInternalPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final ValidationInternalPluginMetadata validationInternalPluginMetadata = new ValidationInternalPluginMetadata();
     validationInternalPluginMetadata.setEnabled(true);
     validationInternalPluginMetadata.setUrlOfSchemasZip("http://ftp.eanadev.org/schema_zips/europeana_schemas-20220809.zip");
     validationInternalPluginMetadata.setSchemaRootPath("EDM-INTERNAL.xsd");
     validationInternalPluginMetadata.setSchematronRootPath("schematron/schematron-internal.xsl");
-    validationInternalPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    validationInternalPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    validationInternalPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    validationInternalPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return validationInternalPluginMetadata;
   }
 
   @NotNull
-  static NormalizationPluginMetadata getNormalizationPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static NormalizationPluginMetadata getNormalizationPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final NormalizationPluginMetadata normalizationPluginMetadata = new NormalizationPluginMetadata();
     normalizationPluginMetadata.setEnabled(true);
-    normalizationPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    normalizationPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    normalizationPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    normalizationPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return normalizationPluginMetadata;
   }
 
   @NotNull
-  static EnrichmentPluginMetadata getEnrichmentPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static EnrichmentPluginMetadata getEnrichmentPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final EnrichmentPluginMetadata enrichmentPluginMetadata = new EnrichmentPluginMetadata();
     enrichmentPluginMetadata.setEnabled(true);
-    enrichmentPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    enrichmentPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    enrichmentPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    enrichmentPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return enrichmentPluginMetadata;
   }
 
   @NotNull
-  static MediaProcessPluginMetadata getMediaProcessPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static MediaProcessPluginMetadata getMediaProcessPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final MediaProcessPluginMetadata mediaProcessPluginMetadata = new MediaProcessPluginMetadata();
     mediaProcessPluginMetadata.setEnabled(true);
-    mediaProcessPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    mediaProcessPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    mediaProcessPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    mediaProcessPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     mediaProcessPluginMetadata.setThrottlingLevel(ThrottlingLevel.STRONG);
     return mediaProcessPluginMetadata;
   }
 
   @NotNull
-  static ReindexToPreviewPluginMetadata getReindexToPreviewPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static ReindexToPreviewPluginMetadata getReindexToPreviewPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final ReindexToPreviewPluginMetadata reindexToPreviewPluginMetadata = new ReindexToPreviewPluginMetadata();
-    reindexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    reindexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    reindexToPreviewPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    reindexToPreviewPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return reindexToPreviewPluginMetadata;
   }
 
   @NotNull
-  static ReindexToPublishPluginMetadata getReindexToPublishPluginMetadata(String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static ReindexToPublishPluginMetadata getReindexToPublishPluginMetadata(String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final ReindexToPublishPluginMetadata reindexToPublishPluginMetadata = new ReindexToPublishPluginMetadata();
-    reindexToPublishPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    reindexToPublishPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    reindexToPublishPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    reindexToPublishPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return reindexToPublishPluginMetadata;
   }
 
   @NotNull
-  static IndexToPreviewPluginMetadata getIndexToPreviewPluginMetadata(Instant harvestDate, String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static IndexToPreviewPluginMetadata getIndexToPreviewPluginMetadata(Instant harvestDate, String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final IndexToPreviewPluginMetadata indexToPreviewPluginMetadata = new IndexToPreviewPluginMetadata();
     indexToPreviewPluginMetadata.setIncrementalIndexing(false);
     indexToPreviewPluginMetadata.setHarvestDate(harvestDate);
@@ -156,15 +156,15 @@ public class TestRedirectionBase {
     indexToPreviewPluginMetadata.setEnabled(true);
     indexToPreviewPluginMetadata.setDatasetIdsToRedirectFrom(List.of());
     indexToPreviewPluginMetadata.setPerformRedirects(true);
-    indexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    indexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    indexToPreviewPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    indexToPreviewPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
 
     return indexToPreviewPluginMetadata;
   }
 
   @NotNull
-  static IndexToPublishPluginMetadata getIndexToPublishPluginMetadata(Instant harvestDate, String revisionNamePreviousPlugin,
-      Instant revisionTimeStampPreviousPlugin) {
+  static IndexToPublishPluginMetadata getIndexToPublishPluginMetadata(Instant harvestDate, String predecessorPluginName,
+      Instant predecessorPluginStartedDate) {
     final IndexToPublishPluginMetadata indexToPublishPluginMetadata = new IndexToPublishPluginMetadata();
     indexToPublishPluginMetadata.setIncrementalIndexing(false);
     indexToPublishPluginMetadata.setHarvestDate(harvestDate);
@@ -172,8 +172,8 @@ public class TestRedirectionBase {
     indexToPublishPluginMetadata.setEnabled(true);
     indexToPublishPluginMetadata.setDatasetIdsToRedirectFrom(List.of());
     indexToPublishPluginMetadata.setPerformRedirects(true);
-    indexToPublishPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
-    indexToPublishPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
+    indexToPublishPluginMetadata.setPredecessorPluginName(predecessorPluginName);
+    indexToPublishPluginMetadata.setPredecessorPluginStartedDate(predecessorPluginStartedDate);
     return indexToPublishPluginMetadata;
   }
 

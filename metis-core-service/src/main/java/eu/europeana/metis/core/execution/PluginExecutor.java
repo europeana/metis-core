@@ -119,7 +119,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       ExecutablePlugin predecessor =
           DataEvolutionUtils.computePredecessorPlugin(metadata.getExecutablePluginType(), workflowExecution);
       if (predecessor != null) {
-        metadata.setPreviousRevisionInformation(predecessor);
+        metadata.setPredecessorInformation(predecessor);
         workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
       }
     }

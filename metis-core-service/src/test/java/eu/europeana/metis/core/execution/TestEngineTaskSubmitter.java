@@ -490,8 +490,8 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     }
 
     if (!(metadata instanceof AbstractHarvestPluginMetadata)) {
-      metadata.setRevisionNamePreviousPlugin(previousType.name());
-      metadata.setRevisionTimestampPreviousPlugin(Instant.now());
+      metadata.setPredecessorPluginName(previousType.name());
+      metadata.setPredecessorPluginStartedDate(Instant.now());
     }
 
     plugin.setPluginMetadata(metadata);

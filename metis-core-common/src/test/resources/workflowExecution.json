@@ -22,8 +22,8 @@
       "updatedDate": null,
       "finishedDate": null,
       "pluginMetadata": {
-        "revisionNamePreviousPlugin": null,
-        "revisionTimestampPreviousPlugin": null,
+        "predecessorPluginName": null,
+        "predecessorPluginStartedDate": null,
         "enabled": false,
         "useDefaultIdentifiers": false,
         "url": null,
@@ -65,8 +65,8 @@
       "updatedDate": null,
       "finishedDate": null,
       "pluginMetadata": {
-        "revisionNamePreviousPlugin": null,
-        "revisionTimestampPreviousPlugin": null,
+        "predecessorPluginName": null,
+        "predecessorPluginStartedDate": null,
         "enabled": false,
         "urlOfSchemasZip": null,
         "schemaRootPath": null,
