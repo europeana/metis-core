@@ -5,7 +5,7 @@
   <groupId>eu.europeana.metis</groupId>
   <artifactId>metis-core</artifactId>
   <packaging>pom</packaging>
-  <version>17-SNAPSHOT</version>
+  <version>17</version>
 
   <modules>
     <module>metis-core-common</module>
