@@ -1,28 +1,35 @@
 package eu.europeana.metis.core.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
-import eu.europeana.metis.core.engine.base.EngineTask;
-import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.DataRevision;
+import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
+import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskProgress;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
@@ -31,58 +38,51 @@ import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.execution.SystemId;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPlugin;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
-import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpServerErrorException;
 
-/**
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2017-10-17
- */
 class TestWorkflowExecutor {
 
   private static WorkflowExecutionDao workflowExecutionDao;
   private static WorkflowPostProcessor workflowPostProcessor;
+  private static DatasetXsltDao datasetXsltDao;
   private static EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
-  private static WorkflowExecutionMonitor workflowExecutionMonitor;
-  private static WorkflowExecutorManager<EngineTaskSettings, EngineTask> workflowExecutorManager;
+  private static WorkflowExecutorSettings<EngineTaskSettings, EngineTask> workflowExecutorSettings;
 
   @BeforeAll
   static void prepare() {
-    workflowExecutionDao = Mockito.mock(WorkflowExecutionDao.class);
-    workflowPostProcessor = Mockito.mock(WorkflowPostProcessor.class);
+    workflowExecutionDao = mock(WorkflowExecutionDao.class);
+    workflowPostProcessor = mock(WorkflowPostProcessor.class);
+    datasetXsltDao = mock(DatasetXsltDao.class);
     engineTaskClient = mock(EngineTaskClient.class);
-    workflowExecutionMonitor = Mockito.mock(WorkflowExecutionMonitor.class);
 
-    WorkflowExecutorManagerSettings workflowExecutorManagerSettings = new WorkflowExecutorManagerSettings();
-    workflowExecutorManagerSettings.setDpsMonitorCheckIntervalInSecs(0);
-    workflowExecutorManagerSettings.setPeriodOfNoProcessedRecordsChangeInMinutes(10);
-
-    workflowExecutorManager = new WorkflowExecutorManager<>(workflowExecutorManagerSettings, new SemaphoresPerPluginManager(2), workflowExecutionDao,
-        workflowPostProcessor, null, null, null, engineTaskClient);
+    TestWorkflowExecutor.workflowExecutorSettings = new WorkflowExecutorSettings<>(
+        Duration.ofMillis(1), Duration.ofMinutes(10),
+        new SemaphoresPerPluginManager(2), workflowExecutionDao,
+        workflowPostProcessor, datasetXsltDao, engineTaskClient);
   }
 
   @BeforeEach
   void cleanUp() {
-    Mockito.reset(workflowExecutionDao);
-    Mockito.reset(workflowPostProcessor);
-    Mockito.reset(workflowExecutionMonitor);
-    Mockito.reset(engineTaskClient);
+    reset(workflowExecutionDao);
+    reset(workflowPostProcessor);
+    reset(engineTaskClient);
 
     EngineTask engineTask = mock(EngineTask.class);
     when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
@@ -91,31 +91,40 @@ class TestWorkflowExecutor {
     when(engineTaskClient.getEngineTaskSettings()).thenReturn(engineTaskSettings);
   }
 
+  private static EngineTaskProgress createProcessedProgressWithSuccess() {
+    EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
+    engineTaskProgress.setEngineTaskState(EngineTaskState.PROCESSED);
+    engineTaskProgress.setExpectedRecords(1);
+    engineTaskProgress.setProcessedRecords(1);
+    engineTaskProgress.setSuccessRecords(1);
+    return engineTaskProgress;
+  }
+
   @Test
   void callNonMockedFieldValue() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -123,7 +132,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
@@ -139,28 +149,29 @@ class TestWorkflowExecutor {
   }
 
   @Test
-  void callNonMockedFieldValue_DROPPEDExeternalTaskButNotCancelled() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+  void callNonMockedFieldValue_DROPPEDExternalTaskButNotCancelled() throws Exception {
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(droppedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -168,7 +179,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
@@ -186,30 +198,30 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_ConsecutiveMonitorFailures() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
     Throwable[] engineTaskException100Times = new Throwable[100];
     Arrays.setAll(engineTaskException100Times, index -> new ExternalTaskException("Some error"));
 
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenThrow(engineTaskException100Times)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -217,7 +229,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
@@ -229,24 +242,26 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_MonitorFailsOnUnrecoverableExternalTaskException() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
 
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
-        .thenThrow(new ExternalTaskException("", new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any(ExecutablePluginType.class)))
+        .thenThrow(new ExternalTaskException("",
+            new UnrecoverableExternalTaskException("Check progress failed!", new Exception("Some error"))));
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -254,7 +269,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
@@ -267,17 +283,17 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValue_ReachPendingState_and_then_finish() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     doReturn(oaipmhHarvestPluginMetadata).when(oaipmhHarvestPlugin).getPluginMetadata();
     final ExternalTaskException exception = new ExternalTaskException("Some error",
@@ -287,14 +303,14 @@ class TestWorkflowExecutor {
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenThrow(engineTaskExceptions)
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
     doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
@@ -303,7 +319,8 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).update(workflowExecution);
@@ -322,33 +339,31 @@ class TestWorkflowExecutor {
 
   @Test
   void callNonMockedFieldValueCancellingState() throws Exception {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setStartedDate(new Date());
+    workflowExecution.setStartedDate(Instant.now());
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
-
-    String topologyName = oaipmhHarvestPlugin.getTopologyName();
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message));
+    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message), isNull());
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false)
                                                                       .thenReturn(true);
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
@@ -358,7 +373,8 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(2)).updateMonitorInformation(workflowExecution);
@@ -369,12 +385,12 @@ class TestWorkflowExecutor {
 
   @Test
   void callExecutionInRUNNINGState() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(OaipmhHarvestPlugin.class);
-    oaipmhHarvestPlugin.setPluginStatus(PluginStatus.FINISHED);
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(OaipmhHarvestPlugin.class);
+    oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(new Date());
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
 
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
@@ -382,20 +398,21 @@ class TestWorkflowExecutor {
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setStartedDate(oaipmhHarvestPlugin.getStartedDate());
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
 
     when(oaipmhHarvestPlugin.getPluginMetadata()).thenReturn(oaipmhHarvestPluginMetadata);
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    String topologyName = oaipmhHarvestPlugin.getTopologyName();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress);
 
-    doNothing().when(workflowExecutionDao).updateMonitorInformation(workflowExecution);
+    when(workflowExecutionDao.updateMonitorInformation(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    EngineTaskProgress processedProgress = new EngineTaskProgress();
-    processedProgress.setEngineTaskState(EngineTaskState.PROCESSED);
-    when(engineTaskClient.getEngineTaskProgress(eq(oaipmhHarvestPlugin.getTopologyName()), any()))
+    EngineTaskProgress processedProgress = createProcessedProgressWithSuccess();
+    when(engineTaskClient.getEngineTaskProgress(eq(topologyName), any(), any()))
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
@@ -404,7 +421,8 @@ class TestWorkflowExecutor {
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution,
+        workflowExecutorSettings);
     workflowExecutor.call();
 
     assertEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
@@ -416,85 +434,145 @@ class TestWorkflowExecutor {
 
   @Test
   void callCancellingStateINQUEUE() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(new OaipmhHarvestPlugin());
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
     final ObjectId objectId = new ObjectId();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(objectId);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
-    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
-        .thenReturn(new ImmutablePair<>(workflowExecution, true));
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message));
+    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message), isNull());
 
     EngineTaskProgress droppedProgress = new EngineTaskProgress();
     droppedProgress.setEngineTaskState(EngineTaskState.DROPPED);
-    when(engineTaskClient.getEngineTaskProgress(anyString(), any()))
-        .thenReturn(droppedProgress);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(droppedProgress);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
 
-    when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
-        .thenReturn(workflowExecution);
-
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     workflowExecutor.call();
 
-    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor
-        .forClass(WorkflowExecution.class);
-    verify(workflowExecutionDao, times(1)).update(workflowExecutionArgumentCaptor.capture());
-    assertEquals(WorkflowStatus.CANCELLED,
-        workflowExecutionArgumentCaptor.getValue().getWorkflowStatus());
-    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(),
-        workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
+    WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
+    assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(PluginStatus.CANCELLED, lastWorkflowExecutionUpdate.getMetisPlugins().getFirst().getPluginStatus());
+    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
   }
 
   @Test
   void callCancellingStateRUNNING() throws ExternalTaskException {
-    OaipmhHarvestPlugin oaipmhHarvestPlugin = Mockito.spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = spy(new OaipmhHarvestPlugin());
     oaipmhHarvestPlugin.setPluginStatus(PluginStatus.RUNNING);
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
     final ObjectId objectId = new ObjectId();
     WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
     workflowExecution.setId(objectId);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setCancelledBy(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name());
 
-    when(workflowExecutionMonitor.claimExecution(workflowExecution.getId().toString()))
-        .thenReturn(new ImmutablePair<>(workflowExecution, true));
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(true);
 
     String topologyName = oaipmhHarvestPlugin.getTopologyName();
     String message = SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name();
-    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message));
+    doNothing().when(engineTaskClient).cancelEngineTask(eq(topologyName), any(), eq(message), isNull());
 
     EngineTaskProgress currentlyProcessingProgress = new EngineTaskProgress();
     currentlyProcessingProgress.setEngineTaskState(EngineTaskState.CURRENTLY_PROCESSING);
-    when(engineTaskClient.getEngineTaskProgress(anyString(), any()))
-        .thenReturn(currentlyProcessingProgress);
+    when(engineTaskClient.getEngineTaskProgress(anyString(), any(), any())).thenReturn(currentlyProcessingProgress);
+    when(workflowExecutionDao.getById(workflowExecution.getId().toString())).thenReturn(workflowExecution);
 
-    when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
-        .thenReturn(workflowExecution);
-
-    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor = new WorkflowExecutor<>(workflowExecution, workflowExecutorManager);
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
     workflowExecutor.call();
 
-    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor
-        .forClass(WorkflowExecution.class);
-    verify(workflowExecutionDao, times(1)).update(workflowExecutionArgumentCaptor.capture());
-    assertEquals(WorkflowStatus.CANCELLED,
-        workflowExecutionArgumentCaptor.getValue().getWorkflowStatus());
-    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(),
-        workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+    ArgumentCaptor<WorkflowExecution> workflowExecutionArgumentCaptor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    verify(workflowExecutionDao, times(2)).update(workflowExecutionArgumentCaptor.capture());
+    WorkflowExecution lastWorkflowExecutionUpdate = workflowExecutionArgumentCaptor.getAllValues().getLast();
+    assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
+    assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+  }
+
+  @Test
+  void call_whenSubmitThrows_thenPluginFailsImmediately_andMonitoringIsNotStarted() throws Exception {
+    OaipmhHarvestPlugin plugin = spy(new OaipmhHarvestPlugin());
+    OaipmhHarvestPluginMetadata metadata = new OaipmhHarvestPluginMetadata();
+    plugin.setPluginMetadata(metadata);
+
+    ArrayList<AbstractMetisPlugin<?>> plugins = new ArrayList<>();
+    plugins.add(plugin);
+
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecution.setMetisPlugins(plugins);
+    workflowExecution.setStartedDate(Instant.now());
+
+    doThrow(new ExternalTaskException("Submit failed"))
+        .when(engineTaskClient)
+        .submitEngineTask(any(EngineTask.class), anyString());
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+
+    executor.call();
+    verify(plugin).setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
+    verify(plugin).setFailMessage(anyString());
+    verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), anyString(), any(ExecutablePluginType.class));
+    assertNotEquals(WorkflowStatus.FINISHED, workflowExecution.getWorkflowStatus());
+    verify(workflowExecutionDao, times(1)).update(workflowExecution);
+  }
+
+  @Test
+  void call_noNextExecutablePluginType_returnsImmediately() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setNextExecutablePluginType(null);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    executor.call();
+    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
+  }
+
+  @Test
+  void call_notMatchingNextExecutablePluginType_returnsImmediately() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.PREVIEW);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    executor.call();
+    verify(workflowExecutionDao, never()).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(1)).update(workflowExecution);
+  }
+
+  @Test
+  void sleepMonitorInterval_whenThreadAlreadyInterrupted_gracefullyExit() {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    WorkflowExecutor<EngineTaskSettings, EngineTask> executor = new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+
+    Thread.currentThread().interrupt();
+    WorkflowExecution result = executor.call();
+
+    assertNotNull(result);
+    assertTrue(Thread.currentThread().isInterrupted());
+    verify(workflowExecutionDao, atMost(1)).updateMonitorInformation(any());
+    verify(workflowExecutionDao, atMost(2)).update(workflowExecution);
   }
 }

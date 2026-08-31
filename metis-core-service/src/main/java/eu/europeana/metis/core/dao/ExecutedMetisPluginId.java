@@ -3,7 +3,7 @@ package eu.europeana.metis.core.dao;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.MetisPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -12,11 +12,11 @@ import java.util.Objects;
  */
 public class ExecutedMetisPluginId {
 
-  private final Date pluginStartedDate;
+  private final Instant pluginStartedDate;
   private final PluginType pluginType;
 
-  ExecutedMetisPluginId(Date pluginStartedDate, PluginType pluginType) {
-    this.pluginStartedDate = pluginStartedDate != null ? new Date(pluginStartedDate.getTime()) : null;
+  ExecutedMetisPluginId(Instant pluginStartedDate, PluginType pluginType) {
+    this.pluginStartedDate = pluginStartedDate;
     this.pluginType = pluginType;
     if (this.pluginStartedDate == null || this.pluginType == null) {
       throw new IllegalArgumentException();
@@ -30,7 +30,7 @@ public class ExecutedMetisPluginId {
    * @return The ID of this plugin, or null if this plugin has not been started yet.
    */
   public static ExecutedMetisPluginId forPlugin(MetisPlugin plugin) {
-    final Date startedDate = plugin.getStartedDate();
+    final Instant startedDate = plugin.getStartedDate();
     if (startedDate == null) {
       return null;
     }
@@ -54,7 +54,7 @@ public class ExecutedMetisPluginId {
    * @return The ID of the predecessor, or null if no predecessor defined.
    */
   public static ExecutedMetisPluginId forPredecessor(MetisPluginMetadata metadata) {
-    final Date previousPluginTimestamp = metadata.getRevisionTimestampPreviousPlugin();
+    final Instant previousPluginTimestamp = metadata.getRevisionTimestampPreviousPlugin();
     final PluginType previousPluginType = PluginType.getPluginTypeFromEnumName(
             metadata.getRevisionNamePreviousPlugin());
     if (previousPluginTimestamp == null || previousPluginType == null) {
@@ -63,8 +63,8 @@ public class ExecutedMetisPluginId {
     return new ExecutedMetisPluginId(previousPluginTimestamp, previousPluginType);
   }
 
-  public Date getPluginStartedDate() {
-    return pluginStartedDate != null ? new Date(pluginStartedDate.getTime()) : null;
+  public Instant getPluginStartedDate() {
+    return pluginStartedDate;
   }
 
   public PluginType getPluginType() {

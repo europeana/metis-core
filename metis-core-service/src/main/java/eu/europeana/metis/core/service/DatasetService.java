@@ -8,7 +8,6 @@ import eu.europeana.metis.core.common.TransformationParameters;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.dao.PluginWithExecutionId;
-import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -16,6 +15,7 @@ import eu.europeana.metis.core.dataset.DatasetConverter;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetSearchView;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.exceptions.DatasetAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
 import eu.europeana.metis.core.exceptions.NoXsltFoundException;
@@ -37,11 +37,11 @@ import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
@@ -69,7 +69,6 @@ public class DatasetService {
   private final DatasetXsltDao datasetXsltDao;
   private final WorkflowDao workflowDao;
   private final WorkflowExecutionDao workflowExecutionDao;
-  private final ScheduledWorkflowDao scheduledWorkflowDao;
   private final RedissonClient redissonClient;
   private final UserService userService;
   private String metisCoreUrl; //Initialize with setter
@@ -82,19 +81,16 @@ public class DatasetService {
    * @param datasetXsltDao the Dao instance to access the DatasetXslt database
    * @param workflowDao the Dao instance to access the Workflow database
    * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param scheduledWorkflowDao the Dao instance to access the ScheduledWorkflow database
    * @param redissonClient the redisson client used for distributed locks
    * @param userService the user service
    */
   @Autowired
   public DatasetService(DatasetDao datasetDao, DatasetXsltDao datasetXsltDao,
-      WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
-      ScheduledWorkflowDao scheduledWorkflowDao, RedissonClient redissonClient, UserService userService) {
+      WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao, RedissonClient redissonClient, UserService userService) {
     this.datasetDao = datasetDao;
     this.datasetXsltDao = datasetXsltDao;
     this.workflowDao = workflowDao;
     this.workflowExecutionDao = workflowExecutionDao;
-    this.scheduledWorkflowDao = scheduledWorkflowDao;
     this.redissonClient = redissonClient;
     this.userService = userService;
   }
@@ -128,14 +124,15 @@ public class DatasetService {
       datasetDTO.setCreatedByUserId(userId);
       datasetDTO.setId(null);
       datasetDTO.setUpdatedDate(null);
-      datasetDTO.setCreatedDate(new Date());
+      datasetDTO.setCreatedDate(Instant.now());
       //Add fake ecloudDatasetId to avoid null errors in the database
       datasetDTO.setEcloudDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
       int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
       datasetDTO.setDatasetId(Integer.toString(nextInSequenceDatasetId));
       verifyReferencesToOldDatasetIds(datasetDTO);
-      createdDataset = datasetDao.create(DatasetConverter.fromDTO(datasetDTO));
+      final String objectId = datasetDao.create(DatasetConverter.fromDTO(datasetDTO)).getId().toString();
+      createdDataset = datasetDao.getById(objectId);
     } finally {
       lock.unlock();
     }
@@ -146,7 +143,8 @@ public class DatasetService {
    * Update an already existent dataset.
    *
    * @param datasetDTO the provided dataset with the changes and the datasetId included in the {@link Dataset}
-   * @param xsltString the text of the String representation
+   * @param xsltInternal the xslt to be used for internal transformation
+   * @param xsltExternal the xslt to be used for external transformation
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
@@ -154,7 +152,7 @@ public class DatasetService {
    * <li>{@link DatasetAlreadyExistsException} if the request contains a datasetName change and that datasetName already exists.</li>
    * </ul>
    */
-  public void updateDataset(DatasetDTO datasetDTO, String xsltString)
+  public void updateDataset(DatasetDTO datasetDTO, String xsltInternal, String xsltExternal)
       throws GenericMetisException {
 
     // Find existing dataset and check authentication.
@@ -183,16 +181,24 @@ public class DatasetService {
 
     verifyReferencesToOldDatasetIds(datasetDTO);
 
-    if (xsltString == null) {
+    if (xsltInternal == null) {
       datasetDTO.setXsltId(ofNullable(storedDataset.getXsltId()).map(ObjectId::toString).orElse(null));
     } else {
       cleanDatasetXslt(storedDataset.getXsltId());
-      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), xsltString)).getId();
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), XsltType.INTERNAL, xsltInternal)).getId();
       datasetDTO.setXsltId(xsltId.toString());
     }
 
+    if (xsltExternal == null) {
+      datasetDTO.setXsltIdExternal(ofNullable(storedDataset.getXsltIdExternal()).map(ObjectId::toString).orElse(null));
+    } else {
+      cleanDatasetXslt(storedDataset.getXsltIdExternal());
+      ObjectId xsltId = datasetXsltDao.create(new DatasetXslt(datasetDTO.getDatasetId(), XsltType.EXTERNAL, xsltExternal)).getId();
+      datasetDTO.setXsltIdExternal(xsltId.toString());
+    }
+
     // Update the dataset
-    datasetDTO.setUpdatedDate(new Date());
+    datasetDTO.setUpdatedDate(Instant.now());
     datasetDao.update(DatasetConverter.fromDTO(datasetDTO));
   }
 
@@ -262,7 +268,6 @@ public class DatasetService {
     datasetXsltDao.deleteAllByDatasetId(datasetId);
     workflowDao.deleteWorkflow(datasetId);
     workflowExecutionDao.deleteAllByDatasetId(datasetId);
-    scheduledWorkflowDao.deleteAllByDatasetId(datasetId);
   }
 
   /**
@@ -389,16 +394,16 @@ public class DatasetService {
   }
 
   /**
-   * Transform a list of xmls using the latest default xslt stored.
+   * Transform a list of records using the latest default xslt stored.
    * <p>
    * This method can be used, for example, after a response from
    * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
-   * @param records the list of {@link Record} for which {@link Record#getXmlRecord()} returns a non-null value
-   * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
+   * @param records the list of {@link Record} for which {@link Record#xmlRecord()} returns a non-null value
+   * @return a list of {@link Record}s with {@link Record#xmlRecord()} ()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
@@ -423,16 +428,16 @@ public class DatasetService {
   }
 
   /**
-   * Transform a list of xmls using the latest dataset xslt stored.
+   * Transform a list of records using the latest dataset xslt stored.
    * <p>
    * This method can be used, for example, after a response from
    * {@link ProxiesService#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, String, int)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * @param datasetId the dataset identifier, it is required for authentication and for the dataset fields xslt injection
-   * @param records the list of {@link Record} for which {@link Record#getXmlRecord()} returns a non-null value
-   * @return a list of {@link Record}s with {@link Record#getXmlRecord()} returning the transformed XML
+   * @param records the list of {@link Record} for which {@link Record#xmlRecord()} returns a non-null value
+   * @return a list of {@link Record}s with {@link Record#xmlRecord()} returning the transformed XML
    * @throws GenericMetisException which can be one of:
    * <ul>
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
@@ -473,16 +478,16 @@ public class DatasetService {
       return records.stream().map(ecloudIdXmlRecord -> {
         try {
           EuropeanaGeneratedIdsMap europeanaGeneratedIdsMap = europeanIdCreator
-              .constructEuropeanaId(ecloudIdXmlRecord.getXmlRecord(), dataset.getDatasetId());
-          return new Record(ecloudIdXmlRecord.getEcloudId(),
-              transformer.transform(ecloudIdXmlRecord.getXmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap)
+              .constructEuropeanaId(ecloudIdXmlRecord.xmlRecord(), dataset.getDatasetId());
+          return new Record(ecloudIdXmlRecord.ecloudId(),
+              transformer.transform(ecloudIdXmlRecord.xmlRecord().getBytes(StandardCharsets.UTF_8), europeanaGeneratedIdsMap)
                          .toString());
         } catch (TransformationException e) {
           LOGGER.info("Record from list failed transformation", e);
-          return new Record(ecloudIdXmlRecord.getEcloudId(), e.getMessage());
+          return new Record(ecloudIdXmlRecord.ecloudId(), e.getMessage());
         } catch (EuropeanaIdException e) {
           LOGGER.info(CommonStringValues.EUROPEANA_ID_CREATOR_INITIALIZATION_FAILED, e);
-          return new Record(ecloudIdXmlRecord.getEcloudId(), e.getMessage());
+          return new Record(ecloudIdXmlRecord.ecloudId(), e.getMessage());
         }
       }).toList();
     } catch (TransformationException e) {
@@ -581,8 +586,7 @@ public class DatasetService {
           datasetSearchView.setProvider(dataset.getProvider());
           datasetSearchView.setDataProvider(dataset.getDataProvider());
           if (latestSuccessfulExecutablePlugin != null) {
-            datasetSearchView
-                .setLastExecutionDate(latestSuccessfulExecutablePlugin.getPlugin().getStartedDate());
+            datasetSearchView.setLastExecutionDate(latestSuccessfulExecutablePlugin.getPlugin().getStartedDate());
           }
           return datasetSearchView;
         }

@@ -9,11 +9,13 @@ import dev.morphia.annotations.Indexes;
 import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import java.time.Instant;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.types.ObjectId;
 
 /**
- * A database model entity representing a depublished (or to-be-depublished) record belonging to a
- * dataset. The record is identified by an ID and can have a state and date of depublication.
+ * A database model entity representing a depublished (or to-be-depublished) record belonging to a dataset. The record is
+ * identified by an ID and can have a state and date of depublication.
  */
 @Entity
 @Indexes({
@@ -21,6 +23,8 @@ import org.bson.types.ObjectId;
         @Field(DepublishRecordId.RECORD_ID_FIELD)}, options = @IndexOptions(unique = true)),
     @Index(fields = {@Field(DepublishRecordId.DATASET_ID_FIELD)}),
     @Index(fields = {@Field(DepublishRecordId.RECORD_ID_FIELD)})})
+@Getter
+@Setter
 public class DepublishRecordId implements HasMongoObjectId {
 
   public static final String ID_FIELD = "_id";
@@ -65,54 +69,4 @@ public class DepublishRecordId implements HasMongoObjectId {
    * Reason for depublication of record
    */
   private DepublicationReason depublicationReason;
-
-  @Override
-  public void setId(ObjectId id) {
-    this.id = id;
-  }
-
-  @Override
-  public ObjectId getId() {
-    return id;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
-
-  public String getRecordId() {
-    return recordId;
-  }
-
-  public void setRecordId(String recordId) {
-    this.recordId = recordId;
-  }
-
-  public DepublicationStatus getDepublicationStatus() {
-    return depublicationStatus;
-  }
-
-  public void setDepublicationStatus(DepublicationStatus depublicationStatus) {
-    this.depublicationStatus = depublicationStatus;
-  }
-
-  public Instant getDepublicationDate() {
-    return depublicationDate;
-  }
-
-  public void setDepublicationDate(Instant depublicationDate) {
-    this.depublicationDate = depublicationDate;
-  }
-
-  public DepublicationReason getDepublicationReason() {
-    return depublicationReason;
-  }
-
-  public void setDepublicationReason(DepublicationReason depublicationReason) {
-    this.depublicationReason = depublicationReason;
-  }
 }

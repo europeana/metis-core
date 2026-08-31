@@ -1,13 +1,13 @@
 package eu.europeana.metis.core.workflow.execution;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.TestSerializationUtils;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressDTO.assertExecutionProgressDTO;
 import static eu.europeana.metis.core.workflow.execution.TestExecutionProgressUtils.EXPECTED_RECORDS;
@@ -60,24 +60,27 @@ class TestMetisPluginDTO {
   }
 
   @Test
-  void testSerialization() throws IOException {
+  void testSerialization() {
     MetisPluginDTO metisPluginDTO = getMetisPluginDTOUsingSetters();
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = JsonMapper.builder()
+                                          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                          .build();
     String jsonOutput = objectMapper.writeValueAsString(metisPluginDTO);
 
     assertMetisPluginDTO(jsonOutput);
   }
 
   @Test
-  void testDeserialization() throws IOException {
-    ObjectMapper objectMapper = new ObjectMapper();
+  void testDeserialization() {
     //TODO: 2025-03-11 - MET-6427 - This is configured because some fields that can be serialized cannot be deserialized(see field
     // "executablePluginType" in the json file example) with the current implementation. This is not a functionality needed at
     // the moment since we do not deserialize a WorkflowExecutionDTO received from the controller.
     // To fix this, some refactoring is required and it needs to be carefully performed so that the morphia/mongo communication
     // won't start failing. There needs to be abstraction of the two entity model and DTO.
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    ObjectMapper objectMapper = JsonMapper.builder()
+                                          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                          .build();
     URL resource = getClass().getClassLoader().getResource("metisPluginDTO.json");
     Objects.requireNonNull(resource);
     File jsonFile = new File(resource.getFile());

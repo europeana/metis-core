@@ -2,9 +2,6 @@ package eu.europeana.metis.core.workflow.plugins;
 
 /**
  * Media Process Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-04-20
  */
 public class MediaProcessPlugin extends AbstractExecutablePlugin<MediaProcessPluginMetadata> {
 

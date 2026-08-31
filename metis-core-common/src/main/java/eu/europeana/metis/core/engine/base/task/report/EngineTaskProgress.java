@@ -1,104 +1,41 @@
 package eu.europeana.metis.core.engine.base.task.report;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Contains execution progress information of a task.
  */
+@Setter
+@Getter
 public class EngineTaskProgress {
 
-  // The total number of expected records excluding deleted records.
-  private int expectedRecords;
+  private long expectedRecords;
+  private long processedRecords;
+  private long successRecords;
+  private long failRecords;
+  private long warningRecords;
+  private long duplicateRecords;
+  private long unchangedRecords;
 
-  // The total number of records processed so far excluding deleted records and including ignored records if applicable.
-  private int processedRecords;
+  private long expectedDepublishRecords;
+  private long successDepublishRecords;
+  private long failDepublishRecords;
+  private long processedDepublishRecords;
 
-  // The number of processed records so far that are to be ignored for follow-up tasks.
-  private int ignoredRecords = 0;
-
-  // The number of deleted records processed so far.
-  private int deletedRecords = 0;
-
-  // The number of post processed records.
-  private int postProcessedRecordsCount = 0;
-
-  // The number of errors encountered so far.
-  private int processedErrors;
-
-  private int deletedErrors;
-
-  // The current state of the task.
   private EngineTaskState engineTaskState;
-
   private String engineTaskStateInfo;
 
-  public int getExpectedRecords() {
-    return expectedRecords;
-  }
-
-  public void setExpectedRecords(int expectedRecords) {
-    this.expectedRecords = expectedRecords;
-  }
-
-  public int getProcessedRecords() {
-    return processedRecords;
-  }
-
-  public void setProcessedRecords(int processedRecords) {
-    this.processedRecords = processedRecords;
-  }
-
-  public int getIgnoredRecords() {
-    return ignoredRecords;
-  }
-
-  public void setIgnoredRecords(int ignoredRecords) {
-    this.ignoredRecords = ignoredRecords;
-  }
-
-  public int getDeletedRecords() {
-    return deletedRecords;
-  }
-
-  public void setDeletedRecords(int deletedRecords) {
-    this.deletedRecords = deletedRecords;
-  }
-
-  public int getProcessedErrors() {
-    return processedErrors;
-  }
-
-  public void setProcessedErrors(int processedErrors) {
-    this.processedErrors = processedErrors;
-  }
-
-  public int getDeletedErrors() {
-    return deletedErrors;
-  }
-
-  public void setDeletedErrors(int deletedErrors) {
-    this.deletedErrors = deletedErrors;
-  }
-
-  public EngineTaskState getEngineTaskState() {
-    return engineTaskState;
-  }
-
-  public void setEngineTaskState(EngineTaskState engineTaskState) {
-    this.engineTaskState = engineTaskState;
-  }
-
-  public String getEngineTaskStateInfo() {
-    return engineTaskStateInfo;
-  }
-
-  public void setEngineTaskStateInfo(String engineTaskStateInfo) {
-    this.engineTaskStateInfo = engineTaskStateInfo;
-  }
-
-  public int getPostProcessedRecordsCount() {
-    return postProcessedRecordsCount;
-  }
-
-  public void setPostProcessedRecordsCount(int postProcessedRecordsCount) {
-    this.postProcessedRecordsCount = postProcessedRecordsCount;
+  /**
+   * Determines whether the task has yielded any successful results.
+   * <p>
+   * A task is considered to have successful results if there are processed records (or processed depublished records), and the
+   * number of successful records (or successful depublished records) is greater than zero.
+   *
+   * @return true if there are both processed records and successful records; false otherwise.
+   */
+  public boolean hasSuccessfulResults() {
+    return (processedRecords > 0 || processedDepublishRecords > 0)
+        && (successRecords > 0 || successDepublishRecords > 0);
   }
 }

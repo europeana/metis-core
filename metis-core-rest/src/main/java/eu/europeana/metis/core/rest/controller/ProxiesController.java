@@ -1,8 +1,10 @@
 package eu.europeana.metis.core.rest.controller;
 
-import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
+
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.RecordsResponse;
@@ -13,14 +15,9 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.lang.invoke.MethodHandles;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,10 +32,10 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Proxies Controller which encapsulates functionality that has to be proxied to an external resource.
  */
+@Slf4j
 @RestController
 public class ProxiesController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int NUMBER_OF_RECORDS = 5;
   private final ProxiesService proxiesService;
 
@@ -50,39 +47,6 @@ public class ProxiesController {
   @Autowired
   public ProxiesController(ProxiesService proxiesService) {
     this.proxiesService = proxiesService;
-  }
-
-  /**
-   * Get logs from a specific topology task paged.
-   *
-   * @param topologyName the topology name of the task
-   * @param externalTaskId the task identifier
-   * @param from integer to start getting logs from
-   * @param to integer until where logs should be received
-   * @return the list of logs
-   * @throws GenericMetisException can be one of:
-   * <ul>
-   * <li>{@link eu.europeana.cloud.service.dps.exception.DpsException} if an error occurred while
-   * retrieving the logs from the external resource</li>
-   * <li>{@link eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException} if no
-   * workflow execution exists for the provided external task identifier</li>
-   * </ul>
-   */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-  @ResponseStatus(HttpStatus.OK)
-  public List<DataItemStatus> getExternalTaskLogs(
-      @PathVariable("topologyName") String topologyName,
-      @PathVariable("externalTaskId") String externalTaskId,
-      @RequestParam(value = "from") int from,
-      @RequestParam(value = "to") int to) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(
-          "Requesting proxy call task logs for topologyName: {}, externalTaskId: {}, from: {}, to: {}",
-          topologyName, externalTaskId, from, to);
-    }
-    return proxiesService.getExternalTaskLogs(topologyName, externalTaskId, from, to);
   }
 
   /**
@@ -98,19 +62,14 @@ public class ProxiesController {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT_EXISTS,
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Map<String, Boolean> existsExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    externalTaskId = StringEscapeUtils.escapeJava(externalTaskId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(
-          "Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
-          topologyName, externalTaskId);
-    }
+    log.info("Requesting proxy call to check if task report exists for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return Collections.singletonMap("existsExternalTaskReport",
         proxiesService.existsExternalTaskReport(topologyName, externalTaskId));
   }
@@ -131,17 +90,15 @@ public class ProxiesController {
    * workflow execution exists for the provided external task identifier</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_REPORT,
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public EngineTaskErrors getExternalTaskReport(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("idsPerError") int idsPerError) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Requesting proxy call task reports for topologyName: {}, externalTaskId: {}", topologyName, externalTaskId);
-    }
+    log.info("Requesting proxy call task reports for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getExternalTaskReport(topologyName, externalTaskId, idsPerError);
   }
 
@@ -160,15 +117,13 @@ public class ProxiesController {
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_STATISTICS,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordStatisticsDTO getExternalTaskStatistics(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}", topologyName, externalTaskId);
-    }
+    log.info("Requesting proxy call task statistics for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getExternalTaskStatistics(topologyName, externalTaskId);
   }
 
@@ -189,17 +144,14 @@ public class ProxiesController {
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_NODE_STATISTICS,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public NodePathStatisticsDTO getAdditionalNodeStatistics(
       @PathVariable("topologyName") String topologyName,
       @PathVariable("externalTaskId") String externalTaskId,
       @RequestParam("nodePath") String nodePath) throws GenericMetisException {
-    topologyName = StringEscapeUtils.escapeJava(topologyName);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
-          topologyName, externalTaskId);
-    }
+    log.info("Requesting proxy call additional node statistics for topologyName: {}, externalTaskId: {}",
+        escapeJava(topologyName), escapeJava(externalTaskId));
     return proxiesService.getAdditionalNodeStatistics(topologyName, externalTaskId, nodePath);
   }
 
@@ -221,7 +173,7 @@ public class ProxiesController {
    * </ul>
    */
   @GetMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
@@ -229,7 +181,7 @@ public class ProxiesController {
       @RequestParam(value = "nextPage", required = false) String nextPage
   ) throws GenericMetisException {
     return proxiesService.getListOfFileContentsFromPluginExecution(workflowExecutionId, pluginType,
-        StringUtils.isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
+        isEmpty(nextPage) ? null : nextPage, NUMBER_OF_RECORDS);
   }
 
   /**
@@ -250,8 +202,8 @@ public class ProxiesController {
    * </ul>
    */
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_BY_IDS,
-      consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
@@ -279,7 +231,7 @@ public class ProxiesController {
    * </ul>
    */
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORD_SEARCH_BY_ID,
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public Record searchRecordByIdFromPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,
@@ -307,8 +259,8 @@ public class ProxiesController {
    * </ul>
    */
   @PostMapping(value = RestEndpoints.ORCHESTRATOR_PROXIES_RECORDS_FROM_PREDECESSOR_PLUGIN,
-      consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
-      produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public RecordsResponse getListOfFileContentsFromPredecessorOfPluginExecution(
       @RequestParam("workflowExecutionId") String workflowExecutionId,

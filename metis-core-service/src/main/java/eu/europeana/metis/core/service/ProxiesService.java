@@ -10,7 +10,6 @@ import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -64,28 +63,6 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     this.workflowExecutionDao = workflowExecutionDao;
     this.datasetDao = datasetDao;
     this.dataEvolutionUtils = new DataEvolutionUtils(this.workflowExecutionDao);
-  }
-
-  /**
-   * Get logs from a specific topology task paged.
-   *
-   * @param topologyName the topology name of the task
-   * @param externalTaskId the task identifier
-   * @param from integer to start getting logs from
-   * @param to integer until where logs should be received
-   * @return the list of logs
-   * @throws GenericMetisException can be one of:
-   * <ul>
-   * <li>{@link DpsException} if an error occurred while retrieving the logs from the external
-   * resource</li>
-   * <li>{@link NoWorkflowExecutionFoundException} if no
-   * workflow execution exists for the provided external task identifier</li>
-   * </ul>
-   */
-  public List<DataItemStatus> getExternalTaskLogs(String topologyName, String externalTaskId, int from, int to)
-      throws GenericMetisException {
-    datasetDao.getDatasetOrThrow(getDatasetIdFromExternalTaskId(externalTaskId));
-    return engineTaskClient.getDataItemStatuses(topologyName, externalTaskId, from, to);
   }
 
   /**
@@ -301,7 +278,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * Get a record from the external resource based on o searchId, workflow execution and {@link PluginType}.
    *
    * @param workflowExecutionId the execution identifier of the workflow
-   * @param pluginType the {@link ExecutablePluginType} that is to be located inside the workflow
+   * @param executablePluginType the {@link ExecutablePluginType} that is to be located inside the workflow
    * @param idToSearch the ID we are searching for and for which we want to find a record
    * @return the record from the external resource
    * @throws GenericMetisException can be one of:
@@ -312,19 +289,22 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
    * execution exists for the provided identifier</li>
    * </ul>
    */
-  public Record searchRecordByIdFromPluginExecution(String workflowExecutionId, ExecutablePluginType pluginType,
-      String idToSearch) throws GenericMetisException {
+  public Record searchRecordByIdFromPluginExecution(
+      String workflowExecutionId, ExecutablePluginType executablePluginType, String idToSearch) throws GenericMetisException {
 
     // Get the right workflow execution and plugin type.
-    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
-    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
+    final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId,
+        executablePluginType);
+    existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, executablePluginType, executionAndPlugin);
 
     // Check whether the searched ID is known as a Europeana ID or an ecloudId.
     final String datasetId = executionAndPlugin.getLeft().getDatasetId();
+    final String engineDatasetId = executionAndPlugin.getLeft().getEcloudDatasetId();
     final String revisionName = executionAndPlugin.getRight().getPluginType().name();
 
     //Check engine record id and then europeana record id.
-    Record recordData = engineTaskClient.getRecord(idToSearch, revisionName, executionAndPlugin.getRight().getStartedDate());
+    Record recordData = engineTaskClient.getRecord(engineDatasetId, idToSearch, revisionName,
+        executionAndPlugin.getRight().getStartedDate(), executablePluginType);
     if (recordData == null) {
       String normalizedRecordId = idToSearch;
       try {
@@ -333,7 +313,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       } catch (BadContentException e) {
         LOGGER.info(format("Normalization of recordId '%s' failed. Using as is.", normalizedRecordId), e);
       }
-      recordData = engineTaskClient.getRecord(normalizedRecordId, revisionName, executionAndPlugin.getRight().getStartedDate());
+      recordData = engineTaskClient.getRecord(engineDatasetId, normalizedRecordId, revisionName,
+          executionAndPlugin.getRight().getStartedDate(), executablePluginType);
     }
     return recordData;
   }

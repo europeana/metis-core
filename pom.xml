@@ -5,13 +5,14 @@
   <groupId>eu.europeana.metis</groupId>
   <artifactId>metis-core</artifactId>
   <packaging>pom</packaging>
-  <version>16</version>
+  <version>17</version>
 
   <modules>
     <module>metis-core-common</module>
     <module>metis-core-service</module>
     <module>metis-core-rest</module>
   </modules>
+
 
   <scm>
     <url>https://github.com/europeana/metis-core</url>
@@ -31,32 +32,27 @@
     <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
 
     <!--Internal-->
-    <version.ecloud>15</version.ecloud>
-    <version.metis-common>18</version.metis-common>
-    <version.metis-framework>16</version.metis-framework>
-    <version.metis-schema>13</version.metis-schema>
-    <version.corelib>2.17.6</version.corelib>
+    <version.metis-sandbox-common>12-SNAPSHOT</version.metis-sandbox-common>
+    <version.ecloud>17</version.ecloud>
+    <version.metis-common>20</version.metis-common>
+    <version.metis-framework>18</version.metis-framework>
+    <version.metis-schema>14.1</version.metis-schema>
+    <version.corelib>2.18.0</version.corelib>
 
     <!--External-->
+    <version.spring.boot>4.1.0</version.spring.boot>
+    <version.springdoc-openapi-starter-webmvc-api>2.8.14</version.springdoc-openapi-starter-webmvc-api>
     <version.javax.annotation>2.1.1</version.javax.annotation>
-    <version.morphia.core>2.4.5</version.morphia.core>
-    <version.embedded.mongo>4.17.0</version.embedded.mongo>
+    <version.morphia.core>2.5.2</version.morphia.core>
+    <version.embedded.mongo>4.24.0</version.embedded.mongo>
     <version.redisson>3.24.3</version.redisson>
     <version.elastic.apm>1.48.1</version.elastic.apm>
     <version.hamcrest>1.3</version.hamcrest>
-    <version.jakarta.xml.bind-api>4.0.1</version.jakarta.xml.bind-api>
-    <version.spring>6.1.4</version.spring>
-    <version.spring.boot>3.2.3</version.spring.boot>
     <version.keycloak-admin-client>26.0.4</version.keycloak-admin-client>
-    <version.rabbitmq>5.12.0</version.rabbitmq>
     <version.commons.io>2.18.0</version.commons.io>
     <version.commons.lang3>3.18.0</version.commons.lang3>
     <version.commons.text>1.13.0</version.commons.text>
-    <version.jackson>2.16.1</version.jackson>
-    <version.jaxb.runtime>4.0.4</version.jaxb.runtime>
     <version.org.wiremock>3.4.2</version.org.wiremock>
-    <version.mockito.core>4.3.1</version.mockito.core>
-    <version.junit>5.10.2</version.junit>
     <version.awaitability>4.2.0</version.awaitability>
     <version.json.path>2.9.0</version.json.path>
     <version.jetbrains>24.0.1</version.jetbrains>
@@ -67,9 +63,9 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-framework-bom</artifactId>
-        <version>${version.spring}</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${version.spring.boot}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -109,25 +105,6 @@
         <artifactId>metis-common-spring-properties</artifactId>
         <version>${version.metis-common}</version>
       </dependency>
-
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>${version.spring.boot}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-
-      <dependency>
-        <groupId>jakarta.xml.bind</groupId>
-        <artifactId>jakarta.xml.bind-api</artifactId>
-        <version>${version.jakarta.xml.bind-api}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.glassfish.jaxb</groupId>
-        <artifactId>jaxb-runtime</artifactId>
-        <version>${version.jaxb.runtime}</version>
-      </dependency>
       <dependency>
         <groupId>jakarta.annotation</groupId>
         <artifactId>jakarta.annotation-api</artifactId>
@@ -147,11 +124,6 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
         <version>${version.commons.text}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-collections4</artifactId>
-        <version>${version.commons-collections4}</version>
       </dependency>
       <dependency>
         <groupId>eu.europeana.corelib</groupId>
@@ -400,43 +372,6 @@
         <version>${version.corelib}</version>
       </dependency>
       <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-api</artifactId>
-        <version>${version.junit}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-engine</artifactId>
-        <version>${version.junit}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-params</artifactId>
-        <version>${version.junit}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>${version.mockito.core}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-junit-jupiter</artifactId>
-        <version>${version.mockito.core}</version>
-        <scope>test</scope>
-      </dependency>
-
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-test</artifactId>
-        <version>${version.spring}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
         <version>${version.hamcrest}</version>
@@ -478,41 +413,6 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>${version.xerces}</version>
-        <exclusions>
-          <exclusion>
-            <artifactId>xml-apis</artifactId>
-            <groupId>xml-apis</groupId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>io.gdcc</groupId>
-        <artifactId>xoai-service-provider</artifactId>
-        <version>${version.gdcc.xoai}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <!-- Tomcat tries to set a SAX feature not supported by this SAX parser. -->
-          <exclusion>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>woodstox-core-asl</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>wstx-asl</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
         <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
         <version>${version.jetbrains}</version>
@@ -532,7 +432,7 @@
     <repository>
       <id>libs-release</id>
       <name>libs-release</name>
-      <url>https://artifactory.eanadev.org/artifactory/libs-release</url>
+      <url>https://artifactory-prod.eanadev.org/artifactory/libs-release</url>
       <releases>
         <enabled>true</enabled>
       </releases>

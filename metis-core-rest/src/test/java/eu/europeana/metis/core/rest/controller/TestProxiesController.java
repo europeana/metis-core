@@ -4,7 +4,6 @@ import static com.jayway.jsonassert.impl.matcher.IsCollectionWithSize.hasSize;
 import static eu.europeana.metis.security.test.JwtUtils.BEARER;
 import static eu.europeana.metis.security.test.JwtUtils.MOCK_INVALID_TOKEN;
 import static eu.europeana.metis.security.test.JwtUtils.MOCK_VALID_TOKEN;
-import static java.lang.Long.parseLong;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,9 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import eu.europeana.cloud.common.model.dps.SubTaskInfo;
 import eu.europeana.metis.common.config.properties.security.SecurityConfigurationProperties;
-import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
+import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
 import eu.europeana.metis.core.rest.PaginatedRecordsResponse;
 import eu.europeana.metis.core.rest.Record;
@@ -49,12 +47,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -63,13 +61,13 @@ import org.springframework.web.context.WebApplicationContext;
 @ContextConfiguration(classes = {ProxiesController.class, SecurityConfig.class, RestResponseExceptionHandler.class})
 class TestProxiesController {
 
-  @MockBean
+  @MockitoBean
   private ProxiesService proxiesService;
 
-  @MockBean
+  @MockitoBean
   private JwtDecoder jwtDecoder;
 
-  @MockBean
+  @MockitoBean
   private UserService userService;
 
   private static MockMvc mockMvc;
@@ -93,26 +91,6 @@ class TestProxiesController {
     reset(proxiesService);
     reset(jwtDecoder);
     reset(userService);
-  }
-
-  @Test
-  void getExternalTaskLogs() throws Exception {
-    when(jwtDecoder.decode(MOCK_VALID_TOKEN)).thenReturn(jwtUtils.getDataOfficerJwt());
-
-    int from = 1;
-    int to = 100;
-    List<DataItemStatus> dataItemStatuses = TestObjectFactory.createExternalRecordStatusList();
-    when(proxiesService.getExternalTaskLogs(TestObjectFactory.TOPOLOGY_NAME,
-        TestObjectFactory.EXTERNAL_TASK_ID, from, to)).thenReturn(dataItemStatuses);
-
-    mockMvc.perform(get(RestEndpoints.ORCHESTRATOR_PROXIES_TOPOLOGY_TASK_LOGS,
-               TestObjectFactory.TOPOLOGY_NAME, TestObjectFactory.EXTERNAL_TASK_ID)
-               .header("Authorization", BEARER + MOCK_VALID_TOKEN)
-               .param("from", Integer.toString(from))
-               .param("to", Integer.toString(to))
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(""))
-           .andExpect(status().isOk());
   }
 
   @Test
@@ -245,10 +223,10 @@ class TestProxiesController {
                .contentType(MediaType.APPLICATION_JSON)
                .content(""))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.getEcloudId())))
-           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.getXmlRecord())))
-           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.getEcloudId())))
-           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.getXmlRecord())));
+           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.ecloudId())))
+           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.xmlRecord())))
+           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.ecloudId())))
+           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.xmlRecord())));
   }
   // TODO: add tests for lookupIdFromUISClient
 
@@ -261,7 +239,7 @@ class TestProxiesController {
     final Record record2 = new Record("ID 2", "content 2");
     final RecordsResponse output = new RecordsResponse(Arrays.asList(record1, record2));
     final List<String> expectedInput = Stream.concat(Stream.of("UNKNOWN ID"),
-        output.getRecords().stream().map(Record::getEcloudId)).toList();
+        output.getRecords().stream().map(Record::ecloudId)).toList();
 
     // Test happy flow with non-empty ID list
     final ExecutablePluginType pluginType = ExecutablePluginType.MEDIA_PROCESS;
@@ -280,10 +258,10 @@ class TestProxiesController {
                .content("{\"ids\":[\"" + String.join("\",\"", expectedInput) + "\"]}"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.records", hasSize(2)))
-           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.getEcloudId())))
-           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.getXmlRecord())))
-           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.getEcloudId())))
-           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.getXmlRecord())));
+           .andExpect(jsonPath("$.records[0].ecloudId", is(record1.ecloudId())))
+           .andExpect(jsonPath("$.records[0].xmlRecord", is(record1.xmlRecord())))
+           .andExpect(jsonPath("$.records[1].ecloudId", is(record2.ecloudId())))
+           .andExpect(jsonPath("$.records[1].xmlRecord", is(record2.xmlRecord())));
 
     // Test happy flow with empty ID list
     final RecordsResponse emptyOutput = new RecordsResponse(Collections.emptyList());

@@ -18,7 +18,6 @@ import eu.europeana.cloud.common.model.dps.TaskErrorsInfo;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
-import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.exceptions.NoWorkflowExecutionFoundException;
 import eu.europeana.metis.core.rest.ListOfIds;
@@ -38,8 +37,8 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -75,39 +74,6 @@ class TestProxiesService {
     reset(workflowExecutionDao);
     reset(engineTaskClient);
     reset(proxiesService);
-  }
-
-  @Test
-  void getExternalTaskLogs() throws Exception {
-    List<DataItemStatus> dataItemStatusList = TestObjectFactory.createExternalRecordStatusList();
-
-    when(engineTaskClient.getDataItemStatuses(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100)).thenReturn(dataItemStatusList);
-    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    proxiesService.getExternalTaskLogs(Topology.OAIPMH_HARVEST.getTopologyName(),
-        EXTERNAL_TASK_ID, 1, 100);
-    assertEquals(2, dataItemStatusList.size());
-  }
-
-  @Test
-  void getExternalTaskLogs_NoExecutionException() {
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(null);
-    assertThrows(NoWorkflowExecutionFoundException.class, () -> proxiesService
-        .getExternalTaskLogs(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100));
-  }
-
-  @Test
-  void getExternalTaskLogs_ExternalTaskException() throws Exception {
-    when(engineTaskClient
-        .getDataItemStatuses(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100)).thenThrow(new ExternalTaskException(""));
-    final WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
-    when(workflowExecutionDao.getByExternalTaskId(EXTERNAL_TASK_ID)).thenReturn(workflowExecution);
-    assertThrows(ExternalTaskException.class, () -> proxiesService
-        .getExternalTaskLogs(Topology.OAIPMH_HARVEST.getTopologyName(),
-            EXTERNAL_TASK_ID, 1, 100));
   }
 
   @Test
@@ -257,7 +223,7 @@ class TestProxiesService {
     // Create execution and plugin
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
     execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(new Date()));
+             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(Instant.now()));
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
     doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
@@ -280,9 +246,9 @@ class TestProxiesService {
     PaginatedRecordsResponse listOfFileContentsFromPluginExecution = proxiesService
         .getListOfFileContentsFromPluginExecution(TestObjectFactory.EXECUTIONID,
             executablePluginType, null, numberOfRecords);
-    assertEquals(record.getXmlRecord(),
-        listOfFileContentsFromPluginExecution.getRecords().getFirst().getXmlRecord());
-    assertEquals(ecloudId, listOfFileContentsFromPluginExecution.getRecords().getFirst().getEcloudId());
+    assertEquals(record.xmlRecord(),
+        listOfFileContentsFromPluginExecution.getRecords().getFirst().xmlRecord());
+    assertEquals(ecloudId, listOfFileContentsFromPluginExecution.getRecords().getFirst().ecloudId());
 
     // Test exception.
     doThrow(ExternalTaskException.class).when(engineTaskClient)
@@ -324,7 +290,7 @@ class TestProxiesService {
     // Create execution and plugin and mock relevant method getting them.
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
     execution.getMetisPlugins()
-             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(new Date()));
+             .forEach(abstractMetisPlugin -> abstractMetisPlugin.setStartedDate(Instant.now()));
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
     doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
                                                     .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID,
@@ -350,7 +316,7 @@ class TestProxiesService {
     assertNotNull(result);
     assertNotNull(result.getRecords());
     assertEquals(listOfIds.getIds().size(), result.getRecords().size());
-    assertEquals(listOfIds.getIds(), result.getRecords().stream().map(Record::getEcloudId).toList());
+    assertEquals(listOfIds.getIds(), result.getRecords().stream().map(Record::ecloudId).toList());
 
     // Check that the call also works for an empty list
     listOfIds.setIds(Collections.emptyList());

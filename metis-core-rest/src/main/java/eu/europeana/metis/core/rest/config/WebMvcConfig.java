@@ -1,15 +1,10 @@
 package eu.europeana.metis.core.rest.config;
 
 import eu.europeana.metis.core.rest.config.properties.MetisCoreConfigurationProperties;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -31,15 +26,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
   }
 
   @Override
-  public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**").allowedMethods("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedOrigins(metisCoreConfigurationProperties.allowedCorsHosts().toArray(String[]::new));
+  public void addViewControllers(ViewControllerRegistry registry) {
+    registry.addRedirectViewController("/", "/v3/api-docs");
   }
 
   @Override
-  public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-    converters.add(new MappingJackson2HttpMessageConverter());
-    converters.add(new MappingJackson2XmlHttpMessageConverter());
-    converters.add(new StringHttpMessageConverter(StandardCharsets.UTF_8));
+  public void addCorsMappings(CorsRegistry registry) {
+    registry.addMapping("/**").allowedMethods("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS")
+            .allowedOrigins(metisCoreConfigurationProperties.allowedCorsHosts().toArray(String[]::new));
   }
 }

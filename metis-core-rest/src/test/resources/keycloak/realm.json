@@ -1,6 +1,9 @@
 {
   "realm": "europeana",
   "enabled": true,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 57600,
+  "ssoSessionMaxLifespan": 86400,
   "clients": [
     {
       "clientId": "metis-core-local",

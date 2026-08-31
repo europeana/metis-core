@@ -1,8 +1,5 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
 import dev.morphia.annotations.Id;
@@ -17,10 +14,14 @@ import eu.europeana.metis.core.common.LanguageSerializer;
 import eu.europeana.metis.mongo.model.HasMongoObjectId;
 import eu.europeana.metis.mongo.utils.ObjectIdSerializer;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.types.ObjectId;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Dataset model that contains all the required fields for Dataset functionality.
@@ -34,6 +35,8 @@ import org.bson.types.ObjectId;
     @Index(fields = {@Field("intermediateProvider")}),
     @Index(fields = {@Field("dataProvider")}),
     @Index(fields = {@Field("createdByUserId")})})
+@Getter
+@Setter
 public class Dataset implements HasMongoObjectId {
 
   /**
@@ -55,10 +58,8 @@ public class Dataset implements HasMongoObjectId {
   private String dataProvider;
   private String createdByUserId;
 
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date createdDate;
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date updatedDate;
+  private Instant createdDate;
+  private Instant updatedDate;
 
   private List<String> datasetIdsToRedirectFrom = new ArrayList<>();
   private String replacedBy;
@@ -77,88 +78,8 @@ public class Dataset implements HasMongoObjectId {
 
   @JsonSerialize(using = ObjectIdSerializer.class)
   private ObjectId xsltId;
-
-  @Override
-  public ObjectId getId() {
-    return id;
-  }
-
-  @Override
-  public void setId(ObjectId id) {
-    this.id = id;
-  }
-
-  public String getEcloudDatasetId() {
-    return ecloudDatasetId;
-  }
-
-  public void setEcloudDatasetId(String ecloudDatasetId) {
-    this.ecloudDatasetId = ecloudDatasetId;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
-
-  public String getDatasetName() {
-    return datasetName;
-  }
-
-  public void setDatasetName(String datasetName) {
-    this.datasetName = datasetName;
-  }
-
-  public String getProvider() {
-    return provider;
-  }
-
-  public void setProvider(String provider) {
-    this.provider = provider;
-  }
-
-  public String getIntermediateProvider() {
-    return intermediateProvider;
-  }
-
-  public void setIntermediateProvider(String intermediateProvider) {
-    this.intermediateProvider = intermediateProvider;
-  }
-
-  public String getDataProvider() {
-    return dataProvider;
-  }
-
-  public void setDataProvider(String dataProvider) {
-    this.dataProvider = dataProvider;
-  }
-
-  public String getCreatedByUserId() {
-    return createdByUserId;
-  }
-
-  public void setCreatedByUserId(String createdByUserId) {
-    this.createdByUserId = createdByUserId;
-  }
-
-  public Date getCreatedDate() {
-    return createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public void setCreatedDate(Date createdDate) {
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public Date getUpdatedDate() {
-    return updatedDate == null ? null : new Date(updatedDate.getTime());
-  }
-
-  public void setUpdatedDate(Date updatedDate) {
-    this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
-  }
+  @JsonSerialize(using = ObjectIdSerializer.class)
+  private ObjectId xsltIdExternal;
 
   public List<String> getDatasetIdsToRedirectFrom() {
     return new ArrayList<>(datasetIdsToRedirectFrom);
@@ -168,69 +89,5 @@ public class Dataset implements HasMongoObjectId {
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(
             datasetIdsToRedirectFrom);
-  }
-
-  public String getReplacedBy() {
-    return replacedBy;
-  }
-
-  public void setReplacedBy(String replacedBy) {
-    this.replacedBy = replacedBy;
-  }
-
-  public String getReplaces() {
-    return replaces;
-  }
-
-  public void setReplaces(String replaces) {
-    this.replaces = replaces;
-  }
-
-  public Country getCountry() {
-    return country;
-  }
-
-  public void setCountry(Country country) {
-    this.country = country;
-  }
-
-  public Language getLanguage() {
-    return language;
-  }
-
-  public void setLanguage(Language language) {
-    this.language = language;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public PublicationFitness getPublicationFitness() {
-    return publicationFitness;
-  }
-
-  public void setPublicationFitness(PublicationFitness publicationFitness) {
-    this.publicationFitness = publicationFitness;
-  }
-
-  public String getNotes() {
-    return notes;
-  }
-
-  public void setNotes(String notes) {
-    this.notes = notes;
-  }
-
-  public ObjectId getXsltId() {
-    return xsltId;
-  }
-
-  public void setXsltId(ObjectId xsltId) {
-    this.xsltId = xsltId;
   }
 }

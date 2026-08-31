@@ -1,54 +1,43 @@
 package eu.europeana.metis.core.rest.execution.overview;
 
 import eu.europeana.metis.core.workflow.plugins.ExecutionProgress;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * This class contains executionProgress information on a plugin's execution.
  */
+@Getter
+@NoArgsConstructor
 public class PluginProgressView {
 
-  private int expectedRecords;
-  private int processedRecords;
-  private int ignoredRecords;
-  private int deletedRecords;
-  private int errors;
-  private int progressPercentage;
-
-  PluginProgressView() {
-  }
+  private long expectedRecords;
+  private long processedRecords;
+  private long progressPercentage;
+  private long successRecords;
+  private long failRecords;
+  private long warningRecords;
+  private long duplicateRecords;
+  private long unchangedRecords;
+  private long expectedDepublishRecords;
+  private long successDepublishRecords;
+  private long failDepublishRecords;
+  private long processedDepublishRecords;
 
   PluginProgressView(ExecutionProgress progress) {
     if (progress != null) {
       this.expectedRecords = progress.getExpectedRecords();
       this.processedRecords = progress.getProcessedRecords();
-      this.ignoredRecords = progress.getIgnoredRecords();
-      this.deletedRecords = progress.getDeletedRecords();
-      this.errors = progress.getErrors();
       this.progressPercentage = progress.getProgressPercentage();
+      this.successRecords = progress.getSuccessRecords();
+      this.failRecords = progress.getFailRecords();
+      this.warningRecords = progress.getWarningRecords();
+      this.duplicateRecords = progress.getDuplicateRecords();
+      this.unchangedRecords = progress.getUnchangedRecords();
+      this.expectedDepublishRecords = progress.getExpectedDepublishRecords();
+      this.successDepublishRecords = progress.getSuccessDepublishRecords();
+      this.failDepublishRecords = progress.getFailDepublishRecords();
+      this.processedDepublishRecords = progress.getProcessedDepublishRecords();
     }
-  }
-
-  public int getExpectedRecords() {
-    return expectedRecords;
-  }
-
-  public int getProcessedRecords() {
-    return processedRecords;
-  }
-
-  public int getIgnoredRecords() {
-    return ignoredRecords;
-  }
-
-  public int getDeletedRecords() {
-    return deletedRecords;
-  }
-
-  public int getErrors() {
-    return errors;
-  }
-
-  public int getProgressPercentage() {
-    return progressPercentage;
   }
 }

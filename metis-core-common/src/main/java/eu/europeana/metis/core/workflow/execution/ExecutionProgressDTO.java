@@ -1,84 +1,31 @@
 package eu.europeana.metis.core.workflow.execution;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * This class contains executionProgress information on a plugin's execution.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public class ExecutionProgressDTO {
 
-  private int expectedRecords;
-  private int processedRecords;
-  private int progressPercentage;
-  private int ignoredRecords;
-  private int deletedRecords;
-  private int errors;
+  private long expectedRecords;
+  private long processedRecords;
+  private long progressPercentage;
+  private long successRecords;
+  private long failRecords;
+  private long warningRecords;
+  private long duplicateRecords;
+  private long unchangedRecords;
+
   private String status;
-  private int totalDatabaseRecords;
+  private long totalDatabaseRecords;
 
-  public ExecutionProgressDTO() {
-    //Required for json serialization
-  }
-
-  public int getExpectedRecords() {
-    return expectedRecords;
-  }
-
-  public void setExpectedRecords(int expectedRecords) {
-    this.expectedRecords = expectedRecords;
-  }
-
-  public int getProcessedRecords() {
-    return processedRecords;
-  }
-
-  public void setProcessedRecords(int processedRecords) {
-    this.processedRecords = processedRecords;
-  }
-
-  public int getProgressPercentage() {
-    return progressPercentage;
-  }
-
-  public void setProgressPercentage(int progressPercentage) {
-    this.progressPercentage = progressPercentage;
-  }
-
-  public int getIgnoredRecords() {
-    return ignoredRecords;
-  }
-
-  public void setIgnoredRecords(int ignoredRecords) {
-    this.ignoredRecords = ignoredRecords;
-  }
-
-  public int getDeletedRecords() {
-    return deletedRecords;
-  }
-
-  public void setDeletedRecords(int deletedRecords) {
-    this.deletedRecords = deletedRecords;
-  }
-
-  public int getErrors() {
-    return errors;
-  }
-
-  public void setErrors(int errors) {
-    this.errors = errors;
-  }
-
-  public String getStatus() {
-    return status;
-  }
-
-  public void setStatus(String status) {
-    this.status = status;
-  }
-
-  public int getTotalDatabaseRecords() {
-    return totalDatabaseRecords;
-  }
-
-  public void setTotalDatabaseRecords(int totalDatabaseRecords) {
-    this.totalDatabaseRecords = totalDatabaseRecords;
-  }
+  private long expectedDepublishRecords;
+  private long processedDepublishRecords;
+  private long successDepublishRecords;
+  private long failDepublishRecords;
 }

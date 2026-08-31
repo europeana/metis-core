@@ -3,8 +3,8 @@ package eu.europeana.metis.core.dataset;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import org.bson.types.ObjectId;
 
@@ -36,11 +36,12 @@ public class TestDatasetUtils {
   static final String PUBLICATION_FITNESS = "publicationFitness";
   static final String NOTES = "notes";
   static final String XSLT_ID = "xsltId";
+  static final String XSLT_ID_EXTERNAL = "xsltIdExternal";
   //VALUES
   static final ObjectId OBJECT_ID_VALUE = new ObjectId("67cfeedb4cdf5102acad7395");
   static final ObjectId XSLT_OBJECT_ID_VALUE = new ObjectId("507f191e810c19729de860ea");
-  static final Date CREATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
-  static final Date UPDATED_DATE_VALUE = Date.from(zonedDateTime.toInstant());
+  static final Instant CREATED_DATE_VALUE = zonedDateTime.toInstant();
+  static final Instant UPDATED_DATE_VALUE = zonedDateTime.toInstant();
   static final String REDIRECT_ID_1_VALUE = "redirectId1";
   static final String REDIRECT_ID_2_VALUE = "redirectId2";
 
@@ -67,7 +68,8 @@ public class TestDatasetUtils {
         DESCRIPTION,
         PublicationFitness.FIT,
         NOTES,
-        XSLT_OBJECT_ID_VALUE.toString()
+        XSLT_OBJECT_ID_VALUE.toString(),
+        null
     );
   }
 
@@ -96,6 +98,7 @@ public class TestDatasetUtils {
     datasetDTO1.setPublicationFitness(datasetDTO.getPublicationFitness());
     datasetDTO1.setNotes(datasetDTO.getNotes());
     datasetDTO1.setXsltId(datasetDTO.getXsltId());
+    datasetDTO1.setXsltIdExternal(datasetDTO.getXsltIdExternal());
     return datasetDTO1;
   }
 
@@ -123,7 +126,8 @@ public class TestDatasetUtils {
         datasetDTO.getDescription(),
         datasetDTO.getPublicationFitness(),
         datasetDTO.getNotes(),
-        datasetDTO.getXsltId());
+        datasetDTO.getXsltId(),
+        datasetDTO.getXsltIdExternal());
   }
 
   static DatasetDTO getDatasetDTOUsingSettersWithNullValues() {
@@ -155,6 +159,7 @@ public class TestDatasetUtils {
     dataset.setPublicationFitness(PublicationFitness.FIT);
     dataset.setNotes(NOTES);
     dataset.setXsltId(XSLT_OBJECT_ID_VALUE);
+    dataset.setXsltIdExternal(null);
     return dataset;
   }
 

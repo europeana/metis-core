@@ -1,6 +1,9 @@
 package eu.europeana.metis.core.dao;
 
+import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
+import eu.europeana.metis.core.engine.base.EngineType;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
@@ -12,8 +15,10 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
@@ -25,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.util.CollectionUtils;
 
@@ -33,18 +39,24 @@ import org.springframework.util.CollectionUtils;
  */
 public class WorkflowValidationUtils {
 
+  private final EngineType engineType;
   private final DepublishRecordIdDao depublishRecordIdDao;
+  private final DatasetXsltDao datasetXsltDao;
   private final DataEvolutionUtils dataEvolutionUtils;
 
   /**
    * Constructor.
    *
+   * @param engineType the engine type
    * @param depublishRecordIdDao the depublication record id dao
+   * @param datasetXsltDao the dataset xslt dao
    * @param dataEvolutionUtils The utilities class for sorting out data evolution
    */
-  public WorkflowValidationUtils(DepublishRecordIdDao depublishRecordIdDao,
-      DataEvolutionUtils dataEvolutionUtils) {
+  public WorkflowValidationUtils(EngineType engineType, DepublishRecordIdDao depublishRecordIdDao,
+      DatasetXsltDao datasetXsltDao, DataEvolutionUtils dataEvolutionUtils) {
+    this.engineType = engineType;
     this.depublishRecordIdDao = depublishRecordIdDao;
+    this.datasetXsltDao = datasetXsltDao;
     this.dataEvolutionUtils = dataEvolutionUtils;
   }
 
@@ -100,17 +112,11 @@ public class WorkflowValidationUtils {
           "There are enabled plugins of which the type could not be determined.");
     }
 
-    // Validate dataset/record depublication
+    validateAndNormalizeHarvestParameters(workflow.getDatasetId(), enabledPlugins);
+    validateTransformExternalPlugin(workflow.getDatasetId(), enabledPlugins);
+    validateIndexToPublishPlugin(enabledPlugins);
     validateDepublishPlugin(workflow.getDatasetId(), enabledPlugins);
-
-    // Validate and normalize the harvest parameters of harvest plugins (even if not enabled)
-    validateAndTrimHarvestParameters(workflow.getDatasetId(), enabledPlugins);
-
-    // Check that first plugin is not link checking (except if it is the only plugin)
-    if (enabledPlugins.size() > 1
-        && enabledPlugins.getFirst().getPluginType() == PluginType.LINK_CHECKING) {
-      throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
-    }
+    validateLinkChecking(enabledPlugins);
 
     // Make sure that all enabled plugins (except the first) have a predecessor within the workflow.
     final EnumSet<ExecutablePluginType> previousTypesInWorkflow = EnumSet
@@ -119,13 +125,14 @@ public class WorkflowValidationUtils {
 
       // Find the permissible predecessors
       final ExecutablePluginType pluginType = enabledPlugins.get(i).getExecutablePluginType();
+      final ExecutablePluginType previousPluginType = enabledPlugins.get(i - 1).getExecutablePluginType();
       final Set<ExecutablePluginType> permissiblePredecessors = DataEvolutionUtils
           .getPredecessorTypes(pluginType);
 
-      // Check if we have the right predecessor plugin types in the workflow
-      final boolean hasNoPredecessor = !permissiblePredecessors.isEmpty() &&
-          permissiblePredecessors.stream().noneMatch(previousTypesInWorkflow::contains);
-      if (hasNoPredecessor) {
+      final boolean hasInvalidPredecessor =
+          !permissiblePredecessors.isEmpty() && !permissiblePredecessors.contains(previousPluginType);
+
+      if (hasInvalidPredecessor) {
         throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
       }
 
@@ -144,7 +151,44 @@ public class WorkflowValidationUtils {
             enforcedPredecessorType, workflow.getDatasetId());
   }
 
-  private void validateAndTrimHarvestParameters(String datasetId,
+  private void validateIndexToPublishPlugin(List<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
+    final boolean hasIndexToPublishPlugin = enabledPlugins.stream().anyMatch(IndexToPublishPluginMetadata.class::isInstance);
+    if (hasIndexToPublishPlugin && engineType == EngineType.SANDBOX) {
+      throw new BadContentException("Index to publish plugins are not supported for METIS-SANDBOX");
+    }
+  }
+
+  private void validateLinkChecking(List<AbstractExecutablePluginMetadata> enabledPlugins)
+      throws PluginExecutionNotAllowed, BadContentException {
+    // Check that first plugin is not link checking (except if it is the only plugin)
+    boolean isFirstPluginLinkChecking = enabledPlugins.getFirst().getPluginType() == PluginType.LINK_CHECKING;
+    if (isFirstPluginLinkChecking && enabledPlugins.size() > 1) {
+      throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
+    }
+
+    if (isFirstPluginLinkChecking && engineType == EngineType.SANDBOX) {
+      throw new BadContentException("Link Checking plugins are not supported for METIS-SANDBOX");
+    }
+  }
+
+  private void validateTransformExternalPlugin(String datasetId, List<AbstractExecutablePluginMetadata> enabledPlugins)
+      throws BadContentException {
+    final boolean hasTransformationExternalPlugin = enabledPlugins.stream().anyMatch(
+        TransformationExternalPluginMetadata.class::isInstance);
+
+    if (hasTransformationExternalPlugin) {
+      if (engineType == EngineType.ECLOUD) {
+        throw new BadContentException("Transformation external plugins are not supported for E-Cloud");
+      }
+      DatasetXslt xsltObject = datasetXsltDao.getLatestXsltForDatasetId(datasetId, XsltType.EXTERNAL);
+
+      if (xsltObject == null || StringUtils.isBlank(xsltObject.getXslt())) {
+        throw new BadContentException("XSLT cannot be null or empty for dataset: " + datasetId);
+      }
+    }
+  }
+
+  private void validateAndNormalizeHarvestParameters(String datasetId,
       Iterable<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
     for (AbstractExecutablePluginMetadata pluginMetadata : enabledPlugins) {
       if (pluginMetadata instanceof OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata) {
@@ -155,14 +199,15 @@ public class WorkflowValidationUtils {
             : oaipmhHarvestPluginMetadata.getMetadataFormat().trim());
         oaipmhHarvestPluginMetadata.setSetSpec(
             oaipmhHarvestPluginMetadata.getSetSpec() == null ? null : oaipmhHarvestPluginMetadata.getSetSpec().trim());
-      }
-      if (pluginMetadata instanceof HTTPHarvestPluginMetadata httpHarvestPluginMetadata) {
+      } else if (pluginMetadata instanceof HTTPHarvestPluginMetadata httpHarvestPluginMetadata) {
         httpHarvestPluginMetadata.setUrl(validateUrl(httpHarvestPluginMetadata.getUrl()).toString());
       }
-      if (pluginMetadata instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata &&
-              abstractHarvestPluginMetadata.isIncrementalHarvest() && !isIncrementalHarvestingAllowed(datasetId)) {
+      if (pluginMetadata instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata) {
+        abstractHarvestPluginMetadata.normalizeStepSize();
+        if (abstractHarvestPluginMetadata.isIncrementalHarvest() && !isIncrementalHarvestingAllowed(datasetId)) {
           throw new BadContentException("Can't perform incremental harvesting for this dataset.");
         }
+      }
     }
   }
 
@@ -180,16 +225,18 @@ public class WorkflowValidationUtils {
   private void validateDepublishPlugin(String datasetId,
       List<AbstractExecutablePluginMetadata> enabledPlugins) throws BadContentException {
     // If depublish requested, make sure it's the only plugin in the workflow
-    final Optional<DepublishPluginMetadata> depublishPluginMetadata = enabledPlugins.stream()
-                                                                                    .filter(plugin ->
-                                                                                        plugin.getExecutablePluginType()
-                                                                                              .toPluginType()
-                                                                                            == PluginType.DEPUBLISH)
-                                                                                    .map(DepublishPluginMetadata.class::cast)
-                                                                                    .findFirst();
+    final Optional<DepublishPluginMetadata> depublishPluginMetadata =
+        enabledPlugins.stream()
+                      .filter(DepublishPluginMetadata.class::isInstance)
+                      .map(DepublishPluginMetadata.class::cast)
+                      .findFirst();
     if (enabledPlugins.size() > 1 && depublishPluginMetadata.isPresent()) {
       throw new BadContentException(
           "If DEPUBLISH plugin enabled, no other enabled plugins are allowed.");
+    }
+
+    if (depublishPluginMetadata.isPresent() && engineType == EngineType.SANDBOX) {
+      throw new BadContentException("Record depublication is not supported for METIS-SANDBOX");
     }
 
     // If record depublication requested, check if there are pending record ids in the db

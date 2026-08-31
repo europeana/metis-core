@@ -1,6 +1,6 @@
 package eu.europeana.metis.core.engine.base.task.input;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Represents an input data endpoint for OAI harvesting.
@@ -15,7 +15,8 @@ public record OaiHarvestInputDataEndpoint(
     String url,
     String set,
     String metadataPrefix,
-    Date from,
-    Date until) implements InputDataEndpoint {
+    Instant from,
+    Instant until,
+    Integer stepSize) implements HarvestInputDataEndpoint {
 
 }

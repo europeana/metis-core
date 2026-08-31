@@ -22,6 +22,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
@@ -83,7 +84,9 @@ public class WorkflowExecutionFactory {
     WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
-    workflowExecution.setMetisPlugins(workflowPlugins.stream().map(AbstractMetisPlugin.class::cast).toList());
+    workflowExecution.setMetisPlugins(workflowPlugins);
+    workflowExecution.setNextExecutablePluginType(
+        ExecutablePluginType.getExecutablePluginFromPluginType(workflowPlugins.getFirst().getPluginType()));
     return workflowExecution;
   }
 
@@ -93,8 +96,10 @@ public class WorkflowExecutionFactory {
       List<ExecutablePluginType> typesInWorkflowBeforeThisPlugin) throws BadContentException {
 
     // Add some extra configuration to the plugin metadata depending on the type.
-    if (pluginMetadata instanceof TransformationPluginMetadata transformationPluginMetadata) {
-      setupXsltIdForPluginMetadata(dataset, transformationPluginMetadata);
+    if (pluginMetadata instanceof TransformationExternalPluginMetadata transformationExternalPluginMetadata) {
+      setupTransformationExternalPluginMetadata(dataset, transformationExternalPluginMetadata);
+    } else if (pluginMetadata instanceof TransformationPluginMetadata transformationPluginMetadata) {
+      setupTransformationPluginMetadata(dataset, transformationPluginMetadata);
     } else if (pluginMetadata instanceof ValidationExternalPluginMetadata validationExternalPluginMetadata) {
       this.setupValidationExternalForPluginMetadata(validationExternalPluginMetadata, getValidationExternalProperties());
     } else if (pluginMetadata instanceof ValidationInternalPluginMetadata validationInternalPluginMetadata) {
@@ -133,7 +138,15 @@ public class WorkflowExecutionFactory {
     metadata.setSchematronRootPath(validationProperties.schematronRootPath());
   }
 
-  private void setupXsltIdForPluginMetadata(Dataset dataset,
+  private void setupTransformationExternalPluginMetadata(Dataset dataset,
+      TransformationExternalPluginMetadata pluginMetadata) {
+    DatasetXslt xsltObject = datasetXsltDao.getById(dataset.getXsltIdExternal().toString());
+    if (xsltObject != null && StringUtils.isNotEmpty(xsltObject.getXslt())) {
+      pluginMetadata.setXsltId(xsltObject.getId().toString());
+    }
+  }
+
+  private void setupTransformationPluginMetadata(Dataset dataset,
       TransformationPluginMetadata pluginMetadata) {
     DatasetXslt xsltObject;
     if (pluginMetadata.isCustomXslt()) {

@@ -2,35 +2,27 @@ package eu.europeana.metis.core.workflow.plugins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 /**
  * This denotes a plugin type that is executable (i.e. can be run by Metis). This is a subset of the list in {@link PluginType},
  * which contains all plugin types.
  */
+@Getter
 public enum ExecutablePluginType {
 
-  HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
-
   OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST, ExecutablePluginTypeGroup.HARVEST),
-
-  ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.PROCESS),
-
-  MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.PROCESS),
-
-  LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.PROCESS),
-
-  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.PROCESS),
-
-  TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.PROCESS),
-
-  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL, ExecutablePluginTypeGroup.PROCESS),
-
-  NORMALIZATION(PluginType.NORMALIZATION, ExecutablePluginTypeGroup.PROCESS),
-
+  HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
+  ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.CURATE),
+  MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.CURATE),
+  LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.CURATE),
+  TRANSFORMATION_EXTERNAL(PluginType.TRANSFORMATION_EXTERNAL, ExecutablePluginTypeGroup.CURATE),
+  VALIDATION_EXTERNAL(PluginType.VALIDATION_EXTERNAL, ExecutablePluginTypeGroup.CURATE),
+  TRANSFORMATION(PluginType.TRANSFORMATION, ExecutablePluginTypeGroup.CURATE),
+  VALIDATION_INTERNAL(PluginType.VALIDATION_INTERNAL, ExecutablePluginTypeGroup.CURATE),
+  NORMALIZATION(PluginType.NORMALIZATION, ExecutablePluginTypeGroup.CURATE),
   PREVIEW(PluginType.PREVIEW, ExecutablePluginTypeGroup.INDEX),
-
   PUBLISH(PluginType.PUBLISH, ExecutablePluginTypeGroup.INDEX),
-
   DEPUBLISH(PluginType.DEPUBLISH, ExecutablePluginTypeGroup.DEPUBLISH);
 
   private final PluginType pluginType;
@@ -80,16 +72,12 @@ public enum ExecutablePluginType {
     return null;
   }
 
-  public ExecutablePluginTypeGroup getExecutablePluginTypeGroup() {
-    return executablePluginTypeGroup;
-  }
-
   /**
    * Enum representing groups of executable plugin types.
    * <p>
    * These groups categorize functionality types that can be executed as part of the workflow.
    */
   public enum ExecutablePluginTypeGroup {
-    HARVEST, PROCESS, INDEX, DEPUBLISH
+    HARVEST, CURATE, INDEX, DEPUBLISH
   }
 }

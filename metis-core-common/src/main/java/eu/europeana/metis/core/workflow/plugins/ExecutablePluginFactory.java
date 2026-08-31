@@ -27,6 +27,8 @@ public final class ExecutablePluginFactory {
         new PluginCreator<>(MediaProcessPluginMetadata.class, MediaProcessPlugin::new));
     creators.put(ExecutablePluginType.LINK_CHECKING,
         new PluginCreator<>(LinkCheckingPluginMetadata.class, LinkCheckingPlugin::new));
+    creators.put(ExecutablePluginType.TRANSFORMATION_EXTERNAL,
+        new PluginCreator<>(TransformationExternalPluginMetadata.class, TransformationExternalPlugin::new));
     creators.put(ExecutablePluginType.VALIDATION_EXTERNAL,
         new PluginCreator<>(ValidationExternalPluginMetadata.class, ValidationExternalPlugin::new));
     creators.put(ExecutablePluginType.TRANSFORMATION,
@@ -65,7 +67,7 @@ public final class ExecutablePluginFactory {
 
     // Perform the creation.
     final AbstractExecutablePlugin plugin = creator.createPlugin(metadata);
-    plugin.setId(new ObjectId().toString() + "-" + plugin.getPluginType().name());
+    plugin.setId(new ObjectId() + "-" + plugin.getPluginType().name());
     plugin.setDataStatus(DataStatus.NOT_YET_GENERATED);
     return plugin;
   }

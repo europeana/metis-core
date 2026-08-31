@@ -33,7 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,10 +96,10 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
 
     List<Record> records =
-        ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, new Date(), 1);
+        ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, Instant.now(), 1);
     assertEquals(1, records.size());
-    assertEquals(cloudTagsResponse.getCloudId(), records.getFirst().getEcloudId());
-    assertEquals(recordContent, records.getFirst().getXmlRecord());
+    assertEquals(cloudTagsResponse.getCloudId(), records.getFirst().ecloudId());
+    assertEquals(recordContent, records.getFirst().xmlRecord());
   }
 
   @Test
@@ -123,7 +123,7 @@ class TestEcloudEngineDatasetRecordClient {
 
     assertThrows(ExternalTaskException.class,
         () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+            Instant.now(), 1));
   }
 
   @Test
@@ -149,7 +149,7 @@ class TestEcloudEngineDatasetRecordClient {
 
     assertThrows(ExternalTaskException.class,
         () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+            Instant.now(), 1));
   }
 
   @Test
@@ -169,10 +169,10 @@ class TestEcloudEngineDatasetRecordClient {
 
     assertThrows(ExternalTaskException.class,
         () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+            Instant.now(), 1));
     assertThrows(ExternalTaskException.class,
         () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+            Instant.now(), 1));
   }
 
   @Test
@@ -187,7 +187,7 @@ class TestEcloudEngineDatasetRecordClient {
         .getRepresentationsByRevision(eq(cloudTagsResponse.getCloudId()), eq(MetisPlugin.getRepresentationName()), any(
             Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
 
-    Date now = new Date();
+    Instant now = Instant.now();
     assertThrows(IllegalStateException.class,
         () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME, now, 1));
     assertThrows(IllegalStateException.class,
@@ -204,7 +204,7 @@ class TestEcloudEngineDatasetRecordClient {
 
     assertThrows(ExternalTaskException.class,
         () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, DATASET_ID, REPRESENTATION_NAME, REVISION_NAME,
-            new Date(), 1));
+            Instant.now(), 1));
   }
 
   @Test
@@ -224,10 +224,10 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
 
     List<Record> records =
-        ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date());
+        ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now());
     assertEquals(1, records.size());
-    assertEquals(recordIds.getFirst(), records.getFirst().getEcloudId());
-    assertEquals(recordContent, records.getFirst().getXmlRecord());
+    assertEquals(recordIds.getFirst(), records.getFirst().ecloudId());
+    assertEquals(recordContent, records.getFirst().xmlRecord());
   }
 
   @Test
@@ -246,7 +246,7 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenThrow(new MCSException());
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -267,7 +267,7 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenReturn(throwingStreamMock);
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -281,9 +281,9 @@ class TestEcloudEngineDatasetRecordClient {
             Revision.class))).thenReturn(List.of(representationMock));
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -294,10 +294,10 @@ class TestEcloudEngineDatasetRecordClient {
         .getRepresentationsByRevision(eq(recordIds.getFirst()), eq(MetisPlugin.getRepresentationName()), any(
             Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
 
-    assertTrue(ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()).isEmpty());
-    assertTrue(ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()).isEmpty());
+    assertTrue(ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()).isEmpty());
+    assertTrue(ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()).isEmpty());
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecords(PROVIDER_ID, recordIds, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -318,9 +318,9 @@ class TestEcloudEngineDatasetRecordClient {
     String recordContent = "recordContent";
     when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
 
-    Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date());
-    assertEquals(recordId, recordItem.getEcloudId());
-    assertEquals(recordContent, recordItem.getXmlRecord());
+    Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now());
+    assertEquals(recordId, recordItem.ecloudId());
+    assertEquals(recordContent, recordItem.xmlRecord());
   }
 
   @Test
@@ -341,7 +341,7 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenThrow(new MCSException());
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -364,7 +364,7 @@ class TestEcloudEngineDatasetRecordClient {
     when(fileServiceClient.getFile(anyString())).thenReturn(throwingStreamMock);
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -382,9 +382,9 @@ class TestEcloudEngineDatasetRecordClient {
             Revision.class))).thenReturn(List.of(representationMock));
 
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -398,10 +398,10 @@ class TestEcloudEngineDatasetRecordClient {
         .getRepresentationsByRevision(eq(recordId), eq(MetisPlugin.getRepresentationName()), any(
             Revision.class))).thenReturn(null).thenReturn(List.of()).thenThrow(new MCSException());
 
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -410,7 +410,7 @@ class TestEcloudEngineDatasetRecordClient {
 
     when(uisClient.getCloudId(PROVIDER_ID, recordId)).thenThrow(new CloudException("", new IllegalStateException()));
     assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
   }
 
   @Test
@@ -435,9 +435,9 @@ class TestEcloudEngineDatasetRecordClient {
     String recordContent = "recordContent";
     when(fileServiceClient.getFile(anyString())).thenReturn(new ByteArrayInputStream(recordContent.getBytes()));
 
-    Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date());
-    assertEquals(recordId, recordItem.getEcloudId());
-    assertEquals(recordContent, recordItem.getXmlRecord());
+    Record recordItem = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now());
+    assertEquals(recordId, recordItem.ecloudId());
+    assertEquals(recordContent, recordItem.xmlRecord());
   }
 
   @Test
@@ -450,12 +450,12 @@ class TestEcloudEngineDatasetRecordClient {
     ResultSlice<CloudId> resultSlice = new ResultSlice<>("nextSlice", List.of());
     when(uisClient.getRecordId(recordId)).thenReturn(resultSlice).thenThrow(new CloudException("", new IllegalStateException()));
 
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, new Date()));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, recordId, REVISION_NAME, Instant.now()));
   }
 
   @Test
   void getRecord_recordId_null() throws Exception {
-    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, null, REVISION_NAME, new Date()));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, null, REVISION_NAME, Instant.now()));
   }
 }

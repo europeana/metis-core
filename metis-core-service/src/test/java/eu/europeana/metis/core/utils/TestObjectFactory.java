@@ -15,6 +15,7 @@ import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.core.dataset.DatasetDTO;
 import eu.europeana.metis.core.dataset.DatasetXslt;
+import eu.europeana.metis.core.dataset.DatasetXslt.XsltType;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
 import eu.europeana.metis.core.engine.base.item.report.DataItemStatus;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorDetails;
@@ -23,28 +24,33 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.user.User;
 import eu.europeana.metis.core.user.User.UserBuilder;
-import eu.europeana.metis.core.workflow.ScheduleFrequence;
-import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
+import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.core.workflow.plugins.HTTPHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.IndexToPreviewPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.IndexToPublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.LinkCheckingPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.MediaProcessPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.NormalizationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 
 public class TestObjectFactory {
@@ -66,40 +72,66 @@ public class TestObjectFactory {
   }
 
   /**
-   * Create dummy workflow
+   * Create a dummy workflow
    *
    * @return the created workflow
    */
   public static Workflow createWorkflowObject() {
     Workflow workflow = new Workflow();
     workflow.setDatasetId(Integer.toString(DATASETID));
-    OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
-    oaipmhHarvestPluginMetadata.setUrl("http://example.com");
-    oaipmhHarvestPluginMetadata.setEnabled(true);
-    ValidationExternalPluginMetadata validationExternalPluginMetadata = new ValidationExternalPluginMetadata();
-    validationExternalPluginMetadata.setEnabled(true);
-    TransformationPluginMetadata transformationPluginMetadata = new TransformationPluginMetadata();
-    transformationPluginMetadata.setEnabled(true);
-    ValidationInternalPluginMetadata validationInternalPluginMetadata = new ValidationInternalPluginMetadata();
-    validationInternalPluginMetadata.setEnabled(true);
-    NormalizationPluginMetadata normalizationPluginMetadata = new NormalizationPluginMetadata();
-    normalizationPluginMetadata.setEnabled(true);
-    LinkCheckingPluginMetadata linkCheckingPluginMetadata = new LinkCheckingPluginMetadata();
-    linkCheckingPluginMetadata.setEnabled(true);
-    EnrichmentPluginMetadata enrichmentPluginMetadata = new EnrichmentPluginMetadata();
-    enrichmentPluginMetadata.setEnabled(true);
-
-    List<AbstractExecutablePluginMetadata> abstractMetisPluginMetadata = new ArrayList<>();
-    abstractMetisPluginMetadata.add(oaipmhHarvestPluginMetadata);
-    abstractMetisPluginMetadata.add(validationExternalPluginMetadata);
-    abstractMetisPluginMetadata.add(transformationPluginMetadata);
-    abstractMetisPluginMetadata.add(validationInternalPluginMetadata);
-    abstractMetisPluginMetadata.add(normalizationPluginMetadata);
-    abstractMetisPluginMetadata.add(linkCheckingPluginMetadata);
-    abstractMetisPluginMetadata.add(enrichmentPluginMetadata);
-    workflow.setMetisPluginsMetadata(abstractMetisPluginMetadata);
+    List<AbstractExecutablePluginMetadata> abstractExecutablePluginMetadata = List.of(
+        enableMetadata(new OaipmhHarvestPluginMetadata()),
+        enableMetadata(new ValidationExternalPluginMetadata()),
+        enableMetadata(new TransformationPluginMetadata()),
+        enableMetadata(new ValidationInternalPluginMetadata()),
+        enableMetadata(new NormalizationPluginMetadata()),
+        enableMetadata(new LinkCheckingPluginMetadata()),
+        enableMetadata(new EnrichmentPluginMetadata())
+    );
+    workflow.setMetisPluginsMetadata(abstractExecutablePluginMetadata);
 
     return workflow;
+  }
+
+  private static <T extends AbstractExecutablePluginMetadata> T enableMetadata(T abstractExecutablePluginMetadata) {
+    abstractExecutablePluginMetadata.setEnabled(true);
+    return abstractExecutablePluginMetadata;
+  }
+
+  public static WorkflowExecution createWorkflowExecutionObject(ExecutablePluginType executablePluginType) {
+    Dataset dataset = createDataset(DATASETNAME);
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
+    AbstractExecutablePlugin<?> executablePlugin = createExecutablePlugin(executablePluginType);
+    abstractMetisPlugins.add(executablePlugin);
+
+    WorkflowExecution workflowExecution = new WorkflowExecution();
+    workflowExecution.setNextExecutablePluginType(executablePluginType);
+    workflowExecution.setDatasetId(dataset.getDatasetId());
+    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setMetisPlugins(abstractMetisPlugins);
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    workflowExecution.setCreatedDate(Instant.now());
+
+    return workflowExecution;
+  }
+
+  public static AbstractExecutablePlugin<?> createExecutablePlugin(ExecutablePluginType type) {
+    return ExecutablePluginFactory.createPlugin(switch (type) {
+      case HTTP_HARVEST -> new HTTPHarvestPluginMetadata();
+      case OAIPMH_HARVEST -> new OaipmhHarvestPluginMetadata();
+      case ENRICHMENT -> new EnrichmentPluginMetadata();
+      case MEDIA_PROCESS -> new MediaProcessPluginMetadata();
+      case LINK_CHECKING -> new LinkCheckingPluginMetadata();
+      case TRANSFORMATION_EXTERNAL -> new TransformationExternalPluginMetadata();
+      case VALIDATION_EXTERNAL -> new ValidationExternalPluginMetadata();
+      case TRANSFORMATION -> new TransformationPluginMetadata();
+      case VALIDATION_INTERNAL -> new ValidationInternalPluginMetadata();
+      case NORMALIZATION -> new NormalizationPluginMetadata();
+      case PREVIEW -> new IndexToPreviewPluginMetadata();
+      case PUBLISH -> new IndexToPublishPluginMetadata();
+      case DEPUBLISH -> new DepublishPluginMetadata();
+    });
   }
 
   /**
@@ -109,34 +141,28 @@ public class TestObjectFactory {
    */
   public static WorkflowExecution createWorkflowExecutionObject() {
     Dataset dataset = createDataset(DATASETNAME);
-    ArrayList<AbstractMetisPlugin> abstractMetisPlugins = new ArrayList<>();
-    AbstractMetisPlugin oaipmhHarvestPlugin = ExecutablePluginFactory
+    ArrayList<AbstractMetisPlugin<?>> abstractMetisPlugins = new ArrayList<>();
+    AbstractMetisPlugin<?> oaipmhHarvestPlugin = ExecutablePluginFactory
         .createPlugin(new OaipmhHarvestPluginMetadata());
     abstractMetisPlugins.add(oaipmhHarvestPlugin);
-    AbstractMetisPlugin validationExternalPlugin = ExecutablePluginFactory
+    AbstractMetisPlugin<?> validationExternalPlugin = ExecutablePluginFactory
         .createPlugin(new ValidationExternalPluginMetadata());
     abstractMetisPlugins.add(validationExternalPlugin);
 
-    WorkflowExecution workflowExecution = new WorkflowExecution();
-    workflowExecution.setDatasetId(dataset.getDatasetId());
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
-    workflowExecution.setId(new ObjectId());
-    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
-
     return workflowExecution;
   }
 
   public static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
-    WorkflowExecution workflowExecution = new WorkflowExecution();
-    workflowExecution.setDatasetId(dataset.getDatasetId());
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
-    workflowExecution.setMetisPlugins(new ArrayList<>());
-    workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
-
-    return workflowExecution;
+    WorkflowExecution execution = new WorkflowExecution();
+    execution.setDatasetId(dataset.getDatasetId());
+    execution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    execution.setWorkflowStatus(WorkflowStatus.INQUEUE);
+    execution.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+    execution.setId(new ObjectId());
+    return execution;
   }
 
   /**
@@ -160,66 +186,13 @@ public class TestObjectFactory {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       Dataset dataset = createDataset(String.format("%s%s", DATASETNAME, i));
-      dataset.setId(new ObjectId(new Date(i)));
+      dataset.setId(new ObjectId());
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
       workflowExecution.setId(new ObjectId());
       result.add(new ExecutionDatasetPair(dataset, workflowExecution));
     }
     return result;
-  }
-
-  /**
-   * Create a dummy scheduled workflow
-   *
-   * @return the created scheduled workflow
-   */
-  public static ScheduledWorkflow createScheduledWorkflowObject() {
-    ScheduledWorkflow scheduledWorkflow = new ScheduledWorkflow();
-    scheduledWorkflow.setDatasetId(Integer.toString(DATASETID));
-    scheduledWorkflow.setPointerDate(new Date());
-    scheduledWorkflow.setScheduleFrequence(ScheduleFrequence.ONCE);
-    return scheduledWorkflow;
-  }
-
-  /**
-   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each dataset.
-   *
-   * @param size the number of dummy scheduled workflows to create
-   * @return the created list
-   */
-  public static List<ScheduledWorkflow> createListOfScheduledWorkflows(int size) {
-    List<ScheduledWorkflow> scheduledWorkflows = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-      scheduledWorkflow.setId(new ObjectId());
-      scheduledWorkflow.setDatasetId(Integer.toString(DATASETID + i));
-      scheduledWorkflows.add(scheduledWorkflow);
-    }
-    return scheduledWorkflows;
-  }
-
-  /**
-   * Create a list of dummy scheduled workflows with pointer date and frequency. The dataset name will have a suffix number for
-   * each dataset.
-   *
-   * @param size the number of dummy scheduled workflows to create
-   * @param date the pointer date
-   * @param scheduleFrequence the schedule frequence
-   * @return the created list
-   */
-  public static List<ScheduledWorkflow> createListOfScheduledWorkflowsWithDateAndFrequence(
-      int size, Date date, ScheduleFrequence scheduleFrequence) {
-    List<ScheduledWorkflow> scheduledWorkflows = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-      scheduledWorkflow.setId(new ObjectId());
-      scheduledWorkflow.setDatasetId(Integer.toString(DATASETID + i));
-      scheduledWorkflow.setPointerDate(date);
-      scheduledWorkflow.setScheduleFrequence(scheduleFrequence);
-      scheduledWorkflows.add(scheduledWorkflow);
-    }
-    return scheduledWorkflows;
   }
 
   /**
@@ -238,8 +211,8 @@ public class TestObjectFactory {
     ds.setIntermediateProvider(providerId);
     ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
+    ds.setCreatedDate(Instant.now());
+    ds.setUpdatedDate(Instant.now());
     ds.setReplacedBy("replacedBy");
     ds.setReplaces("12345");
     ds.setCountry(Country.GREECE);
@@ -267,8 +240,8 @@ public class TestObjectFactory {
     ds.setIntermediateProvider(providerId);
     ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
+    ds.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+    ds.setUpdatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     ds.setReplacedBy("replacedBy");
     ds.setReplaces("12345");
     ds.setCountry(Country.GREECE);
@@ -287,7 +260,6 @@ public class TestObjectFactory {
         .lastName("lastName")
         .issuedAt(Instant.now())
         .build();
-
   }
 
   /**
@@ -300,29 +272,20 @@ public class TestObjectFactory {
         "additional info", "europeanaId", 0L);
     SubTaskInfo subTaskInfo2 = new SubTaskInfo(2, "some_resource_id2", RecordState.SUCCESS, "info",
         "additional info", "europeanaId", 0L);
-    ArrayList<SubTaskInfo> subTaskInfos = new ArrayList<>();
-    subTaskInfos.add(subTaskInfo1);
-    subTaskInfos.add(subTaskInfo2);
-    return subTaskInfos;
+    return List.of(subTaskInfo1, subTaskInfo2);
   }
 
   public static List<DataItemStatus> createExternalRecordStatusList() {
-    List<SubTaskInfo> listOfSubTaskInfo = createListOfSubTaskInfo();
-
-    List<DataItemStatus> dataItemStatusList = new ArrayList<>();
-    for (SubTaskInfo subTaskInfo : listOfSubTaskInfo) {
-      DataItemStatus dataItemStatus = new DataItemStatus(
-          subTaskInfo.getResourceNum(),
-          subTaskInfo.getResource(),
-          DataItemState.valueOf(subTaskInfo.getRecordState().name()),
-          subTaskInfo.getInfo(),
-          subTaskInfo.getEuropeanaId(),
-          subTaskInfo.getProcessingTime(),
-          subTaskInfo.getResultResource());
-      dataItemStatusList.add(dataItemStatus);
-    }
-    return dataItemStatusList;
-
+    return createListOfSubTaskInfo().stream()
+                                    .map(subTaskInfo -> new DataItemStatus(
+                                        subTaskInfo.getResourceNum(),
+                                        subTaskInfo.getResource(),
+                                        DataItemState.valueOf(subTaskInfo.getRecordState().name()),
+                                        subTaskInfo.getInfo(),
+                                        subTaskInfo.getEuropeanaId(),
+                                        subTaskInfo.getProcessingTime(),
+                                        subTaskInfo.getResultResource()))
+                                    .toList();
   }
 
   /**
@@ -395,7 +358,7 @@ public class TestObjectFactory {
       }
       return new EngineTaskErrorInfo(taskErrorInfo.getErrorType(), taskErrorInfo.getMessage(),
           taskErrorInfo.getOccurrences(), engineTaskErrorDetailsList);
-    }).collect(Collectors.toList());
+    }).toList();
     return new EngineTaskErrors(Long.toString(taskErrorsInfo.getId()), engineTaskErrorInfoList);
   }
 
@@ -418,7 +381,7 @@ public class TestObjectFactory {
    * @return the created dataset xslt
    */
   public static DatasetXslt createXslt(Dataset dataset) {
-    DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(),
+    DatasetXslt datasetXslt = new DatasetXslt(dataset.getDatasetId(), XsltType.INTERNAL,
         """
             <?xml version="1.0" encoding="UTF-8"?>
             <xsl:stylesheet version="2.0"

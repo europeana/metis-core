@@ -2,6 +2,7 @@ package eu.europeana.metis.core.engine.base;
 
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.DATASET_IDS_TO_REDIRECT_FROM;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.DEPUBLICATION_REASON;
+import static eu.europeana.metis.core.engine.base.EngineTaskKey.ENGINE_DATASET_ID;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.GENERATE_STATS;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.HARVEST_DATE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.INCREMENTAL_HARVEST;
@@ -29,36 +30,40 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMATRON_LOCAT
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMA_NAME;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_DATABASE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
+import static lombok.AccessLevel.PRIVATE;
 
 import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
+import lombok.NoArgsConstructor;
 import org.springframework.util.CollectionUtils;
 
 /**
  * Configures task parameters for the engine tasks in various contexts, such as harvesting, validation, transformation, and
  * indexing.
  */
+@NoArgsConstructor(access = PRIVATE)
 public final class EngineTaskParametersConfigurator {
 
-  private EngineTaskParametersConfigurator() {
-  }
+  private static final DateTimeFormatter UTC_DATE_FORMAT =
+      DateTimeFormatter.ofPattern(CommonStringValues.DATE_FORMAT_Z, Locale.ROOT)
+                       .withZone(ZoneOffset.UTC);
 
   /**
    * Creates a default set of task parameters used for configuring an engine task.
    *
+   * @param engineDatasetId the identifier of the engine dataset
    * @param datasetId the identifier of the dataset
    * @param previousTaskId the identifier of the previous task
    * @param inputDataRevision the revision of input data
@@ -66,8 +71,9 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParameters(
-      String datasetId, String previousTaskId, DataRevision inputDataRevision, String dataLocation) {
+      String engineDatasetId, String datasetId, String previousTaskId, DataRevision inputDataRevision, String dataLocation) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     parameters.put(REVISION_NAME, inputDataRevision.name());
@@ -82,6 +88,7 @@ public final class EngineTaskParametersConfigurator {
   /**
    * Creates a map of default task parameters for a harvest operation.
    *
+   * @param engineDatasetId the identifier of the engine dataset
    * @param datasetId the identifier of the dataset to be harvested
    * @param incrementalHarvest a flag indicating if the harvest should be incremental
    * @param startedDate the starting date of the harvest operation
@@ -90,8 +97,10 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
-      String datasetId, boolean incrementalHarvest, Date startedDate, String dataLocation, String providerId) {
+      String engineDatasetId, String datasetId, boolean incrementalHarvest, Instant startedDate, String dataLocation,
+      String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(INCREMENTAL_HARVEST, String.valueOf(incrementalHarvest));
     parameters.put(HARVEST_DATE, formatUtcDate(startedDate));
@@ -109,7 +118,7 @@ public final class EngineTaskParametersConfigurator {
    * @param ecloudProvider the identifier of the eCloud provider associated with the revision
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
-  public static DataRevision createDataRevision(PluginType pluginType, Date pluginStartedDate, String ecloudProvider) {
+  public static DataRevision createDataRevision(PluginType pluginType, Instant pluginStartedDate, String ecloudProvider) {
     return new DataRevision(pluginType.name(), ecloudProvider, pluginStartedDate, false);
   }
 
@@ -163,6 +172,21 @@ public final class EngineTaskParametersConfigurator {
   }
 
   /**
+   * Creates a map of transformation external parameters.
+   *
+   * @param metisCoreBaseUrl the base URL for the Metis core API
+   * @param xsltId the identifier of the XSLT transformation
+   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
+   */
+  public static Map<EngineTaskKey, String> createTransformationExternalParameters(
+      String metisCoreBaseUrl, String xsltId) {
+    Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
+    parameters.put(XSLT_URL,
+        metisCoreBaseUrl + RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID, Collections.singletonList(xsltId)));
+    return parameters;
+  }
+
+  /**
    * Creates a map of transformation parameters.
    *
    * @param metisCoreBaseUrl the base URL for the Metis core API
@@ -172,7 +196,7 @@ public final class EngineTaskParametersConfigurator {
    * @param language the language associated with the dataset
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
-  public static Map<EngineTaskKey, String> createTransformationParameters(
+  public static Map<EngineTaskKey, String> createTransformationInternalParameters(
       String metisCoreBaseUrl, String xsltId, String datasetName, String country, String language) {
     Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(XSLT_URL,
@@ -223,9 +247,9 @@ public final class EngineTaskParametersConfigurator {
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createIndexParameters(
-      Date pluginStartedDate,
+      Instant pluginStartedDate,
       boolean incrementalIndexing,
-      Date harvestDate,
+      Instant harvestDate,
       boolean preserveTimestamps,
       List<String> datasetIdsToRedirectFrom,
       boolean performRedirects,
@@ -274,9 +298,7 @@ public final class EngineTaskParametersConfigurator {
     return parameters;
   }
 
-  private static String formatUtcDate(Date date) {
-    DateFormat dateFormat = new SimpleDateFormat(CommonStringValues.DATE_FORMAT_Z, Locale.US);
-    dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return dateFormat.format(date);
+  private static String formatUtcDate(Instant instant) {
+    return UTC_DATE_FORMAT.format(instant);
   }
 }

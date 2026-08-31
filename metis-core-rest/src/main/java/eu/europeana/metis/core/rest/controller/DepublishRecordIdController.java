@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.security.AuthenticationUtils.getUserId;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.metis.core.exceptions.NoDatasetFoundException;
@@ -14,13 +15,10 @@ import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.DepublicationReason;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -40,10 +38,10 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Controller for calls related to depublish record ids.
  */
+@Slf4j
 @RestController
 public class DepublishRecordIdController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final DepublishRecordIdService depublishRecordIdService;
 
   /**
@@ -67,18 +65,14 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
-      MediaType.TEXT_PLAIN_VALUE})
+  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     final int added = depublishRecordIdService
         .addRecordIdsToBeDepublished(datasetId, recordIdsInSeparateLines);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("{} Depublish record ids added to dataset with datasetId: {}", added, datasetId);
-    }
+    log.info("{} Depublish record ids added to dataset with datasetId: {}", added, escapeJava(datasetId));
   }
 
   /**
@@ -92,8 +86,7 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
-      MediaType.MULTIPART_FORM_DATA_VALUE})
+  @PostMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public void createRecordIdsToBeDepublished(@PathVariable("datasetId") String datasetId,
       @RequestPart("depublicationFile") MultipartFile recordIdsFile) throws GenericMetisException {
@@ -118,16 +111,12 @@ public class DepublishRecordIdController {
    * <li>{@link BadContentException} if some content or the operation were invalid</li>
    * </ul>
    */
-  @DeleteMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {
-      MediaType.TEXT_PLAIN_VALUE})
+  @DeleteMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, consumes = {MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deletePendingRecordIds(@PathVariable("datasetId") String datasetId, @RequestBody String recordIdsInSeparateLines
   ) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     final Long removedRecordIds = depublishRecordIdService.deletePendingRecordIds(datasetId, recordIdsInSeparateLines);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("{} Depublish record ids removed from database with datasetId: {}", removedRecordIds, datasetId);
-    }
+    log.info("{} Depublish record ids removed from database with datasetId: {}", removedRecordIds, escapeJava(datasetId));
   }
 
   /**
@@ -144,8 +133,7 @@ public class DepublishRecordIdController {
    * <li>{@link NoDatasetFoundException} if the dataset for datasetId was not found.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DEPUBLISH_RECORDIDS_DATASETID, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DepublicationInfoView getDepublishRecordIds(
       @PathVariable("datasetId") String datasetId,
@@ -188,8 +176,7 @@ public class DepublishRecordIdController {
    * happen since ids are UUIDs</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DEPUBLISH_EXECUTE_DATASETID, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @PostMapping(value = RestEndpoints.DEPUBLISH_EXECUTE_DATASETID, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public WorkflowExecutionDTO addDepublishWorkflowInQueueOfWorkflowExecutions(
       @AuthenticationPrincipal Jwt jwtPrincipal,
@@ -209,8 +196,7 @@ public class DepublishRecordIdController {
    *
    * @return All possible values of depublication reasons
    */
-  @GetMapping(value = RestEndpoints.DEPUBLISH_REASONS, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DEPUBLISH_REASONS, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<DepublicationReasonView> getAllDepublicationReasons() {
     return Arrays.stream(DepublicationReason.values()).filter(value -> value != DepublicationReason.LEGACY)

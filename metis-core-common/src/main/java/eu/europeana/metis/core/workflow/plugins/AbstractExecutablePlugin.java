@@ -1,23 +1,22 @@
 package eu.europeana.metis.core.workflow.plugins;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * This abstract class is the base implementation of {@link ExecutablePlugin} and all executable plugins should inherit from it.
  *
  * @param <M> The type of the plugin metadata that this plugin represents.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePluginMetadata>
     extends AbstractMetisPlugin<M> implements ExecutablePlugin {
 
   private String externalTaskId;
   private ExecutionProgress executionProgress = new ExecutionProgress();
-
-  /**
-   * Required by (de)serialization in db.
-   * <p>It is not to be used manually</p>
-   */
-  AbstractExecutablePlugin() {
-    //Required by (de)serialization in db
-  }
 
   /**
    * Constructor with provided pluginType
@@ -36,29 +35,5 @@ public abstract class AbstractExecutablePlugin<M extends AbstractExecutablePlugi
    */
   AbstractExecutablePlugin(PluginType pluginType, M pluginMetadata) {
     super(pluginType, pluginMetadata);
-  }
-
-  @Override
-  public String getExternalTaskId() {
-    return this.externalTaskId;
-  }
-
-  /**
-   * @param externalTaskId String representation of the external task identifier of the execution
-   */
-  public void setExternalTaskId(String externalTaskId) {
-    this.externalTaskId = externalTaskId;
-  }
-
-  @Override
-  public ExecutionProgress getExecutionProgress() {
-    return this.executionProgress;
-  }
-
-  /**
-   * @param executionProgress {@link ExecutionProgress} of the external execution
-   */
-  public void setExecutionProgress(ExecutionProgress executionProgress) {
-    this.executionProgress = executionProgress;
   }
 }

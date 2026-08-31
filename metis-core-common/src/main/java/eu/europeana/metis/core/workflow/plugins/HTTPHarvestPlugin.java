@@ -12,7 +12,7 @@ public class HTTPHarvestPlugin extends AbstractExecutablePlugin<HTTPHarvestPlugi
    * plugin.
    */
   public HTTPHarvestPlugin() {
-    // Required for json serialization
+    // Required for JSON serialization
     super(PluginType.HTTP_HARVEST);
   }
 

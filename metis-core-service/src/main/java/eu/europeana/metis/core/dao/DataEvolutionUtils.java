@@ -18,11 +18,11 @@ import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.PluginStatus;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +43,9 @@ public class DataEvolutionUtils {
 
   private static final Set<ExecutablePluginType> HARVEST_PLUGIN_GROUP = Collections.unmodifiableSet(
       EnumSet.of(ExecutablePluginType.OAIPMH_HARVEST, ExecutablePluginType.HTTP_HARVEST));
+  private static final Set<ExecutablePluginType> HARVEST_AND_TRANSFORMATION_PLUGIN_GROUP = Collections.unmodifiableSet(
+      EnumSet.of(ExecutablePluginType.OAIPMH_HARVEST, ExecutablePluginType.HTTP_HARVEST,
+          ExecutablePluginType.TRANSFORMATION_EXTERNAL));
   private static final Set<ExecutablePluginType> PROCESS_PLUGIN_GROUP = Collections.unmodifiableSet(
       EnumSet.of(ExecutablePluginType.VALIDATION_EXTERNAL, ExecutablePluginType.TRANSFORMATION,
           ExecutablePluginType.VALIDATION_INTERNAL, ExecutablePluginType.NORMALIZATION, ExecutablePluginType.ENRICHMENT,
@@ -198,7 +201,7 @@ public class DataEvolutionUtils {
       // Sort on finished state, so that the root check occurs as little as possible.
       final Stream<PluginWithExecutionId<ExecutablePlugin>> sortedSuccessfulPlugins = latestSuccessfulPlugins.sorted(
           Comparator.comparing(
-              plugin -> Optional.ofNullable(plugin.getPlugin().getFinishedDate()).orElseGet(() -> new Date(Long.MIN_VALUE)),
+              plugin -> Optional.ofNullable(plugin.getPlugin().getFinishedDate()).orElse(Instant.MIN),
               Comparator.reverseOrder()));
 
       // Find the first plugin that satisfies the root check. If none found, throw exception.
@@ -214,7 +217,7 @@ public class DataEvolutionUtils {
   private static Boolean pluginHasSuccessfulRecords(PluginWithExecutionId<ExecutablePlugin> plugin) {
     final ExecutionProgress executionProgress = plugin.getPlugin().getExecutionProgress();
     return Optional.ofNullable(executionProgress)
-                   .map(progress -> progress.getProcessedRecords() > progress.getErrors() || progress.getDeletedRecords() > 0)
+                   .map(progress -> progress.getProcessedRecords() > progress.getFailRecords() || progress.getSuccessDepublishRecords() > 0)
                    .orElse(Boolean.FALSE);
   }
 
@@ -244,7 +247,8 @@ public class DataEvolutionUtils {
    */
   public static Set<ExecutablePluginType> getPredecessorTypes(ExecutablePluginType pluginType) {
     return switch (pluginType) {
-      case VALIDATION_EXTERNAL -> HARVEST_PLUGIN_GROUP;
+      case TRANSFORMATION_EXTERNAL -> HARVEST_PLUGIN_GROUP;
+      case VALIDATION_EXTERNAL -> HARVEST_AND_TRANSFORMATION_PLUGIN_GROUP;
       case TRANSFORMATION -> EnumSet.of(ExecutablePluginType.VALIDATION_EXTERNAL);
       case VALIDATION_INTERNAL -> EnumSet.of(ExecutablePluginType.TRANSFORMATION);
       case NORMALIZATION -> EnumSet.of(ExecutablePluginType.VALIDATION_INTERNAL);
@@ -350,8 +354,8 @@ public class DataEvolutionUtils {
    *
    * @param datasetId The dataset ID for which to obtain the chain.
    * @return The chain, in the form of plugin-execution pairs that are ordered chronologically. Is never null, but can be empty if
-   * no such chain exists (i.e. the dataset does not have a published harvest, or we find an index after the last full harvest that
-   * is invalid or did somehow not originate from a harvest).
+   * no such chain exists (i.e. the dataset does not have a published harvest, or we find an index after the last full harvest
+   * that is invalid or did somehow not originate from a harvest).
    */
   public List<PluginWithExecutionId<ExecutablePlugin>> getPublishedHarvestIncrements(String datasetId) {
 
@@ -402,6 +406,16 @@ public class DataEvolutionUtils {
   private static boolean isIncrementalHarvest(PluginWithExecutionId<ExecutablePlugin> rootHarvest) {
     return (rootHarvest.getPlugin().getPluginMetadata() instanceof AbstractHarvestPluginMetadata abstractHarvestPluginMetadata)
         && abstractHarvestPluginMetadata.isIncrementalHarvest();
+  }
+
+  /**
+   * Retrieves the set of executable plugin types that are classified
+   * as part of the harvest or transformation plugins.
+   *
+   * @return a set containing the plugin types associated with harvest or transformation.
+   */
+  public static Set<ExecutablePluginType> getHarvestAndTransformationPluginGroup() {
+    return HARVEST_AND_TRANSFORMATION_PLUGIN_GROUP;
   }
 
   /**

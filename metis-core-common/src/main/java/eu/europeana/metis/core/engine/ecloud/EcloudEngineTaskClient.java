@@ -13,6 +13,7 @@ import eu.europeana.cloud.common.model.dps.TaskInfo;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -28,12 +29,14 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskState;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.stats.NodePathStatisticsDTO;
 import eu.europeana.metis.core.rest.stats.RecordStatisticsDTO;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.UnrecoverableExternalTaskException;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,16 +67,21 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
 
   private static EngineTaskProgress convertToProcessingEngineTaskProgress(TaskInfo taskInfo) {
     EngineTaskProgress engineTaskProgress = new EngineTaskProgress();
-    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecordsNumber());
-    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecordsCount());
-    engineTaskProgress.setDeletedRecords(taskInfo.getDeletedRecordsCount());
-    engineTaskProgress.setIgnoredRecords(taskInfo.getIgnoredRecordsCount());
-    engineTaskProgress.setProcessedErrors(taskInfo.getProcessedErrorsCount());
-    engineTaskProgress.setPostProcessedRecordsCount(taskInfo.getPostProcessedRecordsCount());
-    engineTaskProgress.setDeletedErrors(taskInfo.getDeletedErrorsCount());
-    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getState().name());
+    engineTaskProgress.setExpectedRecords(taskInfo.getExpectedRecords());
+    engineTaskProgress.setProcessedRecords(taskInfo.getProcessedRecords());
+    engineTaskProgress.setSuccessRecords(taskInfo.getSuccessRecords());
+    engineTaskProgress.setFailRecords(taskInfo.getFailRecords());
+    engineTaskProgress.setWarningRecords(taskInfo.getWarningRecords());
+    engineTaskProgress.setDuplicateRecords(taskInfo.getDuplicateRecords());
+    engineTaskProgress.setUnchangedRecords(taskInfo.getUnchangedRecords());
+    engineTaskProgress.setExpectedDepublishRecords(taskInfo.getExpectedDepublishRecords());
+    engineTaskProgress.setSuccessDepublishRecords(taskInfo.getSuccessDepublishRecords());
+    engineTaskProgress.setFailDepublishRecords(taskInfo.getFailDepublishRecords());
+    engineTaskProgress.setProcessedDepublishRecords(taskInfo.getProcessedDepublishRecords());
+
+    EngineTaskState engineTaskState = EngineTaskState.valueOf(taskInfo.getEngineTaskState().name());
     engineTaskProgress.setEngineTaskState(engineTaskState);
-    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getStateDescription());
+    engineTaskProgress.setEngineTaskStateInfo(taskInfo.getEngineTaskStateInfo());
     return engineTaskProgress;
   }
 
@@ -99,7 +107,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId)
+  public EngineTaskProgress getEngineTaskProgress(String topologyName, String taskId, ExecutablePluginType pluginType)
       throws ExternalTaskException {
     try {
       TaskInfo taskInfo = dpsClient.getTaskProgress(topologyName, parseLong(taskId));
@@ -228,7 +236,8 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public void cancelEngineTask(String topologyName, String taskId, String message) throws ExternalTaskException {
+  public void cancelEngineTask(String topologyName, String taskId, String message, ExecutablePluginType pluginType)
+      throws ExternalTaskException {
     try {
       dpsClient.killTask(topologyName, parseLong(taskId), message);
     } catch (DpsException | RuntimeException e) {
@@ -237,26 +246,34 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   }
 
   @Override
-  public boolean createEngineDatasetId(String engineDatasetId) throws ExternalTaskException {
-    return ecloudEngineDatasetRecordClient.createEngineDatasetId(ecloudEngineTaskSettings.getProvider(), engineDatasetId);
+  public String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
+    String engineDatasetId = UUID.randomUUID().toString();
+    boolean isEngineDatasetIdCreated = ecloudEngineDatasetRecordClient.createEngineDatasetId(
+        ecloudEngineTaskSettings.getProvider(), engineDatasetId);
+    if (!isEngineDatasetIdCreated) {
+      throw new ExternalTaskException(
+          String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
+    }
+    return engineDatasetId;
   }
 
   @Override
-  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Date revisionTimestamp,
+  public List<Record> getRecords(String engineDatasetId, String representationName, String revisionName, Instant revisionTimestamp,
       int numberOfRecords) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), engineDatasetId, representationName,
         revisionName, revisionTimestamp, numberOfRecords);
   }
 
   @Override
-  public List<Record> getRecords(List<String> recordIds, String revisionName, Date revisionTimestamp)
+  public List<Record> getRecords(List<String> recordIds, String revisionName, Instant revisionTimestamp)
       throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecords(ecloudEngineTaskSettings.getProvider(), recordIds, revisionName,
         revisionTimestamp);
   }
 
   @Override
-  public Record getRecord(String recordId, String revisionName, Date revisionTimestamp) throws ExternalTaskException {
+  public Record getRecord(String engineDatasetId, String recordId, String revisionName, Instant revisionTimestamp,
+      ExecutablePluginType pluginType) throws ExternalTaskException {
     return ecloudEngineDatasetRecordClient.getRecord(ecloudEngineTaskSettings.getProvider(), recordId, revisionName,
         revisionTimestamp);
   }

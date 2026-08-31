@@ -30,10 +30,9 @@ import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +52,6 @@ public class TestRedirectionBase {
   static HTTPHarvestPluginMetadata getHttpHarvestPluginMetadata() {
     final HTTPHarvestPluginMetadata httpHarvestPluginMetadata = new HTTPHarvestPluginMetadata();
     httpHarvestPluginMetadata.setUrl("https://url.org");
-    httpHarvestPluginMetadata.setUser("user");
     httpHarvestPluginMetadata.setIncrementalHarvest(false);
     httpHarvestPluginMetadata.setEnabled(true);
     return httpHarvestPluginMetadata;
@@ -61,7 +59,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static ValidationExternalPluginMetadata getValidationExternalPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final ValidationExternalPluginMetadata validationExternalPluginMetadata = new ValidationExternalPluginMetadata();
     validationExternalPluginMetadata.setEnabled(true);
     validationExternalPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
@@ -74,7 +72,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static TransformationPluginMetadata getTransformationPluginMetadata(Dataset dataset, String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final TransformationPluginMetadata transformationPluginMetadata = new TransformationPluginMetadata();
     transformationPluginMetadata.setEnabled(true);
     transformationPluginMetadata.setCustomXslt(false);
@@ -88,7 +86,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static ValidationInternalPluginMetadata getValidationInternalPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final ValidationInternalPluginMetadata validationInternalPluginMetadata = new ValidationInternalPluginMetadata();
     validationInternalPluginMetadata.setEnabled(true);
     validationInternalPluginMetadata.setUrlOfSchemasZip("http://ftp.eanadev.org/schema_zips/europeana_schemas-20220809.zip");
@@ -101,7 +99,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static NormalizationPluginMetadata getNormalizationPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final NormalizationPluginMetadata normalizationPluginMetadata = new NormalizationPluginMetadata();
     normalizationPluginMetadata.setEnabled(true);
     normalizationPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
@@ -111,7 +109,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static EnrichmentPluginMetadata getEnrichmentPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final EnrichmentPluginMetadata enrichmentPluginMetadata = new EnrichmentPluginMetadata();
     enrichmentPluginMetadata.setEnabled(true);
     enrichmentPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
@@ -121,7 +119,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static MediaProcessPluginMetadata getMediaProcessPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final MediaProcessPluginMetadata mediaProcessPluginMetadata = new MediaProcessPluginMetadata();
     mediaProcessPluginMetadata.setEnabled(true);
     mediaProcessPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
@@ -132,7 +130,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static ReindexToPreviewPluginMetadata getReindexToPreviewPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final ReindexToPreviewPluginMetadata reindexToPreviewPluginMetadata = new ReindexToPreviewPluginMetadata();
     reindexToPreviewPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
     reindexToPreviewPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
@@ -141,7 +139,7 @@ public class TestRedirectionBase {
 
   @NotNull
   static ReindexToPublishPluginMetadata getReindexToPublishPluginMetadata(String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+      Instant revisionTimeStampPreviousPlugin) {
     final ReindexToPublishPluginMetadata reindexToPublishPluginMetadata = new ReindexToPublishPluginMetadata();
     reindexToPublishPluginMetadata.setRevisionNamePreviousPlugin(revisionNamePreviousPlugin);
     reindexToPublishPluginMetadata.setRevisionTimestampPreviousPlugin(revisionTimeStampPreviousPlugin);
@@ -149,8 +147,8 @@ public class TestRedirectionBase {
   }
 
   @NotNull
-  static IndexToPreviewPluginMetadata getIndexToPreviewPluginMetadata(Date harvestDate, String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+  static IndexToPreviewPluginMetadata getIndexToPreviewPluginMetadata(Instant harvestDate, String revisionNamePreviousPlugin,
+      Instant revisionTimeStampPreviousPlugin) {
     final IndexToPreviewPluginMetadata indexToPreviewPluginMetadata = new IndexToPreviewPluginMetadata();
     indexToPreviewPluginMetadata.setIncrementalIndexing(false);
     indexToPreviewPluginMetadata.setHarvestDate(harvestDate);
@@ -165,8 +163,8 @@ public class TestRedirectionBase {
   }
 
   @NotNull
-  static IndexToPublishPluginMetadata getIndexToPublishPluginMetadata(Date harvestDate, String revisionNamePreviousPlugin,
-      Date revisionTimeStampPreviousPlugin) {
+  static IndexToPublishPluginMetadata getIndexToPublishPluginMetadata(Instant harvestDate, String revisionNamePreviousPlugin,
+      Instant revisionTimeStampPreviousPlugin) {
     final IndexToPublishPluginMetadata indexToPublishPluginMetadata = new IndexToPublishPluginMetadata();
     indexToPublishPluginMetadata.setIncrementalIndexing(false);
     indexToPublishPluginMetadata.setHarvestDate(harvestDate);
@@ -190,8 +188,8 @@ public class TestRedirectionBase {
     dataset.setLanguage(Language.MUL);
     dataset.setDatasetIdsToRedirectFrom(List.of());
     dataset.setCreatedByUserId("userId");
-    dataset.setCreatedDate(Date.from(Instant.now().minus(120, ChronoUnit.MINUTES)));
-    dataset.setUpdatedDate(Date.from(Instant.now()));
+    dataset.setCreatedDate(getDateMinusMinutes(Instant.now(), 120));
+    dataset.setUpdatedDate(Instant.now());
     dataset.setReplacedBy("");
     dataset.setDataProvider("Kunsthochschule Kassel");
     dataset.setProvider("EFG");
@@ -209,18 +207,24 @@ public class TestRedirectionBase {
     executionProgress.setExpectedRecords(1);
     executionProgress.setProcessedRecords(1);
     executionProgress.setProgressPercentage(100);
-    executionProgress.setIgnoredRecords(0);
-    executionProgress.setDeletedRecords(0);
-    executionProgress.setErrors(0);
     executionProgress.setTotalDatabaseRecords(-1);
+    executionProgress.setSuccessRecords(1);
+    executionProgress.setFailRecords(0);
+    executionProgress.setWarningRecords(0);
+    executionProgress.setDuplicateRecords(0);
+    executionProgress.setUnchangedRecords(0);
+    executionProgress.setExpectedDepublishRecords(0);
+    executionProgress.setSuccessDepublishRecords(0);
+    executionProgress.setFailDepublishRecords(0);
+    executionProgress.setProcessedDepublishRecords(0);
     return executionProgress;
   }
 
   @NotNull
   static AbstractExecutablePlugin getExecutablePlugin(ExecutablePluginMetadata executablePluginMetadata,
-      Date startDate,
-      Date updateDate,
-      Date finishDate,
+      Instant startDate,
+      Instant updateDate,
+      Instant finishDate,
       DataStatus dataStatus,
       String id,
       ExecutionProgress executionProgress) {
@@ -252,8 +256,8 @@ public class TestRedirectionBase {
     return typesInWorkflow;
   }
 
-  static Date getDateMinusMinutes(Date date, long minutes) {
-    return Date.from(Instant.from(date.toInstant()).minus(minutes, ChronoUnit.MINUTES));
+  static Instant getDateMinusMinutes(Instant date, long minutes) {
+    return date.minus(Duration.ofMinutes(minutes));
   }
 
   @NotNull
@@ -264,7 +268,7 @@ public class TestRedirectionBase {
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
     workflowExecution.setCancelling(false);
-    Date templateDate = Date.from(Instant.now());
+    Instant templateDate = Instant.now();
 
     workflowExecution.setCreatedDate(templateDate);
     workflowExecution.setStartedDate(getDateMinusMinutes(templateDate,28));
@@ -361,14 +365,14 @@ public class TestRedirectionBase {
   }
 
   @NotNull
-  static WorkflowExecution getWorkflowReindex(Dataset dataset, Date harvestDate) {
+  static WorkflowExecution getWorkflowReindex(Dataset dataset, Instant harvestDate) {
     final WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.FINISHED);
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
     workflowExecution.setCancelling(false);
-    Date templateDate = Date.from(Instant.now());
+    Instant templateDate = Instant.now();
 
     workflowExecution.setCreatedDate(templateDate);
     workflowExecution.setStartedDate(getDateMinusMinutes(templateDate,19));
@@ -408,7 +412,7 @@ public class TestRedirectionBase {
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setStartedBy(dataset.getCreatedByUserId());
     workflowExecution.setCancelling(false);
-    Date templateDate = Date.from(Instant.now());
+    Instant templateDate = Instant.now();
 
     workflowExecution.setCreatedDate(templateDate);
     workflowExecution.setStartedDate(getDateMinusMinutes(templateDate,10));

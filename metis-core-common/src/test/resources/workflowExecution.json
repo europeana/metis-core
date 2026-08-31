@@ -38,14 +38,20 @@
       },
       "externalTaskId": null,
       "executionProgress": {
-        "expectedRecords": 0,
-        "processedRecords": 0,
+        "expectedRecords": 100,
+        "processedRecords": 100,
         "progressPercentage": 0,
-        "ignoredRecords": 0,
-        "deletedRecords": 0,
-        "errors": 0,
         "status": null,
-        "totalDatabaseRecords": -1
+        "totalDatabaseRecords": -1,
+        "successRecords" : 85,
+        "failRecords" : 5,
+        "warningRecords" : 10,
+        "unchangedRecords" : 5,
+        "duplicateRecords" : 5,
+        "processedDepublishRecords" : 5,
+        "expectedDepublishRecords" : 5,
+        "successDepublishRecords" : 3,
+        "failDepublishRecords" : 2
       },
       "topologyName": "oai_harvest"
     },
@@ -70,14 +76,20 @@
       },
       "externalTaskId": null,
       "executionProgress": {
-        "expectedRecords": 0,
-        "processedRecords": 0,
+        "expectedRecords": 100,
+        "processedRecords": 100,
         "progressPercentage": 0,
-        "ignoredRecords": 0,
-        "deletedRecords": 0,
-        "errors": 0,
         "status": null,
-        "totalDatabaseRecords": -1
+        "totalDatabaseRecords": -1,
+        "successRecords" : 85,
+        "failRecords" : 5,
+        "warningRecords" : 10,
+        "unchangedRecords" : 5,
+        "duplicateRecords" : 5,
+        "processedDepublishRecords" : 5,
+        "expectedDepublishRecords" : 5,
+        "successDepublishRecords" : 3,
+        "failDepublishRecords" : 2
       },
       "topologyName": "validation"
     }

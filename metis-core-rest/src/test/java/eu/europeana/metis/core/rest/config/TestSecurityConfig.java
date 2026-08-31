@@ -25,11 +25,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -44,10 +44,10 @@ import org.springframework.web.context.WebApplicationContext;
 @ContextConfiguration(classes = {TestController.class, SecurityConfig.class})
 class TestSecurityConfig {
 
-  @MockBean
+  @MockitoBean
   private JwtDecoder jwtDecoder;
 
-  @MockBean
+  @MockitoBean
   private UserService userService;
 
   private static MockMvc mockMvc;

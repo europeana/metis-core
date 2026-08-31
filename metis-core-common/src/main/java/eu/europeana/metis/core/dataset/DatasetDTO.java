@@ -1,8 +1,5 @@
 package eu.europeana.metis.core.dataset;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import eu.europeana.metis.core.common.CountryDeserializer;
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
@@ -10,9 +7,13 @@ import eu.europeana.metis.core.common.LanguageDeserializer;
 import eu.europeana.metis.core.common.LanguageSerializer;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Data Transfer Object (DTO) representing a dataset.
@@ -20,6 +21,8 @@ import java.util.List;
  * This class encapsulates the metadata and other relevant information about a dataset.
  */
 //TODO: 2025-03-10 - MET-6415 - Abstract this class in smaller components.
+@Getter
+@Setter
 public class DatasetDTO {
 
   private String id;
@@ -34,11 +37,8 @@ public class DatasetDTO {
   private String createdByFirstName;
   private String createdByLastName;
 
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date createdDate;
-
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-  private Date updatedDate;
+  private Instant createdDate;
+  private Instant updatedDate;
 
   private List<String> datasetIdsToRedirectFrom = new ArrayList<>();
   private String replacedBy;
@@ -56,6 +56,7 @@ public class DatasetDTO {
   private PublicationFitness publicationFitness;
   private String notes;
   private String xsltId;
+  private String xsltIdExternal;
 
   public DatasetDTO() {
     //Required for json serialization
@@ -86,6 +87,7 @@ public class DatasetDTO {
    * @param publicationFitness the publication fitness of the dataset
    * @param notes the notes associated with the dataset
    * @param xsltId the ID of the XSLT associated with the dataset
+   * @param xsltIdExternal the ID of the external XSLT associated with the dataset
    */
   public DatasetDTO(
       String id,
@@ -99,8 +101,8 @@ public class DatasetDTO {
       String createdByUserName,
       String createdByFirstName,
       String createdByLastName,
-      Date createdDate,
-      Date updatedDate,
+      Instant createdDate,
+      Instant updatedDate,
       List<String> datasetIdsToRedirectFrom,
       String replacedBy,
       String replaces,
@@ -109,7 +111,8 @@ public class DatasetDTO {
       String description,
       PublicationFitness publicationFitness,
       String notes,
-      String xsltId
+      String xsltId,
+      String xsltIdExternal
   ) {
     this.id = id;
     this.ecloudDatasetId = ecloudDatasetId;
@@ -122,8 +125,8 @@ public class DatasetDTO {
     this.createdByUserName = createdByUserName;
     this.createdByFirstName = createdByFirstName;
     this.createdByLastName = createdByLastName;
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
-    this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
+    this.createdDate = createdDate;
+    this.updatedDate = updatedDate;
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(datasetIdsToRedirectFrom);
     this.replacedBy = replacedBy;
@@ -134,111 +137,7 @@ public class DatasetDTO {
     this.publicationFitness = publicationFitness;
     this.notes = notes;
     this.xsltId = xsltId;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  // Getters and setters
-  public String getEcloudDatasetId() {
-    return ecloudDatasetId;
-  }
-
-  public void setEcloudDatasetId(String ecloudDatasetId) {
-    this.ecloudDatasetId = ecloudDatasetId;
-  }
-
-  public String getDatasetId() {
-    return datasetId;
-  }
-
-  public void setDatasetId(String datasetId) {
-    this.datasetId = datasetId;
-  }
-
-  public String getDatasetName() {
-    return datasetName;
-  }
-
-  public void setDatasetName(String datasetName) {
-    this.datasetName = datasetName;
-  }
-
-  public String getProvider() {
-    return provider;
-  }
-
-  public void setProvider(String provider) {
-    this.provider = provider;
-  }
-
-  public String getDataProvider() {
-    return dataProvider;
-  }
-
-  public void setDataProvider(String dataProvider) {
-    this.dataProvider = dataProvider;
-  }
-
-  public String getIntermediateProvider() {
-    return intermediateProvider;
-  }
-
-  public void setIntermediateProvider(String intermediateProvider) {
-    this.intermediateProvider = intermediateProvider;
-  }
-
-  public String getCreatedByUserId() {
-    return createdByUserId;
-  }
-
-  public void setCreatedByUserId(String createdByUserId) {
-    this.createdByUserId = createdByUserId;
-  }
-
-  public String getCreatedByUserName() {
-    return createdByUserName;
-  }
-
-  public void setCreatedByUserName(String createdByUserName) {
-    this.createdByUserName = createdByUserName;
-  }
-
-  public String getCreatedByFirstName() {
-    return createdByFirstName;
-  }
-
-  public void setCreatedByFirstName(String createdByFirstName) {
-    this.createdByFirstName = createdByFirstName;
-  }
-
-  public String getCreatedByLastName() {
-    return createdByLastName;
-  }
-
-  public void setCreatedByLastName(String createdByLastName) {
-    this.createdByLastName = createdByLastName;
-  }
-
-  public Date getCreatedDate() {
-    return createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public void setCreatedDate(Date createdDate) {
-    this.createdDate = createdDate == null ? null : new Date(createdDate.getTime());
-  }
-
-  public Date getUpdatedDate() {
-    return updatedDate == null ? null : new Date(updatedDate.getTime());
-  }
-
-  public void setUpdatedDate(Date updatedDate) {
-    this.updatedDate = updatedDate == null ? null : new Date(updatedDate.getTime());
+    this.xsltIdExternal = xsltIdExternal;
   }
 
   public List<String> getDatasetIdsToRedirectFrom() {
@@ -249,70 +148,6 @@ public class DatasetDTO {
     this.datasetIdsToRedirectFrom =
         datasetIdsToRedirectFrom == null ? new ArrayList<>() : new ArrayList<>(
             datasetIdsToRedirectFrom);
-  }
-
-  public String getReplacedBy() {
-    return replacedBy;
-  }
-
-  public void setReplacedBy(String replacedBy) {
-    this.replacedBy = replacedBy;
-  }
-
-  public String getReplaces() {
-    return replaces;
-  }
-
-  public void setReplaces(String replaces) {
-    this.replaces = replaces;
-  }
-
-  public Country getCountry() {
-    return country;
-  }
-
-  public void setCountry(Country country) {
-    this.country = country;
-  }
-
-  public Language getLanguage() {
-    return language;
-  }
-
-  public void setLanguage(Language language) {
-    this.language = language;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public PublicationFitness getPublicationFitness() {
-    return publicationFitness;
-  }
-
-  public void setPublicationFitness(PublicationFitness publicationFitness) {
-    this.publicationFitness = publicationFitness;
-  }
-
-  public String getNotes() {
-    return notes;
-  }
-
-  public void setNotes(String notes) {
-    this.notes = notes;
-  }
-
-  public String getXsltId() {
-    return xsltId;
-  }
-
-  public void setXsltId(String xsltId) {
-    this.xsltId = xsltId;
   }
 }
 

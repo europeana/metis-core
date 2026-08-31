@@ -1,12 +1,13 @@
 package eu.europeana.metis.core.rest;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This class represents a history of operations that are applied to a dataset.
@@ -26,35 +27,12 @@ public class VersionEvolution {
   /**
    * This class represents one operation applied to a dataset.
    */
+  @Getter
+  @Setter
   public static class VersionEvolutionStep {
 
     private String workflowExecutionId;
     private ExecutablePluginType pluginType;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-    private Date finishedTime;
-
-    public String getWorkflowExecutionId() {
-      return workflowExecutionId;
-    }
-
-    public void setWorkflowExecutionId(String workflowExecutionId) {
-      this.workflowExecutionId = workflowExecutionId;
-    }
-
-    public ExecutablePluginType getPluginType() {
-      return pluginType;
-    }
-
-    public void setPluginType(ExecutablePluginType pluginType) {
-      this.pluginType = pluginType;
-    }
-
-    public Date getFinishedTime() {
-      return new Date(finishedTime.getTime());
-    }
-
-    public void setFinishedTime(Date finishedTime) {
-      this.finishedTime = new Date(finishedTime.getTime());
-    }
+    private Instant finishedTime;
   }
 }

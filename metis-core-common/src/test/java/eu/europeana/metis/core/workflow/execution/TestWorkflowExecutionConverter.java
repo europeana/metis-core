@@ -113,12 +113,12 @@ class TestWorkflowExecutionConverter {
     AbstractExecutablePlugin<?> plugin = ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     plugin.setDataStatus(DataStatus.VALID);
     plugin.getExecutionProgress().setProcessedRecords(0);
-    plugin.getExecutionProgress().setErrors(1);
+    plugin.getExecutionProgress().setFailRecords(1);
     assertFalse(WorkflowExecutionConverter.canDisplayRawXml(plugin));
   }
 
   private void assertMetisPluginsEqual(WorkflowExecution workflowExecution, WorkflowExecutionDTO workflowExecutionDTO) {
-    List<AbstractMetisPlugin> abstractMetisPlugins = workflowExecution.getMetisPlugins();
+    List<AbstractMetisPlugin<?>> abstractMetisPlugins = workflowExecution.getMetisPlugins();
     List<MetisPluginDTO> metisPluginDTOS = workflowExecutionDTO.getMetisPlugins();
 
     assertEquals(abstractMetisPlugins.size(), metisPluginDTOS.size());

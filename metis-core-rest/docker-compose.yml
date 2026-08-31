@@ -1,14 +1,4 @@
 services:
-  rabbitmq:
-    image: rabbitmq:3.9.12-management-alpine
-    container_name: metis-core-rabbitmq
-    environment:
-      - RABBIT_DEFAULT_VHOST=/
-      - RABBITMQ_DEFAULT_USER=local
-      - RABBITMQ_DEFAULT_PASS=local
-    ports:
-      - '5672:5672'
-      - '15672:15672'
   redis:
     image: redis:6.0.16-alpine
     container_name: metis-core-redis
@@ -48,7 +38,6 @@ services:
     ports:
       - '8080:8080'
     environment:
-      RABBITMQ_HOST: metis-core-rabbitmq
       MONGO_HOSTS: metis-core-mongo
       REDIS_HOST: metis-core-redis
     volumes:
@@ -57,6 +46,5 @@ services:
       - /data/metis-configuration/metis-core/metis-core-rest/k8s/overlays/local/resources/log4j2.xml:/data/logging/log4j2.xml
     depends_on:
       - oauth2
-      - rabbitmq
       - mongo
       - redis

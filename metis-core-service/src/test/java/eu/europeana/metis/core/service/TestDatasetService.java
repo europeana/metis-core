@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import eu.europeana.metis.core.dao.DatasetDao;
 import eu.europeana.metis.core.dao.DatasetXsltDao;
-import eu.europeana.metis.core.dao.ScheduledWorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowDao;
 import eu.europeana.metis.core.dao.WorkflowExecutionDao;
 import eu.europeana.metis.core.dataset.Dataset;
@@ -40,9 +39,9 @@ import eu.europeana.metis.network.NetworkUtil;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -74,7 +73,6 @@ class TestDatasetService {
   private DatasetDao datasetDao;
   private DatasetXsltDao datasetXsltDao;
   private WorkflowExecutionDao workflowExecutionDao;
-  private ScheduledWorkflowDao scheduledWorkflowDao;
   private DatasetService datasetService;
   private RedissonClient redissonClient;
   private UserService userService;
@@ -115,12 +113,11 @@ class TestDatasetService {
     datasetXsltDao = mock(DatasetXsltDao.class);
     WorkflowDao workflowDao = mock(WorkflowDao.class);
     workflowExecutionDao = mock(WorkflowExecutionDao.class);
-    scheduledWorkflowDao = mock(ScheduledWorkflowDao.class);
     redissonClient = mock(RedissonClient.class);
     userService = mock(UserService.class);
 
-    datasetService = new DatasetService(datasetDao, datasetXsltDao, workflowDao, workflowExecutionDao, scheduledWorkflowDao,
-        redissonClient, userService);
+    datasetService =
+        new DatasetService(datasetDao, datasetXsltDao, workflowDao, workflowExecutionDao, redissonClient, userService);
     datasetService.setMetisCoreUrl(String.format("http://localhost:%d", portForWireMock));
   }
 
@@ -134,6 +131,7 @@ class TestDatasetService {
     when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(null);
     when(datasetDao.findNextInSequenceDatasetId()).thenReturn(1);
     when(datasetDao.create(any(Dataset.class))).thenReturn(dataset);
+    when(datasetDao.getById(any(String.class))).thenReturn(dataset);
     when(userService.getUserFromCache(any(String.class))).thenReturn(user);
     datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO);
     ArgumentCaptor<Dataset> datasetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
@@ -151,7 +149,8 @@ class TestDatasetService {
     RLock rlock = mock(RLock.class);
     when(redissonClient.getFairLock(DATASET_CREATION_LOCK)).thenReturn(rlock);
     when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(dataset);
-    expectException(DatasetAlreadyExistsException.class, () -> datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO));
+    expectException(DatasetAlreadyExistsException.class,
+        () -> datasetService.createDataset(TestObjectFactory.USER_ID, datasetDTO));
     verify(datasetDao, times(0)).create(any(Dataset.class));
     verify(datasetDao, times(0)).getById(null);
   }
@@ -161,12 +160,12 @@ class TestDatasetService {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     datasetDTO.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    storedDataset.setUpdatedDate(new Date(-1000));
+    storedDataset.setUpdatedDate(Instant.now().minusSeconds(1000));
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
     datasetService.updateDataset(datasetDTO,
-        TestObjectFactory.createXslt(TestObjectFactory.createDataset(datasetDTO.getDatasetName())).getXslt());
+        TestObjectFactory.createXslt(TestObjectFactory.createDataset(datasetDTO.getDatasetName())).getXslt(), null);
 
     ArgumentCaptor<Dataset> dataSetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
     verify(datasetDao, times(1)).update(dataSetArgumentCaptor.capture());
@@ -181,11 +180,11 @@ class TestDatasetService {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
     datasetDTO.setProvider("newProvider");
     Dataset storedDataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
-    storedDataset.setUpdatedDate(new Date(-1000));
+    storedDataset.setUpdatedDate(Instant.now().minusSeconds(1000));
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn(null);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetXsltDao.create(any(DatasetXslt.class))).thenReturn(TestObjectFactory.DATASET_XSLT);
-    datasetService.updateDataset(datasetDTO, null);
+    datasetService.updateDataset(datasetDTO, null, null);
 
     ArgumentCaptor<Dataset> dataSetArgumentCaptor = ArgumentCaptor.forClass(Dataset.class);
     verify(datasetDao, times(1)).update(dataSetArgumentCaptor.capture());
@@ -201,7 +200,7 @@ class TestDatasetService {
     Dataset storedDataset = TestObjectFactory.createDataset(String.format("%s%s", TestObjectFactory.DATASETNAME, 10));
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(storedDataset);
     when(datasetDao.getDatasetByDatasetName(datasetDTO.getDatasetName())).thenReturn(new Dataset());
-    assertThrows(DatasetAlreadyExistsException.class, () -> datasetService.updateDataset(datasetDTO, null));
+    assertThrows(DatasetAlreadyExistsException.class, () -> datasetService.updateDataset(datasetDTO, null, null));
   }
 
   @Test
@@ -210,14 +209,15 @@ class TestDatasetService {
     Dataset dataset = TestObjectFactory.createDataset(TestObjectFactory.DATASETNAME);
     when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenReturn(dataset);
     when(workflowExecutionDao.existsAndNotCompleted(datasetDTO.getDatasetId())).thenReturn("ObjectId");
-    assertThrows(BadContentException.class, () -> datasetService.updateDataset(datasetDTO, null));
+    assertThrows(BadContentException.class, () -> datasetService.updateDataset(datasetDTO, null, null));
   }
 
   @Test
   void testUpdateDatasetNoDatasetFoundException() throws NoDatasetFoundException {
     DatasetDTO datasetDTO = TestObjectFactory.createDatasetDTO(TestObjectFactory.DATASETNAME);
-    when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenThrow(new NoDatasetFoundException(datasetDTO.getDatasetId()));
-    assertThrows(NoDatasetFoundException.class, () -> datasetService.updateDataset(datasetDTO, null));
+    when(datasetDao.getDatasetOrThrow(datasetDTO.getDatasetId())).thenThrow(
+        new NoDatasetFoundException(datasetDTO.getDatasetId()));
+    assertThrows(NoDatasetFoundException.class, () -> datasetService.updateDataset(datasetDTO, null, null));
   }
 
   @Test
@@ -226,7 +226,6 @@ class TestDatasetService {
     datasetService.deleteDatasetByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(datasetDao, times(1)).deleteByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
     verify(workflowExecutionDao, times(1)).deleteAllByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
-    verify(scheduledWorkflowDao, times(1)).deleteAllByDatasetId(Integer.toString(TestObjectFactory.DATASETID));
   }
 
   @Test
@@ -360,7 +359,7 @@ class TestDatasetService {
     when(datasetDao.getDatasetOrThrow(dataset.getDatasetId())).thenReturn(dataset);
     when(datasetXsltDao.getLatestDefaultXslt()).thenReturn(datasetXslt);
     List<Record> listOfRecords = TestObjectFactory.createListOfRecords(5);
-    listOfRecords.getFirst().setXmlRecord("invalid xml");
+    listOfRecords.set(0, new Record("id", "invalid xml"));
 
     String xsltUrl = RestEndpoints.resolve(RestEndpoints.DATASETS_XSLT_XSLTID,
         Collections.singletonList(datasetXslt.getId().toString()));
@@ -374,9 +373,9 @@ class TestDatasetService {
     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
     Document doc;
-    assertFalse(records.getFirst().getXmlRecord().contains("edm:ProvidedCHO")); //First record is invalid
+    assertFalse(records.getFirst().xmlRecord().contains("edm:ProvidedCHO")); //First record is invalid
     for (int i = 1; i < records.size(); i++) {
-      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).getXmlRecord())));
+      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).xmlRecord())));
       assertEquals(1, doc.getElementsByTagName("edm:ProvidedCHO").getLength());
       assertTrue(doc.getElementsByTagName("edm:ProvidedCHO").item(0).getAttributes()
                     .getNamedItem("rdf:about").getTextContent().contains(Integer.toString(i)));
@@ -415,7 +414,7 @@ class TestDatasetService {
     DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
     Document doc;
     for (int i = 0; i < records.size(); i++) {
-      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).getXmlRecord())));
+      doc = dBuilder.parse(new InputSource(new StringReader(records.get(i).xmlRecord())));
       assertEquals(1, doc.getElementsByTagName("edm:ProvidedCHO").getLength());
       assertTrue(doc.getElementsByTagName("edm:ProvidedCHO").item(0).getAttributes()
                     .getNamedItem("rdf:about").getTextContent().contains(Integer.toString(i)));

@@ -2,6 +2,7 @@ package eu.europeana.metis.core.engine.ecloud;
 
 import static eu.europeana.cloud.service.dps.InputDataType.DATASET_URLS;
 import static eu.europeana.cloud.service.dps.InputDataType.REPOSITORY_URLS;
+import static java.util.Optional.ofNullable;
 
 import eu.europeana.cloud.common.model.Revision;
 import eu.europeana.cloud.service.dps.DpsTask;
@@ -13,22 +14,22 @@ import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
-import eu.europeana.metis.core.engine.base.task.input.InternalInputDataEndpoint;
+import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.OaiHarvestInputDataEndpoint;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a task for the Ecloud processing engine that wraps and transforms
- * task parameters for use in a DPS task.
+ * Represents a task for the Ecloud processing engine that wraps and transforms task parameters for use in a DPS task.
  */
 public class EcloudEngineTask extends EngineTask {
 
   private final DpsTask dpsTask = new DpsTask();
 
   /**
-   * Constructs an EcloudEngineTask with specified task parameters, input data endpoint,
-   * and output data revision. Initializes internal configurations for the task.
+   * Constructs an EcloudEngineTask with specified task parameters, input data endpoint, and output data revision. Initializes
+   * internal configurations for the task.
    *
    * @param parameters Map of EngineTaskKey and String values used to configure the task. Must not be null.
    * @param inputDataEndpoint InputDataEndpoint representing the input data source for the task. Must not be null.
@@ -62,7 +63,7 @@ public class EcloudEngineTask extends EngineTask {
         yield REPOSITORY_URLS;
       }
       case HttpHarvestInputDataEndpoint ignored -> REPOSITORY_URLS;
-      case InternalInputDataEndpoint ignored -> DATASET_URLS;
+      case IntermediateInputDataEndpoint ignored -> DATASET_URLS;
       case DepublishInputDataEndpoint ignored -> null;
     };
     if (inputDataType != null) {
@@ -75,14 +76,14 @@ public class EcloudEngineTask extends EngineTask {
     OAIPMHHarvestingDetails oaipmhHarvestingDetails = new OAIPMHHarvestingDetails();
     oaipmhHarvestingDetails.setSet(oaiHarvestInputDataParameters.set());
     oaipmhHarvestingDetails.setSchema(oaiHarvestInputDataParameters.metadataPrefix());
-    oaipmhHarvestingDetails.setDateFrom(oaiHarvestInputDataParameters.from());
-    oaipmhHarvestingDetails.setDateUntil(oaiHarvestInputDataParameters.until());
+    oaipmhHarvestingDetails.setDateFrom(ofNullable(oaiHarvestInputDataParameters.from()).map(Date::from).orElse(null));
+    oaipmhHarvestingDetails.setDateUntil(ofNullable(oaiHarvestInputDataParameters.until()).map(Date::from).orElse(null));
     dpsTask.setHarvestingDetails(oaipmhHarvestingDetails);
   }
 
   private void setOutputRevision() {
     final Revision revision = new Revision(outputDataRevision.name(), outputDataRevision.providerId(),
-        outputDataRevision.creationTimeStamp(),
+        Date.from(outputDataRevision.creationTimeStamp()),
         outputDataRevision.deleted());
     dpsTask.setOutputRevision(revision);
   }

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
@@ -52,6 +53,8 @@ import eu.europeana.metis.core.workflow.plugins.OaipmhHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingLevel;
 import eu.europeana.metis.core.workflow.plugins.ThrottlingValues;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPlugin;
+import eu.europeana.metis.core.workflow.plugins.TransformationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.TransformationPlugin;
 import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPlugin;
@@ -60,7 +63,7 @@ import eu.europeana.metis.core.workflow.plugins.ValidationInternalPlugin;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.utils.DepublicationReason;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -75,10 +78,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends AbstractExecutablePluginMetadata> {
+class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends AbstractExecutablePluginMetadata> {
 
   @Mock
   private EngineTaskClient<EngineTaskSettings, EngineTask> engineTaskClient;
+  @Mock
+  private DatasetXsltDao datasetXsltDao;
 
   @Mock
   private EngineTask engineTask;
@@ -105,7 +110,8 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
       throws ExternalTaskException {
     setupPlugin(plugin, metadata, previousPlugin, throttlingLevel);
 
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(plugin, engineTaskClient);
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(plugin, engineTaskClient, datasetXsltDao);
 
     ArgumentCaptor<Map<EngineTaskKey, String>> propertiesCaptor = ArgumentCaptor.forClass(Map.class);
     ArgumentCaptor<InputDataEndpoint> inputDataCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
@@ -115,7 +121,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         dataRevisionCaptor.capture())).thenReturn(engineTask);
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
 
-    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
+    engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     assertTaskSubmission(plugin, propertiesCaptor, inputDataCaptor, dataRevisionCaptor, throttlingLevel);
   }
@@ -125,12 +131,12 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     ValidationExternalPlugin validationExternalPlugin = new ValidationExternalPlugin();
     ValidationExternalPluginMetadata validationExternalPluginMetadata = spy(ValidationExternalPluginMetadata.class);
     validationExternalPlugin.setPluginMetadata(validationExternalPluginMetadata);
-    validationExternalPlugin.setStartedDate(new Date());
+    validationExternalPlugin.setStartedDate(Instant.now());
     when(validationExternalPluginMetadata.getExecutablePluginType()).thenReturn(HTTP_HARVEST);
 
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(validationExternalPlugin,
-        engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter = new EngineTaskSubmitter<>(validationExternalPlugin,
+        engineTaskClient, datasetXsltDao);
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   @Test
@@ -138,11 +144,13 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     IndexToPreviewPlugin indexToPreviewPlugin = new IndexToPreviewPlugin();
     IndexToPreviewPluginMetadata indexToPreviewPluginMetadata = spy(IndexToPreviewPluginMetadata.class);
     indexToPreviewPlugin.setPluginMetadata(indexToPreviewPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
+    indexToPreviewPlugin.setStartedDate(Instant.now());
     when(indexToPreviewPluginMetadata.getExecutablePluginType()).thenReturn(VALIDATION_EXTERNAL);
+    when(indexToPreviewPluginMetadata.getRevisionNamePreviousPlugin()).thenReturn(VALIDATION_EXTERNAL.name());
 
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(indexToPreviewPlugin, engineTaskClient, datasetXsltDao);
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   @Test
@@ -150,17 +158,20 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     OaipmhHarvestPlugin indexToPreviewPlugin = new OaipmhHarvestPlugin();
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = spy(OaipmhHarvestPluginMetadata.class);
     indexToPreviewPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
+    indexToPreviewPlugin.setStartedDate(Instant.now());
     when(oaipmhHarvestPluginMetadata.getExecutablePluginType()).thenReturn(PREVIEW);
+    when(oaipmhHarvestPluginMetadata.getRevisionNamePreviousPlugin()).thenReturn(PREVIEW.name());
 
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(indexToPreviewPlugin, engineTaskClient, datasetXsltDao);
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   private static Stream<Arguments> pluginArguments() {
     return Stream.of(
         arguments(new OaipmhHarvestPlugin(), new OaipmhHarvestPluginMetadata(), null),
         arguments(new HTTPHarvestPlugin(), new HTTPHarvestPluginMetadata(), null),
+        arguments(new TransformationExternalPlugin(), new TransformationExternalPluginMetadata(), PluginType.OAIPMH_HARVEST),
         arguments(new ValidationExternalPlugin(), new ValidationExternalPluginMetadata(), PluginType.OAIPMH_HARVEST),
         arguments(new TransformationPlugin(), new TransformationPluginMetadata(), PluginType.VALIDATION_EXTERNAL),
         arguments(new ValidationInternalPlugin(), new ValidationInternalPluginMetadata(), PluginType.TRANSFORMATION),
@@ -182,17 +193,17 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     } else if (metadata instanceof MediaProcessPluginMetadata mediaProcessPluginMetadata) {
       mediaProcessPluginMetadata.setThrottlingLevel(throttlingLevel);
     } else if (metadata instanceof IndexToPreviewPluginMetadata pluginMetadata) {
-      pluginMetadata.setHarvestDate(new Date());
+      pluginMetadata.setHarvestDate(Instant.now());
     } else if (metadata instanceof IndexToPublishPluginMetadata pluginMetadata) {
-      pluginMetadata.setHarvestDate(new Date());
+      pluginMetadata.setHarvestDate(Instant.now());
     }
 
     if (!(metadata instanceof AbstractHarvestPluginMetadata)) {
       metadata.setRevisionNamePreviousPlugin(previousType.name());
-      metadata.setRevisionTimestampPreviousPlugin(new Date());
+      metadata.setRevisionTimestampPreviousPlugin(Instant.now());
     }
     plugin.setPluginMetadata(metadata);
-    plugin.setStartedDate(new Date());
+    plugin.setStartedDate(Instant.now());
     return plugin;
   }
 
@@ -226,8 +237,9 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     DepublishPluginMetadata depublishPluginMetadata = new DepublishPluginMetadata();
     depublishPluginMetadata.setDatasetDepublish(true);
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(depublishPlugin, engineTaskClient);
+    depublishPlugin.setStartedDate(Instant.now());
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
 
     ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
     ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
@@ -236,7 +248,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
-    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
+    engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
     assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
@@ -254,8 +266,9 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     depublishPluginMetadata.setDatasetDepublish(true);
     depublishPluginMetadata.setDepublicationReason(DepublicationReason.GDPR);
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(depublishPlugin, engineTaskClient);
+    depublishPlugin.setStartedDate(Instant.now());
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
 
     ArgumentCaptor<Map<EngineTaskKey, String>> properties = ArgumentCaptor.forClass(Map.class);
     ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
@@ -265,7 +278,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
-    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
+    engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     assertEquals(depublishPluginMetadata.getDepublicationReason().name(), properties.getValue().get(DEPUBLICATION_REASON));
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
@@ -284,8 +297,9 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     depublishPluginMetadata.setDatasetDepublish(false);
     depublishPluginMetadata.setRecordIdsToDepublish(Set.of("RecordId1", "RecordId2"));
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(depublishPlugin, engineTaskClient);
+    depublishPlugin.setStartedDate(Instant.now());
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
 
     ArgumentCaptor<InputDataEndpoint> inputDataEndpointCaptor = ArgumentCaptor.forClass(InputDataEndpoint.class);
     ArgumentCaptor<DataRevision> dataRevisionCaptor = ArgumentCaptor.forClass(DataRevision.class);
@@ -294,7 +308,7 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenReturn(TASK_ID);
-    pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
+    engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID);
 
     InputDataEndpoint inputDataEndpoint = inputDataEndpointCaptor.getValue();
     assertInstanceOf(DepublishInputDataEndpoint.class, inputDataEndpoint);
@@ -311,9 +325,10 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     DepublishPluginMetadata depublishPluginMetadata = new DepublishPluginMetadata();
     depublishPluginMetadata.setDatasetDepublish(false);
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
-    depublishPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(depublishPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID),
+    depublishPlugin.setStartedDate(Instant.now());
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(depublishPlugin, engineTaskClient, datasetXsltDao);
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID),
         "Requested record depublication but there are no records ids for depublication in the db");
   }
 
@@ -322,11 +337,12 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     OaipmhHarvestPlugin indexToPreviewPlugin = new OaipmhHarvestPlugin();
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = spy(OaipmhHarvestPluginMetadata.class);
     indexToPreviewPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    indexToPreviewPlugin.setStartedDate(new Date());
+    indexToPreviewPlugin.setStartedDate(Instant.now());
     when(oaipmhHarvestPluginMetadata.getExecutablePluginType()).thenReturn(DEPUBLISH);
 
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(indexToPreviewPlugin, engineTaskClient);
-    assertThrows(IllegalStateException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(indexToPreviewPlugin, engineTaskClient, datasetXsltDao);
+    assertThrows(IllegalStateException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
   @Test
@@ -335,14 +351,15 @@ class TestPluginExecutor<T extends AbstractExecutablePlugin<M>, M extends Abstra
     OaipmhHarvestPluginMetadata oaipmhHarvestPluginMetadata = new OaipmhHarvestPluginMetadata();
     oaipmhHarvestPluginMetadata.setUrl(HARVEST_URL);
     oaipmhHarvestPlugin.setPluginMetadata(oaipmhHarvestPluginMetadata);
-    oaipmhHarvestPlugin.setStartedDate(new Date());
-    PluginExecutor<EngineTaskSettings, EngineTask> pluginExecutor = new PluginExecutor<>(oaipmhHarvestPlugin, engineTaskClient);
+    oaipmhHarvestPlugin.setStartedDate(Instant.now());
+    EngineTaskSubmitter<EngineTaskSettings, EngineTask> engineTaskSubmitter =
+        new EngineTaskSubmitter<>(oaipmhHarvestPlugin, engineTaskClient, datasetXsltDao);
 
     when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), any(DataRevision.class)))
         .thenReturn(engineTask);
 
     when(engineTaskClient.submitEngineTask(eq(engineTask), anyString())).thenThrow(new ExternalTaskException(""));
-    assertThrows(ExternalTaskException.class, () -> pluginExecutor.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
+    assertThrows(ExternalTaskException.class, () -> engineTaskSubmitter.submit(DATASET_ID, ENGINE_DATASET_ID, PREVIOUS_TASK_ID));
   }
 
 }

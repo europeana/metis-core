@@ -1,6 +1,7 @@
 package eu.europeana.metis.core.rest.controller;
 
 import static eu.europeana.metis.security.AuthenticationUtils.getUserId;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import eu.europeana.metis.core.common.CountrySerializer;
 import eu.europeana.metis.core.common.Language;
@@ -26,11 +27,8 @@ import eu.europeana.metis.exception.GenericMetisException;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.Country;
 import eu.europeana.metis.utils.RestEndpoints;
-import java.lang.invoke.MethodHandles;
 import java.util.List;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -50,10 +48,10 @@ import org.springframework.web.bind.annotation.RestController;
  * Contains all the calls that are related to Datasets.
  * <p>The {@link DatasetService} has control on how to manipulate a dataset</p>
  */
+@Slf4j
 @RestController
 public class DatasetController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final DatasetService datasetService;
 
   /**
@@ -68,7 +66,7 @@ public class DatasetController {
 
   /**
    * Create a provided dataset.
-   * <p>Dataset is provided as json or xml.</p>
+   * <p>Dataset is provided as json.</p>
    *
    * <p> The expected input should follow the rule Bearer
    * accessTokenHere </p>
@@ -81,13 +79,13 @@ public class DatasetController {
    * <li>{@link DatasetAlreadyExistsException} if the dataset already exists for datasetName.</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @PostMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public DatasetDTO createDataset(@AuthenticationPrincipal Jwt jwtPrincipal, @RequestBody DatasetDTO datasetDTO)
       throws GenericMetisException {
     final String userId = getUserId(jwtPrincipal);
     DatasetDTO createdDataset = datasetService.createDataset(userId, datasetDTO);
-    LOGGER.info("Dataset with datasetId: {}, datasetName: {} created", createdDataset.getDatasetId(),
+    log.info("Dataset with datasetId: {}, datasetName: {} created", createdDataset.getDatasetId(),
         createdDataset.getDatasetName());
     return createdDataset;
   }
@@ -110,16 +108,13 @@ public class DatasetController {
    * <li>{@link DatasetAlreadyExistsException} if a datasetName change is requested and the datasetName already exists.</li>
    * </ul>
    */
-  @PutMapping(value = RestEndpoints.DATASETS, consumes = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @PutMapping(value = RestEndpoints.DATASETS, consumes = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void updateDataset(@RequestBody DatasetXsltStringWrapper datasetXsltStringWrapper)
       throws GenericMetisException {
-    datasetService.updateDataset(datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt());
-    if (LOGGER.isInfoEnabled()) {
-      final String datasetId = StringEscapeUtils.escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId());
-      LOGGER.info("Dataset with datasetId {} updated", datasetId);
-    }
+    datasetService.updateDataset(
+        datasetXsltStringWrapper.getDataset(), datasetXsltStringWrapper.getXslt(), datasetXsltStringWrapper.getXsltExternal());
+    log.info("Dataset with datasetId {} updated", escapeJava(datasetXsltStringWrapper.getDataset().getDatasetId()));
   }
 
   /**
@@ -137,11 +132,8 @@ public class DatasetController {
   @DeleteMapping(value = RestEndpoints.DATASETS_DATASETID)
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteDataset(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     datasetService.deleteDatasetByDatasetId(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' deleted", datasetId);
-    }
+    log.info("Dataset with datasetId '{}' deleted", escapeJava(datasetId));
   }
 
   /**
@@ -157,17 +149,12 @@ public class DatasetController {
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_DATASETID, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_DATASETID, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DatasetDTO getByDatasetId(@PathVariable("datasetId") String datasetId)
       throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
-
     DatasetDTO storedDataset = datasetService.getDatasetByDatasetId(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset with datasetId '{}' found", datasetId);
-    }
+    log.info("Dataset with datasetId '{}' found", escapeJava(datasetId));
     return storedDataset;
   }
 
@@ -185,15 +172,11 @@ public class DatasetController {
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DatasetXslt getDatasetXsltByDatasetId(@PathVariable("datasetId") String datasetId) throws GenericMetisException {
-    datasetId = StringEscapeUtils.escapeJava(datasetId);
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByDatasetId(datasetId);
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", datasetId, datasetXslt.getId());
-    }
+    log.info("Dataset XSLT with datasetId '{}' and xsltId: '{}' found", escapeJava(datasetId), datasetXslt.getId());
     return datasetXslt;
   }
 
@@ -211,13 +194,12 @@ public class DatasetController {
    * <li>{@link NoXsltFoundException} if the xslt was not found.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_XSLT_XSLTID, produces = {
-      MediaType.TEXT_PLAIN_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_XSLT_XSLTID, produces = {MediaType.TEXT_PLAIN_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public String getXsltByXsltId(@PathVariable("xsltId") String xsltId)
       throws GenericMetisException {
     DatasetXslt datasetXslt = datasetService.getDatasetXsltByXsltId(xsltId);
-    LOGGER.info("XSLT with xsltId '{}' found", datasetXslt.getId());
+    log.info("XSLT with xsltId '{}' found", datasetXslt.getId());
     return datasetXslt.getXslt();
   }
 
@@ -235,13 +217,13 @@ public class DatasetController {
    * @param xsltString the text of the String representation non escaped
    * @return the created {@link DatasetXslt}
    */
-  @PostMapping(value = RestEndpoints.DATASETS_XSLT_DEFAULT, consumes = {
-      MediaType.TEXT_PLAIN_VALUE}, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @PostMapping(value = RestEndpoints.DATASETS_XSLT_DEFAULT,
+      consumes = {MediaType.TEXT_PLAIN_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.CREATED)
   public DatasetXslt createDefaultXslt(@RequestBody String xsltString) {
     DatasetXslt defaultDatasetXslt = datasetService.createDefaultXslt(xsltString);
-    LOGGER.info("New default xslt created with xsltId: {}", defaultDatasetXslt.getId());
+    log.info("New default xslt created with xsltId: {}", defaultDatasetXslt.getId());
     return defaultDatasetXslt;
   }
 
@@ -262,16 +244,16 @@ public class DatasetController {
   @ResponseStatus(HttpStatus.OK)
   public String getLatestDefaultXslt() throws GenericMetisException {
     DatasetXslt datasetXslt = datasetService.getLatestDefaultXslt();
-    LOGGER.info("Default XSLT with xsltId '{}' found", datasetXslt.getId());
+    log.info("Default XSLT with xsltId '{}' found", datasetXslt.getId());
     return datasetXslt.getXslt();
   }
 
   /**
-   * Transform a list of xmls using the latest dataset xslt stored.
+   * Transform a list of records using the latest dataset xslt stored.
    * <p>
    * This method is meant to be used after a response from
    * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * <p> The expected input should follow the rule Bearer
@@ -287,8 +269,9 @@ public class DatasetController {
    * <li>{@link XsltSetupException} if the XSL transform could not be set up</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT_TRANSFORM, consumes = {
-      MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+  @PostMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT_TRANSFORM,
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<Record> transformRecordsUsingLatestDatasetXslt(@PathVariable("datasetId") String datasetId,
       @RequestBody List<Record> records) throws GenericMetisException {
@@ -296,11 +279,11 @@ public class DatasetController {
   }
 
   /**
-   * Transform a list of xmls using the latest default xslt stored.
+   * Transform a list of records using the latest default xslt stored.
    * <p>
    * This method is meant to be used after a response from
    * {@link ProxiesController#getListOfFileContentsFromPluginExecution(String, ExecutablePluginType, ListOfIds)} to try a
-   * transformation on a list of xmls just after validation external to preview an example result.
+   * transformation on a list of records just after validation external to preview an example result.
    * </p>
    *
    * <p> The expected input should follow the rule Bearer
@@ -316,8 +299,9 @@ public class DatasetController {
    * <li>{@link XsltSetupException} if the XSL transform could not be set up</li>
    * </ul>
    */
-  @PostMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT_TRANSFORM_DEFAULT, consumes = {
-      MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+  @PostMapping(value = RestEndpoints.DATASETS_DATASETID_XSLT_TRANSFORM_DEFAULT,
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<Record> transformRecordsUsingLatestDefaultXslt(@PathVariable("datasetId") String datasetId,
       @RequestBody List<Record> records) throws GenericMetisException {
@@ -337,12 +321,11 @@ public class DatasetController {
    * <li>{@link NoDatasetFoundException} if the dataset was not found.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_DATASETNAME, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_DATASETNAME, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public DatasetDTO getByDatasetName(@PathVariable("datasetName") String datasetName) throws GenericMetisException {
     DatasetDTO dataset = datasetService.getDatasetByDatasetName(datasetName);
-    LOGGER.info("Dataset with datasetName '{}' found", dataset.getDatasetName());
+    log.info("Dataset with datasetName '{}' found", dataset.getDatasetName());
     return dataset;
   }
 
@@ -361,8 +344,7 @@ public class DatasetController {
    * <li>{@link BadContentException} if the parameters provided are invalid.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_PROVIDER, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_PROVIDER, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public ResponseListWrapper<DatasetDTO> getAllDatasetsByProvider(
       @PathVariable("provider") String provider,
@@ -376,8 +358,7 @@ public class DatasetController {
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByProvider(provider, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 
@@ -395,8 +376,7 @@ public class DatasetController {
    * <li>{@link BadContentException} if the parameters provided are invalid.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_INTERMEDIATE_PROVIDER, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_INTERMEDIATE_PROVIDER, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public ResponseListWrapper<DatasetDTO> getAllDatasetsByIntermediateProvider(
       @PathVariable("intermediateProvider") String intermediateProvider,
@@ -411,8 +391,7 @@ public class DatasetController {
             datasetService
                 .getAllDatasetsByIntermediateProvider(intermediateProvider, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 
@@ -431,8 +410,7 @@ public class DatasetController {
    * <li>{@link BadContentException} if the parameters provided are invalid.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_DATAPROVIDER, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_DATAPROVIDER, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public ResponseListWrapper<DatasetDTO> getAllDatasetsByDataProvider(
       @PathVariable("dataProvider") String dataProvider,
@@ -446,8 +424,7 @@ public class DatasetController {
         .setResultsAndLastPage(
             datasetService.getAllDatasetsByDataProvider(dataProvider, nextPage),
             datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED,
-        responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 
@@ -460,8 +437,7 @@ public class DatasetController {
    *
    * @return The list of countries that are serialized based on {@link CountrySerializer}
    */
-  @GetMapping(value = RestEndpoints.DATASETS_COUNTRIES, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_COUNTRIES, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<CountryView> getDatasetsCountries() {
     return Country.getCountryListSortedByName().stream().map(CountryView::new).toList();
@@ -475,8 +451,7 @@ public class DatasetController {
    *
    * @return The list of countries that are serialized based on {@link eu.europeana.metis.core.common.LanguageSerializer}
    */
-  @GetMapping(value = RestEndpoints.DATASETS_LANGUAGES, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_LANGUAGES, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public List<LanguageView> getDatasetsLanguages() {
     return Language.getLanguageListSortedByName().stream().map(LanguageView::new).toList();
@@ -499,8 +474,7 @@ public class DatasetController {
    *   <li>{@link BadContentException} if the parameters provided are invalid.</li>
    * </ul>
    */
-  @GetMapping(value = RestEndpoints.DATASETS_SEARCH, produces = {
-      MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+  @GetMapping(value = RestEndpoints.DATASETS_SEARCH, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseStatus(HttpStatus.OK)
   public ResponseListWrapper<DatasetSearchView> getDatasetSearch(
       @RequestParam(value = "searchString") String searchString,
@@ -513,7 +487,7 @@ public class DatasetController {
     responseListWrapper.setResultsAndLastPage(
         datasetService.searchDatasetsBasedOnSearchString(searchString, nextPage),
         datasetService.getDatasetsPerRequestLimit(), nextPage);
-    LOGGER.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
+    log.info(CommonStringValues.BATCH_OF_DATASETS_RETURNED, responseListWrapper.getListSize(), nextPage);
     return responseListWrapper;
   }
 }

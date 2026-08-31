@@ -29,14 +29,14 @@ public class ExecutionProgressView {
   }
 
   ExecutionProgressView(WorkflowExecution execution) {
-    List<AbstractMetisPlugin> metisPlugins = execution.getMetisPlugins();
+    List<AbstractMetisPlugin<?>> metisPlugins = execution.getMetisPlugins();
     this.stepsDone = (int) metisPlugins.stream()
         .map(AbstractMetisPlugin::getPluginStatus).filter(FINISHED_STATUS_SET::contains).count();
-    final AbstractMetisPlugin currentPlugin = metisPlugins.stream()
+    final AbstractMetisPlugin<?> currentPlugin = metisPlugins.stream()
         .filter(plugin -> EXECUTING_STATUS_SET.contains(plugin.getPluginStatus())).findFirst()
         .orElse(null);
     this.stepsTotal = metisPlugins.size();
-    if (currentPlugin instanceof AbstractExecutablePlugin abstractExecutablePlugin) {
+    if (currentPlugin instanceof AbstractExecutablePlugin<?> abstractExecutablePlugin) {
       this.currentPluginProgress = new PluginProgressView(abstractExecutablePlugin.getExecutionProgress());
     }
   }

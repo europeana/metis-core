@@ -35,8 +35,8 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import java.lang.invoke.MethodHandles;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -192,7 +192,7 @@ public class WorkflowPostProcessor {
 
     successfulRecords.forEach((dataset, records) ->
         depublishRecordIdDao.markRecordIdsWithDepublicationStatus(dataset, records,
-            DepublicationStatus.DEPUBLISHED, new Date(), depublishPlugin.getPluginMetadata().getDepublicationReason()));
+            DepublicationStatus.DEPUBLISHED, Instant.now(), depublishPlugin.getPluginMetadata().getDepublicationReason()));
 
     // Set publication fitness to PARTIALLY FIT (if not set to the more severe UNFIT).
     final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
@@ -217,7 +217,7 @@ public class WorkflowPostProcessor {
         .nonNull(latestSuccessfulPlugin.getPlugin())) {
       final WorkflowExecution workflowExecutionToUpdate = workflowExecutionDao
           .getById(latestSuccessfulPlugin.getExecutionId());
-      final Optional<AbstractMetisPlugin> metisPluginWithType = workflowExecutionHelper
+      final Optional<AbstractMetisPlugin<?>> metisPluginWithType = workflowExecutionHelper
           .getMetisPluginWithType(workflowExecutionToUpdate, latestSuccessfulPlugin.getPlugin().getPluginType());
       if (metisPluginWithType.isPresent()) {
         metisPluginWithType.get().setDataStatus(DataStatus.DELETED);

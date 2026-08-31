@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.rest.config.properties;
 
+import eu.europeana.metis.core.engine.base.EngineType;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -17,8 +18,7 @@ public record MetisCoreConfigurationProperties(
     int dpsConnectTimeoutInMilliseconds,
     int dpsReadTimeoutInMilliseconds,
     int failsafeMarginOfInactivityInSeconds,
-    int periodicFailsafeCheckInMilliseconds,
-    int periodicSchedulerCheckInMilliseconds,
+    int workflowDispatchPeriodCheckInMilliseconds,
     int pollingTimeoutForCleaningCompletionServiceInMilliseconds,
     int userCacheClearIntervalInMinutes,
     int periodOfNoProcessedRecordsChangeInMinutes,
@@ -33,11 +33,4 @@ public record MetisCoreConfigurationProperties(
     List<String> allowedCorsHosts
 ) {
 
-  /**
-   * Enum representing types of engines available for configuration.
-   */
-  public enum EngineType {
-    ECLOUD,
-    MOCK;
-  }
 }

@@ -2,9 +2,6 @@ package eu.europeana.metis.core.workflow.plugins;
 
 /**
  * Transformation Plugin.
- *
- * @author Simon Tzanakis (Simon.Tzanakis@europeana.eu)
- * @since 2018-01-29
  */
 public class TransformationPlugin extends AbstractExecutablePlugin<TransformationPluginMetadata> {
 
@@ -15,7 +12,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
    * plugin.
    */
   public TransformationPlugin() {
-    //Required for json serialization
+    //Required for JSON serialization
     super(PluginType.TRANSFORMATION);
   }
 
@@ -30,7 +27,7 @@ public class TransformationPlugin extends AbstractExecutablePlugin<Transformatio
   }
 
   /**
-   * Required for json serialization.
+   * Required for JSON serialization.
    *
    * @return the String representation of the topology
    */

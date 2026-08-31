@@ -2,6 +2,7 @@ package eu.europeana.metis.core.dao;
 
 import static eu.europeana.metis.mongo.utils.MorphiaUtils.getListOfQueryRetryable;
 import static eu.europeana.metis.network.ExternalRequestUtil.retryableExternalRequestForNetworkExceptions;
+import static java.util.Optional.ofNullable;
 
 import dev.morphia.DeleteOptions;
 import dev.morphia.UpdateOptions;
@@ -22,7 +23,6 @@ import eu.europeana.metis.exception.BadContentException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -30,11 +30,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
@@ -46,6 +47,7 @@ public class DepublishRecordIdDao {
 
   private final MorphiaDatastoreProvider morphiaDatastoreProvider;
   private final long maxDepublishRecordIdsPerDataset;
+  @Getter
   private final int pageSize;
 
   /**
@@ -317,7 +319,7 @@ public class DepublishRecordIdDao {
   }
 
   /**
-   * This method marks record ids with the provided {@link DepublicationStatus} and {@link Date} where appropriate.
+   * This method marks record ids with the provided {@link DepublicationStatus} and depublication date where appropriate.
    * <p>A {@link DepublicationStatus#PENDING_DEPUBLICATION} unsets the depublication date</p>
    * <p>A {@link DepublicationStatus#DEPUBLISHED} sets the depublication date with the one
    * provided</p>
@@ -326,12 +328,13 @@ public class DepublishRecordIdDao {
    * @param recordIds the records for which to set this. Can be null or empty, in which case the operation will be performed on
    * all records. If it is not empty, a new record will be created if a record with the given record ID is not already present.
    * @param depublicationStatus the depublication status. Cannot be null
-   * @param depublicationDate the depublication date. Can be null only if depublicationStatus is not {DepublicationStatus#DEPUBLISHED}
-   * @param depublicationReason the depublication reason. Can be null only if depublicationStatus is {DepublicationStatus#DEPUBLISHED}
-   * {@link DepublicationStatus#PENDING_DEPUBLICATION}
+   * @param depublicationDate the depublication date. Can be null only if depublicationStatus is not
+   * {DepublicationStatus#DEPUBLISHED}
+   * @param depublicationReason the depublication reason. Can be null only if depublicationStatus is
+   * {DepublicationStatus#DEPUBLISHED} {@link DepublicationStatus#PENDING_DEPUBLICATION}
    */
   public void markRecordIdsWithDepublicationStatus(String datasetId, Set<String> recordIds,
-      DepublicationStatus depublicationStatus, @Nullable Date depublicationDate, DepublicationReason depublicationReason) {
+      DepublicationStatus depublicationStatus, @Nullable Instant depublicationDate, DepublicationReason depublicationReason) {
 
     // Check correctness of parameters
     if (Objects.isNull(depublicationStatus) || StringUtils.isBlank(datasetId)) {
@@ -341,7 +344,7 @@ public class DepublishRecordIdDao {
       throw new IllegalArgumentException(String
           .format("DepublicationDate cannot be null if depublicationStatus == %s ",
               DepublicationStatus.DEPUBLISHED.name()));
-    } else if(depublicationStatus == DepublicationStatus.DEPUBLISHED && Objects.isNull(depublicationReason)){
+    } else if (depublicationStatus == DepublicationStatus.DEPUBLISHED && Objects.isNull(depublicationReason)) {
       throw new IllegalArgumentException(String
           .format("DepublicationReason cannot be null if depublicationStatus == %s ",
               DepublicationStatus.DEPUBLISHED.name()));
@@ -355,10 +358,9 @@ public class DepublishRecordIdDao {
 
       // Add the records that are missing.
       final Set<String> recordIdsToAdd = getNonExistingRecordIds(datasetId, recordIds);
-      final Instant depublicationInstant = Optional.ofNullable(depublicationDate)
-                                                   .filter(
-                                                       date -> depublicationStatus != DepublicationStatus.PENDING_DEPUBLICATION)
-                                                   .map(Date::toInstant).orElse(null);
+      final Instant depublicationInstant =
+          ofNullable(depublicationDate).filter(date -> depublicationStatus != DepublicationStatus.PENDING_DEPUBLICATION)
+                                       .orElse(null);
       addRecords(recordIdsToAdd, datasetId, depublicationStatus, depublicationInstant, depublicationReason);
 
       // Compute the records to update - if there are none, we're done.
@@ -388,7 +390,7 @@ public class DepublishRecordIdDao {
     } else {
       updateOperators.add(
           UpdateOperators.set(DepublishRecordId.DEPUBLICATION_DATE_FIELD,
-          depublicationDate == null? Date.from(Instant.now()): depublicationDate)
+              depublicationDate == null ? Instant.now() : depublicationDate)
       );
       updateOperators.add(
           UpdateOperators.set(DepublishRecordId.DEPUBLICATION_REASON, depublicationReason)
@@ -398,15 +400,6 @@ public class DepublishRecordIdDao {
     // Apply the operations.
     retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions().multi(true), updateOperators.toArray(UpdateOperator[]::new)));
-  }
-
-  /**
-   * Returns the page size imposed by this DAO.
-   *
-   * @return The page size.
-   */
-  public int getPageSize() {
-    return pageSize;
   }
 
   long deleteRecords(Query<DepublishRecordId> query) {

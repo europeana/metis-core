@@ -16,6 +16,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.metis.core.dataset.DepublishRecordId.DepublicationStatus;
+import eu.europeana.metis.core.engine.base.EngineType;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.util.DepublishRecordIdSortField;
 import eu.europeana.metis.core.util.SortDirection;
@@ -44,14 +45,16 @@ class TestWorkflowValidationUtils {
   private static final String DATASET_ID = Integer.toString(TestObjectFactory.DATASETID);
   private static WorkflowValidationUtils validationUtils;
   private static DepublishRecordIdDao depublishRecordIdDao;
+  private static DatasetXsltDao datasetXsltDao;
   private static DataEvolutionUtils dataEvolutionUtils;
   private static final ExecutablePluginType predecessorType = ExecutablePluginType.OAIPMH_HARVEST;
 
   @BeforeAll
   static void prepare() {
     depublishRecordIdDao = mock(DepublishRecordIdDao.class);
+    datasetXsltDao = mock(DatasetXsltDao.class);
     dataEvolutionUtils = mock(DataEvolutionUtils.class);
-    validationUtils = spy(new WorkflowValidationUtils(depublishRecordIdDao, dataEvolutionUtils));
+    validationUtils = spy(new WorkflowValidationUtils(EngineType.ECLOUD, depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils));
   }
 
   @AfterEach
@@ -65,7 +68,7 @@ class TestWorkflowValidationUtils {
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
-    predecessor.getExecutionProgress().setErrors(0);
+    predecessor.getExecutionProgress().setFailRecords(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
                                                           .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 
@@ -137,7 +140,7 @@ class TestWorkflowValidationUtils {
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
-    predecessor.getExecutionProgress().setErrors(0);
+    predecessor.getExecutionProgress().setFailRecords(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
                                                           .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 
@@ -174,7 +177,7 @@ class TestWorkflowValidationUtils {
         ExecutablePluginFactory.createPlugin(new OaipmhHarvestPluginMetadata());
     predecessor.setExecutionProgress(new ExecutionProgress());
     predecessor.getExecutionProgress().setProcessedRecords(1);
-    predecessor.getExecutionProgress().setErrors(0);
+    predecessor.getExecutionProgress().setFailRecords(0);
     doReturn(new PluginWithExecutionId<>("", predecessor)).when(dataEvolutionUtils)
                                                           .computePredecessorPlugin(any(), eq(predecessorType), eq(DATASET_ID));
 

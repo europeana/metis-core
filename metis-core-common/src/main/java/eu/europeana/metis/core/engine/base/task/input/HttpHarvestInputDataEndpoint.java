@@ -5,6 +5,9 @@ package eu.europeana.metis.core.engine.base.task.input;
  *
  * @param url The URL of the harvest input data endpoint.
  */
-public record HttpHarvestInputDataEndpoint(String url) implements InputDataEndpoint {
+public record HttpHarvestInputDataEndpoint(
+    String url,
+    Integer stepSize
+) implements HarvestInputDataEndpoint {
 
 }

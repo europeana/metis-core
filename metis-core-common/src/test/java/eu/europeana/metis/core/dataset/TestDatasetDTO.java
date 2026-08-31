@@ -42,16 +42,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europeana.metis.core.common.Language;
 import eu.europeana.metis.core.dataset.Dataset.PublicationFitness;
 import eu.europeana.metis.utils.Country;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 class TestDatasetDTO {
 
@@ -81,7 +80,7 @@ class TestDatasetDTO {
   }
 
   @Test
-  void testSerialization() throws IOException {
+  void testSerialization() {
     DatasetDTO datasetDTO = getDatasetDTO();
 
     ObjectMapper objectMapper = new ObjectMapper();
@@ -91,7 +90,7 @@ class TestDatasetDTO {
   }
 
   @Test
-  void testDeserialization() throws IOException {
+  void testDeserialization() {
     ObjectMapper objectMapper = new ObjectMapper();
     URL resource = getClass().getClassLoader().getResource("datasetDTO.json");
     Objects.requireNonNull(resource);

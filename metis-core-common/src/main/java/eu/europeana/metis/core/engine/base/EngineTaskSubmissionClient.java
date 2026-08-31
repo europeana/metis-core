@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.engine.base;
 
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.exception.ExternalTaskException;
 
 /**
@@ -22,10 +23,11 @@ public interface EngineTaskSubmissionClient<T extends EngineTask> {
   /**
    * Cancels the specified engine task with the provided details.
    *
-   * @param topologyName Name of the topology associated with the task.
-   * @param taskId Unique identifier of the task to be canceled.
-   * @param message Reason or message indicating why the task is being canceled.
-   * @throws ExternalTaskException If an error occurs during task cancellation.
+   * @param topologyName name of the topology associated with the task.
+   * @param taskId unique identifier of the task to be canceled.
+   * @param message reason or message indicating why the task is being canceled.
+   * @param pluginType the plugin type associated with the task.
+   * @throws ExternalTaskException if an error occurs during task cancellation.
    */
-  void cancelEngineTask(String topologyName, String taskId, String message) throws ExternalTaskException;
+  void cancelEngineTask(String topologyName, String taskId, String message, ExecutablePluginType pluginType) throws ExternalTaskException;
 }

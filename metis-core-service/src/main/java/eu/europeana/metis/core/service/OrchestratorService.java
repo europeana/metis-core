@@ -22,7 +22,7 @@ import eu.europeana.metis.core.exceptions.NoWorkflowFoundException;
 import eu.europeana.metis.core.exceptions.PluginExecutionNotAllowed;
 import eu.europeana.metis.core.exceptions.WorkflowAlreadyExistsException;
 import eu.europeana.metis.core.exceptions.WorkflowExecutionAlreadyExistsException;
-import eu.europeana.metis.core.execution.WorkflowExecutorManager;
+import eu.europeana.metis.core.execution.WorkflowExecutorSettings;
 import eu.europeana.metis.core.rest.ExecutionHistory;
 import eu.europeana.metis.core.rest.ExecutionHistory.Execution;
 import eu.europeana.metis.core.rest.PluginsWithDataAvailability;
@@ -53,27 +53,25 @@ import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.exception.GenericMetisException;
-import eu.europeana.metis.utils.DateUtils;
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.Nullable;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -107,7 +105,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private final DataEvolutionUtils dataEvolutionUtils;
   private final WorkflowDao workflowDao;
   private final DatasetDao datasetDao;
-  private final WorkflowExecutorManager<S, T> workflowExecutorManager;
+  private final WorkflowExecutorSettings<S, T> workflowExecutorSettings;
   private final RedissonClient redissonClient;
   private final WorkflowExecutionFactory workflowExecutionFactory;
   private final DepublishRecordIdDao depublishRecordIdDao;
@@ -116,24 +114,24 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private int solrCommitPeriodInMins; // Use getter and setter for this field!
 
   /**
-   * Constructor with all the required parameters
+   * Constructor.
    *
-   * @param workflowExecutionFactory the orchestratorHelper instance
-   * @param workflowDao the Dao instance to access the Workflow database
-   * @param workflowExecutionDao the Dao instance to access the WorkflowExecution database
-   * @param workflowValidationUtils utilities class providing more functionality on top of DAOs.
-   * @param dataEvolutionUtils utilities class providing more functionality on top of DAOs.
-   * @param datasetDao the Dao instance to access the Dataset database
-   * @param workflowExecutorManager the instance that handles the production and consumption of workflowExecutions
-   * @param redissonClient the instance of Redisson library that handles distributed locks
-   * @param depublishRecordIdDao the Dao instance to access the DepublishRecordId database
-   * @param userService the service instance for managing user-related operations
+   * @param workflowExecutionFactory Factory for creating workflow execution objects.
+   * @param workflowDao Data Access Object for workflows.
+   * @param workflowExecutionDao Data Access Object for workflow executions.
+   * @param workflowValidationUtils Utility for validating workflows.
+   * @param dataEvolutionUtils Utility for handling data evolution processes.
+   * @param datasetDao Data Access Object for datasets.
+   * @param workflowExecutorSettings Configuration settings for the workflow executor manager.
+   * @param redissonClient Redis client for distributed operations.
+   * @param depublishRecordIdDao Data Access Object for managing depublish record IDs.
+   * @param userService Service for managing user-related operations.
    */
   @Autowired
   public OrchestratorService(WorkflowExecutionFactory workflowExecutionFactory,
       WorkflowDao workflowDao, WorkflowExecutionDao workflowExecutionDao,
       WorkflowValidationUtils workflowValidationUtils, DataEvolutionUtils dataEvolutionUtils,
-      DatasetDao datasetDao, WorkflowExecutorManager<S, T> workflowExecutorManager,
+      DatasetDao datasetDao, WorkflowExecutorSettings<S, T> workflowExecutorSettings,
       RedissonClient redissonClient, DepublishRecordIdDao depublishRecordIdDao, UserService userService) {
     this.workflowExecutionFactory = workflowExecutionFactory;
     this.workflowDao = workflowDao;
@@ -141,7 +139,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     this.workflowValidationUtils = workflowValidationUtils;
     this.dataEvolutionUtils = dataEvolutionUtils;
     this.datasetDao = datasetDao;
-    this.workflowExecutorManager = workflowExecutorManager;
+    this.workflowExecutorSettings = workflowExecutorSettings;
     this.redissonClient = redissonClient;
     this.depublishRecordIdDao = depublishRecordIdDao;
     this.userService = userService;
@@ -287,45 +285,6 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   }
 
   /**
-   * <p> Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates
-   * the status of the WorkflowExecution to {@link WorkflowStatus#INQUEUE}, adds it to the database and also it's identifier goes
-   * into the distributed queue of WorkflowExecutions. The source data for the first plugin in the workflow can be controlled, if
-   * required, from the {@code enforcedPredecessorType}, which means that the last valid plugin that is provided with that
-   * parameter, will be used as the source data. </p>
-   * <p> <b>Please note:</b> this method is not checked for authorization: it is only meant to be
-   * called from a scheduled task. </p>
-   *
-   * @param datasetId the dataset identifier for which the execution will take place
-   * @param workflowProvided optional, the workflow to use instead of retrieving the saved one from the db
-   * @param enforcedPredecessorType optional, the plugin type to be used as source data
-   * @return the WorkflowExecution object that was generated
-   * @throws GenericMetisException which can be one of:
-   * <ul>
-   * <li>{@link NoWorkflowFoundException} if a workflow for the dataset identifier provided does
-   * not exist</li>
-   * <li>{@link BadContentException} if the workflow is empty or no plugin enabled</li>
-   * <li>{@link NoDatasetFoundException} if the dataset identifier provided does not exist</li>
-   * <li>{@link ExternalTaskException} if there was an exception when contacting the external
-   * resource(ECloud)</li>
-   * <li>{@link PluginExecutionNotAllowed} if the execution of the first plugin was not allowed,
-   * because a valid source plugin could not be found</li>
-   * <li>{@link WorkflowExecutionAlreadyExistsException} if a workflow execution for the generated
-   * execution identifier already exists, almost impossible to happen since ids are UUIDs</li>
-   * </ul>
-   */
-  public WorkflowExecution addWorkflowInQueueOfWorkflowExecutionsWithoutAuthorization(
-      String datasetId, @Nullable Workflow workflowProvided,
-      @Nullable ExecutablePluginType enforcedPredecessorType)
-      throws GenericMetisException {
-    final Dataset dataset = datasetDao.getDatasetByDatasetId(datasetId);
-    if (dataset == null) {
-      throw new NoDatasetFoundException(
-          String.format("No dataset found with datasetId: %s, in METIS", datasetId));
-    }
-    return addWorkflowInQueueOfWorkflowExecutions(dataset, workflowProvided, enforcedPredecessorType, null);
-  }
-
-  /**
    * Does checking, prepares and adds a WorkflowExecution in the queue. That means it updates the status of the WorkflowExecution
    * to {@link WorkflowStatus#INQUEUE}, adds it to the database, and also it's identifier goes into the distributed queue of
    * WorkflowExecutions. The source data for the first plugin in the workflow can be controlled, if required, from the
@@ -411,15 +370,13 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else {
         workflowExecution.setStartedBy(userId);
       }
-      workflowExecution.setCreatedDate(new Date());
+      Instant now = Instant.now();
+      workflowExecution.setCreatedDate(now);
+      workflowExecution.setUpdatedDate(now);
       objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
     } finally {
       executionDatasetIdLock.unlock();
     }
-
-    // Add the workflow execution to the queue.
-    workflowExecutorManager.addWorkflowExecutionToQueue(objectId);
-    LOGGER.info("WorkflowExecution with id: {}, added to execution queue", objectId);
 
     // Done. Get a fresh copy of the workflow execution to return.
     return workflowExecutionDao.getById(objectId);
@@ -428,13 +385,8 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
     if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
         || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
-      final String engineDatasetUuid = UUID.randomUUID().toString();
-      boolean isEngineDatasetIdCreated = workflowExecutorManager.getEngineTaskClient().createEngineDatasetId(engineDatasetUuid);
-      if (!isEngineDatasetIdCreated) {
-        throw new ExternalTaskException(
-            String.format("Could not create engine dataset id for datasetId: %s", dataset.getDatasetId()));
-      }
-      dataset.setEcloudDatasetId(engineDatasetUuid);
+      String engineDatasetId = workflowExecutorSettings.engineTaskClient().createEngineDatasetId(dataset);
+      dataset.setEcloudDatasetId(engineDatasetId);
       datasetDao.update(dataset);
     } else {
       LOGGER.info("Dataset with datasetId {} already has a dataset initialized in Ecloud with id {}",
@@ -607,7 +559,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
    * @return a list of all the WorkflowExecutions together with the datasets that they belong to.
    */
   public ResponseListWrapper<ExecutionAndDatasetView> getWorkflowExecutionsOverview(Set<PluginStatus> pluginStatuses,
-      Set<PluginType> pluginTypes, Date fromDate, Date toDate, int nextPage, int pageCount) {
+      Set<PluginType> pluginTypes, Instant fromDate, Instant toDate, int nextPage, int pageCount) {
     final Set<String> datasetIds = getAllDatasetIds();
     final ResultList<ExecutionDatasetPair> resultList;
     if (datasetIds == null || !datasetIds.isEmpty()) {
@@ -689,11 +641,10 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       executionInfo.setLastHarvestedDate(lastHarvestPlugin.getFinishedDate());
       executionInfo.setLastHarvestedRecords(
           lastHarvestPlugin.getExecutionProgress().getProcessedRecords() - lastHarvestPlugin
-              .getExecutionProgress().getErrors());
+              .getExecutionProgress().getFailRecords());
     }
-    final Date now = new Date();
-    setPreviewInformation(executionInfo, lastExecutablePreviewPlugin, lastPreviewPlugin,
-        isPreviewCleaningOrRunning, now);
+    final Instant now = Instant.now();
+    setPreviewInformation(executionInfo, lastExecutablePreviewPlugin, lastPreviewPlugin, isPreviewCleaningOrRunning, now);
     setPublishInformation(executionInfo, firstPublishPlugin, lastExecutablePublishPlugin,
         lastPublishPlugin, lastExecutableDepublishPlugin, isPublishCleaningOrRunning, now,
         datasetId);
@@ -707,9 +658,9 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
 
   private void setPreviewInformation(DatasetExecutionInformation executionInfo,
       ExecutablePlugin lastExecutablePreviewPlugin, MetisPlugin lastPreviewPlugin,
-      boolean isPreviewCleaningOrRunning, Date date) {
+      boolean isPreviewCleaningOrRunning, Instant date) {
 
-    boolean lastPreviewHasDeletedRecords = computeRecordCountsAndCheckDeletedRecords(lastExecutablePreviewPlugin,
+    boolean lastPreviewHasDepublishedRecords = computeRecordCountsAndCheckDepublishedRecords(lastExecutablePreviewPlugin,
         executionInfo::setLastPreviewRecords, executionInfo::setTotalPreviewRecords);
 
     //Compute more general information of the plugin
@@ -722,7 +673,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else if (executionInfo.getTotalPreviewRecords() == 0) {
         recordsAvailable = false;
       } else {
-        recordsAvailable = executionInfo.getLastPreviewRecords() > 0 || lastPreviewHasDeletedRecords;
+        recordsAvailable = executionInfo.getLastPreviewRecords() > 0 || lastPreviewHasDepublishedRecords;
       }
 
       executionInfo.setLastPreviewRecordsReadyForViewing(recordsAvailable &&
@@ -734,7 +685,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   private void setPublishInformation(DatasetExecutionInformation executionInfo,
       MetisPlugin firstPublishPlugin, ExecutablePlugin lastExecutablePublishPlugin,
       MetisPlugin lastPublishPlugin, ExecutablePlugin lastExecutableDepublishPlugin,
-      boolean isPublishCleaningOrRunning, Date date, String datasetId) {
+      boolean isPublishCleaningOrRunning, Instant date, String datasetId) {
 
     // Set the first publication information
     executionInfo.setFirstPublishedDate(firstPublishPlugin == null ? null : firstPublishPlugin.getFinishedDate());
@@ -743,16 +694,15 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
     final boolean datasetCurrentlyDepublished = isDatasetCurrentlyDepublished(lastExecutablePublishPlugin,
         lastExecutableDepublishPlugin);
 
-    boolean lastPublishHasDeletedRecords = computeRecordCountsAndCheckDeletedRecords(lastExecutablePublishPlugin,
+    boolean lastPublishHasDepublishedRecords = computeRecordCountsAndCheckDepublishedRecords(lastExecutablePublishPlugin,
         executionInfo::setLastPublishedRecords, executionInfo::setTotalPublishedRecords);
 
     //Compute depublish count
-    final int depublishedRecordCount;
+    final long depublishedRecordCount;
     if (datasetCurrentlyDepublished) {
       depublishedRecordCount = executionInfo.getLastPublishedRecords();
     } else {
-      depublishedRecordCount = (int) depublishRecordIdDao
-          .countSuccessfullyDepublishedRecordIdsForDataset(datasetId);
+      depublishedRecordCount = depublishRecordIdDao.countSuccessfullyDepublishedRecordIdsForDataset(datasetId);
     }
 
     //Compute more general information of the plugin
@@ -768,7 +718,7 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
       } else {
         recordsAvailable =
             !datasetCurrentlyDepublished && (executionInfo.getLastPublishedRecords() > depublishedRecordCount
-                || lastPublishHasDeletedRecords);
+                || lastPublishHasDepublishedRecords);
       }
       executionInfo.setLastPublishedRecordsReadyForViewing(
           recordsAvailable && !isPublishCleaningOrRunning && isPreviewOrPublishReadyForViewing(
@@ -806,27 +756,27 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
         && depublishPlugin.getPluginMetadata().isDatasetDepublish();
   }
 
-  private boolean computeRecordCountsAndCheckDeletedRecords(ExecutablePlugin executablePlugin, IntConsumer lastRecordsSetter,
-      IntConsumer totalRecordsSetter) {
-    int recordCount = 0;
-    int totalRecordCount = -1;
-    boolean hasDeletedRecords = false;
+  private boolean computeRecordCountsAndCheckDepublishedRecords(ExecutablePlugin executablePlugin, LongConsumer lastRecordsSetter,
+      LongConsumer totalRecordsSetter) {
+    long recordCount = 0;
+    long totalRecordCount = -1;
+    boolean hasDepublishedRecords = false;
     if (Objects.nonNull(executablePlugin)) {
       recordCount = executablePlugin.getExecutionProgress().getProcessedRecords()
-          - executablePlugin.getExecutionProgress().getErrors();
+          - executablePlugin.getExecutionProgress().getFailRecords();
       totalRecordCount = executablePlugin.getExecutionProgress().getTotalDatabaseRecords();
-      hasDeletedRecords = executablePlugin.getExecutionProgress().getDeletedRecords() > 0;
+      hasDepublishedRecords = executablePlugin.getExecutionProgress().getSuccessDepublishRecords() > 0;
     }
     lastRecordsSetter.accept(recordCount);
     totalRecordsSetter.accept(totalRecordCount);
-    return hasDeletedRecords;
+    return hasDepublishedRecords;
   }
 
-  private boolean isPreviewOrPublishReadyForViewing(MetisPlugin plugin, Date now) {
+  private boolean isPreviewOrPublishReadyForViewing(MetisPlugin plugin, Instant now) {
     final boolean dataIsValid = !(plugin instanceof ExecutablePlugin executablePlugin)
         || MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID;
-    final boolean enoughTimeHasPassed = getSolrCommitPeriodInMinutes() < DateUtils
-        .calculateDateDifference(plugin.getFinishedDate(), now, TimeUnit.MINUTES);
+    final boolean enoughTimeHasPassed = getSolrCommitPeriodInMinutes() <
+        Duration.between(plugin.getFinishedDate(), now).toMinutes();
     return dataIsValid && enoughTimeHasPassed;
   }
 

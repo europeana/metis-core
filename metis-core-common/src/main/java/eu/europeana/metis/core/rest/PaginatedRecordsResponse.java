@@ -1,10 +1,14 @@
 package eu.europeana.metis.core.rest;
 
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Class that encapsulates a list of {@link Record} including a {@link #nextPage} field.
  */
+@Setter
+@Getter
 public class PaginatedRecordsResponse extends RecordsResponse {
 
   private String nextPage;
@@ -18,14 +22,6 @@ public class PaginatedRecordsResponse extends RecordsResponse {
    */
   public PaginatedRecordsResponse(List<Record> records, String nextPage) {
     super(records);
-    this.nextPage = nextPage;
-  }
-
-  public String getNextPage() {
-    return nextPage;
-  }
-
-  public void setNextPage(String nextPage) {
     this.nextPage = nextPage;
   }
 }

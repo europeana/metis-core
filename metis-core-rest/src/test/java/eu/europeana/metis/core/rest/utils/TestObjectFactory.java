@@ -18,8 +18,6 @@ import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrorInfo;
 import eu.europeana.metis.core.engine.base.task.report.EngineTaskErrors;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.rest.execution.overview.ExecutionAndDatasetView;
-import eu.europeana.metis.core.workflow.ScheduleFrequence;
-import eu.europeana.metis.core.workflow.ScheduledWorkflow;
 import eu.europeana.metis.core.workflow.Workflow;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.WorkflowStatus;
@@ -37,8 +35,8 @@ import eu.europeana.metis.core.workflow.plugins.TransformationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationExternalPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ValidationInternalPluginMetadata;
 import eu.europeana.metis.utils.Country;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -112,7 +110,7 @@ public class TestObjectFactory {
                                                                  WorkflowExecutionConverter.canDisplayRawXml(plugin)))
                                                              .toList());
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecutionDTO.setCreatedDate(new Date());
+    workflowExecutionDTO.setCreatedDate(Instant.now());
 
     return workflowExecutionDTO;
   }
@@ -123,7 +121,7 @@ public class TestObjectFactory {
     workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
     workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
-    workflowExecution.setCreatedDate(new Date());
+    workflowExecution.setCreatedDate(Instant.now());
 
     return workflowExecution;
   }
@@ -158,43 +156,13 @@ public class TestObjectFactory {
     final List<ExecutionDatasetPair> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       Dataset dataset = DatasetConverter.fromDTO(createDatasetDTO(String.format("%s%s", DATASETNAME, i)));
-      dataset.setId(new ObjectId(new Date(i)));
+      dataset.setId(new ObjectId());
       dataset.setDatasetId(Integer.toString(DATASETID + i));
       WorkflowExecution workflowExecution = createWorkflowExecutionObject(dataset);
       workflowExecution.setId(new ObjectId());
       result.add(new ExecutionDatasetPair(dataset, workflowExecution));
     }
     return result;
-  }
-
-  /**
-   * Create a dummy scheduled workflow
-   *
-   * @return the created scheduled workflow
-   */
-  public static ScheduledWorkflow createScheduledWorkflowObject() {
-    ScheduledWorkflow scheduledWorkflow = new ScheduledWorkflow();
-    scheduledWorkflow.setDatasetId(Integer.toString(DATASETID));
-    scheduledWorkflow.setPointerDate(new Date());
-    scheduledWorkflow.setScheduleFrequence(ScheduleFrequence.ONCE);
-    return scheduledWorkflow;
-  }
-
-  /**
-   * Create a list of dummy scheduled workflows. The dataset name will have a suffix number for each dataset.
-   *
-   * @param size the number of dummy scheduled workflows to create
-   * @return the created list
-   */
-  public static List<ScheduledWorkflow> createListOfScheduledWorkflows(int size) {
-    List<ScheduledWorkflow> scheduledWorkflows = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      ScheduledWorkflow scheduledWorkflow = createScheduledWorkflowObject();
-      scheduledWorkflow.setId(new ObjectId());
-      scheduledWorkflow.setDatasetId(Integer.toString(DATASETID + i));
-      scheduledWorkflows.add(scheduledWorkflow);
-    }
-    return scheduledWorkflows;
   }
 
   /**
@@ -213,8 +181,8 @@ public class TestObjectFactory {
     ds.setIntermediateProvider(providerId);
     ds.setDataProvider(providerId);
     ds.setCreatedByUserId("userId");
-    ds.setCreatedDate(new Date());
-    ds.setUpdatedDate(new Date());
+    ds.setCreatedDate(Instant.now());
+    ds.setUpdatedDate(Instant.now());
     ds.setReplacedBy("replacedBy");
     ds.setReplaces("12345");
     ds.setCountry(Country.GREECE);
