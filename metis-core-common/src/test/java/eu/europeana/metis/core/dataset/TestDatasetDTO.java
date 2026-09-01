@@ -16,7 +16,7 @@ import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_IDS_TO_RE
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATASET_NAME;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.DATA_PROVIDER;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.DESCRIPTION;
-import static eu.europeana.metis.core.dataset.TestDatasetUtils.ECLOUD_DATASET_ID;
+import static eu.europeana.metis.core.dataset.TestDatasetUtils.ENGINE_DATASET_ID;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.ID;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.INTERMEDIATE_PROVIDER;
 import static eu.europeana.metis.core.dataset.TestDatasetUtils.LANGUAGE;
@@ -103,7 +103,7 @@ class TestDatasetDTO {
 
   private void assertDatasetDTO(String jsonOutput) {
     assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
-    assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    assertFieldEquals(jsonOutput, ENGINE_DATASET_ID, ENGINE_DATASET_ID);
     assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
     assertFieldEquals(jsonOutput, DATASET_NAME, DATASET_NAME);
     assertFieldEquals(jsonOutput, PROVIDER, PROVIDER);
@@ -128,7 +128,7 @@ class TestDatasetDTO {
 
   private void assertDatasetDTO(DatasetDTO datasetDTO) {
     assertEquals(OBJECT_ID_VALUE.toString(), datasetDTO.getId());
-    assertEquals(ECLOUD_DATASET_ID, datasetDTO.getEcloudDatasetId());
+    assertEquals(ENGINE_DATASET_ID, datasetDTO.getEngineDatasetId());
     assertEquals(DATASET_ID, datasetDTO.getDatasetId());
     assertEquals(DATASET_NAME, datasetDTO.getDatasetName());
     assertEquals(PROVIDER, datasetDTO.getProvider());

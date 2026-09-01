@@ -29,7 +29,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @Entity
 @Indexes({
     @Index(fields = {@Field("datasetName")}, options = @IndexOptions(unique = true)),
-    @Index(fields = {@Field("ecloudDatasetId")}, options = @IndexOptions(unique = true)),
+    @Index(fields = {@Field("engineDatasetId")}, options = @IndexOptions(unique = true)),
     @Index(fields = {@Field("datasetId")}),
     @Index(fields = {@Field("provider")}),
     @Index(fields = {@Field("intermediateProvider")}),
@@ -50,7 +50,7 @@ public class Dataset implements HasMongoObjectId {
   @Id
   @JsonSerialize(using = ObjectIdSerializer.class)
   private ObjectId id;
-  private String ecloudDatasetId;
+  private String engineDatasetId;
   private String datasetId;
   private String datasetName;
   private String provider;

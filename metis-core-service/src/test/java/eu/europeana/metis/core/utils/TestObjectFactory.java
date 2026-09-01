@@ -107,7 +107,7 @@ public class TestObjectFactory {
     WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setNextExecutablePluginType(executablePluginType);
     workflowExecution.setDatasetId(dataset.getDatasetId());
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecution.setMetisPlugins(abstractMetisPlugins);
     workflowExecution.setId(new ObjectId());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
@@ -158,7 +158,7 @@ public class TestObjectFactory {
   public static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
     WorkflowExecution execution = new WorkflowExecution();
     execution.setDatasetId(dataset.getDatasetId());
-    execution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    execution.setEngineDatasetId(dataset.getEngineDatasetId());
     execution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     execution.setCreatedDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     execution.setId(new ObjectId());
@@ -203,7 +203,7 @@ public class TestObjectFactory {
    */
   public static DatasetDTO createDatasetDTO(String datasetName) {
     DatasetDTO ds = new DatasetDTO();
-    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setEngineDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
     final String providerId = "1234567890";
@@ -232,7 +232,7 @@ public class TestObjectFactory {
   public static Dataset createDataset(String datasetName) {
     Dataset ds = new Dataset();
     ds.setId(new ObjectId());
-    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setEngineDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
     final String providerId = "1234567890";

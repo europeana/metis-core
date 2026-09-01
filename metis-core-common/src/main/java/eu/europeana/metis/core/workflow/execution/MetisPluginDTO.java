@@ -25,7 +25,8 @@ public class MetisPluginDTO {
   private Instant startedDate;
   private Instant updatedDate;
   private Instant finishedDate;
-  private String externalTaskId;
+  private String engineTaskId;
+  private String engineBatchId;
   private ExecutionProgressDTO executionProgress;
   private String topologyName;
   private boolean canDisplayRawXml;

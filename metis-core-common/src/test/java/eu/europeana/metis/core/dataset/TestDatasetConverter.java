@@ -15,7 +15,7 @@ class TestDatasetConverter {
     Dataset dataset = DatasetConverter.fromDTO(datasetDTO);
 
     assertEquals(datasetDTO.getId(), dataset.getId().toString());
-    assertEquals(datasetDTO.getEcloudDatasetId(), dataset.getEcloudDatasetId());
+    assertEquals(datasetDTO.getEngineDatasetId(), dataset.getEngineDatasetId());
     assertEquals(datasetDTO.getDatasetId(), dataset.getDatasetId());
     assertEquals(datasetDTO.getDatasetName(), dataset.getDatasetName());
     assertEquals(datasetDTO.getProvider(), dataset.getProvider());
@@ -50,7 +50,7 @@ class TestDatasetConverter {
     DatasetDTO datasetDTO = DatasetConverter.toDTO(dataset, user);
 
     assertEquals(dataset.getId().toString(), datasetDTO.getId());
-    assertEquals(dataset.getEcloudDatasetId(), datasetDTO.getEcloudDatasetId());
+    assertEquals(dataset.getEngineDatasetId(), datasetDTO.getEngineDatasetId());
     assertEquals(dataset.getDatasetId(), datasetDTO.getDatasetId());
     assertEquals(dataset.getDatasetName(), datasetDTO.getDatasetName());
     assertEquals(dataset.getProvider(), datasetDTO.getProvider());

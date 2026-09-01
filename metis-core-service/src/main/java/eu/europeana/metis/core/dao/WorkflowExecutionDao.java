@@ -3,7 +3,7 @@ package eu.europeana.metis.core.dao;
 import static eu.europeana.metis.core.common.DaoFieldNames.CLAIMED_BY_INSTANCE;
 import static eu.europeana.metis.core.common.DaoFieldNames.CREATED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.DATASET_ID;
-import static eu.europeana.metis.core.common.DaoFieldNames.EXTERNAL_TASK_ID;
+import static eu.europeana.metis.core.common.DaoFieldNames.ENGINE_TASK_ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.FINISHED_DATE;
 import static eu.europeana.metis.core.common.DaoFieldNames.ID;
 import static eu.europeana.metis.core.common.DaoFieldNames.METIS_PLUGINS;
@@ -150,10 +150,10 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
    *
    * @param workflowExecution the workflow execution object containing the updated monitor information. It is expected to have
    * valid IDs and the claimed instance information.
-   * @return {@code true} if the monitor information was successfully updated in the datastore (i.e., exactly one record was
-   * modified); {@code false} otherwise.
+   * @return {@code true} if the workflow execution matched both the provided identifier and the current instance ownership;
+   * {@code false} otherwise. A matching document can return {@code true} even when no values needed to be modified.
    */
-  public boolean updateMonitorInformation(WorkflowExecution workflowExecution) {
+  public boolean updateMonitorInformationIfOwned(WorkflowExecution workflowExecution) {
     Filter[] filters = {
         Filters.eq(ID.getFieldName(), workflowExecution.getId()),
         Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), morphiaDatastoreProvider.getInstanceId())
@@ -166,11 +166,12 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), updateOperators.toArray(UpdateOperator[]::new)));
     LOGGER.debug(
-        "WorkflowExecution monitor information for datasetId '{}' updated in Mongo. (UpdateResults: {})",
+        "WorkflowExecution monitor information for datasetId '{}' updated in Mongo. (Matched: {}, Modified: {})",
         workflowExecution.getDatasetId(),
+        updateResult == null ? 0 : updateResult.getMatchedCount(),
         updateResult == null ? 0 : updateResult.getModifiedCount());
 
-    return updateResult != null && updateResult.getModifiedCount() == 1;
+    return updateResult != null && updateResult.getMatchedCount() == 1;
   }
 
   /**
@@ -712,14 +713,14 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   /**
    * This method retrieves the workflow execution of which the task with the given ID is a subtask.
    *
-   * @param externalTaskId The external task ID that is to be queried.
+   * @param engineTaskId The external task ID that is to be queried.
    * @return The workflow execution.
    */
-  public WorkflowExecution getByExternalTaskId(String externalTaskId) {
+  public WorkflowExecution getByEngineTaskId(String engineTaskId) {
     // TODO JV Validation is disabled because otherwise it complains that the subquery is looking in a
-    // list of AbstractMetisPlugin objects that don't have the "externalTaskId" property being queried.
+    // list of AbstractMetisPlugin objects that don't have the "engineTaskId" property being queried.
     Filter[] filters = {
-        Filters.elemMatch(METIS_PLUGINS.getFieldName(), Filters.eq(EXTERNAL_TASK_ID.getFieldName(), externalTaskId))
+        Filters.elemMatch(METIS_PLUGINS.getFieldName(), Filters.eq(ENGINE_TASK_ID.getFieldName(), engineTaskId))
     };
     final Query<WorkflowExecution> query =
         morphiaDatastoreProvider.getDatastore().find(WorkflowExecution.class).disableValidation().filter(filters);

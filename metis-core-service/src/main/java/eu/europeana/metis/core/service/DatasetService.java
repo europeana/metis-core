@@ -125,8 +125,8 @@ public class DatasetService {
       datasetDTO.setId(null);
       datasetDTO.setUpdatedDate(null);
       datasetDTO.setCreatedDate(Instant.now());
-      //Add fake ecloudDatasetId to avoid null errors in the database
-      datasetDTO.setEcloudDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
+      //Add fake engineDatasetId to avoid null errors in the database
+      datasetDTO.setEngineDatasetId(format("NOT_CREATED_YET-%s", UUID.randomUUID()));
 
       int nextInSequenceDatasetId = datasetDao.findNextInSequenceDatasetId();
       datasetDTO.setDatasetId(Integer.toString(nextInSequenceDatasetId));
@@ -174,7 +174,7 @@ public class DatasetService {
 
     // Set/overwrite dataset properties that the user may not determine.
     datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
-    datasetDTO.setEcloudDatasetId(storedDataset.getEcloudDatasetId());
+    datasetDTO.setEngineDatasetId(storedDataset.getEngineDatasetId());
     datasetDTO.setCreatedDate(storedDataset.getCreatedDate());
     datasetDTO.setCreatedByUserId(storedDataset.getCreatedByUserId());
     datasetDTO.setId(storedDataset.getId().toString());

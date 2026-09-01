@@ -5,32 +5,36 @@ import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
 import eu.europeana.metis.core.workflow.WorkflowExecution;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
-import java.lang.invoke.MethodHandles;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadPoolExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * The WorkflowExecutionDispatcher is responsible for managing the lifecycle of workflow executions. It handles the polling,
- * execution submission, and cleanup of workflow executions using a thread pool and completion service.
+ * execution submission, and cleanup of workflow executions using a thread pool.
+ * <p>
+ * Tracks each in-flight execution against the {@link ExecutablePluginType} whose semaphore permit was acquired for it. The entry
+ * is registered <em>before</em> the task is handed to the executor, so it is always visible by the time the task can complete.
+ * This lets {@link #cleanup()} release the permit for a finished task in every case - whether it completed normally or failed.
  *
  * @param <S> The type representing the task settings required for the engine tasks.
  * @param <T> The type representing the tasks to be executed.
  */
+@Slf4j
 public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends EngineTask> {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private final WorkflowExecutorSettings<S, T> workflowExecutorSettings;
   private final WorkflowExecutionClaimDao workflowExecutionClaimDao;
   private final SemaphoresPerPluginManager semaphoresPerPluginManager;
-  private final ExecutorCompletionService<WorkflowExecution> completionService;
+  private final ThreadPoolExecutor threadPoolExecutor;
   private final Map<Future<WorkflowExecution>, ExecutablePluginType> pluginTypeByFuture = new ConcurrentHashMap<>();
   private final Duration failsafeLeniency;
 
@@ -50,7 +54,7 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
     this.workflowExecutorSettings = workflowExecutorSettings;
     this.workflowExecutionClaimDao = workflowExecutionClaimDao;
     this.failsafeLeniency = failsafeLeniency;
-    this.completionService = new ExecutorCompletionService<>(threadPoolExecutor);
+    this.threadPoolExecutor = threadPoolExecutor;
   }
 
   /**
@@ -78,11 +82,18 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
   }
 
   private void submitExecution(WorkflowExecution workflowExecution, ExecutablePluginType executablePluginType) {
+    FutureTask<WorkflowExecution> future = null;
     try {
       WorkflowExecutor<S, T> workflowExecutor = createExecutor(workflowExecution, workflowExecutorSettings);
-      Future<WorkflowExecution> future = completionService.submit(workflowExecutor);
+      future = new FutureTask<>(workflowExecutor);
+      // Register the permit owner before starting the task, so cleanup() can always find it once the task completes.
       pluginTypeByFuture.put(future, executablePluginType);
+      threadPoolExecutor.execute(future);
     } catch (RuntimeException e) {
+      // The task never started (or was rejected): drop any registration and release the permit here.
+      if (future != null) {
+        pluginTypeByFuture.remove(future);
+      }
       semaphoresPerPluginManager.releaseForPluginType(executablePluginType);
       throw e;
     }
@@ -97,26 +108,33 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
   /**
    * Cleans up completed workflow execution tasks.
    * <p>
-   * This method processes all completed tasks from the CompletionService queue. For each task:
+   * This method scans the in-flight tasks and, for each one that has finished:
    * <ul>
-   *   <li>The result of the task is obtained, logging its completion or handling any execution exceptions.</li>
-   *   <li>The associated plugin type is removed from the mapping of futures to plugin types.</li>
-   *   <li>The associated semaphore for the respective plugin type is released to allow new tasks for that type.</li>
+   *   <li>Removes it from the tracking map.</li>
+   *   <li>Gets its result, logging its completion or any execution exception.</li>
+   *   <li>Releases the semaphore permit for its plugin type - always, regardless of the task outcome - so new tasks for that
+   *   type can be dispatched.</li>
    * </ul>
    * <p>
-   * Safe to call multiple times (idempotent).
+   * Safe to call multiple times (idempotent). Tasks still running are left untouched for a later invocation.
    *
-   * @throws InterruptedException if the thread is interrupted while waiting for the completion of tasks.
+   * @throws InterruptedException if the thread is interrupted while retrieving the result of a finished task.
    */
   public void cleanup() throws InterruptedException {
-    Future<WorkflowExecution> future;
-    while ((future = completionService.poll()) != null) {
-      ExecutablePluginType pluginType = pluginTypeByFuture.remove(future);
+    Iterator<Entry<Future<WorkflowExecution>, ExecutablePluginType>> futuresIterator = pluginTypeByFuture.entrySet().iterator();
+    while (futuresIterator.hasNext()) {
+      Entry<Future<WorkflowExecution>, ExecutablePluginType> entry = futuresIterator.next();
+      Future<WorkflowExecution> future = entry.getKey();
+      if (!future.isDone()) {
+        continue;
+      }
+      ExecutablePluginType pluginType = entry.getValue();
+      futuresIterator.remove();
       try {
         WorkflowExecution execution = future.get();
-        LOGGER.info("workflowExecutionId: {} - Task finished", execution.getId());
-      } catch (ExecutionException e) {
-        LOGGER.warn("Exception occurred in Future task for pluginType {}", pluginType, e);
+        log.info("workflowExecutionId: {} - Task finished", execution.getId());
+      } catch (ExecutionException | CancellationException e) {
+        log.warn("Exception occurred in Future task for pluginType {}", pluginType, e);
       } finally {
         semaphoresPerPluginManager.releaseForPluginType(pluginType);
       }
@@ -124,4 +142,3 @@ public class WorkflowExecutionDispatcher<S extends EngineTaskSettings, T extends
   }
 
 }
-

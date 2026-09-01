@@ -2,7 +2,7 @@
   "id": "64bffcdde13e6c25d4efb2ac",
   "datasetId": "datasetId",
   "workflowStatus": "RUNNING",
-  "ecloudDatasetId": "ecloudDatasetId",
+  "engineDatasetId": "engineDatasetId",
   "cancelledBy": "cancelledBy",
   "startedBy": "startedBy",
   "workflowPriority": 0,
@@ -22,8 +22,8 @@
       "updatedDate": null,
       "finishedDate": null,
       "pluginMetadata": {
-        "revisionNamePreviousPlugin": null,
-        "revisionTimestampPreviousPlugin": null,
+        "predecessorPluginName": null,
+        "predecessorPluginStartedDate": null,
         "enabled": false,
         "useDefaultIdentifiers": false,
         "url": null,
@@ -36,7 +36,7 @@
         "executablePluginType": "OAIPMH_HARVEST",
         "pluginType": "OAIPMH_HARVEST"
       },
-      "externalTaskId": null,
+      "engineTaskId": null,
       "executionProgress": {
         "expectedRecords": 100,
         "processedRecords": 100,
@@ -65,8 +65,8 @@
       "updatedDate": null,
       "finishedDate": null,
       "pluginMetadata": {
-        "revisionNamePreviousPlugin": null,
-        "revisionTimestampPreviousPlugin": null,
+        "predecessorPluginName": null,
+        "predecessorPluginStartedDate": null,
         "enabled": false,
         "urlOfSchemasZip": null,
         "schemaRootPath": null,
@@ -74,7 +74,7 @@
         "executablePluginType": "VALIDATION_EXTERNAL",
         "pluginType": "VALIDATION_EXTERNAL"
       },
-      "externalTaskId": null,
+      "engineTaskId": null,
       "executionProgress": {
         "expectedRecords": 100,
         "processedRecords": 100,

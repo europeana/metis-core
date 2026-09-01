@@ -26,7 +26,7 @@ public class TestMetisPluginUtils {
   public static final String STARTED_DATE = "startedDate";
   public static final String UPDATED_DATE = "updatedDate";
   public static final String FINISHED_DATE = "finishedDate";
-  public static final String EXTERNAL_TASK_ID = "externalTaskId";
+  public static final String ENGINE_TASK_ID = "engineTaskId";
   public static final String EXECUTION_PROGRESS_DTO = "executionProgress";
   public static final String TOPOLOGY_NAME = "topologyName";
   public static final String CAN_DISPLAY_RAW_XML = "canDisplayRawXml";
@@ -41,7 +41,7 @@ public class TestMetisPluginUtils {
   public static final Instant UPDATED_DATE_VALUE = zonedDateTime.toInstant();
   public static final Instant FINISHED_DATE_VALUE = zonedDateTime.toInstant();
   public static final boolean CAN_DISPLAY_RAW_XML_VALUE = true;
-  public static final String EXTERNAL_TASK_ID_VALUE = "externalTaskId";
+  public static final String ENGINE_TASK_ID_VALUE = "engineTaskId";
   public static final ExecutionProgressDTO EXECUTION_PROGRESS_DTO_VALUE = TestExecutionProgressUtils.getExecutionProgressDTOUsingSetters();
   public static final String TOPOLOGY_NAME_VALUE = "topologyName";
   public static final OaipmhHarvestPluginMetadata METIS_PLUGIN_METADATA_VALUE = new OaipmhHarvestPluginMetadata();
@@ -56,7 +56,7 @@ public class TestMetisPluginUtils {
     metisPluginDTO.setStartedDate(STARTED_DATE_VALUE);
     metisPluginDTO.setUpdatedDate(UPDATED_DATE_VALUE);
     metisPluginDTO.setFinishedDate(FINISHED_DATE_VALUE);
-    metisPluginDTO.setExternalTaskId(EXTERNAL_TASK_ID_VALUE);
+    metisPluginDTO.setEngineTaskId(ENGINE_TASK_ID_VALUE);
     metisPluginDTO.setExecutionProgress(EXECUTION_PROGRESS_DTO_VALUE);
     metisPluginDTO.setTopologyName(TOPOLOGY_NAME_VALUE);
     metisPluginDTO.setCanDisplayRawXml(CAN_DISPLAY_RAW_XML_VALUE);
@@ -82,7 +82,7 @@ public class TestMetisPluginUtils {
     oaipmhHarvestPlugin.setStartedDate(STARTED_DATE_VALUE);
     oaipmhHarvestPlugin.setUpdatedDate(UPDATED_DATE_VALUE);
     oaipmhHarvestPlugin.setFinishedDate(FINISHED_DATE_VALUE);
-    oaipmhHarvestPlugin.setExternalTaskId(EXTERNAL_TASK_ID_VALUE);
+    oaipmhHarvestPlugin.setEngineTaskId(ENGINE_TASK_ID_VALUE);
     oaipmhHarvestPlugin.setExecutionProgress(getExecutionProgressUsingSetters());
     oaipmhHarvestPlugin.setPluginMetadata(METIS_PLUGIN_METADATA_VALUE);
     return oaipmhHarvestPlugin;

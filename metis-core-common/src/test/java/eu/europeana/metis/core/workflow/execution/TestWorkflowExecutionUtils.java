@@ -20,7 +20,7 @@ public class TestWorkflowExecutionUtils {
   public static final String ID = "id";
   public static final String DATASET_ID = "datasetId";
   public static final String WORKFLOW_STATUS = "workflowStatus";
-  public static final String ECLOUD_DATASET_ID = "ecloudDatasetId";
+  public static final String ENGINE_DATASET_ID = "engineDatasetId";
   public static final String CANCELLED_BY = "cancelledBy";
   public static final String CANCELLED_BY_USER_NAME = "cancelledByUserName";
   public static final String CANCELLED_BY_FIRST_NAME = "cancelledByFirstName";
@@ -54,7 +54,7 @@ public class TestWorkflowExecutionUtils {
     workflowExecutionDTO.setId(OBJECT_ID_VALUE.toString());
     workflowExecutionDTO.setDatasetId(DATASET_ID);
     workflowExecutionDTO.setWorkflowStatus(WorkflowStatus.RUNNING);
-    workflowExecutionDTO.setEcloudDatasetId(ECLOUD_DATASET_ID);
+    workflowExecutionDTO.setEngineDatasetId(ENGINE_DATASET_ID);
     workflowExecutionDTO.setCancelledBy(CANCELLED_BY);
     workflowExecutionDTO.setCancelledByUserName(CANCELLED_BY_USER_NAME);
     workflowExecutionDTO.setCancelledByFirstName(CANCELLED_BY_FIRST_NAME);
@@ -91,7 +91,7 @@ public class TestWorkflowExecutionUtils {
     workflowExecution.setId(OBJECT_ID_VALUE);
     workflowExecution.setDatasetId(DATASET_ID);
     workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
-    workflowExecution.setEcloudDatasetId(ECLOUD_DATASET_ID);
+    workflowExecution.setEngineDatasetId(ENGINE_DATASET_ID);
     workflowExecution.setCancelledBy(CANCELLED_BY);
     workflowExecution.setStartedBy(STARTED_BY);
     workflowExecution.setCancelling(false);
