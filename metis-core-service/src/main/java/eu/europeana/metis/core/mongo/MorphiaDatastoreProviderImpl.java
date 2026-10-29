@@ -79,7 +79,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
    * @param databaseName the database name
    */
   public MorphiaDatastoreProviderImpl(MongoClient mongoClient, String databaseName) {
-    this(mongoClient, databaseName, false);
+    this(mongoClient, databaseName, true);
   }
 
   /**
