@@ -7,7 +7,7 @@
   "startedDate": "2025-03-10T10:10:10.000Z",
   "updatedDate": "2025-03-10T10:10:10.000Z",
   "finishedDate": "2025-03-10T10:10:10.000Z",
-  "externalTaskId": "externalTaskId",
+  "engineTaskId": "engineTaskId",
   "executionProgress": {
     "expectedRecords": 100,
     "processedRecords": 100,
@@ -27,8 +27,8 @@
   "topologyName": "topologyName",
   "canDisplayRawXml": true,
   "pluginMetadata": {
-    "revisionNamePreviousPlugin": null,
-    "revisionTimestampPreviousPlugin": null,
+    "predecessorPluginName": null,
+    "predecessorPluginStartedDate": null,
     "enabled": false,
     "useDefaultIdentifiers": false,
     "url": null,

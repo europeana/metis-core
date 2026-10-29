@@ -54,13 +54,12 @@ public class ExecutedMetisPluginId {
    * @return The ID of the predecessor, or null if no predecessor defined.
    */
   public static ExecutedMetisPluginId forPredecessor(MetisPluginMetadata metadata) {
-    final Instant previousPluginTimestamp = metadata.getRevisionTimestampPreviousPlugin();
-    final PluginType previousPluginType = PluginType.getPluginTypeFromEnumName(
-            metadata.getRevisionNamePreviousPlugin());
-    if (previousPluginTimestamp == null || previousPluginType == null) {
+    final Instant predecessorPluginStartedDate = metadata.getPredecessorPluginStartedDate();
+    final PluginType previousPluginType = PluginType.getPluginTypeFromEnumName(metadata.getPredecessorPluginName());
+    if (predecessorPluginStartedDate == null || previousPluginType == null) {
       return null;
     }
-    return new ExecutedMetisPluginId(previousPluginTimestamp, previousPluginType);
+    return new ExecutedMetisPluginId(predecessorPluginStartedDate, previousPluginType);
   }
 
   public Instant getPluginStartedDate() {

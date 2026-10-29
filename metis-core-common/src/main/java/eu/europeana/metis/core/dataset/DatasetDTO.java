@@ -26,7 +26,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 public class DatasetDTO {
 
   private String id;
-  private String ecloudDatasetId;
+  private String engineDatasetId;
   private String datasetId;
   private String datasetName;
   private String provider;
@@ -66,7 +66,7 @@ public class DatasetDTO {
    * Constructs a new DatasetDTO object with the specified parameters.
    *
    * @param id the ID of the dataset
-   * @param ecloudDatasetId the ECloud dataset ID
+   * @param engineDatasetId the ECloud dataset ID
    * @param datasetId the dataset ID
    * @param datasetName the name of the dataset
    * @param provider the provider of the dataset
@@ -91,7 +91,7 @@ public class DatasetDTO {
    */
   public DatasetDTO(
       String id,
-      String ecloudDatasetId,
+      String engineDatasetId,
       String datasetId,
       String datasetName,
       String provider,
@@ -115,7 +115,7 @@ public class DatasetDTO {
       String xsltIdExternal
   ) {
     this.id = id;
-    this.ecloudDatasetId = ecloudDatasetId;
+    this.engineDatasetId = engineDatasetId;
     this.datasetId = datasetId;
     this.datasetName = datasetName;
     this.provider = provider;

@@ -1,10 +1,7 @@
 package eu.europeana.metis.core.execution.task;
 
-import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDataRevision;
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDefaultTaskParameters;
-import static java.util.Objects.requireNonNull;
 
-import eu.europeana.metis.core.engine.base.DataRevision;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -13,15 +10,13 @@ import eu.europeana.metis.core.engine.base.PluginTypeToBatchJobMapper;
 import eu.europeana.metis.core.engine.base.task.input.IntermediateInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.SimpleIntermediateInputDataEndpoint;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
-import eu.europeana.metis.core.workflow.plugins.PluginType;
+import eu.europeana.metis.exception.ExternalTaskException;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Abstract base class for creating curate or index tasks.
- * <p>
- * Represents a task factory that has an input data revision as a base.
  *
  * @param <S> The type of {@link EngineTaskSettings} used by the task.
  * @param <T> The type of {@link EngineTask} created by the factory.
@@ -46,20 +41,10 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
     this.plugin = plugin;
   }
 
-  protected GenericIntermediateTaskContext createGenericIntermediateTaskContext(String engineDatasetId) {
-    return new GenericIntermediateTaskContext(
-        createInputDataRevision(),
-        createOutputDataRevision(),
-        getDataLocation(engineDatasetId)
-    );
-  }
-
   protected Map<EngineTaskKey, String> createAllParameters(
       String engineDatasetId,
       String datasetId,
-      String previousTaskId,
-      DataRevision inputDataRevision,
-      String dataLocation,
+      String sourceExecutionId,
       Map<EngineTaskKey, String> pluginParameters
   ) {
     Map<EngineTaskKey, String> allParameters = new EnumMap<>(EngineTaskKey.class);
@@ -67,28 +52,12 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
     allParameters.putAll(createDefaultTaskParameters(
         engineDatasetId,
         datasetId,
-        previousTaskId,
-        inputDataRevision,
-        dataLocation
+        sourceExecutionId,
+        engineTaskClient.getEngineTaskSettings().getProvider()
     ));
 
     allParameters.putAll(pluginParameters);
     return allParameters;
-  }
-
-  protected DataRevision createInputDataRevision() {
-    return createDataRevision(
-        requireNonNull(PluginType.getPluginTypeFromEnumName(
-            plugin.getPluginMetadata().getRevisionNamePreviousPlugin())),
-        plugin.getPluginMetadata().getRevisionTimestampPreviousPlugin(),
-        engineTaskClient.getEngineTaskSettings().getProvider()
-    );
-  }
-
-  protected DataRevision createOutputDataRevision() {
-    return createDataRevision(
-        plugin.getPluginType(), plugin.getStartedDate(), engineTaskClient.getEngineTaskSettings().getProvider()
-    );
   }
 
   protected void addJobNameParameter(Map<EngineTaskKey, String> pluginParameters) {
@@ -97,21 +66,13 @@ public abstract class AbstractIntermediateEngineTaskFactory<S extends EngineTask
   }
 
   protected SimpleIntermediateInputDataEndpoint createSimpleIntermediateInputDataEndpoint(
-      String previousTaskId, GenericIntermediateTaskContext taskData) {
-    return new SimpleIntermediateInputDataEndpoint(taskData.dataLocation(), previousTaskId);
+      String sourceExecutionId, String sourceBatchId) {
+    return new SimpleIntermediateInputDataEndpoint(sourceExecutionId, sourceBatchId);
   }
 
   @NotNull
   protected T createIntermediateEngineTask(Map<EngineTaskKey, String> allParameters,
-      IntermediateInputDataEndpoint intermediateInputDataEndpoint, DataRevision outputDataRevision) {
-    return engineTaskClient.createEngineTask(allParameters, intermediateInputDataEndpoint, outputDataRevision);
-  }
-
-  protected record GenericIntermediateTaskContext(
-      DataRevision inputDataRevision,
-      DataRevision outputDataRevision,
-      String dataLocation
-  ) {
-
+      IntermediateInputDataEndpoint intermediateInputDataEndpoint) throws ExternalTaskException {
+    return engineTaskClient.createEngineTask(allParameters, intermediateInputDataEndpoint, plugin.getTopologyName());
   }
 }

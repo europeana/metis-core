@@ -26,7 +26,7 @@ public final class DatasetConverter {
     Dataset dataset = new Dataset();
 
     dataset.setId(Optional.ofNullable(datasetDTO.getId()).map(ObjectId::new).orElse(null));
-    dataset.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
+    dataset.setEngineDatasetId(datasetDTO.getEngineDatasetId());
     dataset.setDatasetId(datasetDTO.getDatasetId());
     dataset.setDatasetName(datasetDTO.getDatasetName());
     dataset.setProvider(datasetDTO.getProvider());
@@ -59,7 +59,7 @@ public final class DatasetConverter {
   public static DatasetDTO toDTO(Dataset dataset, User user) {
     return new DatasetDTO(
         Optional.ofNullable(dataset.getId()).map(ObjectId::toString).orElse(null),
-        dataset.getEcloudDatasetId(),
+        dataset.getEngineDatasetId(),
         dataset.getDatasetId(),
         dataset.getDatasetName(),
         dataset.getProvider(),

@@ -30,7 +30,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @Indexes({
     @Index(fields = {@Field("datasetId")}),
     @Index(fields = {@Field("workflowStatus")}),
-    @Index(fields = {@Field("ecloudDatasetId")}),
+    @Index(fields = {@Field("engineDatasetId")}),
     @Index(fields = {@Field("cancelledBy")}),
     @Index(fields = {@Field("startedBy")}),
     @Index(fields = {@Field("createdDate")}),
@@ -53,7 +53,7 @@ public class WorkflowExecution implements HasMongoObjectId {
   private ObjectId id;
   private String datasetId;
   private WorkflowStatus workflowStatus;
-  private String ecloudDatasetId;
+  private String engineDatasetId;
   private String cancelledBy;
   private String startedBy;
   private String claimedByInstance;

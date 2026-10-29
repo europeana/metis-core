@@ -373,9 +373,9 @@ class TestDataEvolutionUtils {
       Instant previousDate) {
     AbstractMetisPluginMetadata metadata = mock(AbstractMetisPluginMetadata.class);
     when(metadata.getPluginType()).thenReturn(type);
-    when(metadata.getRevisionNamePreviousPlugin())
+    when(metadata.getPredecessorPluginName())
         .thenReturn(previousType == null ? null : previousType.name());
-    when(metadata.getRevisionTimestampPreviousPlugin()).thenReturn(previousDate);
+    when(metadata.getPredecessorPluginStartedDate()).thenReturn(previousDate);
     AbstractMetisPlugin<?> result = mock(AbstractMetisPlugin.class);
     when(result.getPluginType()).thenReturn(type);
     when((AbstractMetisPluginMetadata) result.getPluginMetadata()).thenReturn(metadata);

@@ -49,7 +49,7 @@ public class TestObjectFactory {
   public static final String EXECUTIONID = "5a5dc67ba458bb00083d49e3";
   public static final String DATASETNAME = "datasetName";
   public static final String TOPOLOGY_NAME = "topology_name";
-  public static final String EXTERNAL_TASK_ID = "2070373127078497810";
+  public static final String ENGINE_TASK_ID = "2070373127078497810";
   private static final int OCCURRENCES = 2;
 
   private TestObjectFactory() {
@@ -104,7 +104,7 @@ public class TestObjectFactory {
 
     WorkflowExecutionDTO workflowExecutionDTO = new WorkflowExecutionDTO();
     workflowExecutionDTO.setDatasetId(dataset.getDatasetId());
-    workflowExecutionDTO.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecutionDTO.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecutionDTO.setMetisPlugins(abstractMetisPlugins.stream()
                                                              .map(plugin -> MetisPluginConverter.toDTO(plugin,
                                                                  WorkflowExecutionConverter.canDisplayRawXml(plugin)))
@@ -118,7 +118,7 @@ public class TestObjectFactory {
   private static WorkflowExecution createWorkflowExecutionObject(Dataset dataset) {
     WorkflowExecution workflowExecution = new WorkflowExecution();
     workflowExecution.setDatasetId(dataset.getDatasetId());
-    workflowExecution.setEcloudDatasetId(dataset.getEcloudDatasetId());
+    workflowExecution.setEngineDatasetId(dataset.getEngineDatasetId());
     workflowExecution.setMetisPlugins(new ArrayList<>());
     workflowExecution.setWorkflowStatus(WorkflowStatus.INQUEUE);
     workflowExecution.setCreatedDate(Instant.now());
@@ -173,7 +173,7 @@ public class TestObjectFactory {
    */
   public static DatasetDTO createDatasetDTO(String datasetName) {
     DatasetDTO ds = new DatasetDTO();
-    ds.setEcloudDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
+    ds.setEngineDatasetId("NOT_CREATED_YET-f525f64c-fea0-44bf-8c56-88f30962734c");
     ds.setDatasetId(Integer.toString(DATASETID));
     ds.setDatasetName(datasetName);
     final String providerId = "1234567890";
@@ -245,7 +245,7 @@ public class TestObjectFactory {
       taskErrorInfo.setErrorDetails(errorDetails);
       taskErrorInfos.add(taskErrorInfo);
     }
-    return new TaskErrorsInfo(Long.parseLong(EXTERNAL_TASK_ID), taskErrorInfos);
+    return new TaskErrorsInfo(Long.parseLong(ENGINE_TASK_ID), taskErrorInfos);
   }
 
   public static EngineTaskErrors createExternalTaskErrorsListWithIdentifiers(int numberOfErrorTypes) {

@@ -1,10 +1,10 @@
 package eu.europeana.metis.core.engine.base.task.input;
 
+import java.util.Set;
+
 /**
- * Represents an depublish input data endpoint used within the processing engine.
- *
- * @param url The URL of the input data endpoint.
+ * Represents a depublish input data endpoint used within the processing engine.
  */
-public record DepublishInputDataEndpoint(String url) implements InputDataEndpoint {
+public record DepublishInputDataEndpoint(boolean datasetDepublish, Set<String> idsToDepublish) implements InputDataEndpoint {
 
 }

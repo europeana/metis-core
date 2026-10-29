@@ -56,7 +56,7 @@ class TestDataset {
 
   private void assertDataset(String jsonOutput) {
     TestSerializationUtils.assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
-    TestSerializationUtils.assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    TestSerializationUtils.assertFieldEquals(jsonOutput, ENGINE_DATASET_ID, ENGINE_DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
     TestSerializationUtils.assertFieldEquals(jsonOutput, DATASET_NAME, DATASET_NAME);
     TestSerializationUtils.assertFieldEquals(jsonOutput, PROVIDER, PROVIDER);
@@ -79,7 +79,7 @@ class TestDataset {
 
   private void assertDataset(Dataset dataset) {
     assertEquals(OBJECT_ID_VALUE, dataset.getId());
-    assertEquals(ECLOUD_DATASET_ID, dataset.getEcloudDatasetId());
+    assertEquals(ENGINE_DATASET_ID, dataset.getEngineDatasetId());
     assertEquals(DATASET_ID, dataset.getDatasetId());
     assertEquals(DATASET_NAME, dataset.getDatasetName());
     assertEquals(PROVIDER, dataset.getProvider());

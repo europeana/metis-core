@@ -34,7 +34,7 @@ class TestMetisPluginConverter {
     assertEquals(abstractMetisPlugin.getFinishedDate(), metisPluginDTO.getFinishedDate());
     assertEquals(abstractMetisPlugin.getPluginMetadata(), metisPluginDTO.getPluginMetadata());
     if (abstractMetisPlugin instanceof AbstractExecutablePlugin<?> abstractExecutablePlugin) {
-      assertEquals(abstractExecutablePlugin.getExternalTaskId(), metisPluginDTO.getExternalTaskId());
+      assertEquals(abstractExecutablePlugin.getEngineTaskId(), metisPluginDTO.getEngineTaskId());
       TestExecutionProgressConverter.assertExecutionProgressEquals(abstractExecutablePlugin.getExecutionProgress(),
           metisPluginDTO.getExecutionProgress());
     }

@@ -20,7 +20,7 @@ public class WorkflowExecutionDTO {
   private String id;
   private String datasetId;
   private WorkflowStatus workflowStatus;
-  private String ecloudDatasetId;
+  private String engineDatasetId;
   private String cancelledBy;
   private String cancelledByUserName;
   private String cancelledByFirstName;

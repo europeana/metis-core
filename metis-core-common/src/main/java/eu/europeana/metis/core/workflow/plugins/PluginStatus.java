@@ -2,32 +2,33 @@ package eu.europeana.metis.core.workflow.plugins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * The status that a plugin can have.
  */
 public enum PluginStatus {
-  INQUEUE(Category.RUNNABLE),
+  INQUEUE(Category.RUNNABLE, Category.CANCELLABLE),
+  RUNNING(Category.RUNNABLE, Category.CANCELLABLE),
+  IDENTIFYING_DELETED_RECORDS(Category.RUNNABLE, Category.CANCELLABLE),
   CLEANING(Category.RUNNABLE),
-  RUNNING(Category.RUNNABLE),
-  IDENTIFYING_DELETED_RECORDS(Category.RUNNABLE),
   PENDING(Category.RUNNABLE),
   FINISHED(Category.TERMINAL),
   CANCELLED(Category.TERMINAL),
   FAILED(Category.TERMINAL);
 
-  private final Category category;
+  private final Set<Category> categories;
 
-  PluginStatus(Category category) {
-    this.category = category;
+  PluginStatus(Category... categories) {
+    this.categories = Set.of(categories);
   }
 
   public boolean isRunnable() {
-    return category == Category.RUNNABLE;
+    return categories.contains(Category.RUNNABLE);
   }
 
   public boolean isCancellable() {
-    return this != CLEANING && this != PENDING;
+    return categories.contains(Category.CANCELLABLE);
   }
 
   /**
@@ -43,6 +44,7 @@ public enum PluginStatus {
   }
 
   enum Category {
+    CANCELLABLE,
     RUNNABLE,
     TERMINAL
   }

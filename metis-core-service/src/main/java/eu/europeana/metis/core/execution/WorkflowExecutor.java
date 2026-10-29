@@ -90,7 +90,11 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       return workflowExecution;
     }
 
-    runPlugin(plugin);
+    if (!runPlugin(plugin)) {
+      log.info("workflowExecutionId: {} - Monitoring stopped because execution ownership was lost",
+          workflowExecution.getId());
+      return workflowExecution;
+    }
     handlePluginCompletion(plugin);
     workflowExecutionDao.update(workflowExecution);
     return workflowExecution;
@@ -110,11 +114,9 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
         .orElse(null);
   }
 
-  private void runPlugin(AbstractExecutablePlugin<?> plugin) {
+  private boolean runPlugin(AbstractExecutablePlugin<?> plugin) {
     boolean startedSuccessfully = pluginExecutor.execute(plugin, workflowExecution);
-    if (startedSuccessfully) {
-      periodicCheckingLoop(plugin, workflowExecution.getDatasetId());
-    }
+    return !startedSuccessfully || periodicCheckingLoop(plugin, workflowExecution.getDatasetId());
   }
 
   private void handlePluginCompletion(AbstractExecutablePlugin<?> plugin) {
@@ -176,59 +178,56 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     }
   }
 
-  private void periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
+  private boolean periodicCheckingLoop(AbstractExecutablePlugin<?> plugin, String datasetId) {
     final EngineTaskMonitor<S, T> engineTaskMonitor = new EngineTaskMonitor<>(plugin, engineTaskClient);
     EngineTaskProgress engineTaskProgress = null;
     int consecutiveCancelOrMonitorFailures = 0;
     AtomicBoolean externalCancelCallSent = new AtomicBoolean(false);
     ProgressState progressState = new ProgressState(plugin);
-    boolean updateSuccess = true;
-    while (updateSuccess && isContinueMonitor(engineTaskProgress)) {
+    boolean ownershipRetained = true;
+    boolean monitoringAborted = false;
+    while (ownershipRetained && !monitoringAborted && !hasTerminalEngineState(engineTaskProgress)) {
       try {
         if (!sleepMonitorInterval()) {
-          return;
+          monitoringAborted = true;
+        } else {
+          sendExternalCancelCallIfNeeded(
+              externalCancelCallSent,
+              engineTaskMonitor,
+              plugin,
+              progressState
+          );
+
+          engineTaskProgress = engineTaskMonitor.monitor();
+          consecutiveCancelOrMonitorFailures = 0;
+
+          applyRuntimePluginState(plugin, engineTaskProgress);
         }
-
-        sendExternalCancelCallIfNeeded(
-            externalCancelCallSent,
-            engineTaskMonitor,
-            plugin,
-            progressState
-        );
-
-        engineTaskProgress = engineTaskMonitor.monitor();
-        consecutiveCancelOrMonitorFailures = 0;
-
-        applyRuntimePluginState(plugin, engineTaskProgress);
       } catch (ExternalTaskException | RuntimeException e) {
         if (e.getCause() instanceof UnrecoverableExternalTaskException) {
           log.warn("workflowExecutionId: {}, pluginType: {} - UnrecoverableExternalTaskException occurred. "
               + "Setting task state failed.", workflowExecution.getId(), plugin.getPluginType(), e);
-          // Set the plugin to FAILED and return immediately
           plugin.setFinishedDate(null);
           plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
           plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, MONITOR_ERROR_PREFIX, ExceptionUtils.getStackTrace(e)));
-          return;
+          monitoringAborted = true;
+        } else {
+          consecutiveCancelOrMonitorFailures++;
+          handleRecoverableMonitorFailure(plugin, e, consecutiveCancelOrMonitorFailures);
         }
-
-        consecutiveCancelOrMonitorFailures++;
-        handleRecoverableMonitorFailure(plugin, e, consecutiveCancelOrMonitorFailures);
-
       } finally {
         Instant now = Instant.now();
         plugin.setUpdatedDate(now);
         workflowExecution.setUpdatedDate(now);
-        updateSuccess = workflowExecutionDao.updateMonitorInformation(workflowExecution);
+        ownershipRetained = workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution);
       }
     }
 
-    // Perform post-processing if needed.
-    if (engineTaskProgress == null || !applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
-      return;
+    if (ownershipRetained && hasTerminalEngineState(engineTaskProgress)
+        && applyPostProcessing(engineTaskProgress, plugin, datasetId)) {
+      preparePluginStateAndFinishedDate(plugin, engineTaskProgress);
     }
-
-    // Set the status of the task.
-    preparePluginStateAndFinishedDate(plugin, engineTaskProgress);
+    return ownershipRetained;
   }
 
   private boolean sleepMonitorInterval() {
@@ -254,39 +253,35 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
 
   private void applyRuntimePluginState(AbstractExecutablePlugin<?> plugin, EngineTaskProgress engineTaskProgress) {
     EngineTaskState engineTaskState = engineTaskProgress.getEngineTaskState();
-    if (engineTaskState == EngineTaskState.REMOVING_FROM_SOLR_AND_MONGO ||
-        isIndexingInPostProcessing(engineTaskState, plugin)) {
+    if (isIndexInPostProcessing(engineTaskState, plugin)) {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.CLEANING);
-
     } else if (isHarvestingInPostProcessing(engineTaskState, plugin)) {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.IDENTIFYING_DELETED_RECORDS);
-
     } else {
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.RUNNING);
     }
   }
 
-  private boolean isIndexingInPostProcessing(EngineTaskState engineTaskState,
+  private boolean isIndexInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
     return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
-        (plugin.getPluginType() == PluginType.REINDEX_TO_PREVIEW ||
-            plugin.getPluginType() == PluginType.REINDEX_TO_PUBLISH);
+        (plugin.getPluginType() == PluginType.PREVIEW || plugin.getPluginType() == PluginType.PUBLISH);
   }
 
   private boolean isHarvestingInPostProcessing(EngineTaskState engineTaskState,
       AbstractExecutablePlugin<?> plugin) {
     return engineTaskState == EngineTaskState.IN_POST_PROCESSING &&
-        (plugin.getPluginType() == PluginType.HTTP_HARVEST ||
-            plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
+        (plugin.getPluginType() == PluginType.HTTP_HARVEST || plugin.getPluginType() == PluginType.OAIPMH_HARVEST);
   }
 
   private void sendExternalCancelCallIfNeeded(AtomicBoolean externalCancelCallSent,
       EngineTaskMonitor<S, T> engineTaskMonitor, AbstractExecutablePlugin<?> plugin,
       ProgressState progressState) throws ExternalTaskException {
     if (!externalCancelCallSent.get() && shouldPluginBeCancelled(plugin, progressState)) {
-      // Update workflowExecution first, to retrieve cancelling information from db
-      workflowExecution = workflowExecutionDao.getById(workflowExecution.getId().toString());
-      engineTaskMonitor.cancel(workflowExecution.getCancelledBy());
+      // Retrieve the cancellation information without replacing the workflow object whose plugin is being monitored.
+      WorkflowExecution cancellingWorkflowExecution =
+          workflowExecutionDao.getById(workflowExecution.getId().toString());
+      engineTaskMonitor.cancel(cancellingWorkflowExecution.getCancelledBy());
       externalCancelCallSent.set(true);
     }
   }
@@ -309,10 +304,10 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
     return processingAppliedOrNotRequired;
   }
 
-  private boolean isContinueMonitor(EngineTaskProgress engineTaskProgress) {
-    return engineTaskProgress == null ||
-        (engineTaskProgress.getEngineTaskState() != EngineTaskState.DROPPED
-            && engineTaskProgress.getEngineTaskState() != EngineTaskState.PROCESSED);
+  private boolean hasTerminalEngineState(EngineTaskProgress engineTaskProgress) {
+    return engineTaskProgress != null &&
+        (engineTaskProgress.getEngineTaskState() == EngineTaskState.DROPPED
+            || engineTaskProgress.getEngineTaskState() == EngineTaskState.PROCESSED);
   }
 
   private boolean shouldPluginBeCancelled(AbstractExecutablePlugin<?> plugin, ProgressState progressState) {

@@ -42,7 +42,7 @@ class TestWorkflowExecutionConverter {
     assertEquals(OBJECT_ID_VALUE.toString(), workflowExecutionDTO.getId());
     assertEquals(workflowExecution.getDatasetId(), workflowExecutionDTO.getDatasetId());
     assertEquals(workflowExecution.getWorkflowStatus(), workflowExecutionDTO.getWorkflowStatus());
-    assertEquals(workflowExecution.getEcloudDatasetId(), workflowExecutionDTO.getEcloudDatasetId());
+    assertEquals(workflowExecution.getEngineDatasetId(), workflowExecutionDTO.getEngineDatasetId());
     assertEquals(workflowExecution.getCancelledBy(), workflowExecutionDTO.getCancelledBy());
     assertEquals(cancelledUser.getUserName(), workflowExecutionDTO.getCancelledByUserName());
     assertEquals(cancelledUser.getFirstName(), workflowExecutionDTO.getCancelledByFirstName());
