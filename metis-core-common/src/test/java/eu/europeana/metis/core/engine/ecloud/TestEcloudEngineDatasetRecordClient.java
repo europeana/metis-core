@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -247,7 +248,7 @@ class TestEcloudEngineDatasetRecordClient {
 
     Representation representation = mock(Representation.class);
     when(representation.getCloudId()).thenReturn(ecloudId);
-    when(representation.getDatasetId()).thenReturn(datasetId);
+    when(representation.getDatasetIds()).thenReturn(Set.of(datasetId));
     when(representation.getFiles()).thenReturn(List.of(file));
 
     return representation;
