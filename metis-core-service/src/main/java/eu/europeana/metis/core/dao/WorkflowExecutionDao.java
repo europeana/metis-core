@@ -123,11 +123,12 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
   }
 
   /**
-   * Overwrites only the portion of the WorkflowExecution that contains the plugins.
+   * Persists plugins only when the workflow execution is owned by this instance.
    *
-   * @param workflowExecution the WorkflowExecution to update
+   * @param workflowExecution the workflow execution containing the plugins to persist
+   * @return true when an acknowledged update matched the owned workflow, including when its values were already persisted
    */
-  public void updateWorkflowPlugins(WorkflowExecution workflowExecution) {
+  public boolean updateWorkflowPluginsIfOwned(WorkflowExecution workflowExecution) {
     Filter[] filters = {
         Filters.eq(ID.getFieldName(), workflowExecution.getId()),
         Filters.eq(CLAIMED_BY_INSTANCE.getFieldName(), morphiaDatastoreProvider.getInstanceId())
@@ -138,10 +139,14 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
 
     UpdateResult updateResult = retryableExternalRequestForNetworkExceptions(
         () -> query.update(new UpdateOptions(), updateOperator));
+    if (updateResult == null || !updateResult.wasAcknowledged()) {
+      return false;
+    }
     LOGGER.debug(
         "WorkflowExecution metisPlugins for datasetId '{}' updated in Mongo. (UpdateResults: {})",
         workflowExecution.getDatasetId(),
-        updateResult == null ? 0 : updateResult.getModifiedCount());
+        updateResult.getModifiedCount());
+    return updateResult.getMatchedCount() == 1;
   }
 
   /**

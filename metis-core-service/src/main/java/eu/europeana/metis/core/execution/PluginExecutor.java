@@ -73,6 +73,9 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);
       T engineTask = createTask(plugin, workflowExecution, engineTaskSubmitter);
       if (engineTask != null) {
+        if (!workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution)) {
+          throw new IllegalStateException("Created task identifiers could not be persisted for the owned workflow execution");
+        }
         engineTaskSubmitter.submitTask(engineTask);
       }
     } catch (ExternalTaskException | RuntimeException e) {
@@ -84,7 +87,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, TRIGGER_ERROR_PREFIX, ExceptionUtils.getStackTrace(e)));
       return false;
     } finally {
-      workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
+      workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution);
     }
     return true;
   }
@@ -120,7 +123,7 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
           DataEvolutionUtils.computePredecessorPlugin(metadata.getExecutablePluginType(), workflowExecution);
       if (predecessor != null) {
         metadata.setPredecessorInformation(predecessor);
-        workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
+        workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution);
       }
     }
   }

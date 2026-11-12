@@ -124,7 +124,7 @@ class TestWorkflowExecutionDao {
         workflowExecution.getMetisPlugins().getFirst().getPluginStatus());
     String objectId = workflowExecutionDao.create(workflowExecution).getId().toString();
     workflowExecution.getMetisPlugins().getFirst().setPluginStatus(PluginStatus.RUNNING);
-    workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
+    workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution);
     WorkflowExecution updatedWorkflowExecution = workflowExecutionDao.getById(objectId);
     assertEquals(PluginStatus.RUNNING,
         updatedWorkflowExecution.getMetisPlugins().getFirst().getPluginStatus());

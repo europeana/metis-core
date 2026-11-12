@@ -221,7 +221,7 @@ public class WorkflowPostProcessor {
           .getMetisPluginWithType(workflowExecutionToUpdate, latestSuccessfulPlugin.getPlugin().getPluginType());
       if (metisPluginWithType.isPresent()) {
         metisPluginWithType.get().setDataStatus(DataStatus.DELETED);
-        workflowExecutionDao.updateWorkflowPlugins(workflowExecutionToUpdate);
+        workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecutionToUpdate);
       }
     }
     // Set publication fitness to UNFIT.

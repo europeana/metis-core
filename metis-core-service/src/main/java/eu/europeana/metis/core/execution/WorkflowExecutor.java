@@ -357,6 +357,6 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
       }
       default -> log.debug("No action for other states");
     }
-    workflowExecutionDao.updateWorkflowPlugins(workflowExecution);
+    workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution);
   }
 }

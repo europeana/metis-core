@@ -83,6 +83,7 @@ class TestWorkflowExecutor {
     reset(workflowExecutionDao);
     reset(workflowPostProcessor);
     reset(engineTaskClient);
+    when(workflowExecutionDao.updateWorkflowPluginsIfOwned(any(WorkflowExecution.class))).thenReturn(true);
 
     EngineTask engineTaskRequest = mock(EngineTask.class);
     when(engineTaskClient.createEngineTask(anyMap(), any(InputDataEndpoint.class), anyString())).thenReturn(engineTaskRequest);
@@ -126,7 +127,6 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
@@ -173,7 +173,6 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
@@ -223,7 +222,6 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
@@ -263,7 +261,6 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
@@ -312,7 +309,6 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.updateMonitorInformationIfOwned(workflowExecution)).thenReturn(true);
     when(workflowExecutionDao.isCancelling(workflowExecution.getId())).thenReturn(false);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
 
     when(workflowExecutionDao.update(workflowExecution))
@@ -368,7 +364,6 @@ class TestWorkflowExecutor {
     when(workflowExecutionDao.getById(workflowExecution.getId().toString()))
         .thenReturn(workflowExecution);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
 
@@ -415,7 +410,6 @@ class TestWorkflowExecutor {
         .thenReturn(currentlyProcessingProgress)
         .thenReturn(processedProgress);
 
-    doNothing().when(workflowExecutionDao).updateWorkflowPlugins(workflowExecution);
     when(workflowExecutionDao.update(workflowExecution))
         .thenReturn(workflowExecution.getId().toString());
     when(workflowExecutionDao.getById(anyString())).thenReturn(workflowExecution);
@@ -546,7 +540,7 @@ class TestWorkflowExecutor {
     workflowExecutor.call();
 
     verify(workflowExecutionDao, times(1)).updateMonitorInformationIfOwned(workflowExecution);
-    verify(workflowExecutionDao, times(1)).updateWorkflowPlugins(workflowExecution);
+    verify(workflowExecutionDao, times(1)).updateWorkflowPluginsIfOwned(workflowExecution);
     verify(workflowExecutionDao, never()).update(workflowExecution);
     assertEquals(WorkflowStatus.RUNNING, workflowExecution.getWorkflowStatus());
     assertEquals(PluginStatus.RUNNING, plugin.getPluginStatus());
