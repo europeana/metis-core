@@ -91,7 +91,7 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
   public EcloudEngineTask createEngineTask(
       Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, String topologyName)
       throws ExternalTaskException {
-    EcloudEngineTaskRequest ecloudEngineTaskRequest = new EcloudEngineTaskRequest(parameters, inputDataEndpoint);
+    EcloudEngineTaskRequest ecloudEngineTaskRequest = new EcloudEngineTaskRequest(parameters, inputDataEndpoint, topologyName);
     DpsTask dpsTask;
     try {
       dpsTask = dpsClient.createTask(ecloudEngineTaskRequest.getCreateDpsTaskRequest(), topologyName);

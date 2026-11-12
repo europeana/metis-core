@@ -8,6 +8,7 @@ import eu.europeana.cloud.service.dps.OAIPMHHarvestingDetails;
 import eu.europeana.cloud.service.dps.TaskSource;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.EngineTaskRequest;
+import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.core.engine.base.task.input.DepublishInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
@@ -34,18 +35,19 @@ public class EcloudEngineTaskRequest extends EngineTaskRequest {
    *
    * @param parameters Map of EngineTaskKey and String values used to configure the task. Must not be null.
    * @param inputDataEndpoint InputDataEndpoint representing the input data source for the task. Must not be null.
+   * @param topologyName the Core topology identifier
    */
-  public EcloudEngineTaskRequest(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint) {
+  public EcloudEngineTaskRequest(Map<EngineTaskKey, String> parameters, InputDataEndpoint inputDataEndpoint, String topologyName) {
     super(parameters, inputDataEndpoint);
     setParameters();
-    prepareTaskRequest();
+    prepareTaskRequest(topologyName);
   }
 
   private void setParameters() {
     parameters.forEach((key, value) -> createDpsTaskRequest.addParameter(key.name(), value));
   }
 
-  private void prepareTaskRequest() {
+  private void prepareTaskRequest(String topologyName) {
     String providerId = parameters.get(EngineTaskKey.PROVIDER_ID);
     TaskSource taskSource = switch (this.inputDataEndpoint) {
       case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
@@ -58,6 +60,9 @@ public class EcloudEngineTaskRequest extends EngineTaskRequest {
           new DepublicationInfo(datasetDepublish, idsToDepublish);
     };
     createDpsTaskRequest.setSource(taskSource);
-    createDpsTaskRequest.setResultsProvider(providerId);
+    if (!Topology.LINK_CHECKING.getTopologyName().equals(topologyName)
+        && !Topology.DEPUBLISH.getTopologyName().equals(topologyName)) {
+      createDpsTaskRequest.setResultsProvider(providerId);
+    }
   }
 }

@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.service;
 
+import static eu.europeana.metis.core.workflow.execution.WorkflowExecutionConverter.NO_XML_PREVIEW_TYPES;
 import static java.lang.String.format;
 
 import eu.europeana.cloud.service.dps.exception.DpsException;
@@ -184,6 +185,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       return new PaginatedRecordsResponse(Collections.emptyList(), null);
     }
 
+    requireRecordOutput(pluginType);
+
     // Get the list of records.
     final String engineDatasetId = executionAndPlugin.getLeft().getEngineDatasetId();
     final String engineBatchId = executionAndPlugin.getRight().getEngineBatchId();
@@ -214,6 +217,7 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     final Pair<WorkflowExecution, ExecutablePlugin> executionAndPlugin = getExecutionAndPlugin(workflowExecutionId, pluginType);
     existsOrThrowNoWorkflowExecutionFoundException(workflowExecutionId, pluginType, executionAndPlugin);
 
+    requireRecordOutput(pluginType);
     final String engineBatchId = executionAndPlugin.getRight().getEngineBatchId();
     List<Record> records = engineTaskClient.getRecords(ecloudIds.getIds(), engineBatchId);
 
@@ -296,6 +300,8 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
     final String engineDatasetId = executionAndPlugin.getLeft().getEngineDatasetId();
     final String engineBatchId = executionAndPlugin.getRight().getEngineBatchId();
 
+    requireRecordOutput(executablePluginType);
+
     //Check engine record id and then europeana record id.
     Record recordData = engineTaskClient.getRecord(engineDatasetId, idToSearch, engineBatchId, executablePluginType);
     if (recordData == null) {
@@ -309,6 +315,12 @@ public class ProxiesService<S extends EngineTaskSettings, T extends EngineTask> 
       recordData = engineTaskClient.getRecord(engineDatasetId, normalizedRecordId, engineBatchId, executablePluginType);
     }
     return recordData;
+  }
+
+  private static void requireRecordOutput(ExecutablePluginType pluginType) throws BadContentException {
+    if (NO_XML_PREVIEW_TYPES.contains(pluginType)) {
+      throw new BadContentException("Plugin " + pluginType + " does not produce output records.");
+    }
   }
 
   Pair<WorkflowExecution, ExecutablePlugin> getExecutionAndPlugin(String workflowExecutionId, ExecutablePluginType pluginType)

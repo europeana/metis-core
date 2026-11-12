@@ -166,7 +166,8 @@ public class WorkflowValidationUtils {
       throw new PluginExecutionNotAllowed(CommonStringValues.PLUGIN_EXECUTION_NOT_ALLOWED);
     }
 
-    if (isFirstPluginLinkChecking && engineType == EngineType.SANDBOX) {
+    if (engineType == EngineType.SANDBOX && enabledPlugins.stream()
+        .anyMatch(plugin -> plugin.getPluginType() == PluginType.LINK_CHECKING)) {
       throw new BadContentException("Link Checking plugins are not supported for METIS-SANDBOX");
     }
   }

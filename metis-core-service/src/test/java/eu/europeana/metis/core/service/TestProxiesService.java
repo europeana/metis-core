@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -42,6 +43,7 @@ import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
 import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.core.workflow.plugins.Topology;
 import eu.europeana.metis.exception.ExternalTaskException;
+import eu.europeana.metis.exception.BadContentException;
 import eu.europeana.metis.exception.GenericMetisException;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.MockedStatic;
 
 class TestProxiesService {
@@ -523,4 +527,20 @@ class TestProxiesService {
     verify(datasetDao, never()).getDatasetOrThrow(any());
   }
 
+
+  @ParameterizedTest
+  @EnumSource(value = ExecutablePluginType.class, names = {"LINK_CHECKING", "DEPUBLISH"})
+  void rejectsOutputRecordsForTasksWithoutOutput(ExecutablePluginType pluginType) throws Exception {
+    WorkflowExecution execution = new WorkflowExecution();
+    ExecutablePlugin plugin = mock(ExecutablePlugin.class);
+    doReturn(new ImmutablePair<>(execution, plugin)).when(proxiesService)
+                                                    .getExecutionAndPlugin("execution", pluginType);
+    assertThrows(BadContentException.class, () -> proxiesService
+        .getListOfFileContentsFromPluginExecution("execution", pluginType, null, 10));
+    assertThrows(BadContentException.class, () -> proxiesService
+        .getListOfFileContentsFromPluginExecution("execution", pluginType, new ListOfIds()));
+    assertThrows(BadContentException.class, () -> proxiesService
+        .searchRecordByIdFromPluginExecution("execution", pluginType, "record"));
+    verifyNoInteractions(engineTaskClient);
+  }
 }

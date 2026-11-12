@@ -1,5 +1,6 @@
 package eu.europeana.metis.core.engine.ecloud;
 
+import eu.europeana.cloud.service.dps.BatchInfo;
 import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.metis.core.engine.base.EngineTask;
 
@@ -12,6 +13,7 @@ public record EcloudEngineTask(DpsTask dpsTask) implements EngineTask {
 
   @Override
   public String getEngineBatchId() {
-    return String.valueOf(dpsTask.getTaskId());
+    BatchInfo resultsBatch = dpsTask.getResultsBatch();
+    return resultsBatch == null ? null : resultsBatch.getBatchId();
   }
 }
