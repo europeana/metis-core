@@ -7,6 +7,7 @@ import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.HTTP
 import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.PREVIEW;
 import static eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.VALIDATION_EXTERNAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -252,7 +253,7 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
 
     depublishPluginMetadata.setDatasetDepublish(false);
     depublishPluginMetadata.setRecordIdsToDepublish(
-        Set.of("RecordId1", "RecordId2"));
+        Set.of("recordId1", "recordId2"));
 
     depublishPlugin.setPluginMetadata(depublishPluginMetadata);
     depublishPlugin.setStartedDate(Instant.now());
@@ -272,9 +273,13 @@ class TestEngineTaskSubmitter<T extends AbstractExecutablePlugin<M>, M extends A
     EngineTask createdTask = engineTaskSubmitter.createTask(defaultContext());
 
     assertSame(engineTaskRequest, createdTask);
-    assertInstanceOf(
+    DepublishInputDataEndpoint depublishInputDataEndpoint = assertInstanceOf(
         DepublishInputDataEndpoint.class,
         inputDataEndpointCaptor.getValue());
+    assertFalse(depublishInputDataEndpoint.datasetDepublish());
+    assertEquals(Set.of("/datasetId/recordId1", "/datasetId/recordId2"),
+        depublishInputDataEndpoint.idsToDepublish());
+    assertEquals(Set.of("recordId1", "recordId2"), depublishPluginMetadata.getRecordIdsToDepublish());
     assertEquals(CREATED_TASK_ID, depublishPlugin.getEngineTaskId());
     assertEquals(BATCH_ID, depublishPlugin.getEngineBatchId());
     assertEquals(DataStatus.VALID, depublishPlugin.getDataStatus());

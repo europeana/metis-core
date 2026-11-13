@@ -2,6 +2,7 @@ package eu.europeana.metis.core.execution.task;
 
 import static eu.europeana.metis.core.engine.base.EngineTaskParametersConfigurator.createDepublishParameters;
 
+import eu.europeana.metis.core.common.RecordIdUtils;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
@@ -67,8 +68,10 @@ public class DepublishTaskFactory<S extends EngineTaskSettings, T extends Engine
       String depublicationReason = depublishPluginMetadata.getDepublicationReason() == null ? DepublicationReason.GENERIC.name()
           : depublishPluginMetadata.getDepublicationReason().name();
       Map<EngineTaskKey, String> depublishParameters = createDepublishParameters(datasetId, depublicationReason);
+      Set<String> europeanaIdsToDepublish = datasetDepublish ? recordIdsToDepublish
+          : RecordIdUtils.composeFullRecordIds(datasetId, recordIdsToDepublish);
       return new DepublishContext(depublishParameters,
-          new DepublishInputDataEndpoint(datasetDepublish, recordIdsToDepublish));
+          new DepublishInputDataEndpoint(datasetDepublish, europeanaIdsToDepublish));
     } else {
       throw new IllegalStateException("Unexpected value: " + plugin);
     }
