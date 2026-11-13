@@ -64,19 +64,21 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
    *
    * @param plugin the {@link AbstractExecutablePlugin} instance to be executed
    * @param workflowExecution the {@link WorkflowExecution} object representing the current workflow execution context
-   * @return true if the plugin execution was successful, false otherwise
+   * @return whether execution succeeded, failed, or stopped because workflow ownership was lost
    */
-  public boolean execute(AbstractExecutablePlugin<?> plugin, WorkflowExecution workflowExecution) {
+  public ExecutionResult execute(AbstractExecutablePlugin<?> plugin, WorkflowExecution workflowExecution) {
     EngineTaskSubmitter<S, T> engineTaskSubmitter = new EngineTaskSubmitter<>(plugin, engineTaskClient, datasetXsltDao);
+    ExecutionResult executionResult = ExecutionResult.SUCCESS;
     try {
       preparePredecessorMetadata(plugin, workflowExecution);
       prepareHarvestInfoForIndexPlugin(plugin, workflowExecution);
       T engineTask = createTask(plugin, workflowExecution, engineTaskSubmitter);
       if (engineTask != null) {
         if (!workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution)) {
-          throw new IllegalStateException("Created task identifiers could not be persisted for the owned workflow execution");
+          executionResult = ExecutionResult.OWNERSHIP_LOST;
+        } else {
+          engineTaskSubmitter.submitTask(engineTask);
         }
-        engineTaskSubmitter.submitTask(engineTask);
       }
     } catch (ExternalTaskException | RuntimeException e) {
       log.warn(String.format("workflowExecutionId: %s, pluginType: %s - Execution of plugin failed", workflowExecution.getId(),
@@ -85,11 +87,13 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
       plugin.setFinishedDate(null);
       plugin.setPluginStatusAndResetFailMessage(PluginStatus.FAILED);
       plugin.setFailMessage(String.format(DETAILED_EXCEPTION_FORMAT, TRIGGER_ERROR_PREFIX, ExceptionUtils.getStackTrace(e)));
-      return false;
+      executionResult = ExecutionResult.FAILED;
     } finally {
-      workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution);
+      if (!workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution)) {
+        executionResult = ExecutionResult.OWNERSHIP_LOST;
+      }
     }
-    return true;
+    return executionResult;
   }
 
   private T createTask(AbstractExecutablePlugin<?> plugin,
@@ -178,4 +182,14 @@ public class PluginExecutor<S extends EngineTaskSettings, T extends EngineTask> 
                    .map(AbstractExecutablePlugin.class::cast)
                    .orElse(null);
   }
+
+  /**
+   * Outcome of preparing and submitting a plugin under workflow ownership.
+   */
+  public enum ExecutionResult {
+    SUCCESS,
+    FAILED,
+    OWNERSHIP_LOST
+  }
+
 }

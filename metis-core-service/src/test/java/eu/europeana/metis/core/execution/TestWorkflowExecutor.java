@@ -52,6 +52,8 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.http.HttpStatus;
@@ -512,6 +514,37 @@ class TestWorkflowExecutor {
     assertEquals(WorkflowStatus.CANCELLED, lastWorkflowExecutionUpdate.getWorkflowStatus());
     assertEquals(PluginStatus.CANCELLED, lastWorkflowExecutionUpdate.getMetisPlugins().getFirst().getPluginStatus());
     assertEquals(SystemId.SYSTEM_MINUTE_CAP_EXPIRE.name(), workflowExecutionArgumentCaptor.getValue().getCancelledBy());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void callWhenSubmissionLosesOwnershipSkipsMonitoringAndCompletion(boolean ownershipRetainedBeforeStart)
+      throws ExternalTaskException {
+    OaipmhHarvestPlugin oaipmhHarvestPlugin = new OaipmhHarvestPlugin();
+    oaipmhHarvestPlugin.setPluginMetadata(new OaipmhHarvestPluginMetadata());
+    oaipmhHarvestPlugin.setPluginStatus(PluginStatus.INQUEUE);
+
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    workflowExecution.setId(new ObjectId());
+    workflowExecution.setWorkflowStatus(WorkflowStatus.RUNNING);
+    workflowExecution.setStartedDate(Instant.now());
+    workflowExecution.setMetisPlugins(new ArrayList<>(List.of(oaipmhHarvestPlugin)));
+    workflowExecution.setNextExecutablePluginType(ExecutablePluginType.OAIPMH_HARVEST);
+    when(workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution))
+        .thenReturn(ownershipRetainedBeforeStart, false);
+
+    WorkflowExecutor<EngineTaskSettings, EngineTask> workflowExecutor =
+        new WorkflowExecutor<>(workflowExecution, workflowExecutorSettings);
+    workflowExecutor.call();
+
+    verify(engineTaskClient, times(ownershipRetainedBeforeStart ? 1 : 0))
+        .submitEngineTask(any(EngineTask.class), anyString());
+    verify(engineTaskClient, never()).getEngineTaskProgress(anyString(), any(), any());
+    verify(workflowExecutionDao, never()).updateMonitorInformationIfOwned(any(WorkflowExecution.class));
+    verify(workflowExecutionDao, never()).isCancelling(workflowExecution.getId());
+    verify(workflowExecutionDao, never()).update(any(WorkflowExecution.class));
+    assertEquals(WorkflowStatus.RUNNING, workflowExecution.getWorkflowStatus());
+    assertEquals(PluginStatus.RUNNING, oaipmhHarvestPlugin.getPluginStatus());
   }
 
   @Test

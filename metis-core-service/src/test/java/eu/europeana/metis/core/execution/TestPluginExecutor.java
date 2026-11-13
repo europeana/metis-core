@@ -1,9 +1,7 @@
 package eu.europeana.metis.core.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -78,7 +76,7 @@ class TestPluginExecutor {
       return true;
     });
 
-    assertTrue(pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
+    assertEquals(PluginExecutor.ExecutionResult.SUCCESS, pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
 
     InOrder submissionOrder = inOrder(engineTaskClient, workflowExecutionDao);
     submissionOrder.verify(engineTaskClient).createEngineTask(anyMap(), any(InputDataEndpoint.class), anyString());
@@ -93,10 +91,10 @@ class TestPluginExecutor {
     prepareCreatedTask(engineType);
     when(workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution)).thenReturn(false);
 
-    assertFalse(pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
+    assertEquals(PluginExecutor.ExecutionResult.OWNERSHIP_LOST, pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
 
     verify(engineTaskClient, never()).submitEngineTask(any(EngineTask.class), anyString());
-    assertEquals(PluginStatus.FAILED, oaipmhHarvestPlugin.getPluginStatus());
+    assertEquals(PluginStatus.RUNNING, oaipmhHarvestPlugin.getPluginStatus());
     assertEquals(ENGINE_TASK_ID, oaipmhHarvestPlugin.getEngineTaskId());
     assertEquals(ENGINE_BATCH_ID, oaipmhHarvestPlugin.getEngineBatchId());
   }
@@ -108,7 +106,7 @@ class TestPluginExecutor {
     when(workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecution))
         .thenThrow(new IllegalStateException("Database update failed")).thenReturn(true);
 
-    assertFalse(pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
+    assertEquals(PluginExecutor.ExecutionResult.FAILED, pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
 
     verify(engineTaskClient, never()).submitEngineTask(any(EngineTask.class), anyString());
     verify(workflowExecutionDao, times(2)).updateWorkflowPluginsIfOwned(workflowExecution);
@@ -126,7 +124,7 @@ class TestPluginExecutor {
       throw new ExternalTaskException("Start failed");
     }).when(engineTaskClient).submitEngineTask(engineTask, oaipmhHarvestPlugin.getTopologyName());
 
-    assertFalse(pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
+    assertEquals(PluginExecutor.ExecutionResult.FAILED, pluginExecutor.execute(oaipmhHarvestPlugin, workflowExecution));
 
     InOrder submissionOrder = inOrder(workflowExecutionDao, engineTaskClient);
     submissionOrder.verify(workflowExecutionDao).updateWorkflowPluginsIfOwned(workflowExecution);

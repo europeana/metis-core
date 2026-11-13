@@ -115,8 +115,11 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   }
 
   private boolean runPlugin(AbstractExecutablePlugin<?> plugin) {
-    boolean startedSuccessfully = pluginExecutor.execute(plugin, workflowExecution);
-    return !startedSuccessfully || periodicCheckingLoop(plugin, workflowExecution.getDatasetId());
+    return switch (pluginExecutor.execute(plugin, workflowExecution)) {
+      case SUCCESS -> periodicCheckingLoop(plugin, workflowExecution.getDatasetId());
+      case FAILED -> true;
+      case OWNERSHIP_LOST -> false;
+    };
   }
 
   private void handlePluginCompletion(AbstractExecutablePlugin<?> plugin) {
