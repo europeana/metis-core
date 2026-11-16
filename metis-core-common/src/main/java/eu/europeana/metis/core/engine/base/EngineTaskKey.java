@@ -55,10 +55,6 @@ public enum EngineTaskKey {
    */
   PERFORM_REDIRECTS,
   /**
-   * List of record IDs to be depublished
-   */
-  RECORD_IDS_TO_DEPUBLISH,
-  /**
    * Reason for depublication of records
    */
   DEPUBLICATION_REASON,
@@ -66,18 +62,6 @@ public enum EngineTaskKey {
    * ID of the data provider. This is ECloud specific.
    */
   PROVIDER_ID,
-  /**
-   * Name of the current representation. This is ECloud specific.
-   */
-  REPRESENTATION_NAME,
-  /**
-   * New name for the representation. This is ECloud specific.
-   */
-  NEW_REPRESENTATION_NAME,
-  /**
-   * Output datasets configuration. This is ECloud specific.
-   */
-  OUTPUT_DATA_SETS,
   /**
    * Size of the sample to be processed
    */
@@ -98,18 +82,6 @@ public enum EngineTaskKey {
    * Flag indicating whether to generate statistics for the processed data
    */
   GENERATE_STATS,
-  /**
-   * Name of the revision
-   */
-  REVISION_NAME,
-  /**
-   * Provider of the revision. This is ECloud specific.
-   */
-  REVISION_PROVIDER,
-  /**
-   * Timestamp of the revision
-   */
-  REVISION_TIMESTAMP,
   /**
    * Flag indicating incremental harvest mode
    */

@@ -12,18 +12,11 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.METIS_DATASET_CO
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.METIS_DATASET_ID;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.METIS_DATASET_LANGUAGE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.METIS_DATASET_NAME;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.NEW_REPRESENTATION_NAME;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.OUTPUT_DATA_SETS;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.PERFORM_REDIRECTS;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.PRESERVE_TIMESTAMPS;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.PREVIOUS_TASK_ID;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.PROVIDER_ID;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.RECORD_DATE;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.RECORD_IDS_TO_DEPUBLISH;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.REPRESENTATION_NAME;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.REVISION_NAME;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.REVISION_PROVIDER;
-import static eu.europeana.metis.core.engine.base.EngineTaskKey.REVISION_TIMESTAMP;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.ROOT_LOCATION;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SAMPLE_SIZE;
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.SCHEMATRON_LOCATION;
@@ -32,9 +25,6 @@ import static eu.europeana.metis.core.engine.base.EngineTaskKey.TARGET_INDEXING_
 import static eu.europeana.metis.core.engine.base.EngineTaskKey.XSLT_URL;
 import static lombok.AccessLevel.PRIVATE;
 
-import eu.europeana.metis.core.common.RecordIdUtils;
-import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
-import eu.europeana.metis.core.workflow.plugins.PluginType;
 import eu.europeana.metis.utils.CommonStringValues;
 import eu.europeana.metis.utils.RestEndpoints;
 import java.time.Instant;
@@ -45,9 +35,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import lombok.NoArgsConstructor;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Configures task parameters for the engine tasks in various contexts, such as harvesting, validation, transformation, and
@@ -66,22 +54,15 @@ public final class EngineTaskParametersConfigurator {
    * @param engineDatasetId the identifier of the engine dataset
    * @param datasetId the identifier of the dataset
    * @param previousTaskId the identifier of the previous task
-   * @param inputDataRevision the revision of input data
-   * @param dataLocation the location of the output data sets
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParameters(
-      String engineDatasetId, String datasetId, String previousTaskId, DataRevision inputDataRevision, String dataLocation) {
+      String engineDatasetId, String datasetId, String previousTaskId, String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(ENGINE_DATASET_ID, engineDatasetId);
     parameters.put(METIS_DATASET_ID, datasetId);
-    parameters.put(REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    parameters.put(REVISION_NAME, inputDataRevision.name());
-    parameters.put(REVISION_PROVIDER, inputDataRevision.providerId());
-    parameters.put(REVISION_TIMESTAMP, formatUtcDate(inputDataRevision.creationTimeStamp()));
     parameters.put(PREVIOUS_TASK_ID, previousTaskId);
-    parameters.put(NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
-    parameters.put(OUTPUT_DATA_SETS, dataLocation);
+    parameters.put(PROVIDER_ID, providerId);
     return parameters;
   }
 
@@ -92,12 +73,11 @@ public final class EngineTaskParametersConfigurator {
    * @param datasetId the identifier of the dataset to be harvested
    * @param incrementalHarvest a flag indicating if the harvest should be incremental
    * @param startedDate the starting date of the harvest operation
-   * @param dataLocation the location of the output data sets
    * @param providerId the identifier of the data provider
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParametersHarvest(
-      String engineDatasetId, String datasetId, boolean incrementalHarvest, Instant startedDate, String dataLocation,
+      String engineDatasetId, String datasetId, boolean incrementalHarvest, Instant startedDate,
       String providerId) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(ENGINE_DATASET_ID, engineDatasetId);
@@ -105,21 +85,7 @@ public final class EngineTaskParametersConfigurator {
     parameters.put(INCREMENTAL_HARVEST, String.valueOf(incrementalHarvest));
     parameters.put(HARVEST_DATE, formatUtcDate(startedDate));
     parameters.put(PROVIDER_ID, providerId);
-    parameters.put(OUTPUT_DATA_SETS, dataLocation);
-    parameters.put(NEW_REPRESENTATION_NAME, MetisPlugin.getRepresentationName());
     return parameters;
-  }
-
-  /**
-   * Creates a new instance of {@link DataRevision}.
-   *
-   * @param pluginType the type of the plugin initiating the data revision
-   * @param pluginStartedDate the start date of the plugin associated with the data revision
-   * @param ecloudProvider the identifier of the eCloud provider associated with the revision
-   * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
-   */
-  public static DataRevision createDataRevision(PluginType pluginType, Instant pluginStartedDate, String ecloudProvider) {
-    return new DataRevision(pluginType.name(), ecloudProvider, pluginStartedDate, false);
   }
 
   /**
@@ -269,32 +235,14 @@ public final class EngineTaskParametersConfigurator {
    * Creates a map of parameters for depublishing tasks.
    *
    * @param datasetId The unique identifier of the dataset to be depublished.
-   * @param datasetDepublish Flag indicating whether the entire dataset should be depublished.
-   * @param recordIdsToDepublish A set of record IDs to be depublished if partial depublishing is required.
    * @param depublicationReason The reason for the depublishing operation.
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    * @throws IllegalStateException If partial depublishing is requested but no record IDs are provided.
    */
-  public static Map<EngineTaskKey, String> createDepublishParameters(
-      String datasetId,
-      boolean datasetDepublish,
-      Set<String> recordIdsToDepublish,
-      String depublicationReason) {
+  public static Map<EngineTaskKey, String> createDepublishParameters(String datasetId, String depublicationReason) {
     final Map<EngineTaskKey, String> parameters = new EnumMap<>(EngineTaskKey.class);
     parameters.put(METIS_DATASET_ID, datasetId);
     parameters.put(DEPUBLICATION_REASON, depublicationReason);
-
-    //Do set the records ids parameter only if record ids depublication enabled and there are record ids
-    if (!datasetDepublish) {
-      if (CollectionUtils.isEmpty(recordIdsToDepublish)) {
-        throw new IllegalStateException(
-            "Requested record depublication but there are no records ids for depublication in the db");
-      } else {
-        final String recordIdList = String.join(",", RecordIdUtils
-            .composeFullRecordIds(datasetId, recordIdsToDepublish));
-        parameters.put(RECORD_IDS_TO_DEPUBLISH, recordIdList);
-      }
-    }
     return parameters;
   }
 

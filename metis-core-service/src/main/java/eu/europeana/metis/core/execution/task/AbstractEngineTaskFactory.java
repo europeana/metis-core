@@ -1,10 +1,7 @@
 package eu.europeana.metis.core.execution.task;
 
-import static java.lang.String.format;
-
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskSettings;
-import eu.europeana.metis.utils.CommonStringValues;
 
 /**
  * Abstract factory class for creating engine tasks. This class provides the shared logic and structure for building tasks to be
@@ -20,14 +17,6 @@ public abstract class AbstractEngineTaskFactory<S extends EngineTaskSettings, T 
 
   protected AbstractEngineTaskFactory(S engineTaskSettings) {
     this.engineTaskSettings = engineTaskSettings;
-  }
-
-  protected String getDataLocation(String engineDatasetId) {
-    return format(
-        CommonStringValues.S_DATA_PROVIDERS_S_DATA_SETS_S_TEMPLATE,
-        engineTaskSettings.getBaseUrl(),
-        engineTaskSettings.getProvider(),
-        engineDatasetId);
   }
 }
 

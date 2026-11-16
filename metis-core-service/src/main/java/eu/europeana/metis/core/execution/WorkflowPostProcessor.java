@@ -166,13 +166,13 @@ public class WorkflowPostProcessor {
       throws ExternalTaskException {
 
     // Retrieve the successfully depublished records.
-    final String externalTaskId = depublishPlugin.getExternalTaskId();
+    final String engineTaskId = depublishPlugin.getEngineTaskId();
     final List<DataItemStatus> dataItemStatuses = new ArrayList<>();
     List<DataItemStatus> dataItemStatusesPage;
     do {
       dataItemStatusesPage = retryableExternalRequestForNetworkExceptionsThrowing(
           () -> engineTaskClient.getDataItemStatuses(
-              depublishPlugin.getTopologyName(), externalTaskId, dataItemStatuses.size(),
+              depublishPlugin.getTopologyName(), engineTaskId, dataItemStatuses.size(),
               dataItemStatuses.size() + ECLOUD_REQUEST_PAGE_SIZE));
       dataItemStatuses.addAll(dataItemStatusesPage);
     } while (dataItemStatusesPage.size() == ECLOUD_REQUEST_PAGE_SIZE);
@@ -221,7 +221,7 @@ public class WorkflowPostProcessor {
           .getMetisPluginWithType(workflowExecutionToUpdate, latestSuccessfulPlugin.getPlugin().getPluginType());
       if (metisPluginWithType.isPresent()) {
         metisPluginWithType.get().setDataStatus(DataStatus.DELETED);
-        workflowExecutionDao.updateWorkflowPlugins(workflowExecutionToUpdate);
+        workflowExecutionDao.updateWorkflowPluginsIfOwned(workflowExecutionToUpdate);
       }
     }
     // Set publication fitness to UNFIT.

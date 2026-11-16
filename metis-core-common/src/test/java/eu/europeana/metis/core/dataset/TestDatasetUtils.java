@@ -13,7 +13,7 @@ public class TestDatasetUtils {
   private static final ZonedDateTime zonedDateTime = ZonedDateTime.parse("2025-03-10T10:10:10.000Z[UTC]");
   //FIELDS
   static final String ID = "id";
-  static final String ECLOUD_DATASET_ID = "ecloudDatasetId";
+  static final String ENGINE_DATASET_ID = "engineDatasetId";
   static final String DATASET_ID = "datasetId";
   static final String DATASET_NAME = "datasetName";
   static final String PROVIDER = "provider";
@@ -48,7 +48,7 @@ public class TestDatasetUtils {
   public static DatasetDTO getDatasetDTO() {
     return new DatasetDTO(
         OBJECT_ID_VALUE.toString(),
-        ECLOUD_DATASET_ID,
+        ENGINE_DATASET_ID,
         DATASET_ID,
         DATASET_NAME,
         PROVIDER,
@@ -77,7 +77,7 @@ public class TestDatasetUtils {
     DatasetDTO datasetDTO = getDatasetDTO();
     DatasetDTO datasetDTO1 = new DatasetDTO();
     datasetDTO1.setId(datasetDTO.getId());
-    datasetDTO1.setEcloudDatasetId(datasetDTO.getEcloudDatasetId());
+    datasetDTO1.setEngineDatasetId(datasetDTO.getEngineDatasetId());
     datasetDTO1.setDatasetId(datasetDTO.getDatasetId());
     datasetDTO1.setDatasetName(datasetDTO.getDatasetName());
     datasetDTO1.setProvider(datasetDTO.getProvider());
@@ -106,7 +106,7 @@ public class TestDatasetUtils {
     DatasetDTO datasetDTO = getDatasetDTO();
     return new DatasetDTO(
         datasetDTO.getId(),
-        datasetDTO.getEcloudDatasetId(),
+        datasetDTO.getEngineDatasetId(),
         datasetDTO.getDatasetId(),
         datasetDTO.getDatasetName(),
         datasetDTO.getProvider(),
@@ -141,7 +141,7 @@ public class TestDatasetUtils {
   public static Dataset getDataset() {
     Dataset dataset = new Dataset();
     dataset.setId(OBJECT_ID_VALUE);
-    dataset.setEcloudDatasetId(ECLOUD_DATASET_ID);
+    dataset.setEngineDatasetId(ENGINE_DATASET_ID);
     dataset.setDatasetId(DATASET_ID);
     dataset.setDatasetName(DATASET_NAME);
     dataset.setProvider(PROVIDER);

@@ -383,16 +383,16 @@ public class OrchestratorService<S extends EngineTaskSettings, T extends EngineT
   }
 
   private String createEngineDatasetId(Dataset dataset) throws ExternalTaskException {
-    if (StringUtils.isEmpty(dataset.getEcloudDatasetId())
-        || dataset.getEcloudDatasetId().startsWith("NOT_CREATED_YET")) {
+    if (StringUtils.isEmpty(dataset.getEngineDatasetId())
+        || dataset.getEngineDatasetId().startsWith("NOT_CREATED_YET")) {
       String engineDatasetId = workflowExecutorSettings.engineTaskClient().createEngineDatasetId(dataset);
-      dataset.setEcloudDatasetId(engineDatasetId);
+      dataset.setEngineDatasetId(engineDatasetId);
       datasetDao.update(dataset);
     } else {
       LOGGER.info("Dataset with datasetId {} already has a dataset initialized in Ecloud with id {}",
-              dataset.getDatasetId(), dataset.getEcloudDatasetId());
+              dataset.getDatasetId(), dataset.getEngineDatasetId());
     }
-    return dataset.getEcloudDatasetId();
+    return dataset.getEngineDatasetId();
   }
 
   /**

@@ -8,7 +8,7 @@ import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUt
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.CREATED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.DATASET_ID;
-import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ECLOUD_DATASET_ID;
+import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ENGINE_DATASET_ID;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.FINISHED_DATE_VALUE;
 import static eu.europeana.metis.core.workflow.execution.TestWorkflowExecutionUtils.ID;
@@ -91,7 +91,7 @@ class TestWorkflowExecution {
     assertFieldEquals(jsonOutput, ID, OBJECT_ID_VALUE.toString());
     assertFieldEquals(jsonOutput, DATASET_ID, DATASET_ID);
     assertFieldEquals(jsonOutput, WORKFLOW_STATUS, WORKFLOW_STATUS_VALUE.name());
-    assertFieldEquals(jsonOutput, ECLOUD_DATASET_ID, ECLOUD_DATASET_ID);
+    assertFieldEquals(jsonOutput, ENGINE_DATASET_ID, ENGINE_DATASET_ID);
     assertFieldEquals(jsonOutput, CANCELLED_BY, CANCELLED_BY);
     assertFieldEquals(jsonOutput, STARTED_BY, STARTED_BY);
     assertFieldEquals(jsonOutput, CANCELLING, CANCELLING_VALUE);
@@ -107,7 +107,7 @@ class TestWorkflowExecution {
     assertEquals(OBJECT_ID_VALUE, workflowExecution.getId());
     assertEquals(DATASET_ID, workflowExecution.getDatasetId());
     assertEquals(WorkflowStatus.RUNNING, workflowExecution.getWorkflowStatus());
-    assertEquals(ECLOUD_DATASET_ID, workflowExecution.getEcloudDatasetId());
+    assertEquals(ENGINE_DATASET_ID, workflowExecution.getEngineDatasetId());
     assertEquals(CANCELLED_BY, workflowExecution.getCancelledBy());
     assertEquals(STARTED_BY, workflowExecution.getStartedBy());
     assertFalse(workflowExecution.isCancelling());

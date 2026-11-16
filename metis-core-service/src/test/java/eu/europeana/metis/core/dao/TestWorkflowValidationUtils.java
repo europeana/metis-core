@@ -152,6 +152,16 @@ class TestWorkflowValidationUtils {
   }
 
   @Test
+  void sandboxRejectsLinkCheckingAtAnyPosition() {
+    WorkflowValidationUtils workflowValidationUtils = new WorkflowValidationUtils(
+        EngineType.SANDBOX, depublishRecordIdDao, datasetXsltDao, dataEvolutionUtils);
+    assertThrows(BadContentException.class, () -> workflowValidationUtils.validateWorkflowPlugins(
+        createWorkflow(ExecutablePluginType.LINK_CHECKING), null));
+    assertThrows(BadContentException.class, () -> workflowValidationUtils.validateWorkflowPlugins(
+        createWorkflow(ExecutablePluginType.NORMALIZATION, ExecutablePluginType.LINK_CHECKING), null));
+  }
+
+  @Test
   void testValidateWorkflowPlugins_GapsInWorkflow() {
     assertThrows(PluginExecutionNotAllowed.class, () -> validationUtils.validateWorkflowPlugins(
         createWorkflow(ExecutablePluginType.TRANSFORMATION, ExecutablePluginType.ENRICHMENT),
@@ -207,6 +217,7 @@ class TestWorkflowValidationUtils {
           AbstractExecutablePluginMetadata.class);
       when(plugin.isEnabled()).thenReturn(true);
       doReturn(type).when(plugin).getExecutablePluginType();
+      doReturn(type == null ? null : type.toPluginType()).when(plugin).getPluginType();
       return plugin;
     }).toList());
     return workflow;
