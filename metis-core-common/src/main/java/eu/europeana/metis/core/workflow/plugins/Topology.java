@@ -8,16 +8,16 @@ import lombok.Getter;
 @Getter
 public enum Topology {
 
-  HTTP_HARVEST("http_topology"),
-  OAIPMH_HARVEST("oai_topology"),
-  VALIDATION("validation_topology"),
-  TRANSFORMATION("xslt_topology"),
-  NORMALIZATION("normalization_topology"),
-  ENRICHMENT("enrichment_topology"),
-  MEDIA_PROCESS("media_topology"),
-  LINK_CHECKING("linkcheck_topology"),
-  INDEX("indexing_topology"),
-  DEPUBLISH("depublication_topology");
+  HTTP_HARVEST("http_harvest"),
+  OAIPMH_HARVEST("oai_harvest"),
+  VALIDATION("validation"),
+  TRANSFORMATION("xslt_transform"),
+  NORMALIZATION("normalization"),
+  ENRICHMENT("enrichment"),
+  MEDIA_PROCESS("media_process"),
+  LINK_CHECKING("link_checker"),
+  INDEX("indexer"),
+  DEPUBLISH("depublication");
 
   private final String topologyName;
 
