@@ -1,24 +1,37 @@
 package eu.europeana.metis.core.engine.sandbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withAccepted;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.task.input.HttpHarvestInputDataEndpoint;
+import eu.europeana.metis.core.rest.Record;
+import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType;
+import eu.europeana.metis.exception.ExternalTaskException;
 import eu.europeana.metis.sandbox.common.task.input.HttpHarvestInputMetadataRequest;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTask;
 import eu.europeana.metis.sandbox.common.task.input.SandboxTaskKey;
+import java.io.IOException;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
@@ -85,6 +98,49 @@ class TestSandboxEngineTaskClient {
 
     sandboxEngineTaskClient.submitEngineTask(new SandboxEngineTask(sandboxTask), TOPOLOGY_NAME);
 
+    mockServer.verify();
+  }
+
+  @Test
+  void getRecordReturnsRecordContent() throws Exception {
+    mockServer.expect(requestTo(BASE_URL + "/dataset/" + DATASET_ID + "/record?recordId=recordId&step=NORMALIZE"))
+        .andExpect(method(GET))
+        .andRespond(withSuccess("<record/>", APPLICATION_XML));
+
+    Record record = sandboxEngineTaskClient.getRecord(DATASET_ID, "recordId", BATCH_ID,
+        ExecutablePluginType.NORMALIZATION);
+    assertEquals(new Record("recordId", "<record/>"), record);
+    mockServer.verify();
+  }
+
+  @Test
+  void getRecordReturnsNullWhenNotFound() throws Exception {
+    mockServer.expect(requestTo(BASE_URL + "/dataset/" + DATASET_ID + "/record?recordId=recordId&step=NORMALIZE"))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertNull(sandboxEngineTaskClient.getRecord(DATASET_ID, "recordId", BATCH_ID,
+        ExecutablePluginType.NORMALIZATION));
+    mockServer.verify();
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = HttpStatus.class, names = {"BAD_REQUEST", "UNAUTHORIZED", "FORBIDDEN", "INTERNAL_SERVER_ERROR"})
+  void getRecordThrowsForOtherHttpFailures(HttpStatus httpStatus) {
+    mockServer.expect(requestTo(BASE_URL + "/dataset/" + DATASET_ID + "/record?recordId=recordId&step=NORMALIZE"))
+        .andRespond(withStatus(httpStatus));
+
+    assertThrows(ExternalTaskException.class, () -> sandboxEngineTaskClient.getRecord(
+        DATASET_ID, "recordId", BATCH_ID, ExecutablePluginType.NORMALIZATION));
+    mockServer.verify();
+  }
+
+  @Test
+  void getRecordThrowsForConnectivityFailure() {
+    mockServer.expect(requestTo(BASE_URL + "/dataset/" + DATASET_ID + "/record?recordId=recordId&step=NORMALIZE"))
+        .andRespond(withException(new IOException("connectionFailed")));
+
+    assertThrows(ExternalTaskException.class, () -> sandboxEngineTaskClient.getRecord(
+        DATASET_ID, "recordId", BATCH_ID, ExecutablePluginType.NORMALIZATION));
     mockServer.verify();
   }
 

@@ -1,11 +1,14 @@
 package eu.europeana.metis.core.engine.ecloud;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import eu.europeana.cloud.client.uis.rest.CloudException;
@@ -19,6 +22,9 @@ import eu.europeana.cloud.common.response.ResultSlice;
 import eu.europeana.cloud.mcs.driver.DataSetServiceClient;
 import eu.europeana.cloud.mcs.driver.FileServiceClient;
 import eu.europeana.cloud.service.mcs.exception.MCSException;
+import eu.europeana.cloud.service.mcs.exception.RecordNotExistsException;
+import eu.europeana.cloud.service.mcs.exception.RepresentationNotExistsException;
+import eu.europeana.cloud.service.uis.exception.CloudIdDoesNotExistException;
 import eu.europeana.cloud.service.uis.exception.RecordDoesNotExistException;
 import eu.europeana.metis.core.rest.Record;
 import eu.europeana.metis.core.workflow.plugins.MetisPlugin;
@@ -204,41 +210,101 @@ class TestEcloudEngineDatasetRecordClient {
     CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
     when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
 
-    ExternalTaskException exception = assertThrows(ExternalTaskException.class,
-        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
-
-    assertEquals("No representations found for ecloudId: ecloudId", exception.getMessage());
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
   }
 
   @Test
   void getRecordWhenDatasetHasNoRepresentations() throws Exception {
-    CloudId cloudId = new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID));
-    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID)).thenReturn(cloudId);
-
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenReturn(new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID)));
     mockDatasetRepresentations(List.of());
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
   }
 
   @Test
   void getRecordWhenPotentialEcloudIdDoesNotExist() throws Exception {
-    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
-        .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
-
+    mockMissingLocalId();
     when(uisClient.getRecordId(RECORD_ID)).thenReturn(new ResultSlice<>(null, List.of()));
-    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null,
-        MetisPlugin.getRepresentationName())).thenThrow(new MCSException());
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    verifyNoInteractions(dataSetServiceClient, fileServiceClient);
   }
 
   @Test
-  void getRecordWhenPotentialEcloudIdVerificationThrows() throws Exception {
-    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
-        .thenThrow(new CloudException("", new RecordDoesNotExistException(new ErrorInfo())));
-    when(uisClient.getRecordId(RECORD_ID)).thenThrow(new CloudException("", new IllegalStateException()));
-    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, null,
-        MetisPlugin.getRepresentationName())).thenThrow(new MCSException());
+  void getRecordWhenPotentialEcloudIdVerificationReportsNotFound() throws Exception {
+    mockMissingLocalId();
+    when(uisClient.getRecordId(RECORD_ID))
+        .thenThrow(new CloudException("notFound", new CloudIdDoesNotExistException(new ErrorInfo())));
 
-    assertThrows(ExternalTaskException.class, () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    verifyNoInteractions(dataSetServiceClient, fileServiceClient);
+  }
+
+  @Test
+  void getRecordWhenPotentialEcloudIdVerificationFailsForConnectivityReason() throws Exception {
+    mockMissingLocalId();
+    CloudException connectivityException = new CloudException("connectionFailed", new IOException());
+    when(uisClient.getRecordId(RECORD_ID)).thenThrow(connectivityException);
+
+    ExternalTaskException externalTaskException = assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+
+    assertSame(connectivityException, externalTaskException.getCause());
+    verifyNoInteractions(dataSetServiceClient, fileServiceClient);
+  }
+
+  @Test
+  void getRecordWhenDatasetClientReportsMissingRecord() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenReturn(new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID)));
+    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID,
+        MetisPlugin.getRepresentationName())).thenThrow(new RecordNotExistsException());
+
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    verifyNoInteractions(fileServiceClient);
+  }
+
+  @Test
+  void getRecordWhenDatasetClientReportsMissingRepresentation() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenReturn(new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID)));
+    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID,
+        MetisPlugin.getRepresentationName())).thenThrow(new RepresentationNotExistsException());
+
+    assertNull(ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    verifyNoInteractions(fileServiceClient);
+  }
+
+  @Test
+  void getRecordWhenDatasetClientFails() throws Exception {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenReturn(new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, RECORD_ID)));
+    MCSException mcsException = new MCSException();
+    when(dataSetServiceClient.getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID,
+        MetisPlugin.getRepresentationName())).thenThrow(mcsException);
+
+    ExternalTaskException externalTaskException = assertThrows(ExternalTaskException.class,
+        () -> ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID));
+    assertSame(mcsException, externalTaskException.getCause());
+  }
+
+  @Test
+  void getRecordsByRecordIdsOmitsMissingRecords() throws Exception {
+    mockMissingLocalId();
+    when(uisClient.getRecordId(RECORD_ID)).thenReturn(new ResultSlice<>(null, List.of()));
+    when(uisClient.getCloudId(PROVIDER_ID, "existingRecordId"))
+        .thenReturn(new CloudId(ECLOUD_ID, new LocalId(PROVIDER_ID, "existingRecordId")));
+    mockDatasetRepresentations(List.of(createRepresentation(ECLOUD_ID, BATCH_ID)));
+    mockFileContent();
+
+    List<Record> records = ecloudEngineDatasetRecordClient.getRecords(
+        PROVIDER_ID, List.of(RECORD_ID, "existingRecordId"), BATCH_ID);
+    assertEquals(List.of(new Record(ECLOUD_ID, RECORD_CONTENT)), records);
+  }
+
+  private void mockMissingLocalId() throws CloudException {
+    when(uisClient.getCloudId(PROVIDER_ID, RECORD_ID))
+        .thenThrow(new CloudException("notFound", new RecordDoesNotExistException(new ErrorInfo())));
   }
 
   private Representation createRepresentation(String ecloudId, String datasetId) {

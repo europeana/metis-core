@@ -38,7 +38,7 @@ public interface EngineRecordClient {
    * @param recordId the unique identifier of the record to retrieve
    * @param engineBatchId the batch identifier associated with the record retrieval
    * @param pluginType the plugin type associated with the record retrieval
-   * @return the retrieved Record object matching the provided criteria
+   * @return the retrieved Record object matching the provided criteria, or null if no matching record exists
    * @throws ExternalTaskException if there is an error while retrieving the record
    */
   Record getRecord(String engineDatasetId, String recordId, String engineBatchId,

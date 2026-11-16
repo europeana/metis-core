@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.HttpClientErrorException.NotFound;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -177,6 +178,9 @@ public class SandboxEngineTaskClient implements EngineTaskClient<SandboxEngineTa
                     .retrieve()
                     .body(String.class);
       return recordXml == null ? null : new Record(recordId, recordXml);
+    } catch (NotFound e) {
+      log.warn("Record not found in Sandbox for datasetId: {}, recordId: {}", engineDatasetId, recordId, e);
+      return null;
     } catch (RuntimeException e) {
       throw new ExternalTaskException("Failed to fetch record from Sandbox", e);
     }

@@ -333,6 +333,26 @@ class TestProxiesService {
   }
 
   @Test
+  void searchRecordByIdFromPluginExecutionPropagatesEngineFailureWithoutFallback() throws Exception {
+    WorkflowExecution workflowExecution = TestObjectFactory.createWorkflowExecutionObject();
+    AbstractExecutablePlugin<?> executablePlugin = getUsedAndUnusedPluginType(workflowExecution).getLeft();
+    ExecutablePluginType executablePluginType = executablePlugin.getPluginMetadata().getExecutablePluginType();
+    executablePlugin.setEngineBatchId("engineBatchId");
+    doReturn(new ImmutablePair<>(workflowExecution, executablePlugin)).when(proxiesService)
+        .getExecutionAndPlugin(TestObjectFactory.EXECUTIONID, executablePluginType);
+    ExternalTaskException externalTaskException = new ExternalTaskException("connectionFailed");
+    doThrow(externalTaskException).when(engineTaskClient).getRecord(
+        workflowExecution.getEngineDatasetId(), "recordId", "engineBatchId", executablePluginType);
+
+    ExternalTaskException actualException = assertThrows(ExternalTaskException.class,
+        () -> proxiesService.searchRecordByIdFromPluginExecution(
+            TestObjectFactory.EXECUTIONID, executablePluginType, "recordId"));
+
+    assertSame(externalTaskException, actualException);
+    verify(engineTaskClient, times(1)).getRecord(any(), any(), any(), any());
+  }
+
+  @Test
   void searchRecordByIdFromPluginExecutionReturnsNullWhenRecordDoesNotExist() throws Exception {
     final WorkflowExecution execution = TestObjectFactory.createWorkflowExecutionObject();
     final AbstractExecutablePlugin<?> plugin = getUsedAndUnusedPluginType(execution).getLeft();
