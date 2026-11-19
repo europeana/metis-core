@@ -245,6 +245,7 @@ public class TestRedirectionBase {
   static List<ExecutablePluginType> getExecutablePluginTypes() {
     final List<ExecutablePluginType> typesInWorkflow = new ArrayList<>();
     typesInWorkflow.add(ExecutablePluginType.HTTP_HARVEST);
+    typesInWorkflow.add(ExecutablePluginType.DATASET_ADMINISTRATION);
     typesInWorkflow.add(ExecutablePluginType.VALIDATION_EXTERNAL);
     typesInWorkflow.add(ExecutablePluginType.TRANSFORMATION);
     typesInWorkflow.add(ExecutablePluginType.VALIDATION_INTERNAL);

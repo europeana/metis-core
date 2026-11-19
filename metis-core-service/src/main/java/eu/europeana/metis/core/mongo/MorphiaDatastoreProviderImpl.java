@@ -6,7 +6,9 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 import com.mongodb.client.MongoClient;
 import dev.morphia.Datastore;
+import dev.morphia.DatastoreImpl;
 import dev.morphia.Morphia;
+import dev.morphia.config.MorphiaConfig;
 import dev.morphia.mapping.DiscriminatorFunction;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.MapperOptions;
@@ -24,6 +26,8 @@ import eu.europeana.metis.core.workflow.plugins.AbstractHarvestPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractIndexPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPluginMetadata;
+import eu.europeana.metis.core.workflow.plugins.DatasetAdministrationPlugin;
+import eu.europeana.metis.core.workflow.plugins.DatasetAdministrationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.DepublishPlugin;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPlugin;
@@ -95,7 +99,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     createDatastore(mongoClient, databaseName);
     if (createIndexes) {
       log.info("Initializing database indices");
-      datastore.ensureIndexes();
+      ((DatastoreImpl)datastore).applyIndexes();
     }
   }
 
@@ -119,7 +123,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     if (datasetXsltDao.getLatestDefaultXslt() == null) {
       try (final InputStream inputStream = defaultTransformationSupplier.get()) {
         final String defaultTransformationAsString = IOUtils
-            .toString(inputStream, StandardCharsets.UTF_8.name());
+            .toString(inputStream, StandardCharsets.UTF_8);
         final DatasetXslt defaultTransformation = new DatasetXslt(DatasetXslt.DEFAULT_DATASET_ID, XsltType.DEFAULT,
             defaultTransformationAsString);
         datasetXsltDao.create(defaultTransformation);
@@ -129,11 +133,12 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
 
   private void createDatastore(MongoClient mongoClient, String databaseName) {
     // Register the mappings and set up the data store.
-    // TODO: 8/28/20 The mapper options should eventually be removed but requires an update of the affected fields on all documents in the database
-    final MapperOptions mapperOptions = MapperOptions.builder().discriminatorKey("className")
+    // Using MorphiaConfig instead of mapperOptions
+    final MorphiaConfig morphiaConfig = MorphiaConfig.load().discriminatorKey("className")
                                                      .discriminator(DiscriminatorFunction.className())
-                                                     .collectionNaming(NamingStrategy.identity()).build();
-    datastore = Morphia.createDatastore(mongoClient, databaseName, mapperOptions);
+                                                     .collectionNaming(NamingStrategy.identity())
+                                                     .database(databaseName);
+    datastore = Morphia.createDatastore(mongoClient, morphiaConfig);
     final Mapper mapper = datastore.getMapper();
     mapper.getEntityModel(Dataset.class);
     mapper.getEntityModel(DatasetIdSequence.class);
@@ -144,6 +149,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     // Plugins
     mapper.getEntityModel(AbstractMetisPlugin.class);
     mapper.getEntityModel(AbstractExecutablePlugin.class);
+    mapper.getEntityModel(DatasetAdministrationPlugin.class);
     mapper.getEntityModel(DepublishPlugin.class);
     mapper.getEntityModel(EnrichmentPlugin.class);
     mapper.getEntityModel(HTTPHarvestPlugin.class);
@@ -164,6 +170,7 @@ public class MorphiaDatastoreProviderImpl implements MorphiaDatastoreProvider {
     mapper.getEntityModel(AbstractMetisPluginMetadata.class);
     mapper.getEntityModel(AbstractHarvestPluginMetadata.class);
     mapper.getEntityModel(AbstractIndexPluginMetadata.class);
+    mapper.getEntityModel(DatasetAdministrationPluginMetadata.class);
     mapper.getEntityModel(DepublishPluginMetadata.class);
     mapper.getEntityModel(EnrichmentPluginMetadata.class);
     mapper.getEntityModel(HTTPHarvestPluginMetadata.class);

@@ -248,7 +248,8 @@ public class DataEvolutionUtils {
   public static Set<ExecutablePluginType> getPredecessorTypes(ExecutablePluginType pluginType) {
     return switch (pluginType) {
       case TRANSFORMATION_EXTERNAL -> HARVEST_PLUGIN_GROUP;
-      case VALIDATION_EXTERNAL -> HARVEST_AND_TRANSFORMATION_PLUGIN_GROUP;
+      case DATASET_ADMINISTRATION -> HARVEST_AND_TRANSFORMATION_PLUGIN_GROUP;
+      case VALIDATION_EXTERNAL -> EnumSet.of(ExecutablePluginType.DATASET_ADMINISTRATION);
       case TRANSFORMATION -> EnumSet.of(ExecutablePluginType.VALIDATION_EXTERNAL);
       case VALIDATION_INTERNAL -> EnumSet.of(ExecutablePluginType.TRANSFORMATION);
       case NORMALIZATION -> EnumSet.of(ExecutablePluginType.VALIDATION_INTERNAL);
