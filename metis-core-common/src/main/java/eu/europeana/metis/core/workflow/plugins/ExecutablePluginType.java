@@ -13,6 +13,7 @@ public enum ExecutablePluginType {
 
   OAIPMH_HARVEST(PluginType.OAIPMH_HARVEST, ExecutablePluginTypeGroup.HARVEST),
   HTTP_HARVEST(PluginType.HTTP_HARVEST, ExecutablePluginTypeGroup.HARVEST),
+  DATASET_ADMINISTRATION(PluginType.DATASET_ADMINISTRATION, ExecutablePluginTypeGroup.CURATE),
   ENRICHMENT(PluginType.ENRICHMENT, ExecutablePluginTypeGroup.CURATE),
   MEDIA_PROCESS(PluginType.MEDIA_PROCESS, ExecutablePluginTypeGroup.CURATE),
   LINK_CHECKING(PluginType.LINK_CHECKING, ExecutablePluginTypeGroup.CURATE),

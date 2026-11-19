@@ -32,6 +32,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
+import eu.europeana.metis.core.workflow.plugins.DatasetAdministrationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePlugin;
@@ -112,8 +113,10 @@ class TestDataEvolutionUtils {
     testComputePredecessorPlugin(new HTTPHarvestPluginMetadata(), Collections.emptySet(), null);
     testComputePredecessorPlugin(new TransformationExternalPluginMetadata(),
         DataEvolutionUtils.getHarvestPluginGroup(), null);
-    testComputePredecessorPlugin(new ValidationExternalPluginMetadata(),
+    testComputePredecessorPlugin(new DatasetAdministrationPluginMetadata(),
         DataEvolutionUtils.getHarvestAndTransformationPluginGroup(), null);
+    testComputePredecessorPlugin(new ValidationExternalPluginMetadata(),
+        EnumSet.of(ExecutablePluginType.DATASET_ADMINISTRATION), null);
     testComputePredecessorPlugin(new TransformationPluginMetadata(),
         EnumSet.of(ExecutablePluginType.VALIDATION_EXTERNAL), null);
     testComputePredecessorPlugin(new ValidationInternalPluginMetadata(),

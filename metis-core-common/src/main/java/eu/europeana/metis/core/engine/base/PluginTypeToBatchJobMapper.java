@@ -37,7 +37,7 @@ public final class PluginTypeToBatchJobMapper {
           case ENRICHMENT -> FullBatchJobType.ENRICH;
           case MEDIA_PROCESS -> FullBatchJobType.MEDIA;
           case PREVIEW  -> FullBatchJobType.INDEX_PREVIEW;
-          case PUBLISH, LINK_CHECKING, DEPUBLISH -> null;
+          case PUBLISH, LINK_CHECKING, DEPUBLISH, DATASET_ADMINISTRATION -> null;
         });
   }
 }

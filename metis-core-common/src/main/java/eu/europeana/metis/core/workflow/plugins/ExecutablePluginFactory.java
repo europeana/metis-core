@@ -21,6 +21,8 @@ public final class ExecutablePluginFactory {
         new PluginCreator<>(HTTPHarvestPluginMetadata.class, HTTPHarvestPlugin::new));
     creators.put(ExecutablePluginType.OAIPMH_HARVEST,
         new PluginCreator<>(OaipmhHarvestPluginMetadata.class, OaipmhHarvestPlugin::new));
+    creators.put(ExecutablePluginType.DATASET_ADMINISTRATION,
+        new PluginCreator<>(DatasetAdministrationPluginMetadata.class, DatasetAdministrationPlugin::new));
     creators.put(ExecutablePluginType.ENRICHMENT,
         new PluginCreator<>(EnrichmentPluginMetadata.class, EnrichmentPlugin::new));
     creators.put(ExecutablePluginType.MEDIA_PROCESS,
