@@ -1,5 +1,8 @@
 package eu.europeana.metis.core.engine.base;
 
+/**
+ * A processing engine task with a task identifier and an optional output batch identifier.
+ */
 public interface EngineTask {
 
   String getEngineTaskId();

@@ -4,6 +4,11 @@ import eu.europeana.cloud.service.dps.BatchInfo;
 import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.metis.core.engine.base.EngineTask;
 
+/**
+ * Wraps an eCloud DPS task and exposes its task and output batch identifiers.
+ *
+ * @param dpsTask the eCloud task
+ */
 public record EcloudEngineTask(DpsTask dpsTask) implements EngineTask {
 
   @Override

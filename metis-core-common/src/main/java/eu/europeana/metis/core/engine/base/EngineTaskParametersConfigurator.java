@@ -54,6 +54,7 @@ public final class EngineTaskParametersConfigurator {
    * @param engineDatasetId the identifier of the engine dataset
    * @param datasetId the identifier of the dataset
    * @param previousTaskId the identifier of the previous task
+   * @param providerId the identifier of provider
    * @return a map of {@link EngineTaskKey} keys to their corresponding parameter values
    */
   public static Map<EngineTaskKey, String> createDefaultTaskParameters(

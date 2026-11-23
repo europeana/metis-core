@@ -22,11 +22,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
 /**
  * A client for managing interactions with eCloud Engine dataset records, including creation, retrieval, and verification.
  */
+@Slf4j
 public class EcloudEngineDatasetRecordClient {
 
   private final DataSetServiceClient dataSetServiceClient;
@@ -87,9 +89,9 @@ public class EcloudEngineDatasetRecordClient {
 
     final List<Record> records = new ArrayList<>(recordIds.size());
     for (String recordId : recordIds) {
-      Record record = getRecord(providerId, recordId, engineBatchId);
-      if (record != null) {
-        records.add(record);
+      Record retrievedRecord = getRecord(providerId, recordId, engineBatchId);
+      if (retrievedRecord != null) {
+        records.add(retrievedRecord);
       }
     }
 
@@ -130,7 +132,9 @@ public class EcloudEngineDatasetRecordClient {
     try {
       representations = dataSetServiceClient.getDataSetRepresentations(providerId, engineBatchId, ecloudId,
           MetisPlugin.getRepresentationName());
-    } catch (RecordNotExistsException | RepresentationNotExistsException e) {
+    } catch (RecordNotExistsException | RepresentationNotExistsException missingRecordException) {
+      log.debug("No eCloud record representation found for provider {}, batch {}, eCloud ID {}",
+          providerId, engineBatchId, ecloudId, missingRecordException);
       return null;
     } catch (MCSException e) {
       throw new ExternalTaskException(

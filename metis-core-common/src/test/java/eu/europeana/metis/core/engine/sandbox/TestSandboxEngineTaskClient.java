@@ -107,9 +107,9 @@ class TestSandboxEngineTaskClient {
         .andExpect(method(GET))
         .andRespond(withSuccess("<record/>", APPLICATION_XML));
 
-    Record record = sandboxEngineTaskClient.getRecord(DATASET_ID, "recordId", BATCH_ID,
+    Record retrievedRecord = sandboxEngineTaskClient.getRecord(DATASET_ID, "recordId", BATCH_ID,
         ExecutablePluginType.NORMALIZATION);
-    assertEquals(new Record("recordId", "<record/>"), record);
+    assertEquals(new Record("recordId", "<record/>"), retrievedRecord);
     mockServer.verify();
   }
 

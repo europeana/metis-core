@@ -400,9 +400,10 @@ class TestProxiesService {
                                                         plugin.getPluginMetadata().getExecutablePluginType());
 
     final int numberOfRecords = 5;
-    final Record record = new Record("ECLOUDID1", "test content");
+    final Record retrievedRecord = new Record("ECLOUDID1", "test content");
 
-    doReturn(List.of(record)).when(engineTaskClient).getRecords(execution.getEngineDatasetId(), engineBatchId, numberOfRecords);
+    doReturn(List.of(retrievedRecord)).when(engineTaskClient)
+                                     .getRecords(execution.getEngineDatasetId(), engineBatchId, numberOfRecords);
 
     final PaginatedRecordsResponse result =
         proxiesService.getListOfFileContentsFromPluginExecution(
@@ -412,7 +413,7 @@ class TestProxiesService {
             numberOfRecords);
 
     assertNotNull(result);
-    assertEquals(List.of(record), result.getRecords());
+    assertEquals(List.of(retrievedRecord), result.getRecords());
     assertNull(result.getNextPage());
 
     verify(engineTaskClient).getRecords(execution.getEngineDatasetId(), engineBatchId, numberOfRecords);

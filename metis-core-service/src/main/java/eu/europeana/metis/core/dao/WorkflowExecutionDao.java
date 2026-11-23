@@ -335,7 +335,7 @@ public class WorkflowExecutionDao implements MetisDao<WorkflowExecution, String>
       case ExecutablePlugin executablePlugin
           when !limitToValidData || MetisPlugin.getDataStatus(executablePlugin) == DataStatus.VALID ->
           new PluginWithExecutionId<>(uncastResultWrapper.getExecutionId(), executablePlugin);
-      case ExecutablePlugin ignored -> null;
+      case ExecutablePlugin _ -> null;
       default -> {
         LOGGER.warn("Found plugin {} for executable plugin type {} that is not itself executable.",
             uncastResult.getId(), uncastResult.getPluginType());

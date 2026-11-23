@@ -159,10 +159,10 @@ class TestEcloudEngineDatasetRecordClient {
     mockDatasetRepresentations(List.of(representation));
     mockFileContent();
 
-    Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
+    Record retrievedRecord = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
 
-    assertEquals(ECLOUD_ID, record.ecloudId());
-    assertEquals(RECORD_CONTENT, record.xmlRecord());
+    assertEquals(ECLOUD_ID, retrievedRecord.ecloudId());
+    assertEquals(RECORD_CONTENT, retrievedRecord.xmlRecord());
     verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID, MetisPlugin.getRepresentationName());
   }
 
@@ -175,9 +175,9 @@ class TestEcloudEngineDatasetRecordClient {
     mockDatasetRepresentations(List.of(otherBatchRepresentation, requestedBatchRepresentation));
     mockFileContent();
 
-    Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
-    assertEquals(ECLOUD_ID, record.ecloudId());
-    assertEquals(RECORD_CONTENT, record.xmlRecord());
+    Record retrievedRecord = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, RECORD_ID, BATCH_ID);
+    assertEquals(ECLOUD_ID, retrievedRecord.ecloudId());
+    assertEquals(RECORD_CONTENT, retrievedRecord.xmlRecord());
   }
 
   @Test
@@ -198,10 +198,10 @@ class TestEcloudEngineDatasetRecordClient {
     mockDatasetRepresentations(List.of(representation));
     mockFileContent();
 
-    Record record = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, ECLOUD_ID, BATCH_ID);
+    Record retrievedRecord = ecloudEngineDatasetRecordClient.getRecord(PROVIDER_ID, ECLOUD_ID, BATCH_ID);
 
-    assertEquals(ECLOUD_ID, record.ecloudId());
-    assertEquals(RECORD_CONTENT, record.xmlRecord());
+    assertEquals(ECLOUD_ID, retrievedRecord.ecloudId());
+    assertEquals(RECORD_CONTENT, retrievedRecord.xmlRecord());
     verify(dataSetServiceClient).getDataSetRepresentations(PROVIDER_ID, BATCH_ID, ECLOUD_ID, MetisPlugin.getRepresentationName());
   }
 

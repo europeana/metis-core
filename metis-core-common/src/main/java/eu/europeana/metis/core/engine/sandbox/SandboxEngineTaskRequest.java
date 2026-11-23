@@ -70,7 +70,7 @@ public class SandboxEngineTaskRequest extends EngineTaskRequest {
           new TransformInternalInputMetadataRequest(endpoint.xslt(), endpoint.sourceExecutionId());
       case SimpleIntermediateInputDataEndpoint endpoint ->
           new SimpleIntermediateInputMetadataRequest(endpoint.sourceExecutionId());
-      case DepublishInputDataEndpoint ignored ->
+      case DepublishInputDataEndpoint _ ->
           throw new IllegalArgumentException("DepublishInputDataEndpoint is not supported for sandbox tasks");
     };
     sandboxTaskRequest.setInputMetadataRequest(inputMetadataRequest);

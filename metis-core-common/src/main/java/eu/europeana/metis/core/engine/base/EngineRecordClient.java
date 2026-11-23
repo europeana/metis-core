@@ -26,7 +26,8 @@ public interface EngineRecordClient {
    * Retrieves a list of records based on the provided record identifiers and batch information.
    *
    * @param recordIds the list of record identifiers to retrieve
-   * @return a list of {@link java.lang.Record} objects corresponding to the provided record identifiers
+   * @param engineBatchId the identifier of the batch to retrieve records from
+   * @return a list of {@link Record} objects corresponding to the provided record identifiers
    * @throws ExternalTaskException if an error occurs during the record retrieval process
    */
   List<Record> getRecords(List<String> recordIds, String engineBatchId) throws ExternalTaskException;

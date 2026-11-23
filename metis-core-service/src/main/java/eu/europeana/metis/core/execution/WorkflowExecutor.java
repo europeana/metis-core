@@ -55,7 +55,7 @@ public class WorkflowExecutor<S extends EngineTaskSettings, T extends EngineTask
   private final Duration periodOfNoProcessedRecordsChange;
   private final EngineTaskClient<S, T> engineTaskClient;
   private final PluginExecutor<S, T> pluginExecutor;
-  private WorkflowExecution workflowExecution;
+  private final WorkflowExecution workflowExecution;
 
   /**
    * Constructor.

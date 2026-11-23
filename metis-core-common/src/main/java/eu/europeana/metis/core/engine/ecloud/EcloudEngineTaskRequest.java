@@ -50,11 +50,11 @@ public class EcloudEngineTaskRequest extends EngineTaskRequest {
   private void prepareTaskRequest(String topologyName) {
     String providerId = parameters.get(EngineTaskKey.PROVIDER_ID);
     TaskSource taskSource = switch (this.inputDataEndpoint) {
-      case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, Integer stepSize) ->
+      case OaiHarvestInputDataEndpoint(String url, String set, String metadataPrefix, Instant from, Instant until, _) ->
           new OAIPMHHarvestingDetails(url, metadataPrefix, set,
               Optional.ofNullable(from).map(Date::from).orElse(null),
               Optional.ofNullable(until).map(Date::from).orElse(null), null);
-      case HttpHarvestInputDataEndpoint(String url, Integer stepSize) -> new HttpHarvestingDetails(url);
+      case HttpHarvestInputDataEndpoint(String url, _) -> new HttpHarvestingDetails(url);
       case IntermediateInputDataEndpoint endpoint -> new BatchInfo(providerId, endpoint.sourceBatchId());
       case DepublishInputDataEndpoint(boolean datasetDepublish, Set<String> idsToDepublish) ->
           new DepublicationInfo(datasetDepublish, idsToDepublish);

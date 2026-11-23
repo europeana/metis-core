@@ -122,11 +122,7 @@ public class CurateTaskFactory<S extends EngineTaskSettings, T extends EngineTas
           ),
           simpleInput
       );
-      case NormalizationPluginMetadata ignored -> new CurateTaskContext(
-          new EnumMap<>(EngineTaskKey.class),
-          simpleInput
-      );
-      case EnrichmentPluginMetadata ignored -> new CurateTaskContext(
+      case NormalizationPluginMetadata _, EnrichmentPluginMetadata _ -> new CurateTaskContext(
           new EnumMap<>(EngineTaskKey.class),
           simpleInput
       );
