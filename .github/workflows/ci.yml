@@ -7,6 +7,7 @@ jobs:
   ci:
     uses: europeana/metis-actions/.github/workflows/ci.yml@main
     with:
+      java-version: '25'
       sonar_organization: europeana
       sonar_project_key: europeana_metis-core
     secrets:
@@ -15,6 +16,8 @@ jobs:
   deploy-artifacts:
     needs: ci
     uses: europeana/metis-actions/.github/workflows/deploy-artifacts.yml@main
+    with:
+      java-version: '25'
     secrets:
       ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
       ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
