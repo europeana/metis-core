@@ -6,7 +6,7 @@ import eu.europeana.metis.exception.ExternalTaskException;
 /**
  * Interface for submitting and managing tasks to be executed within a processing engine.
  *
- * @param <T> The type of task extending {@link EngineTask} to be submitted and managed.
+ * @param <T> The type of {@link EngineTask} to be submitted and managed.
  */
 public interface EngineTaskSubmissionClient<T extends EngineTask> {
 
@@ -15,10 +15,9 @@ public interface EngineTaskSubmissionClient<T extends EngineTask> {
    *
    * @param engineTask The task to be executed.
    * @param topologyName The name of the topology where the task will be submitted.
-   * @return A unique identifier for the submitted task.
    * @throws ExternalTaskException If the submission fails due to an error with the external resource.
    */
-  String submitEngineTask(T engineTask, String topologyName) throws ExternalTaskException;
+  void submitEngineTask(T engineTask, String topologyName) throws ExternalTaskException;
 
   /**
    * Cancels the specified engine task with the provided details.

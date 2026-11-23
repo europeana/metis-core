@@ -8,10 +8,4 @@ package eu.europeana.metis.core.engine.base.task.input;
 public sealed interface InputDataEndpoint
     permits HarvestInputDataEndpoint, IntermediateInputDataEndpoint, DepublishInputDataEndpoint {
 
-  /**
-   * Retrieves the URL associated with the input data endpoint.
-   *
-   * @return The URL of the input data endpoint.
-   */
-  String url();
 }

@@ -102,7 +102,6 @@ public class EngineClientConfig {
 
     dpsClient = dpsClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     dataSetServiceClient = dataSetServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
-    recordServiceClient = recordServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     fileServiceClient = fileServiceClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     uisClient = uisClient(metisCoreConfigurationProperties, ecloudConfigurationProperties);
     EcloudEngineTaskSettings ecloudEngineTaskSettings = new EcloudEngineTaskSettings(
@@ -112,8 +111,7 @@ public class EngineClientConfig {
         throttlingValues
     );
     final EcloudEngineDatasetRecordClient ecloudEngineDatasetRecordClient = new EcloudEngineDatasetRecordClient(
-        dataSetServiceClient,
-        recordServiceClient, fileServiceClient, uisClient);
+        dataSetServiceClient, fileServiceClient, uisClient);
     return new EcloudEngineTaskClient(dpsClient, ecloudEngineTaskSettings, ecloudEngineDatasetRecordClient);
   }
 
@@ -132,17 +130,6 @@ public class EngineClientConfig {
       MetisCoreConfigurationProperties metisCoreConfigurationProperties,
       EcloudConfigurationProperties ecloudConfigurationProperties) {
     return new DataSetServiceClient(
-        ecloudConfigurationProperties.getBaseUrl(),
-        ecloudConfigurationProperties.getUsername(),
-        ecloudConfigurationProperties.getPassword(),
-        metisCoreConfigurationProperties.dpsConnectTimeoutInMilliseconds(),
-        metisCoreConfigurationProperties.dpsReadTimeoutInMilliseconds());
-  }
-
-  private RecordServiceClient recordServiceClient(
-      MetisCoreConfigurationProperties metisCoreConfigurationProperties,
-      EcloudConfigurationProperties ecloudConfigurationProperties) {
-    return new RecordServiceClient(
         ecloudConfigurationProperties.getBaseUrl(),
         ecloudConfigurationProperties.getUsername(),
         ecloudConfigurationProperties.getPassword(),

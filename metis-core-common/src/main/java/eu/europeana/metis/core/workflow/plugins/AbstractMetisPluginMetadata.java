@@ -33,16 +33,16 @@ import lombok.Setter;
 @NoArgsConstructor
 public abstract class AbstractMetisPluginMetadata implements MetisPluginMetadata {
 
-  private String revisionNamePreviousPlugin;
-  private Instant revisionTimestampPreviousPlugin;
+  private String predecessorPluginName;
+  private Instant predecessorPluginStartedDate;
 
   /**
-   * For the current plugin, set up the source/previous revision information.
+   * For the current plugin, set up the predecessor link.
    *
    * @param predecessor the predecessor plugin that the current plugin is based on. Is not null.
    */
-  public void setPreviousRevisionInformation(ExecutablePlugin predecessor) {
-    this.setRevisionNamePreviousPlugin(predecessor.getPluginType().name());
-    this.setRevisionTimestampPreviousPlugin(predecessor.getStartedDate());
+  public void setPredecessorInformation(ExecutablePlugin predecessor) {
+    this.setPredecessorPluginName(predecessor.getPluginType().name());
+    this.setPredecessorPluginStartedDate(predecessor.getStartedDate());
   }
 }

@@ -16,7 +16,9 @@ public interface ExecutablePlugin extends MetisPlugin {
   /**
    * @return String representation of the external task identifier of the execution
    */
-  String getExternalTaskId();
+  String getEngineTaskId();
+
+  String getEngineBatchId();
 
   /**
    * Progress information of the execution of the plugin

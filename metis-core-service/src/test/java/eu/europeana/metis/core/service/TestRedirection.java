@@ -119,10 +119,10 @@ class TestRedirection {
     final Workflow workflow = getWorkflow(objectId, getIndexToPublishPluginMetadata(Instant.now(),
         ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
                                                    .orElseThrow()).getPluginMetadata()
-                                                                  .getRevisionNamePreviousPlugin(),
+                                                                  .getPredecessorPluginName(),
         ((ExecutablePlugin) workflowExecutionHelper.getMetisPluginWithType(workflowExecutionPre, PluginType.PREVIEW)
                                                    .orElseThrow()).getPluginMetadata()
-                                                                  .getRevisionTimestampPreviousPlugin()));
+                                                                  .getPredecessorPluginStartedDate()));
 
     dataset.setDatasetIdsToRedirectFrom(List.of("253"));
     final PluginWithExecutionId<ExecutablePlugin> predecessor = new PluginWithExecutionId<>("executionId",

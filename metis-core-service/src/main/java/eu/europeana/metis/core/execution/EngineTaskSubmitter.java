@@ -1,7 +1,5 @@
 package eu.europeana.metis.core.execution;
 
-import static java.lang.String.format;
-
 import eu.europeana.metis.core.dao.DatasetXsltDao;
 import eu.europeana.metis.core.engine.base.EngineTask;
 import eu.europeana.metis.core.engine.base.EngineTaskClient;
@@ -15,9 +13,7 @@ import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.DataStatus;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginType.ExecutablePluginTypeGroup;
 import eu.europeana.metis.exception.ExternalTaskException;
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A class responsible for submitting engine tasks based on the provided plugin.
@@ -25,9 +21,9 @@ import org.slf4j.LoggerFactory;
  * @param <S> Generic type parameter extending AbstractEngineTaskSettings.
  * @param <T> Generic type parameter extending AbstractEngineTask.
  */
+@Slf4j
 public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineTask> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final AbstractExecutablePlugin<?> plugin;
   private final EngineTaskClient<S, T> engineTaskClient;
   private final EngineTaskFactory<T> engineTaskFactory;
@@ -57,27 +53,45 @@ public class EngineTaskSubmitter<S extends EngineTaskSettings, T extends EngineT
   }
 
   /**
-   * Submits a new task to the engine for execution based on the provided dataset identifiers and the previous task information.
+   * Creates a new task to the engine for execution based on the provided dataset identifiers and the previous task information.
    * This method creates an engine task using the given parameters, submits it to the engine, and updates the plugin with the
    * submitted task ID and data status. If an error occurs during task creation or submission, an exception is thrown.
    *
-   * @param datasetId The unique identifier of the dataset to be processed by the plugin.
-   * @param engineDatasetId The unique identifier of the dataset within the engine context.
-   * @param previousTaskId The unique identifier of the previous task, used for task chaining or dependencies.
+   * @param engineTaskCreationContext The context required for creating the engine task.
+   * @return The created engine task.
    * @throws ExternalTaskException If an error occurs during task submission or execution.
    */
-  public void submit(String datasetId, String engineDatasetId, String previousTaskId) throws ExternalTaskException {
-    T engineTask = engineTaskFactory.create(datasetId, engineDatasetId, previousTaskId);
-
-    LOGGER.info("Starting execution of {} plugin for externalDatasetId {}", plugin.getPluginType(), datasetId);
+  public T createTask(EngineTaskCreationContext engineTaskCreationContext) throws ExternalTaskException {
+    log.info("Create task of {} plugin for engineDatasetId {}", plugin.getPluginType(),
+        engineTaskCreationContext.getEngineDatasetId());
     try {
-      String taskId = engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
-      plugin.setExternalTaskId(taskId);
+      T engineTask = engineTaskFactory.create(engineTaskCreationContext);
+      plugin.setEngineTaskId(engineTask.getEngineTaskId());
+      plugin.setEngineBatchId(engineTask.getEngineBatchId());
       plugin.setDataStatus(DataStatus.VALID);
-    } catch (ExternalTaskException | RuntimeException e) {
+      log.info("Created task with engineTaskId: {}", plugin.getEngineTaskId());
+      return engineTask;
+    } catch (IllegalStateException | ExternalTaskException e) {
+      throw e;
+    } catch (RuntimeException e) {
       throw new ExternalTaskException(
-          format("Submitting task for plugin type %s and dataset %s failed", plugin.getPluginType(), datasetId), e);
+          "Create task for plugin type %s and dataset %s failed"
+              .formatted(plugin.getPluginMetadata().getExecutablePluginType(), engineTaskCreationContext.getDatasetId()),
+          e
+      );
     }
-    LOGGER.info("Submitted task with externalTaskId: {}", plugin.getExternalTaskId());
+  }
+
+  /**
+   * Submits the specified task to the processing engine for execution.
+   *
+   * @param engineTask The task to be submitted.
+   * @throws ExternalTaskException If an error occurs during the submission process, such as a failure in external resource
+   * interaction.
+   */
+  public void submitTask(T engineTask) throws ExternalTaskException {
+    log.info("Submit task with engineTaskId: {}", engineTask.getEngineTaskId());
+    engineTaskClient.submitEngineTask(engineTask, plugin.getTopologyName());
+    log.info("Submitted task with engineTaskId: {}", engineTask.getEngineTaskId());
   }
 }

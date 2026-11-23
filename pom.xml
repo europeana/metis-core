@@ -23,7 +23,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>25</maven.compiler.release>
+    <maven.compiler.proc>full</maven.compiler.proc>
 
     <!--Plugins-->
     <version.maven.compiler.plugin>3.14.0</version.maven.compiler.plugin>
@@ -32,11 +33,11 @@
     <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
 
     <!--Internal-->
-    <version.metis-sandbox-common>12-SNAPSHOT</version.metis-sandbox-common>
-    <version.ecloud>17</version.ecloud>
-    <version.metis-common>20</version.metis-common>
-    <version.metis-framework>18</version.metis-framework>
-    <version.metis-schema>14.1</version.metis-schema>
+    <version.metis-sandbox-common>13-SNAPSHOT</version.metis-sandbox-common>
+    <version.ecloud>18-SNAPSHOT</version.ecloud>
+    <version.metis-common>21-SNAPSHOT</version.metis-common>
+    <version.metis-framework>19-SNAPSHOT</version.metis-framework>
+    <version.metis-schema>16-SNAPSHOT</version.metis-schema>
     <version.corelib>2.18.0</version.corelib>
 
     <!--External-->
