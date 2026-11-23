@@ -59,7 +59,7 @@ public class IndexTaskFactory<S extends EngineTaskSettings, T extends EngineTask
 
   private @NotNull IndexTaskContext getIndexTaskConfiguration(String sourceExecutionId, String sourceBatchId) {
     if (!(plugin.getPluginMetadata() instanceof AbstractIndexPluginMetadata indexPluginMetadata)) {
-      throw new IllegalStateException("Unexpected value: " + plugin.getPluginMetadata());
+      throw new IllegalStateException("Expected AbstractIndexPluginMetadata for plugin " + plugin.getPluginType());
     }
 
     return new IndexTaskContext(

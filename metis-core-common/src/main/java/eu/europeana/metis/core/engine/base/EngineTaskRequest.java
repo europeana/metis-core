@@ -1,8 +1,9 @@
 package eu.europeana.metis.core.engine.base;
 
+import static java.util.Objects.requireNonNull;
+
 import eu.europeana.metis.core.engine.base.task.input.InputDataEndpoint;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Represents a task that can be submitted to a processing engine.
@@ -20,7 +21,7 @@ public class EngineTaskRequest {
   protected EngineTaskRequest(
       Map<EngineTaskKey, String> parameters,
       InputDataEndpoint inputDataEndpoint) {
-    this.parameters = Objects.requireNonNull(parameters);
-    this.inputDataEndpoint = Objects.requireNonNull(inputDataEndpoint);
+    this.parameters = requireNonNull(parameters);
+    this.inputDataEndpoint = requireNonNull(inputDataEndpoint);
   }
 }
