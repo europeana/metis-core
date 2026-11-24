@@ -251,8 +251,8 @@ public class EcloudEngineTaskClient implements EngineTaskClient<EcloudEngineTask
 
   @Override
   public String createEngineDatasetId(Dataset dataset) {
-    // Sandbox still provisions datasets through this shared method. eCloud only needs a placeholder ID.
-    return "NOT_REQUIRED_ANYMORE";
+    // Core stores the placeholder in a unique index. The Metis dataset ID keeps it stable across retries.
+    return "NOT_REQUIRED_ANYMORE-" + dataset.getDatasetId();
   }
 
   @Override

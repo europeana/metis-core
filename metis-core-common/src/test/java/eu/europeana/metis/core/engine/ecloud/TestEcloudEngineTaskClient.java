@@ -4,6 +4,7 @@ import static eu.europeana.cloud.common.model.dps.EngineTaskState.PROCESSED;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,6 +29,7 @@ import eu.europeana.cloud.service.dps.DpsTask;
 import eu.europeana.cloud.service.dps.exception.AccessDeniedOrObjectDoesNotExistException;
 import eu.europeana.cloud.service.dps.exception.DpsException;
 import eu.europeana.cloud.service.dps.metis.indexing.TargetIndexingDatabase;
+import eu.europeana.metis.core.dataset.Dataset;
 import eu.europeana.metis.core.engine.base.EngineTaskKey;
 import eu.europeana.metis.core.engine.base.IndexDatabase;
 import eu.europeana.metis.core.engine.base.item.report.DataItemState;
@@ -78,6 +80,19 @@ class TestEcloudEngineTaskClient {
   @Test
   void getEngineTaskSettings_returnsSettings() {
     assertEquals(ecloudEngineTaskSettings, ecloudEngineTaskClient.getEngineTaskSettings());
+  }
+
+  @Test
+  void createEngineDatasetIdIsStableAndUniquePerDataset() {
+    Dataset firstDataset = new Dataset();
+    firstDataset.setDatasetId("firstDatasetId");
+    Dataset secondDataset = new Dataset();
+    secondDataset.setDatasetId("secondDatasetId");
+
+    String firstEngineDatasetId = ecloudEngineTaskClient.createEngineDatasetId(firstDataset);
+
+    assertEquals(firstEngineDatasetId, ecloudEngineTaskClient.createEngineDatasetId(firstDataset));
+    assertNotEquals(firstEngineDatasetId, ecloudEngineTaskClient.createEngineDatasetId(secondDataset));
   }
 
   @Test
