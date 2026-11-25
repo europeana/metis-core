@@ -30,6 +30,7 @@ import eu.europeana.metis.core.workflow.WorkflowStatus;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePlugin;
 import eu.europeana.metis.core.workflow.plugins.AbstractExecutablePluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.AbstractMetisPlugin;
+import eu.europeana.metis.core.workflow.plugins.DatasetAdministrationPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.DepublishPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.EnrichmentPluginMetadata;
 import eu.europeana.metis.core.workflow.plugins.ExecutablePluginFactory;
@@ -120,6 +121,7 @@ public class TestObjectFactory {
     return ExecutablePluginFactory.createPlugin(switch (type) {
       case HTTP_HARVEST -> new HTTPHarvestPluginMetadata();
       case OAIPMH_HARVEST -> new OaipmhHarvestPluginMetadata();
+      case DATASET_ADMINISTRATION -> new DatasetAdministrationPluginMetadata();
       case ENRICHMENT -> new EnrichmentPluginMetadata();
       case MEDIA_PROCESS -> new MediaProcessPluginMetadata();
       case LINK_CHECKING -> new LinkCheckingPluginMetadata();

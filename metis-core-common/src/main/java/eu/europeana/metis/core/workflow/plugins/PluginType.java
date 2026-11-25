@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public enum PluginType {
   HTTP_HARVEST,
   OAIPMH_HARVEST,
+  DATASET_ADMINISTRATION,
   ENRICHMENT,
   MEDIA_PROCESS,
   LINK_CHECKING,

@@ -10,6 +10,7 @@ public enum Topology {
 
   HTTP_HARVEST("http_harvest"),
   OAIPMH_HARVEST("oai_harvest"),
+  DATASET_ADMINISTRATION("dataset_administration"),
   VALIDATION("validation"),
   TRANSFORMATION("xslt_transform"),
   NORMALIZATION("normalization"),
